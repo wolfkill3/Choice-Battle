@@ -2270,7 +2270,7 @@ hashtable bof_HT=InitHashtable()
 group bof_Heroes=CreateGroup()
 hashtable bof_I=InitHashtable()
 hashtable bof_M9=InitHashtable()
-hashtable bof_OI=InitHashtable()
+hashtable Esc_State=InitHashtable()
 group bof_Q9=CreateGroup()
 group bof_RK=CreateGroup()
 hashtable bof_UD=InitHashtable()
@@ -2482,6 +2482,75 @@ boolean LANG_Applied=false // какой язык сейчас выставле�
 boolean LANG_Dirty=false
 rect LANG_R=null
 timer LANG_Clock=null
+// Escanor state fields. Values are stable for the shared port support API.
+constant integer ESC_SUN_FROZEN=$DF127C78
+constant integer ESC_CASTER=$911D5DC2
+constant integer ESC_OWNER=$E6A6EB1E
+constant integer ESC_PLAYER_REMOVED=$AEE4E353
+constant integer ESC_CLOCK_HOUR=$6B54C545
+constant integer ESC_CLOCK_DISTANCE=$5EA34F1E
+constant integer ESC_SUN_STRENGTH=$55B032F5
+constant integer ESC_SCALE=$23E7B98D
+constant integer ESC_X=$A99320FA
+constant integer ESC_Y=$FDF65382
+constant integer ESC_GROUND_Z=$8E206300
+constant integer ESC_EFFECT1=$6EAE13FE
+constant integer ESC_HEIGHT_OFFSET=$DB3E3D6
+constant integer ESC_ANGLE=$2D345649
+constant integer ESC_TICK=$8B1FFFFC
+constant integer ESC_ATTACK_TARGET=$458B7DE9
+constant integer ESC_ELAPSED=$2B0A6845
+constant integer ESC_STEP=$9733C41A
+constant integer ESC_CASTER_PLAYER=$48656946
+constant integer ESC_TARGET_PLAYER=$A895BB39
+constant integer ESC_GRABBED_TARGET=$A7A19391
+constant integer ESC_TARGET_LIFE=$6DD3A3AB
+constant integer ESC_EFFECT_SCALE=$2438D723
+constant integer ESC_EFFECT2=$2260746D
+constant integer ESC_EFFECT4=$7A07744
+constant integer ESC_PHASE_TIME=$5E7B9BEB
+constant integer ESC_HEIGHT_STEP=$3AEEC3E1
+constant integer ESC_TARGET_X=$2392447A
+constant integer ESC_TARGET_Y=$B0897302
+constant integer ESC_EFFECT3=$321957D9
+constant integer ESC_IMPACT_TIME=$1CDCF900
+constant integer ESC_BURN_TICK=$A0136A6F
+constant integer ESC_NEXT_X=$41713DA3
+constant integer ESC_NEXT_Y=$71CA3531
+constant integer ESC_VICTIM=$9B1A6867
+constant integer ESC_VICTIM_X=$F1DDA59B
+constant integer ESC_VICTIM_Y=$38D20A1F
+constant integer ESC_DISTANCE_LIMIT=$3D4DC87A
+constant integer ESC_TARGETS=$1BF14788
+constant integer ESC_ORIGIN_LOCATION=$B0FD2C34
+constant integer ESC_AUX_UNIT=$397C5DE0
+constant integer ESC_MOVE_STEP=$34D6230E
+constant integer ESC_SEARCH_LOCATION=$9CD60476
+constant integer ESC_RADIUS=$38AB9941
+constant integer ESC_EFFECT_ANGLE=$24F5C392
+constant integer ESC_AUX_PROJECTILE=$D2A88040
+constant integer ESC_AUX_EFFECT_UNIT=$82AE6639
+constant integer ESC_PROJECTILE=$62C50DE6
+constant integer ESC_UNIT_FLAG=$68B72DFF
+constant integer ESC_PILLAR_TIME=$936AD39A
+constant integer ESC_PROJECTILE_HEIGHT=$DFE7C6B0
+constant integer ESC_CASTER_HEIGHT=$E89F2623
+constant integer ESC_VERTICAL_STEP=$8B4A5999
+constant integer ESC_CAMERA_PLAYER=$192409FE
+constant integer ESC_JUMP_DISTANCE=$78798ABC
+constant integer ESC_JUMP_PHASE=$190204BA
+constant integer ESC_BURST_RADIUS=$D47063CD
+constant integer ESC_SPAWN_LIFE=$8CBA2711
+constant integer ESC_SPAWN_COUNTER1=$410023C4
+constant integer ESC_SPAWN_COUNTER2=$E90DB670
+
+// Dead Master visual/zone scheduler, separated by owner for time stop support.
+hashtable DMFxHT=InitHashtable()
+integer DMFxCount=0
+integer DMFxFree=0
+timer array DMFxTimer
+timer DMFxTickingTimer=null
+
 endglobals
 native MergeUnits       takes integer qty, integer a, integer b, integer make returns boolean   // reserved native for call 4 integer function and return BOOLEAN value
 native ConvertUnits takes integer qty, integer id returns boolean                                                       // reserved native for call 2 integer function and return BOOLEAN value (can be converted to int!)
@@ -20777,38 +20846,45 @@ set t=null
 endfunction
 //Suigintou1end
 //Escanor1start
+
+// End a timer-owned Escanor context in one place.
+function Esc_EndTimer takes timer eetTimer returns nothing
+    call FlushChildHashtable(Esc_State,GetHandleId(eetTimer))
+    call TSE_DestroyTimer(eetTimer)
+endfunction
+
 // Эффекты Эсканора вдвое меньше, чем у bof (владелец 28 окт 2026: «все эффекты у него на весь экран»):
 // создание эффекта сразу с масштабом 0.5, заданный размер и масштаб дамми-эффектов — x0.5.
 function Esc_AddEffV takes unit caster,string path,real x,real y returns effect
-set bj_lastCreatedEffect=Bof_AddEffV(caster,path,x,y)
-call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
-return bj_lastCreatedEffect
+    set bj_lastCreatedEffect=Bof_AddEffV(caster,path,x,y)
+    call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
+    return bj_lastCreatedEffect
 endfunction
 function Esc_EffSize takes effect e,real sc returns nothing
-call SetSpecialEffectScale(e,sc*0.5)
+    call SetSpecialEffectScale(e,sc*0.5)
 endfunction
 function Esc_UnitScale takes unit u,real x,real y,real z returns nothing
-call SetUnitScale(u,x*0.5,y*0.5,z*0.5)
+    call SetUnitScale(u,x*0.5,y*0.5,z*0.5)
 endfunction
 // сила для урона кнопки D: урон bof x (0.033);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_D takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.033)*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.033)*1000.+0.5)
 endfunction
 // сила для урона кнопки E: урон bof x (0.015 + 0.005 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_E takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'EsE1')))*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'EsE1')))*1000.+0.5)
 endfunction
 // сила для урона кнопки F: урон bof x (0.03);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_F takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.03)*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.03)*1000.+0.5)
 endfunction
 // сила для урона кнопки G: урон bof x (0.025);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_G takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.025)*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.025)*1000.+0.5)
 endfunction
 // сила для урона кнопки Q: урон bof x (0.01875 + 0.00625 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
@@ -20818,31 +20894,31 @@ endfunction
 // сила для урона кнопки W: урон bof x (0.015 + 0.005 x уровень);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_W takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'EsW1')))*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.015+0.005*I2R(GetUnitAbilityLevel(u,'EsW1')))*1000.+0.5)
 endfunction
 // сила для урона кнопки atk: урон bof x (0.0125);
 // x1000, чтобы не терять дробь в целом (в Bof_Dmg урон делится обратно на 1000)
 function Esc_Str_atk takes unit u,boolean b returns integer
-return R2I(I2R(GetHeroStr(u,b))*(0.0125)*1000.+0.5)
+    return R2I(I2R(GetHeroStr(u,b))*(0.0125)*1000.+0.5)
 endfunction
 // ===== Эсканор: своё вместо общего кода bof (до функций героя) =====
 // Сила солнца. bof ставил СИЛУ = 511 + бонус (511 — их базовая сила героя), у нас это
 // сломало бы рост силы по уровням. Бонус считаем долей от нашей базовой силы: в полдень
 // у bof +500 к 511, то есть почти вдвое, — у нас так же (множитель 1.0 ниже).
 function Esc_SunStr takes unit u,real x returns nothing
-local integer cur=LoadInteger(bof_HT,GetHandleId(u),SH_bofBonus+6)
-local integer base=GetHeroStr(u,false)-cur
-call Bof_xa(u,6,2,R2I(I2R(base)*x/511.*1.0))
+    local integer cur=LoadInteger(bof_HT,GetHandleId(u),SH_bofBonus+6)
+    local integer base=GetHeroStr(u,false)-cur
+    call Bof_xa(u,6,2,R2I(I2R(base)*x/511.*1.0))
 endfunction
 // Свои часы Эсканора. В 3.2 время суток заморожено на полдне, поэтому у героя свой цикл:
 // сутки за 240 сек (0.01 часа на тик солнца 0.1 сек). Время карты не трогаем.
 // Всё, что у bof читало GetTimeOfDay() и ставило SetTimeOfDay(), идёт через эти функции.
 function Esc_Time takes unit u returns real
-return LoadReal(bof_HT,GetHandleId(u),SH_EscClock)
+    return LoadReal(bof_HT,GetHandleId(u),SH_EscClock)
 endfunction
 function Esc_SetClock takes unit u,real hour,boolean freeze returns nothing
-call SaveReal(bof_HT,GetHandleId(u),SH_EscClock,hour)
-call SaveBoolean(bof_HT,GetHandleId(u),SH_EscClockFrozen,freeze)
+    call SaveReal(bof_HT,GetHandleId(u),SH_EscClock,hour)
+    call SaveBoolean(bof_HT,GetHandleId(u),SH_EscClockFrozen,freeze)
 endfunction
 // Окошко со временем — общая рамка CustomLeaderboard (как у Дезмастера, Сабрака): видно союзникам,
 // выделившим Эсканора. Днём золотое, ночью голубое. Обновляет тик солнца (0.1 c); когда юнит
@@ -20850,52 +20926,52 @@ endfunction
 function Esc_PanelInit takes unit u returns nothing
 endfunction
 function Esc_BoardKill takes player p returns nothing
-if GetLocalPlayer()==p then
-    call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
-    call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
-endif
+    if GetLocalPlayer()==p then
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0)," ")
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),false)
+    endif
 endfunction
 function Esc_PanelUpdate takes unit u,real hour returns nothing
-local integer escHH=R2I(hour)
-local integer escMM=R2I((hour-I2R(escHH))*60.)
-local string escTxt
-local string escTxt2
-if not IsUnitSelected(u,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
-    return
-endif
-if hour>=6. and hour<18. then
-set escTxt=Lng("|cffffcc00Время|r: ","|cffffcc00Time|r: ")
-else
-set escTxt=Lng("|cff78aaffВремя|r: ","|cff78aaffTime|r: ")
-endif
-set escTxt=escTxt+I2S(escHH)+":"
-if escMM<10 then
-set escTxt=escTxt+"0"
-endif
-set escTxt2=Lng("|r |c00FF0000Бонус STR|r: ","|r |c00FF0000Bonus STR|r: ")
-call SetFrameText(GetFrameByName("CustomLeaderboardText",0),escTxt+I2S(escMM)+escTxt2+I2S(LoadInteger(bof_HT,GetHandleId(u),SH_bofBonus+6)))
-call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
-call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
-call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
+    local integer escHH=R2I(hour)
+    local integer escMM=R2I((hour-I2R(escHH))*60.)
+    local string escTxt
+    local string escTxt2
+    if not IsUnitSelected(u,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
+        return
+    endif
+    if hour>=6. and hour<18. then
+        set escTxt=Lng("|cffffcc00Время|r: ","|cffffcc00Time|r: ")
+    else
+        set escTxt=Lng("|cff78aaffВремя|r: ","|cff78aaffTime|r: ")
+    endif
+    set escTxt=escTxt+I2S(escHH)+":"
+    if escMM<10 then
+        set escTxt=escTxt+"0"
+    endif
+    set escTxt2=Lng("|r |c00FF0000Бонус STR|r: ","|r |c00FF0000Bonus STR|r: ")
+    call SetFrameText(GetFrameByName("CustomLeaderboardText",0),escTxt+I2S(escMM)+escTxt2+I2S(LoadInteger(bof_HT,GetHandleId(u),SH_bofBonus+6)))
+    call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
+    call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
+    call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
 endfunction
 // Бафф долями от наших статов: СИЛА +strK от базовой (без бонусов bof), здоровье +hpK от максимума.
 // Числа bof (+600 СИЛЫ, +200000 здоровья) в их масштабе — база 511 СИЛЫ, ~352 тыс. здоровья;
 // у нас сырыми это было +600% силы. Сколько дали — помним под ключом и снимаем ровно столько же.
 function Esc_BuffOn takes unit u,string key,real strK,real hpK returns nothing
-local integer escId=GetHandleId(u)
-local integer escS=R2I(I2R(GetHeroStr(u,false)-LoadInteger(bof_HT,escId,SH_bofBonus+6))*strK)
-local integer escH=R2I((GetUnitState(u,UNIT_STATE_MAX_LIFE)-I2R(LoadInteger(bof_HT,escId,SH_bofBonus)))*hpK)
-call SaveInteger(bof_HT,escId,StringHash(key+"S"),escS)
-call SaveInteger(bof_HT,escId,StringHash(key+"H"),escH)
-call Bof_xa(u,6,0,escS)
-call Bof_xa(u,0,0,escH)
+    local integer escId=GetHandleId(u)
+    local integer escS=R2I(I2R(GetHeroStr(u,false)-LoadInteger(bof_HT,escId,SH_bofBonus+6))*strK)
+    local integer escH=R2I((GetUnitState(u,UNIT_STATE_MAX_LIFE)-I2R(LoadInteger(bof_HT,escId,SH_bofBonus)))*hpK)
+    call SaveInteger(bof_HT,escId,StringHash(key+"S"),escS)
+    call SaveInteger(bof_HT,escId,StringHash(key+"H"),escH)
+    call Bof_xa(u,6,0,escS)
+    call Bof_xa(u,0,0,escH)
 endfunction
 function Esc_BuffOff takes unit u,string key returns nothing
-local integer escId=GetHandleId(u)
-call Bof_xa(u,6,1,LoadInteger(bof_HT,escId,StringHash(key+"S")))
-call Bof_xa(u,0,1,LoadInteger(bof_HT,escId,StringHash(key+"H")))
-call SaveInteger(bof_HT,escId,StringHash(key+"S"),0)
-call SaveInteger(bof_HT,escId,StringHash(key+"H"),0)
+    local integer escId=GetHandleId(u)
+    call Bof_xa(u,6,1,LoadInteger(bof_HT,escId,StringHash(key+"S")))
+    call Bof_xa(u,0,1,LoadInteger(bof_HT,escId,StringHash(key+"H")))
+    call SaveInteger(bof_HT,escId,StringHash(key+"S"),0)
+    call SaveInteger(bof_HT,escId,StringHash(key+"H"),0)
 endfunction
 // The One (решения владельца 27 сен): состояние на 15 c — бафф как у Sunshine до нерфа (+117% силы,
 // +57% здоровья), каждые 0.25 c урон всем врагам рядом, жизнь догорает к концу, в конце — смерть.
@@ -20903,2243 +20979,2556 @@ endfunction
 // Солнце на время состояния замирает (флаг bof $DF127C78, как у Sunshine), иначе тик солнца
 // каждые 0.1 c ставит бонус СИЛЫ заново и стирает бафф.
 function Esc_TheOneTick takes nothing returns nothing
-local timer escTm=GetExpiredTimer()
-local integer escId=GetHandleId(escTm)
-local unit escU=LoadUnitHandle(bof_HT,escId,0)
-local integer escLeft=LoadInteger(bof_HT,escId,1)
-local group escG
-local unit escE
-local real escLife
-if escLeft<=0 or not IsUnitAliveBJ(escU) then
-call Esc_BuffOff(escU,"EscOne")
-if LoadBoolean(bof_HT,escId,2) then
-call SaveBoolean(bof_M9,GetHandleId(escU),$DF127C78,false)
-endif
-// конец — смерть, как самоподрыв Дейдары (FDeidaraCast2): только во время раунда
-if escLeft<=0 and IsUnitAliveBJ(escU) and udg_B then
-call KillUnit(escU)
-endif
-call FlushChildHashtable(bof_HT,escId)
-call TSE_DestroyTimer(escTm)
-set escTm=null
-set escU=null
-return
-endif
-set escG=CreateGroup()
-call GroupEnumUnitsInRange(escG,GetUnitX(escU),GetUnitY(escU),450.,null)
-loop
-set escE=FirstOfGroup(escG)
-exitwhen escE==null
-call GroupRemoveUnit(escG,escE)
-if Condition_Base(OwnerOf(escU),escE) and GetUnitAbilityLevel(escE,'Avul')==0 then
-call Bof_Dmg(escU,escE,I2R(Esc_Str_G(escU,true))*6.*0.001)
-endif
-endloop
-call DestroyGroup(escG)
-// жизнь догорает ровно к концу: остаток делим на оставшиеся тики
-set escLife=GetUnitState(escU,UNIT_STATE_LIFE)-GetUnitState(escU,UNIT_STATE_LIFE)/I2R(escLeft)
-if escLife<1. then
-set escLife=1.
-endif
-if IsUnitPaused(escU)==false and GetUnitAbilityLevel(escU,'Pet1')==0 then
-call SetUnitState(escU,UNIT_STATE_LIFE,escLife)
-call SaveInteger(bof_HT,escId,1,escLeft-1)
-endif
-set escTm=null
-set escU=null
-set escG=null
-set escE=null
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escTm=escExpiredTimer
+    local integer escId=GetHandleId(escTm)
+    local unit escU=LoadUnitHandle(bof_HT,escId,0)
+    local integer escLeft=LoadInteger(bof_HT,escId,1)
+    local group escG
+    local unit escE
+    local real escLife
+    if escLeft<=0 or not IsUnitAliveBJ(escU) then
+        call Esc_BuffOff(escU,"EscOne")
+        if LoadBoolean(bof_HT,escId,2) then
+            call SaveBoolean(bof_M9,GetHandleId(escU),ESC_SUN_FROZEN,false)
+        endif
+        // конец — смерть, как самоподрыв Дейдары (FDeidaraCast2): только во время раунда
+        if escLeft<=0 and IsUnitAliveBJ(escU) and udg_B then
+            call KillUnit(escU)
+        endif
+        call FlushChildHashtable(bof_HT,escId)
+        call TSE_DestroyTimer(escTm)
+        set escTm=null
+        set escU=null
+        set escExpiredTimer=null
+        return
+    endif
+    set escG=CreateGroup()
+    call GroupEnumUnitsInRange(escG,GetUnitX(escU),GetUnitY(escU),450.,null)
+    loop
+        set escE=FirstOfGroup(escG)
+        exitwhen escE==null
+        call GroupRemoveUnit(escG,escE)
+        if Condition_Base(OwnerOf(escU),escE) and GetUnitAbilityLevel(escE,'Avul')==0 then
+            call Bof_Dmg(escU,escE,I2R(Esc_Str_G(escU,true))*6.*0.001)
+        endif
+    endloop
+    call DestroyGroup(escG)
+    // жизнь догорает ровно к концу: остаток делим на оставшиеся тики
+    set escLife=GetUnitState(escU,UNIT_STATE_LIFE)-GetUnitState(escU,UNIT_STATE_LIFE)/I2R(escLeft)
+    if escLife<1. then
+        set escLife=1.
+    endif
+    if IsUnitPaused(escU)==false and GetUnitAbilityLevel(escU,'Pet1')==0 then
+        call SetUnitState(escU,UNIT_STATE_LIFE,escLife)
+        call SaveInteger(bof_HT,escId,1,escLeft-1)
+    endif
+    set escTm=null
+    set escU=null
+    set escG=null
+    set escE=null
+    set escExpiredTimer=null
 endfunction
 function Esc_TheOneStart takes unit u returns nothing
-local timer escTm=CreateTimer()
-call SaveUnitHandle(bof_HT,GetHandleId(escTm),0,u)
-call SaveInteger(bof_HT,GetHandleId(escTm),1,60)
-// солнце замораживаем, только если его ещё не заморозил Sunshine — тогда и размораживаем сами
-if not LoadBoolean(bof_M9,GetHandleId(u),$DF127C78) then
-call SaveBoolean(bof_M9,GetHandleId(u),$DF127C78,true)
-call SaveBoolean(bof_HT,GetHandleId(escTm),2,true)
-endif
-call Esc_BuffOn(u,"EscOne",1,0.6)
-call TSE_TimerStart(escTm,.25,true,function Esc_TheOneTick)
-set escTm=null
+    local timer escTm=CreateTimer()
+    call SaveUnitHandle(bof_HT,GetHandleId(escTm),0,u)
+    call SaveInteger(bof_HT,GetHandleId(escTm),1,60)
+    // солнце замораживаем, только если его ещё не заморозил Sunshine — тогда и размораживаем сами
+    if not LoadBoolean(bof_M9,GetHandleId(u),ESC_SUN_FROZEN) then
+        call SaveBoolean(bof_M9,GetHandleId(u),ESC_SUN_FROZEN,true)
+        call SaveBoolean(bof_HT,GetHandleId(escTm),2,true)
+    endif
+    call Esc_BuffOn(u,"EscOne",1,0.6)
+    call TSE_TimerStart(escTm,.25,true,function Esc_TheOneTick)
+    set escTm=null
 endfunction
 // Sunshine (D) на 20 c: +80% силы и +40% здоровья (владелец 27 сен: сначала +117%/+57% как у bof —
 // «уменьши ещё немного»; эти +117%/+57% теперь у The One).
 function Esc_SunshineOn takes unit u returns nothing
-call Esc_BuffOn(u,"EscSun",0.,.2) // 29 окт: сила — полуденное солнце (Esc_T_Act), сверху только +20% здоровья (было +80% силы, +40% здоровья)
+    call Esc_BuffOn(u,"EscSun",0.,.2) // 29 окт: сила — полуденное солнце (Esc_T_Act), сверху только +20% здоровья (было +80% силы, +40% здоровья)
 endfunction
 function Esc_SunshineOff takes unit u returns nothing
-call Esc_BuffOff(u,"EscSun")
+    call Esc_BuffOff(u,"EscSun")
 endfunction
 // подсказка владельцу в ключевые часы — иначе не понять, когда жать G и T
 function Esc_ClockTick takes unit u returns nothing
-local integer clkId=GetHandleId(u)
-local real clkOld=LoadReal(bof_HT,clkId,SH_EscClock)
-local real clkNew=clkOld+0.01
-//if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) then
-// 29 окт: часы идут только во время раунда (как отсчёт Полуночи у Юдзи)
-if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) or udg_B==false then
-call Esc_PanelUpdate(u,clkOld)
-return
-endif
-if clkNew>=24. then
-set clkNew=clkNew-24.
-endif
-call SaveReal(bof_HT,clkId,SH_EscClock,clkNew)
-call Esc_PanelUpdate(u,clkNew)
+    local integer clkId=GetHandleId(u)
+    local real clkOld=LoadReal(bof_HT,clkId,SH_EscClock)
+    local real clkNew=clkOld+0.01
+    //if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) then
+    // 29 окт: часы идут только во время раунда (как отсчёт Полуночи у Юдзи)
+    if LoadBoolean(bof_HT,clkId,SH_EscClockFrozen) or udg_B==false then
+        call Esc_PanelUpdate(u,clkOld)
+        return
+    endif
+    if clkNew>=24. then
+        set clkNew=clkNew-24.
+    endif
+    call SaveReal(bof_HT,clkId,SH_EscClock,clkNew)
+    call Esc_PanelUpdate(u,clkNew)
 endfunction
-function Bof_xk takes real Wr,location Ws,boolexpr Wt returns group
-local group Ui=CreateGroup()
-call GroupEnumUnitsInRangeOfLoc(Ui,Ws,Wr,Wt)
-call DestroyBoolExpr(Wt)
-set bof_Wu=Ui
-set Ui=null
-return bof_Wu
+function Esc_GroupAtLocation takes real Wr,location Ws,boolexpr Wt returns group
+    local group Ui=CreateGroup()
+    call GroupEnumUnitsInRangeOfLoc(Ui,Ws,Wr,Wt)
+    call DestroyBoolExpr(Wt)
+    set bof_Wu=Ui
+    set Ui=null
+    return bof_Wu
 endfunction
-function Bof_xw takes unit Uk,location U4,real U5 returns nothing
-local location U6=GetUnitLoc(Uk)
-call SetUnitFacingTimed(Uk,AngleBetweenPoints(U6,U4),U5)
-call RemoveLocation(U6)
-set U6=null
+function Esc_FaceLocation takes unit Uk,location U4,real U5 returns nothing
+    local location U6=GetUnitLoc(Uk)
+    call SetUnitFacingTimed(Uk,AngleBetweenPoints(U6,U4),U5)
+    call RemoveLocation(U6)
+    set U6=null
 endfunction
-function Bof_x5 takes unit Uk,integer Ul returns boolean
-local integer O7=0
-if Ul!=0 then
-loop
-if GetItemTypeId(UnitItemInSlot(Uk,O7))==Ul then
-return true
-endif
-set O7=O7+1
-exitwhen O7>=bj_MAX_INVENTORY
-endloop
-endif
-return false
+function Esc_HasItem takes unit Uk,integer Ul returns boolean
+    local integer O7=0
+    if Ul!=0 then
+        loop
+            if GetItemTypeId(UnitItemInSlot(Uk,O7))==Ul then
+                return true
+            endif
+            set O7=O7+1
+            exitwhen O7>=bj_MAX_INVENTORY
+        endloop
+    endif
+    return false
 endfunction
-function Bof_yt takes unit Uk,unit U4,real U5 returns nothing
-local location U6=GetUnitLoc(U4)
-call Bof_xw(Uk,U6,U5)
-call RemoveLocation(U6)
-set U6=null
+function Esc_FaceTarget takes unit Uk,unit U4,real U5 returns nothing
+    local location U6=GetUnitLoc(U4)
+    call Esc_FaceLocation(Uk,U6,U5)
+    call RemoveLocation(U6)
+    set U6=null
 endfunction
-function Bof_z5 takes unit M2,integer UB returns nothing
-local integer Wv=GetUnitAbilityLevel(M2,UB)
-if Wv<=0 then
-return
-endif
-call UnitRemoveAbility(M2,UB)
-call UnitAddAbility(M2,UB)
-call SetUnitAbilityLevel(M2,UB,Wv)
+function Esc_ResetAbility takes unit M2,integer UB returns nothing
+    local integer Wv=GetUnitAbilityLevel(M2,UB)
+    if Wv<=0 then
+        return
+    endif
+    call UnitRemoveAbility(M2,UB)
+    call UnitAddAbility(M2,UB)
+    call SetUnitAbilityLevel(M2,UB,Wv)
 endfunction
-function Bof_z6 takes nothing returns nothing
-local integer VG=GetHandleId(GetExpiredTimer())
-local unit M2=LoadUnitHandle(bof_I,VG,1)
-local integer VF=GetHandleId(M2)
-local real VH=LoadReal(bof_I,VF,-1)
-local real VI=LoadReal(bof_I,VG,2)
-local real VJ=LoadReal(bof_I,VG,3)
-local real Up=LoadReal(bof_I,VG,4)
-local real Uq=LoadReal(bof_I,VG,5)
-local real OV=LoadReal(bof_I,VG,6)
-local real VK=LoadReal(bof_I,VG,7)
-local real VL=LoadReal(bof_I,VG,8)
-local real VM=LoadReal(bof_I,VG,9)
-local real VN=LoadReal(bof_I,VG,10)
-local real VO=LoadReal(bof_I,VG,11)
-local real VQ
-local real VR
-local real UI
-local real VS
-local real VP=GetUnitMoveSpeed(M2)
-set OV=OV+.01
-set VK=VK+.01
-if VK>=VL then
-set VK=0
-set VM=VI
-set VN=VJ
-set VI=Up
-set VJ=Uq
-set Up=GetUnitX(M2)
-set Uq=GetUnitY(M2)
-set UI=SquareRoot(Pow(VI-Up,2)+Pow(VJ-Uq,2))
-set VQ=Atan2(Uq-VJ,Up-VI)
-set VR=Deg2Rad(GetUnitFacing(M2))
-if Cos(VQ-VR)<.9 and UI>VP*.8*VL then
-set VO=VO+1*VL
-endif
-if VO<=0 or VH<VP then
-set VO=0
-if UI<=550*VL and UI>VP*.8*VL then
-set VS=VH*VL-UI
-set Up=Up+VS*Cos(VQ)
-set Uq=Uq+VS*Sin(VQ)
-if RectContainsCoords(bj_mapInitialPlayableArea,Up,Uq) then
-call SetUnitX(M2,Up)
-call SetUnitY(M2,Uq)
-endif
-endif
-else
-set VO=VO-VL
-endif
-endif
-call SaveUnitHandle(bof_I,VG,1,M2)
-call SaveReal(bof_I,VG,2,VI)
-call SaveReal(bof_I,VG,3,VJ)
-call SaveReal(bof_I,VG,4,Up)
-call SaveReal(bof_I,VG,5,Uq)
-call SaveReal(bof_I,VG,6,OV)
-call SaveReal(bof_I,VG,7,VK)
-call SaveReal(bof_I,VG,8,VL)
-call SaveReal(bof_I,VG,9,GetUnitX(M2))
-call SaveReal(bof_I,VG,10,GetUnitY(M2))
-call SaveReal(bof_I,VG,11,VO)
-set M2=null
+function Esc_MoveSpeedTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local integer VG=escTimerId
+    local unit M2=LoadUnitHandle(bof_I,VG,1)
+    local integer VF=GetHandleId(M2)
+    local real VH=LoadReal(bof_I,VF,-1)
+    local real VI=LoadReal(bof_I,VG,2)
+    local real VJ=LoadReal(bof_I,VG,3)
+    local real Up=LoadReal(bof_I,VG,4)
+    local real Uq=LoadReal(bof_I,VG,5)
+    local real OV=LoadReal(bof_I,VG,6)
+    local real VK=LoadReal(bof_I,VG,7)
+    local real VL=LoadReal(bof_I,VG,8)
+    local real VM=LoadReal(bof_I,VG,9)
+    local real VN=LoadReal(bof_I,VG,10)
+    local real VO=LoadReal(bof_I,VG,11)
+    local real VQ
+    local real VR
+    local real UI
+    local real VS
+    local real VP=GetUnitMoveSpeed(M2)
+    set OV=OV+.01
+    set VK=VK+.01
+    if VK>=VL then
+        set VK=0
+        set VM=VI
+        set VN=VJ
+        set VI=Up
+        set VJ=Uq
+        set Up=GetUnitX(M2)
+        set Uq=GetUnitY(M2)
+        set UI=SquareRoot(Pow(VI-Up,2)+Pow(VJ-Uq,2))
+        set VQ=Atan2(Uq-VJ,Up-VI)
+        set VR=Deg2Rad(GetUnitFacing(M2))
+        if Cos(VQ-VR)<.9 and UI>VP*.8*VL then
+            set VO=VO+1*VL
+        endif
+        if VO<=0 or VH<VP then
+            set VO=0
+            if UI<=550*VL and UI>VP*.8*VL then
+                set VS=VH*VL-UI
+                set Up=Up+VS*Cos(VQ)
+                set Uq=Uq+VS*Sin(VQ)
+                if RectContainsCoords(bj_mapInitialPlayableArea,Up,Uq) then
+                    call SetUnitX(M2,Up)
+                    call SetUnitY(M2,Uq)
+                endif
+            endif
+        else
+            set VO=VO-VL
+        endif
+    endif
+    call SaveUnitHandle(bof_I,VG,1,M2)
+    call SaveReal(bof_I,VG,2,VI)
+    call SaveReal(bof_I,VG,3,VJ)
+    call SaveReal(bof_I,VG,4,Up)
+    call SaveReal(bof_I,VG,5,Uq)
+    call SaveReal(bof_I,VG,6,OV)
+    call SaveReal(bof_I,VG,7,VK)
+    call SaveReal(bof_I,VG,8,VL)
+    call SaveReal(bof_I,VG,9,GetUnitX(M2))
+    call SaveReal(bof_I,VG,10,GetUnitY(M2))
+    call SaveReal(bof_I,VG,11,VO)
+    set M2=null
+    set escExpiredTimer=null
 endfunction
-function Bof_z7 takes unit M2,real VE returns nothing
-local timer Nr=LoadTimerHandle(bof_I,GetHandleId(M2),-3)
-local integer VG
-local integer VF=GetHandleId(M2)
-call SaveReal(bof_I,VF,-1,VE)
-if Nr==null then
-set Nr=CreateTimer()
-else
-set Nr=null
-return
-endif
-set VG=GetHandleId(Nr)
-if VE<0 then
-set VE=0
-endif
-call SaveUnitHandle(bof_I,VG,1,M2)
-call SaveReal(bof_I,VG,2,GetUnitX(M2))
-call SaveReal(bof_I,VG,3,GetUnitY(M2))
-call SaveReal(bof_I,VG,4,GetUnitX(M2))
-call SaveReal(bof_I,VG,5,GetUnitY(M2))
-call SaveReal(bof_I,VG,6,0)
-call SaveReal(bof_I,VG,7,0)
-call SaveReal(bof_I,VG,8,.02)
-call SaveReal(bof_I,VG,9,GetUnitX(M2))
-call SaveReal(bof_I,VG,10,GetUnitY(M2))
-call SaveReal(bof_I,VG,11,0)
-call SaveTimerHandle(bof_I,GetHandleId(M2),-3,Nr)
-call TSE_TimerStart(Nr,.01,true,function Bof_z6)
-set Nr=null
+function Esc_SetMoveSpeed takes unit M2,real VE returns nothing
+    local timer Nr=LoadTimerHandle(bof_I,GetHandleId(M2),-3)
+    local integer VG
+    local integer VF=GetHandleId(M2)
+    call SaveReal(bof_I,VF,-1,VE)
+    if Nr==null then
+        set Nr=CreateTimer()
+    else
+        set Nr=null
+        return
+    endif
+    set VG=GetHandleId(Nr)
+    if VE<0 then
+        set VE=0
+    endif
+    call SaveUnitHandle(bof_I,VG,1,M2)
+    call SaveReal(bof_I,VG,2,GetUnitX(M2))
+    call SaveReal(bof_I,VG,3,GetUnitY(M2))
+    call SaveReal(bof_I,VG,4,GetUnitX(M2))
+    call SaveReal(bof_I,VG,5,GetUnitY(M2))
+    call SaveReal(bof_I,VG,6,0)
+    call SaveReal(bof_I,VG,7,0)
+    call SaveReal(bof_I,VG,8,.02)
+    call SaveReal(bof_I,VG,9,GetUnitX(M2))
+    call SaveReal(bof_I,VG,10,GetUnitY(M2))
+    call SaveReal(bof_I,VG,11,0)
+    call SaveTimerHandle(bof_I,GetHandleId(M2),-3,Nr)
+    call TSE_TimerStart(Nr,.01,true,function Esc_MoveSpeedTick)
+    set Nr=null
 endfunction
-function Bof_z8 takes unit M2 returns nothing
-local integer VG=GetHandleId(M2)
-local timer Nr=LoadTimerHandle(bof_I,VG,-3)
-if Nr!=null then
-call FlushChildHashtable(bof_I,GetHandleId(Nr))
-call PauseTimer(Nr)
-call TSE_DestroyTimer(Nr)
-endif
+function Esc_ClearMoveSpeed takes unit M2 returns nothing
+    local integer VG=GetHandleId(M2)
+    local timer Nr=LoadTimerHandle(bof_I,VG,-3)
+    if Nr!=null then
+        call FlushChildHashtable(bof_I,GetHandleId(Nr))
+        call PauseTimer(Nr)
+        call TSE_DestroyTimer(Nr)
+    endif
 endfunction
-function Bof_BBG takes real Up,real Uq,real Ur,real Us returns real
-return SquareRoot((Uq-Us)*(Uq-Us)+(Up-Ur)*(Up-Ur))
+function Esc_PlaySound takes real Up,real Uq,real Ur,real Us returns real
+    return SquareRoot((Uq-Us)*(Uq-Us)+(Up-Ur)*(Up-Ur))
 endfunction
-function Bof_BBm takes nothing returns nothing
-local timer UE=GetExpiredTimer()
-local sound UF=LoadSoundHandle(bof_UD,GetHandleId(UE),SH_sound)
-call KillSoundWhenDoneBJ(UF)
-call TSE_DestroyTimer(UE)
-set UE=null
-set UF=null
+function Esc_MusicTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer UE=escExpiredTimer
+    local sound UF=LoadSoundHandle(bof_UD,GetHandleId(UE),SH_sound)
+    call KillSoundWhenDoneBJ(UF)
+    call TSE_DestroyTimer(UE)
+    set UE=null
+    set UF=null
+    set escExpiredTimer=null
 endfunction
-function Bof_BBn takes string T8,integer T9 returns nothing
-// 3.8.1: из пула звуков (раньше новый звук и таймер на каждый вызов)
-call SND_Pool(T8,T9)
+function Esc_Sound takes string T8,integer T9 returns nothing
+    // 3.8.1: из пула звуков (раньше новый звук и таймер на каждый вызов)
+    call SND_Pool(T8,T9)
 endfunction
 function Esc_Sun_Tick takes nothing returns nothing
-local timer ST
-if GetUnitTypeId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))==0 then
-call Esc_BoardKill(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$E6A6EB1E))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-return
-endif
-call Esc_ClockTick(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-if LoadBoolean(bof_M9,PH(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$E6A6EB1E)),$AEE4E353)==true then
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-endif
-if LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$DF127C78)==false then
-if Bof_x5(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'IB2N')==true then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=6. and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=18. then
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=11. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,RAbsBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)-6.))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,40.*Pow(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E),2.))
-else
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=12. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,RAbsBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)-11.))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,1000.+9000.*Pow(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E)+0,2.))
-else
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=13. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,RAbsBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)-13.))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,1000.+9000.*Pow(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E)+0,2.))
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,RAbsBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)-18.))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,40.*Pow(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E),2.))
-endif
-endif
-endif
-call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5))
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,1.)
-call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,0.)
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=11. and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=13. and IsUnitAliveBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))==true then
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=11. and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=12. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D)+.01)
-call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call Bof_z7(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),GetUnitDefaultMoveSpeed(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=12. and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=13. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D)-.01)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D)<=1. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,1.)
-else
-endif
-call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call Bof_z7(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),GetUnitDefaultMoveSpeed(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))*LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-else
-endif
-if true then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300,300.)
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-9.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),4.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)==1 or ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),12)==0 then
-call Bof_BBn("bof\\war3mapImported\\Kakarotto-D-YX1.mp3",110)
-else
-endif
-else
-endif
-else
-call Bof_z8(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,0)
-endif
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>=6. and LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)<=18. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,RAbsBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)-12.))
-// 29 окт: днём до +50% белой силы в полдень (было 500 = ~+98%)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,255.*(1.-(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E)+.01)/6.))
-call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5))
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,1.)
-// 29 окт: ночью сила падает — к полуночи до -30% белой силы ($5EA34F1E — часов до полуночи)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545)>18. then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,24.-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545))
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545))
-endif
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5,-153.*(1.-LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5EA34F1E)/6.))
-call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$55B032F5))
-call SetUnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-endif
-endif
-else
-endif
-set ST=null
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escNextTimer
+    if GetUnitTypeId(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))==0 then
+        call Esc_BoardKill(LoadPlayerHandle(Esc_State,escTimerId,ESC_OWNER))
+        call Esc_EndTimer(escExpiredTimer)
+        set escExpiredTimer=null
+        return
+    endif
+    call Esc_ClockTick(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+    if LoadBoolean(bof_M9,PH(LoadPlayerHandle(Esc_State,escTimerId,ESC_OWNER)),ESC_PLAYER_REMOVED)==true then
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    if LoadBoolean(bof_M9,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),ESC_SUN_FROZEN)==false then
+        if Esc_HasItem(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),'IB2N')==true then
+            call SaveReal(Esc_State,escTimerId,ESC_CLOCK_HOUR,Esc_Time(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)>=6. and LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=18. then
+                if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=11. then
+                    call SaveReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE,RAbsBJ(LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)-6.))
+                    call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,40.*Pow(LoadReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE),2.))
+                else
+                    if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=12. then
+                        call SaveReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE,RAbsBJ(LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)-11.))
+                        call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,1000.+9000.*Pow(LoadReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE)+0,2.))
+                    else
+                        if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=13. then
+                            call SaveReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE,RAbsBJ(LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)-13.))
+                            call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,1000.+9000.*Pow(LoadReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE)+0,2.))
+                        else
+                            call SaveReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE,RAbsBJ(LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)-18.))
+                            call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,40.*Pow(LoadReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE),2.))
+                        endif
+                    endif
+                endif
+                call Esc_SunStr(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SUN_STRENGTH))
+            else
+                call SaveReal(Esc_State,escTimerId,ESC_SCALE,1.)
+                call SetUnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+                call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,0.)
+            endif
+            if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)>=11. and LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=13. and IsUnitAliveBJ(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))==true then
+                if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)>=11. and LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=12. then
+                    call SaveReal(Esc_State,escTimerId,ESC_SCALE,LoadReal(Esc_State,escTimerId,ESC_SCALE)+.01)
+                    call SetUnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+                    call Esc_SetMoveSpeed(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),GetUnitDefaultMoveSpeed(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))*LoadReal(Esc_State,escTimerId,ESC_SCALE))
+                endif
+                if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)>=12. and LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=13. then
+                    call SaveReal(Esc_State,escTimerId,ESC_SCALE,LoadReal(Esc_State,escTimerId,ESC_SCALE)-.01)
+                    if LoadReal(Esc_State,escTimerId,ESC_SCALE)<=1. then
+                        call SaveReal(Esc_State,escTimerId,ESC_SCALE,1.)
+                    endif
+                    call SetUnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+                    call Esc_SetMoveSpeed(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),GetUnitDefaultMoveSpeed(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))*LoadReal(Esc_State,escTimerId,ESC_SCALE))
+                endif
+                if true then
+                    call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+                    call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+                    call SaveReal(Esc_State,escTimerId,ESC_GROUND_Z,300.)
+                    call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Escanor-9.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+                    call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+                    call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+                    call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),4.)
+                    call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+                    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+                    if LoadInteger(Esc_State,escTimerId,ESC_TICK)==1 or ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),12)==0 then
+                        call Esc_Sound("bof\\war3mapImported\\Kakarotto-D-YX1.mp3",110)
+                    endif
+                endif
+            else
+                call Esc_ClearMoveSpeed(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+                call SaveInteger(Esc_State,escTimerId,ESC_TICK,0)
+            endif
+        else
+            call SaveReal(Esc_State,escTimerId,ESC_CLOCK_HOUR,Esc_Time(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            if LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)>=6. and LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)<=18. then
+                call SaveReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE,RAbsBJ(LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR)-12.))
+                // 29 окт: днём до +50% белой силы в полдень (было 500 = ~+98%)
+                call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,255.*(1.-(LoadReal(Esc_State,escTimerId,ESC_CLOCK_DISTANCE)+.01)/6.))
+                call Esc_SunStr(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SUN_STRENGTH))
+            else
+                call SaveReal(Esc_State,escTimerId,ESC_SCALE,1.)
+                // Night: no sunlight bonus and no strength penalty.
+                call SaveReal(Esc_State,escTimerId,ESC_SUN_STRENGTH,0.)
+                call Esc_SunStr(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SUN_STRENGTH))
+                call SetUnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+            endif
+        endif
+    endif
+    set escNextTimer=null
+    set escExpiredTimer=null
 endfunction
-function Bof_CWP takes nothing returns nothing
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)-1.5)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.1 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$9733C41A)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$458B7DE9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),true)
-else
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-endfunction
-function Esc_Attack_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetEventDamageSource())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(GetTriggerUnit()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(GetTriggerUnit()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3,GetUnitX(GetEventDamageSource()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531,GetUnitY(GetEventDamageSource()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetUnitX(GetEventDamageSource()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetUnitY(GetEventDamageSource()))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)+180.)
-set bj_lastCreatedEffect=AddSpecialEffectTarget("bof\\huoyanHit.mdx",GetTriggerUnit(),"chest")
-call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
-call DestroyEffect(bj_lastCreatedEffect)
-call Bof_Dmg(GetEventDamageSource(),GetTriggerUnit(),(I2R(Esc_Str_atk(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*40.*1.)*0.001)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$9733C41A,20.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$458B7DE9,GetTriggerUnit())
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call TSE_TimerStart(ST,.01,true,function Bof_CWP)
-if GetRandomInt(1,2)==1 then
-call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YX1.mp3",100)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBET',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531),GetUnitFacing(GetEventDamageSource())))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),$42487765,.8)
-else
-call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YX2.mp3",110)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBF4',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531),GetUnitFacing(GetEventDamageSource())))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),$42487765,.8)
-endif
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
-endfunction
-function Bof_CWU takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWV takes nothing returns nothing
-call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),.75)
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),6)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWW takes nothing returns boolean
-return true and (true and (GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()) and IsUnitAliveBJ(GetFilterUnit())==true)))
-endfunction
-function Bof_CWX takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),60.)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39),60.)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWY takes nothing returns nothing
-if GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_LIFE)>0. and GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),UNIT_STATE_LIFE)>LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB) then
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY4.mp3",100)
-else
-endif
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWZ takes nothing returns nothing
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723)+.01)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D)+.02)
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),50)==0 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=2. then
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723))
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$23E7B98D))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-endfunction
-function Bof_CWa takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWb takes nothing returns nothing
-call GroupRemoveUnit(bof_Q9,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CWc takes nothing returns nothing
-local timer ST
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)+.01)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$3AEEC3E1,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3AEEC3E1)+1.)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3AEEC3E1))
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)<=.03 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),3.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),false)
-call SaveBoolean(HH,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),TARGET_ABILITY,false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),false)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call GroupAddUnit(bof_Q9,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CWb)
-// call Bof_z5(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'EsR1')
-
-call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),1.)
-if LoadBoolean(bof_HT,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),SH_EscRGST4) then
-call SaveBoolean(bof_HT,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),SH_EscRGST4,false)
-call UnitRemoveAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'GST4')
-endif
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),0.,1000000000.)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set ST=null
-endfunction
-function Bof_CWf takes nothing returns nothing
-// R Эсканора, горение — ПЕРЕДЕЛАНО под Чейз (решение владельца 27 сен): все эффекты bof на месте,
-// убрано только самосжигание. У bof оба горели по 1% здоровья Эсканора, пока враг не опустится
-// ниже, потом казнь. Теперь: захваченный враг горит 2 c и получает суммарно 5*СИЛЫ, Эсканор не
-// горит. Взрывы вокруг — те же, без урона. По окончании — финал bof (Bof_CWc: взрывы, звук,
-// тряска), но без казни и без лечения. Умер кто-то раньше — обычный хвост bof без финала.
-// GST4 у Эсканора выдан один раз на всё горение (Bof_CWg): цель в паузе, без него урон режется вдвое.
-local integer escT=GetHandleId(GetExpiredTimer())
-local unit escC=LoadUnitHandle(bof_OI,escT,$911D5DC2)
-local unit escG=LoadUnitHandle(bof_OI,escT,$A7A19391)
-local real escTime=LoadReal(bof_OI,escT,$1CDCF900)+.05
-local integer escN=LoadInteger(bof_OI,escT,$A0136A6F)+1
-local timer ST
-call SaveReal(bof_OI,escT,$1CDCF900,escTime)
-call SaveInteger(bof_OI,escT,$A0136A6F,escN)
-if IsUnitAliveBJ(escC) and IsUnitAliveBJ(escG) and escTime<=2.0 then
-// горение: 8*СИЛЫ за 2 c, по 0.05 c
-call SetUnitInvulnerable(escC,true)
-call PauseUnit(escC,true)
-call SetUnitInvulnerable(escG,false)
-call PauseUnit(escG,false)
-call Bof_Dmg(escC,escG,I2R(GetHeroStr(escC,true))*(3+GetUnitAbilityLevel(escC,'EsR1'))*.05/2.0)
-call SetUnitInvulnerable(escG,true)
-call PauseUnit(escG,true)
-if ModuloInteger(escN,6)==0 then
-call SaveReal(bof_OI,escT,$A99320FA,GetUnitX(escC))
-call SaveReal(bof_OI,escT,$FDF65382,GetUnitY(escC))
-call SaveReal(bof_OI,escT,$41713DA3,LoadReal(bof_OI,escT,$A99320FA)+GetRandomReal(-1000.,1000.)*CosBJ(GetRandomDirectionDeg()))
-call SaveReal(bof_OI,escT,$71CA3531,LoadReal(bof_OI,escT,$FDF65382)+GetRandomReal(-1000.,1000.)*SinBJ(GetRandomDirectionDeg()))
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX3.mp3",110)
-if GetRandomInt(1,2)==1 then
-call SaveEffectHandle(bof_OI,escT,$6EAE13FE,Esc_AddEffV(escC,"bof\\Megumin-1.mdx",LoadReal(bof_OI,escT,$41713DA3),LoadReal(bof_OI,escT,$71CA3531)))
-else
-call SaveEffectHandle(bof_OI,escT,$6EAE13FE,Esc_AddEffV(escC,"bof\\NL-2.mdx",LoadReal(bof_OI,escT,$41713DA3),LoadReal(bof_OI,escT,$71CA3531)))
-endif
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,escT,$6EAE13FE),LoadReal(bof_OI,escT,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,escT,$6EAE13FE),.75)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,escT,$6EAE13FE))
-endif
-elseif IsUnitAliveBJ(escC) and IsUnitAliveBJ(escG) then
-// горение кончилось — финал bof (как было при казни), дальше Bof_CWc
-call SaveReal(bof_OI,escT,$2392447A,GetUnitX(escG))
-call SaveReal(bof_OI,escT,$B0897302,GetUnitY(escG))
-call SaveEffectHandle(bof_OI,escT,$321957D9,Esc_AddEffV(escC,"bof\\NL-2.mdx",LoadReal(bof_OI,escT,$2392447A),LoadReal(bof_OI,escT,$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,escT,$321957D9),LoadReal(bof_OI,escT,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,escT,$321957D9),2.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,escT,$321957D9))
-call SaveEffectHandle(bof_OI,escT,$321957D9,Esc_AddEffV(escC,"bof\\Shana-11.mdx",LoadReal(bof_OI,escT,$2392447A),LoadReal(bof_OI,escT,$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,escT,$321957D9),LoadReal(bof_OI,escT,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,escT,$321957D9),3.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,escT,$321957D9))
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY5.mp3",100)
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$48656946),80.)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$A895BB39),80.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,escT,$A895BB39))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,escT,$48656946))
-call TSE_TimerStart(ST,1.,false,function Bof_CWa)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$5E7B9BEB,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$DB3E3D6,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$3AEEC3E1,20.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,escC)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,escG)
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,escT,$8E206300))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,escT,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,escT,$FDF65382))
-call TSE_TimerStart(ST,.25,true,function Bof_CWc)
-call FlushChildHashtable(bof_OI,escT)
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-// кто-то умер раньше — отпустить обоих (хвост bof без изменений)
-call PauseUnit(escG,false)
-call SaveBoolean(HH,GetHandleId(escG),TARGET_ABILITY,false)
-call SetUnitInvulnerable(escG,false)
-call SetUnitPathing(escG,true)
-call PauseUnit(escC,false)
-call SetUnitInvulnerable(escC,false)
-call SetUnitPathing(escC,true)
-call SetUnitTimeScale(escC,1.)
-call SetUnitFlyHeight(escG,0.,1000000000.)
-if LoadBoolean(bof_HT,GetHandleId(escC),SH_EscRGST4) then
-call SaveBoolean(bof_HT,GetHandleId(escC),SH_EscRGST4,false)
-call UnitRemoveAbility(escC,'GST4')
-endif
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$48656946))
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$A895BB39))
-if GetRandomInt(1,2)==1 then
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY6.mp3",100)
-else
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY7.mp3",100)
-endif
-call FlushChildHashtable(bof_OI,escT)
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set escC=null
-set escG=null
-set ST=null
-endfunction
-function Bof_CWg takes nothing returns nothing
-local timer ST
-local group TF
-local unit bl_TG
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.03)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.2 then
-    call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-12.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-    call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-    call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-    call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.5)
-    call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-    call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-9.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-    call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-    call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-    call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),4.)
-    call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-    call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-8.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-    call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-    call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),1.)
-    call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-else
-    call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-    call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-    call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),80.)
-    call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39),80.)
-    set ST=CreateTimer()
-    call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-    call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-    call TSE_TimerStart(ST,1.,false,function Bof_CWX)
-    call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY3.mp3",100)
-    call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
-    call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB,GetUnitState(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),UNIT_STATE_MAX_LIFE)*(.01*.2))
-    set ST=CreateTimer()
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
-    call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-    call TSE_TimerStart(ST,2.5,false,function Bof_CWY)
-    call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-    call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-    call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),1.)
-    call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-    call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Megumin-6.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-    call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-    call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),1.)
-    call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
-    call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),.5)
-    call Bof_EXSetEffectSpeed(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),.5)
-    set TF=CreateGroup()
-    call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),450.,null)
-    loop
-    set bl_TG=FirstOfGroup(TF)
-    exitwhen bl_TG==null
-    call GroupRemoveUnit(TF,bl_TG)
-    if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-    call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-    call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-    call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
+// Passive attack effects
+function Esc_AttackTrailTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateAttackTarget=LoadUnitHandle(Esc_State,escTimerId,ESC_ATTACK_TARGET)
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveReal(Esc_State,escTimerId,ESC_STEP,LoadReal(Esc_State,escTimerId,ESC_STEP)-1.5)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.1 then
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateAttackTarget))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateAttackTarget))
+        call SaveReal(Esc_State,escTimerId,ESC_X,LoadReal(Esc_State,escTimerId,ESC_X)+LoadReal(Esc_State,escTimerId,ESC_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+LoadReal(Esc_State,escTimerId,ESC_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SetUnitXY_1(escStateAttackTarget,LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),true)
     else
+        call Esc_EndTimer(escExpiredTimer)
     endif
+    set escExpiredTimer=null
+    set escStateAttackTarget=null
+endfunction
+function Esc_AttackHit takes nothing returns nothing
+    local unit escCastCaster=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local unit escCastProjectile=null
+    local timer escNextTimer
+    set escCastCaster=GetEventDamageSource()
+    set escCastX=GetUnitX(GetTriggerUnit())
+    set escCastY=GetUnitY(GetTriggerUnit())
+    set escCastNextX=GetUnitX(GetEventDamageSource())
+    set escCastNextY=GetUnitY(GetEventDamageSource())
+    set escCastTargetX=GetUnitX(GetEventDamageSource())
+    set escCastTargetY=GetUnitY(GetEventDamageSource())
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    set escCastAngle=escCastAngle+180.
+    set bj_lastCreatedEffect=AddSpecialEffectTarget("bof\\huoyanHit.mdx",GetTriggerUnit(),"chest")
+    call SetSpecialEffectScale(bj_lastCreatedEffect,0.5)
+    call DestroyEffect(bj_lastCreatedEffect)
+    call Bof_Dmg(GetEventDamageSource(),GetTriggerUnit(),(I2R(Esc_Str_atk(escCastCaster,true))*40.*1.)*0.001)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_STEP,20.)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_ATTACK_TARGET,GetTriggerUnit())
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call TSE_TimerStart(escNextTimer,.01,true,function Esc_AttackTrailTick)
+    if GetRandomInt(1,2)==1 then
+        call Esc_Sound("bof\\war3mapImported\\Escanor-Q-YX1.mp3",100)
+        set escCastProjectile=CreateUnit(OwnerOf(escCastCaster),'eBET',escCastNextX,escCastNextY,GetUnitFacing(GetEventDamageSource()))
+        call UnitApplyTimedLife(escCastProjectile,$42487765,.8)
+    else
+        call Esc_Sound("bof\\war3mapImported\\Escanor-Q-YX2.mp3",110)
+        set escCastProjectile=CreateUnit(OwnerOf(escCastCaster),'eBF4',escCastNextX,escCastNextY,GetUnitFacing(GetEventDamageSource()))
+        call UnitApplyTimedLife(escCastProjectile,$42487765,.8)
+    endif
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastProjectile=null
+endfunction
+// R - Pride Flare
+function Esc_RWindupCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_RWindupAnimation takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    call SetUnitTimeScale(escStateCaster,.75)
+    call SetUnitAnimationByIndex(escStateCaster,6)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+    set escStateCaster=null
+endfunction
+function Esc_RTargetFilter takes nothing returns boolean
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    set escExpiredTimer=null
+    return true and (true and (GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (Condition_Base(OwnerOf(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),GetFilterUnit()) and IsUnitAliveBJ(GetFilterUnit())==true)))
+    set escExpiredTimer=null
+endfunction
+function Esc_RImpactCamera takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local player escStateTargetPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER)
+    call CameraClearNoiseForPlayer(escStateCasterPlayer)
+    call CameraClearNoiseForPlayer(escStateTargetPlayer)
+    call CameraSetEQNoiseForPlayer(escStateCasterPlayer,60.)
+    call CameraSetEQNoiseForPlayer(escStateTargetPlayer,60.)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+    set escStateCasterPlayer=null
+    set escStateTargetPlayer=null
+endfunction
+function Esc_RSurvivalVoice takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    if GetUnitState(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),UNIT_STATE_LIFE)>0. and GetUnitState(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),UNIT_STATE_LIFE)>LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE) then
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY4.mp3",100)
+    endif
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_RExplosionGrow takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    call SaveReal(Esc_State,escTimerId,ESC_EFFECT_SCALE,LoadReal(Esc_State,escTimerId,ESC_EFFECT_SCALE)+.01)
+    call SaveReal(Esc_State,escTimerId,ESC_SCALE,LoadReal(Esc_State,escTimerId,ESC_SCALE)+.02)
+    if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),50)==0 then
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateCaster))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT2,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+    endif
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=2. then
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),LoadReal(Esc_State,escTimerId,ESC_EFFECT_SCALE))
+    else
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateCaster))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT2,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_SCALE))
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escExpiredTimer=null
+    set escStateCaster=null
+endfunction
+function Esc_RCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_RTargetRelease takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call GroupRemoveUnit(bof_Q9,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_RFinishTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateGrabbedTarget=LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)
+    local timer escNextTimer
+    call SaveReal(Esc_State,escTimerId,ESC_PHASE_TIME,LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)+.01)
+    call SaveReal(Esc_State,escTimerId,ESC_HEIGHT_STEP,LoadReal(Esc_State,escTimerId,ESC_HEIGHT_STEP)+1.)
+    call SaveReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET,LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_STEP))
+    if LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)<=.03 then
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,GetUnitX(escStateGrabbedTarget))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,GetUnitY(escStateGrabbedTarget))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Shana-11.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),3.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    else
+        call PauseUnit(escStateGrabbedTarget,false)
+        call SaveBoolean(HH,GetHandleId(escStateGrabbedTarget),TARGET_ABILITY,false)
+        call SetUnitInvulnerable(escStateGrabbedTarget,false)
+        call SetUnitPathing(escStateGrabbedTarget,true)
+        call PauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+        call SetUnitInvulnerable(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+        call SetUnitPathing(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),true)
+        call GroupAddUnit(bof_Q9,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+        set escNextTimer=CreateTimer()
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+        call TSE_TimerStart(escNextTimer,.01,false,function Esc_RTargetRelease)
+        // call Bof_z5(LoadUnitHandle(bof_OI,escTimerId,$911D5DC2),'EsR1')
+
+        call SetUnitTimeScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),1.)
+        if LoadBoolean(bof_HT,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),SH_EscRGST4) then
+            call SaveBoolean(bof_HT,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),SH_EscRGST4,false)
+            call UnitRemoveAbility(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),'GST4')
+        endif
+        call SetUnitFlyHeight(escStateGrabbedTarget,0.,1000000000.)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateGrabbedTarget=null
+endfunction
+function Esc_RBurnTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    // R Эсканора, горение — ПЕРЕДЕЛАНО под Чейз (решение владельца 27 сен): все эффекты bof на месте,
+    // убрано только самосжигание. У bof оба горели по 1% здоровья Эсканора, пока враг не опустится
+    // ниже, потом казнь. Теперь: захваченный враг горит 2 c и получает суммарно 5*СИЛЫ, Эсканор не
+    // горит. Взрывы вокруг — те же, без урона. По окончании — финал bof (Bof_CWc: взрывы, звук,
+    // тряска), но без казни и без лечения. Умер кто-то раньше — обычный хвост bof без финала.
+    // GST4 у Эсканора выдан один раз на всё горение (Bof_CWg): цель в паузе, без него урон режется вдвое.
+    local integer escT=escTimerId
+    local unit escC=LoadUnitHandle(Esc_State,escT,ESC_CASTER)
+    local unit escG=LoadUnitHandle(Esc_State,escT,ESC_GRABBED_TARGET)
+    local real escTime=LoadReal(Esc_State,escT,ESC_IMPACT_TIME)+.05
+    local integer escN=LoadInteger(Esc_State,escT,ESC_BURN_TICK)+1
+    local timer escNextTimer
+    call SaveReal(Esc_State,escT,ESC_IMPACT_TIME,escTime)
+    call SaveInteger(Esc_State,escT,ESC_BURN_TICK,escN)
+    if IsUnitAliveBJ(escC) and IsUnitAliveBJ(escG) and escTime<=2.0 then
+        // горение: 8*СИЛЫ за 2 c, по 0.05 c
+        call SetUnitInvulnerable(escC,true)
+        call PauseUnit(escC,true)
+        call SetUnitInvulnerable(escG,false)
+        call PauseUnit(escG,false)
+        call Bof_Dmg(escC,escG,I2R(GetHeroStr(escC,true))*(3+GetUnitAbilityLevel(escC,'EsR1'))*.05/2.0)
+        call SetUnitInvulnerable(escG,true)
+        call PauseUnit(escG,true)
+        if ModuloInteger(escN,6)==0 then
+            call SaveReal(Esc_State,escT,ESC_X,GetUnitX(escC))
+            call SaveReal(Esc_State,escT,ESC_Y,GetUnitY(escC))
+            call SaveReal(Esc_State,escT,ESC_NEXT_X,LoadReal(Esc_State,escT,ESC_X)+GetRandomReal(-1000.,1000.)*CosBJ(GetRandomDirectionDeg()))
+            call SaveReal(Esc_State,escT,ESC_NEXT_Y,LoadReal(Esc_State,escT,ESC_Y)+GetRandomReal(-1000.,1000.)*SinBJ(GetRandomDirectionDeg()))
+            call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX3.mp3",110)
+            if GetRandomInt(1,2)==1 then
+                call SaveEffectHandle(Esc_State,escT,ESC_EFFECT1,Esc_AddEffV(escC,"bof\\Megumin-1.mdx",LoadReal(Esc_State,escT,ESC_NEXT_X),LoadReal(Esc_State,escT,ESC_NEXT_Y)))
+            else
+                call SaveEffectHandle(Esc_State,escT,ESC_EFFECT1,Esc_AddEffV(escC,"bof\\NL-2.mdx",LoadReal(Esc_State,escT,ESC_NEXT_X),LoadReal(Esc_State,escT,ESC_NEXT_Y)))
+            endif
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escT,ESC_EFFECT1),LoadReal(Esc_State,escT,ESC_GROUND_Z)+0.)
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escT,ESC_EFFECT1),.75)
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escT,ESC_EFFECT1))
+        endif
+    elseif IsUnitAliveBJ(escC) and IsUnitAliveBJ(escG) then
+        // горение кончилось — финал bof (как было при казни), дальше Bof_CWc
+        call SaveReal(Esc_State,escT,ESC_TARGET_X,GetUnitX(escG))
+        call SaveReal(Esc_State,escT,ESC_TARGET_Y,GetUnitY(escG))
+        call SaveEffectHandle(Esc_State,escT,ESC_EFFECT3,Esc_AddEffV(escC,"bof\\NL-2.mdx",LoadReal(Esc_State,escT,ESC_TARGET_X),LoadReal(Esc_State,escT,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escT,ESC_EFFECT3),LoadReal(Esc_State,escT,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escT,ESC_EFFECT3),2.)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escT,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escT,ESC_EFFECT3,Esc_AddEffV(escC,"bof\\Shana-11.mdx",LoadReal(Esc_State,escT,ESC_TARGET_X),LoadReal(Esc_State,escT,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escT,ESC_EFFECT3),LoadReal(Esc_State,escT,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escT,ESC_EFFECT3),3.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escT,ESC_EFFECT3))
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY5.mp3",100)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
+        call CameraSetEQNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER),80.)
+        call CameraSetEQNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_TARGET_PLAYER),80.)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,LoadPlayerHandle(Esc_State,escT,ESC_TARGET_PLAYER))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER))
+        call TSE_TimerStart(escNextTimer,1.,false,function Esc_RCameraEnd)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PHASE_TIME,0.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_HEIGHT_OFFSET,0.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_HEIGHT_STEP,20.)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escC)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,escG)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escT,ESC_GROUND_Z))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escT,ESC_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escT,ESC_Y))
+        call TSE_TimerStart(escNextTimer,.25,true,function Esc_RFinishTick)
+        call FlushChildHashtable(Esc_State,escT)
+        call TSE_DestroyTimer(escExpiredTimer)
+    else
+        // кто-то умер раньше — отпустить обоих (хвост bof без изменений)
+        call PauseUnit(escG,false)
+        call SaveBoolean(HH,GetHandleId(escG),TARGET_ABILITY,false)
+        call SetUnitInvulnerable(escG,false)
+        call SetUnitPathing(escG,true)
+        call PauseUnit(escC,false)
+        call SetUnitInvulnerable(escC,false)
+        call SetUnitPathing(escC,true)
+        call SetUnitTimeScale(escC,1.)
+        call SetUnitFlyHeight(escG,0.,1000000000.)
+        if LoadBoolean(bof_HT,GetHandleId(escC),SH_EscRGST4) then
+            call SaveBoolean(bof_HT,GetHandleId(escC),SH_EscRGST4,false)
+            call UnitRemoveAbility(escC,'GST4')
+        endif
+        call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER))
+        call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_TARGET_PLAYER))
+        if GetRandomInt(1,2)==1 then
+            call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY6.mp3",100)
+        else
+            call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY7.mp3",100)
+        endif
+        call FlushChildHashtable(Esc_State,escT)
+        call TSE_DestroyTimer(escExpiredTimer)
+    endif
+    set escC=null
+    set escG=null
+    set escNextTimer=null
+    set escExpiredTimer=null
+endfunction
+function Esc_RImpact takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local player escStateTargetPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER)
+    local unit escStateGrabbedTarget=LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)
+    local timer escNextTimer
+    local group escGroup
+    local unit escVictim
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.03)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.2 then
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Shana-12.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),1.5)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Escanor-9.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),4.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Escanor-8.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),1.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+    else
+        call CameraClearNoiseForPlayer(escStateCasterPlayer)
+        call CameraClearNoiseForPlayer(escStateTargetPlayer)
+        call CameraSetEQNoiseForPlayer(escStateCasterPlayer,80.)
+        call CameraSetEQNoiseForPlayer(escStateTargetPlayer,80.)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,escStateTargetPlayer)
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+        call TSE_TimerStart(escNextTimer,1.,false,function Esc_RImpactCamera)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY3.mp3",100)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_LIFE,GetUnitState(escStateCaster,UNIT_STATE_MAX_LIFE)*(.01*.2))
+        set escNextTimer=CreateTimer()
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,escStateGrabbedTarget)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE))
+        call TSE_TimerStart(escNextTimer,2.5,false,function Esc_RSurvivalVoice)
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT2,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),1.)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT4,Esc_AddEffV(escStateCaster,"bof\\Megumin-6.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),1.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4))
+        call Bof_EXSetEffectSpeed(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),.5)
+        call Bof_EXSetEffectSpeed(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),.5)
+        set escGroup=CreateGroup()
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),450.,null)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escStateCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+            endif
+        endloop
+        call DestroyGroup(escGroup)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+        call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_SCALE,1.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_SCALE,1.)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+        call TSE_TimerStart(escNextTimer,.01,true,function Esc_RExplosionGrow)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_IMPACT_TIME,0.)
+        call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_BURN_TICK,0)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_DISTANCE_LIMIT,LoadReal(Esc_State,escTimerId,ESC_DISTANCE_LIMIT))
+        call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+        call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_UNIT))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,escStateGrabbedTarget)
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,escStateTargetPlayer)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y))
+        if GetUnitAbilityLevel(escStateCaster,'GST4')==0 then
+            call UnitAddAbility(escStateCaster,'GST4')
+            call SaveBoolean(bof_HT,GetHandleId(escStateCaster),SH_EscRGST4,true)
+        endif
+        call TSE_TimerStart(escNextTimer,.05,true,function Esc_RBurnTick)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escNextTimer=null
+    set escGroup=null
+    set escVictim=null
+    set escExpiredTimer=null
+    set escStateCaster=null
+    set escStateCasterPlayer=null
+    set escStateTargetPlayer=null
+    set escStateGrabbedTarget=null
+endfunction
+function Esc_RGrabTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateGrabbedTarget=LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local player escStateTargetPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER)
+    local timer escNextTimer
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    call SaveReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET,LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET)+10.)
+    call SetUnitInvulnerable(escStateGrabbedTarget,true)
+    call PauseUnit(escStateGrabbedTarget,true)
+    call SetUnitInvulnerable(escStateCaster,true)
+    call PauseUnit(escStateCaster,true)
+    if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),2)==0 then
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateCaster))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Escanor-4.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),2.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Shana-16.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+    endif
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.15 then
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,GetUnitX(escStateGrabbedTarget))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,GetUnitY(escStateGrabbedTarget))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SetUnitXY_1(escStateGrabbedTarget,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),true)
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_X,LoadReal(Esc_State,escTimerId,ESC_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SetUnitXY_1(escStateCaster,LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),true)
+        call SetUnitFlyHeight(escStateGrabbedTarget,LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET),1000000000.)
+    else
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_X)+50.*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+50.*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SetUnitXY_1(escStateGrabbedTarget,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),true)
+        call Esc_FaceTarget(escStateCaster,escStateGrabbedTarget,0)
+        call Esc_FaceTarget(escStateGrabbedTarget,escStateCaster,0)
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"2620.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Bof_zU(5.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX2.mp3",110)
+        call CameraSetEQNoiseForPlayer(escStateCasterPlayer,25.)
+        call CameraSetEQNoiseForPlayer(escStateTargetPlayer,25.)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_HEIGHT_OFFSET,GetUnitFlyHeight(escStateGrabbedTarget))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_DISTANCE_LIMIT,LoadReal(Esc_State,escTimerId,ESC_DISTANCE_LIMIT))
+        call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+        call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_UNIT))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,escStateGrabbedTarget)
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,escStateTargetPlayer)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y))
+        call TSE_TimerStart(escNextTimer,.3,true,function Esc_RImpact)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateGrabbedTarget=null
+    set escStateCaster=null
+    set escStateCasterPlayer=null
+    set escStateTargetPlayer=null
+endfunction
+function Esc_RDashTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escNextTimer
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+    call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+    call SaveLocationHandle(Esc_State,escTimerId,ESC_SEARCH_LOCATION,Location(LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+    call SaveGroupHandle(Esc_State,escTimerId,ESC_TARGETS,Esc_GroupAtLocation(160.,LoadLocationHandle(Esc_State,escTimerId,ESC_SEARCH_LOCATION),Condition(function Esc_RTargetFilter)))
+    call RemoveLocation(LoadLocationHandle(Esc_State,escTimerId,ESC_SEARCH_LOCATION))
+    if IsUnitGroupEmptyBJ(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))==false then
+        call SaveUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET,FirstOfGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS)))
+        if LoadBoolean(HH,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)),ANTITARGET_ABILITY) then
+            call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)),REVERSE_TARGET,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+            call DestroyGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+            call PauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+            call SetUnitInvulnerable(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+            call SetUnitPathing(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),true)
+            call SetUnitTimeScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),1.)
+            call Esc_EndTimer(escExpiredTimer)
+            set escExpiredTimer=null
+            return
+        endif
+        call SaveBoolean(HH,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)),TARGET_ABILITY,true)
+        call SavePlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER,OwnerOf(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)))
+        call PauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),true)
+        call SetUnitPathing(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),false)
+        call SetUnitInvulnerable(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),true)
+        call UnitRemoveBuffs(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),true,false)
+        call DestroyGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+        call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),6)
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Shana-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call DestroyEffect(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Shana-27.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call DestroyEffect(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"Megumin-2.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call DestroyEffect(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),7)
+        call Esc_FaceTarget(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),0)
+        call Esc_FaceTarget(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET),LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),0)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY2.mp3",90)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,45.)
+        call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_HEIGHT_OFFSET,0.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_DISTANCE_LIMIT,LoadReal(Esc_State,escTimerId,ESC_DISTANCE_LIMIT))
+        call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+        call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_UNIT))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y))
+        call TSE_TimerStart(escNextTimer,.01,true,function Esc_RGrabTick)
+        call Esc_EndTimer(escExpiredTimer)
+    else
+        if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),2)==0 then
+            call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Shana-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+            call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+            call DestroyEffect(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Shana-16.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+            call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        endif
+        if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.2 then
+            call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)))
+            call SaveReal(Esc_State,escTimerId,ESC_X,LoadReal(Esc_State,escTimerId,ESC_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+            call SaveReal(Esc_State,escTimerId,ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+            call SetUnitXY_1(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),true)
+        else
+            call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+            call SetUnitPathing(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),true)
+            call PauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+            call SetUnitInvulnerable(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+            call ResetUnitAnimation(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+            call SetUnitTimeScale(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),1.)
+            call Esc_EndTimer(escExpiredTimer)
+        endif
+    endif
+    call DestroyGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+    set escNextTimer=null
+    set escExpiredTimer=null
+endfunction
+function Esc_RLaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escNextTimer
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,80.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_DISTANCE_LIMIT,LoadReal(Esc_State,escTimerId,ESC_DISTANCE_LIMIT))
+    call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+    call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_SEARCH_LOCATION,LoadLocationHandle(Esc_State,escTimerId,ESC_SEARCH_LOCATION))
+    call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_UNIT))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_TARGET_PLAYER))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,LoadReal(Esc_State,escTimerId,ESC_TARGET_LIFE))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y))
+    call TSE_TimerStart(escNextTimer,.02,true,function Esc_RDashTick)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
+endfunction
+function Esc_RCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local player escCastCasterPlayer=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local real escCastDistanceLimit=0.
+    local group escCastTargets=null
+    local location escCastSearchLocation=null
+    local location escCastOriginLocation=null
+    local unit escCastAuxUnit=null
+    local unit escCastVictim=null
+    local unit escCastGrabbedTarget=null
+    local player escCastTargetPlayer=null
+    local real escCastTargetLife=0.
+    local effect escCastEffect1=null
+    local effect escCastEffect2=null
+    local effect escCastEffect4=null
+    local real escCastNextX=0.
+    local real escCastVictimX=0.
+    local real escCastNextY=0.
+    local real escCastVictimY=0.
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastCasterPlayer=OwnerOf(escCastCaster)
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    call SetUnitPathing(escCastCaster,false)
+    call DestroyEffect(Esc_AddEffV(escCastCaster,"bof\\0329.mdx",escCastX,escCastY))
+    call Esc_Sound("bof\\NL-F-YX1.mp3",110)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-9.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ+150.)
+    call Esc_EffSize(escCastEffect3,2.)
+    call DestroyEffect(escCastEffect3)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-17.mdx",GetUnitX(escCastCaster),GetUnitY(escCastCaster))
+    call Esc_EffSize(escCastEffect3,1.5)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call DestroyEffect(escCastEffect3)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-11.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call Bof_EXEffectMatRotateZ(escCastEffect3,escCastAngle)
+    call Bof_zU(0.,escCastEffect3)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-R-YY1.mp3",90)
+    call CameraSetEQNoiseForPlayer(escCastCasterPlayer,30.)
+    set escNextTimer=CreateTimer()
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call TSE_TimerStart(escNextTimer,.3,false,function Esc_RWindupCameraEnd)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_RWindupAnimation)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_DISTANCE_LIMIT,escCastDistanceLimit)
+    call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,escCastTargets)
+    call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_SEARCH_LOCATION,escCastSearchLocation)
+    call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,escCastOriginLocation)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,escCastAuxUnit)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_GRABBED_TARGET,escCastGrabbedTarget)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_PLAYER,escCastTargetPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_LIFE,escCastTargetLife)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,escCastEffect1)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,escCastEffect2)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,escCastEffect4)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,escCastVictimX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,escCastVictimY)
+    call TSE_TimerStart(escNextTimer,.45,false,function Esc_RLaunch)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastCasterPlayer=null
+    set escCastEffect3=null
+    set escCastTargets=null
+    set escCastSearchLocation=null
+    set escCastOriginLocation=null
+    set escCastAuxUnit=null
+    set escCastVictim=null
+    set escCastGrabbedTarget=null
+    set escCastTargetPlayer=null
+    set escCastEffect1=null
+    set escCastEffect2=null
+    set escCastEffect4=null
+endfunction
+// Q - Dust Slash
+function Esc_QWindup takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),4)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_QAnimationEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_QProjectileTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local group escGroup=LoadGroupHandle(Esc_State,escTimerId,'EGr+')
+    local unit escVictim
+    local integer escIndex
+    local trigger escTrigger
+    local integer escLoopIndex
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveReal(Esc_State,escTimerId,ESC_RADIUS,LoadReal(Esc_State,escTimerId,ESC_RADIUS)+325.)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-Q-YX2.mp3",110)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.04 then
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_X)+LoadReal(Esc_State,escTimerId,ESC_RADIUS)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+LoadReal(Esc_State,escTimerId,ESC_RADIUS)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),300.,null)
+        set idg=GetHandleId(escGroup)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            set ide=GetHandleId(escVictim)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escStateCaster),escVictim) and GetUnitAbilityLevel(escVictim,'Avul')==0 and escVictim!=LoadUnitHandle(Esc_State,idg,ide) then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call Bof_Dmg(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),GetHeroStr(escStateCaster,true)*(1+GetUnitAbilityLevel(escStateCaster,'EsQ1')))
+                call Bof_Ctrl(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),1.5,"stun")
+                call SaveUnitHandle(Esc_State,idg,ide,escVictim)
+            endif
+        endloop
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Arthur-3.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),4.)
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Escanor-2.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        set escLoopIndex=1
+        loop
+            exitwhen escLoopIndex>6
+            call SaveReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE)+60.*I2R(escLoopIndex))
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Escanor-4.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.)
+            call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE))
+            call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+            set escLoopIndex=escLoopIndex+1
+        endloop
+    else
+        call DestroyGroup(escGroup)
+        call SetUnitPathing(escStateCaster,true)
+        call PauseUnit(escStateCaster,false)
+        call SetUnitInvulnerable(escStateCaster,false)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escGroup=null
+    set escVictim=null
+    set escTrigger=null
+    set escExpiredTimer=null
+    set escStateCaster=null
+endfunction
+function Esc_QLaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local timer escNextTimer
+    call Esc_Sound("bof\\war3mapImported\\Escanor-Q-YX1.mp3",100)
+    call CameraSetEQNoiseForPlayer(escStateCasterPlayer,30.)
+    set escNextTimer=CreateTimer()
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+    call TSE_TimerStart(escNextTimer,.3,false,function Esc_QAnimationEnd)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_RADIUS,0.)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),'EGr+',CreateGroup())
+    call TSE_TimerStart(escNextTimer,.15,true,function Esc_QProjectileTick)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateCasterPlayer=null
+endfunction
+function Esc_QCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local player escCastCasterPlayer=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local real escCastEffectAngle=0.
+    local unit escCastVictim=null
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastCasterPlayer=OwnerOf(escCastCaster)
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    set escCastTargetX=escCastX+500.*CosBJ(escCastAngle)
+    set escCastTargetY=escCastY+500.*SinBJ(escCastAngle)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-Q-YY1.mp3",95)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    call SetUnitPathing(escCastCaster,false)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-16.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call Esc_EffSize(escCastEffect3,1.)
+    call Bof_zU(1.,escCastEffect3)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Escanor-4.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call Esc_EffSize(escCastEffect3,2.)
+    call Bof_EXEffectMatRotateZ(escCastEffect3,escCastAngle)
+    call Bof_zU(0.,escCastEffect3)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_QWindup)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_ANGLE,escCastEffectAngle)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call TSE_TimerStart(escNextTimer,.3,false,function Esc_QLaunch)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastCasterPlayer=null
+    set escCastEffect3=null
+    set escCastVictim=null
+endfunction
+// E - Cruel Sun
+function Esc_EWindup takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),3)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_EProjectileTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateAuxProjectile=LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local group escGroup=LoadGroupHandle(Esc_State,escTimerId,'EGr+')
+    local unit escVictim
+    local integer escIndex
+    local trigger escTrigger
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.25 then
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,GetUnitX(escStateAuxProjectile))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,GetUnitY(escStateAuxProjectile))
+        if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),2)==0 then
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Shana-12.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+300.)
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),3.)
+            call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\792.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        endif
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SetUnitXY_1(escStateAuxProjectile,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),true)
+        if IsTerrainPathable(LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+350*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+350*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)),PATHING_TYPE_FLYABILITY)==true then
+            call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.25)
+        endif
+        if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),4)==0 then
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\2177.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.5)
+            call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        endif
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),160.,null)
+        set idg=GetHandleId(escGroup)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            set ide=GetHandleId(escVictim)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escStateCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                if escVictim!=LoadUnitHandle(Esc_State,idg,ide) then
+                    call SaveUnitHandle(Esc_State,idg,ide,escVictim)
+                    call Bof_Dmg(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),GetHeroStr(escStateCaster,true)*2)
+                endif
+                if IsUnitPausedBJ(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))==false and IsUnitInGroup(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),bof_RK)!=true then
+                    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+                    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+                    call SetUnitXY_1(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),LoadReal(Esc_State,escTimerId,ESC_VICTIM_X),LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y),true)
+                endif
+            endif
+        endloop
+    else
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateAuxProjectile))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateAuxProjectile))
+        call Esc_Sound("bof\\war3mapImported\\Megumin-E-YX1.mp3",110)
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Saber-17.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.5)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Megumin-6.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Saber-18.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Fanty-2196.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.75)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),300.,null)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escStateCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call Bof_Dmg(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),GetHeroStr(escStateCaster,true)*(1+GetUnitAbilityLevel(escStateCaster,'EsE1')))
+                call Bof_Ctrl(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),2.,"stun")
+            endif
+        endloop
+        call DestroyGroup(escGroup)
+        call UnitApplyTimedLife(escStateAuxProjectile,$42487765,.5)
+        call SetUnitAnimation(escStateAuxProjectile,"Death")
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escGroup=null
+    set escVictim=null
+    set escTrigger=null
+    set escExpiredTimer=null
+    set escStateAuxProjectile=null
+    set escStateCaster=null
+endfunction
+function Esc_ELaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local timer escNextTimer
+    call PauseUnit(escStateCaster,false)
+    call SetUnitInvulnerable(escStateCaster,false)
+    call SetUnitPathing(escStateCaster,true)
+    call SaveUnitHandle(Esc_State,escTimerId,ESC_AUX_EFFECT_UNIT,CreateUnit(OwnerOf(escStateCaster),'eBF8',LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call Esc_UnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE),1.5,1.5,1.5)
+    call UnitApplyTimedLife(LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE),$42487765,1.)
+    call SaveUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE,CreateUnit(OwnerOf(escStateCaster),'eBJ7',LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y),LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call Esc_UnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE),1.5,1.5,1.5)
+    call UnitApplyTimedLife(LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE),$42487765,1.)
+    call SaveUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE,CreateUnit(OwnerOf(escStateCaster),'eBJV',LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y),LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call UnitApplyTimedLife(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),$42487765,1.)
+    call Esc_UnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),10.,10.,10.)
+    call SetUnitFlyHeight(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),300.,1000000000.)
+    call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE)),ESC_UNIT_FLAG,true)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,80.)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_PROJECTILE,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,LoadReal(Esc_State,escTimerId,ESC_VICTIM_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,LoadReal(Esc_State,escTimerId,ESC_VICTIM_Y))
+    call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),'EGr+',CreateGroup())
+    call TSE_TimerStart(escNextTimer,.03,true,function Esc_EProjectileTick)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateCaster=null
+endfunction
+function Esc_ECast takes nothing returns nothing
+    local unit escCastCaster=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local unit escCastAuxProjectile=null
+    local unit escCastVictim=null
+    local unit escCastProjectile=null
+    local real escCastVictimX=0.
+    local real escCastVictimY=0.
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    set escCastNextX=escCastX+50.*CosBJ(escCastAngle)
+    set escCastNextY=escCastY+50.*SinBJ(escCastAngle)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-E-YY1.mp3",100)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-11.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call Bof_EXEffectMatRotateZ(escCastEffect3,escCastAngle)
+    call Esc_EffSize(escCastEffect3,1.)
+    call Bof_zU(0.,escCastEffect3)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_EWindup)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    call SetUnitPathing(escCastCaster,false)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_PROJECTILE,escCastAuxProjectile)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,escCastProjectile)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,escCastVictimX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,escCastVictimY)
+    call TSE_TimerStart(escNextTimer,.35,false,function Esc_ELaunch)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastEffect3=null
+    set escCastAuxProjectile=null
+    set escCastVictim=null
+    set escCastProjectile=null
+endfunction
+// F - Merciless Sun
+function Esc_FWindup takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),5)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+endfunction
+function Esc_FPillarTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local group escGroup
+    local unit escVictim
+    call SaveReal(Esc_State,escTimerId,ESC_PILLAR_TIME,LoadReal(Esc_State,escTimerId,ESC_PILLAR_TIME)+.02)
+    set escGroup=CreateGroup()
+    call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),600.,null)
+    loop
+        set escVictim=FirstOfGroup(escGroup)
+        exitwhen escVictim==null
+        call GroupRemoveUnit(escGroup,escVictim)
+        if Condition_Base(OwnerOf(escStateCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+            call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+            call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+            call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+            call Bof_Dmg(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),(I2R(Esc_Str_F(escStateCaster,true))*1.*1.)*0.001)
+            call Bof_Slow(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),0.9,0,4,1,false)
+        endif
     endloop
-    call DestroyGroup(TF)
-    set ST=CreateTimer()
-    call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-    call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-    call SaveReal(bof_OI,GetHandleId(ST),$2438D723,1.)
-    call SaveReal(bof_OI,GetHandleId(ST),$23E7B98D,1.)
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-    call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-    call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
-    call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-    call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-    call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-    call TSE_TimerStart(ST,.01,true,function Bof_CWZ)
-    set ST=CreateTimer()
-    call SaveReal(bof_OI,GetHandleId(ST),$1CDCF900,0.)
-    call SaveInteger(bof_OI,GetHandleId(ST),$A0136A6F,0)
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-    call SaveReal(bof_OI,GetHandleId(ST),$3D4DC87A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3D4DC87A))
-    call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-    call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$397C5DE0))
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-    call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
-    call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-    call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-    call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-    call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-    call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-    call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-    call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-    call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-    call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-    call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
-    call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-    call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-    call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-    call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
-    if GetUnitAbilityLevel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'GST4')==0 then
-        call UnitAddAbility(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'GST4')
-        call SaveBoolean(bof_HT,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),SH_EscRGST4,true)
+    call DestroyGroup(escGroup)
+    if LoadReal(Esc_State,escTimerId,ESC_PILLAR_TIME)>=2.46 then
+        call Esc_EndTimer(escExpiredTimer)
     endif
-    call TSE_TimerStart(ST,.05,true,function Bof_CWf)
-    call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-    call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set ST=null
-set TF=null
-set bl_TG=null
+    set escGroup=null
+    set escVictim=null
+    set escExpiredTimer=null
+    set escStateCaster=null
 endfunction
-function Bof_CWh takes nothing returns nothing
-local timer ST
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6)+10.)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),2)==0 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-4.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-16.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.15 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),true)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),true)
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6),1000000000.)
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+50.*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+50.*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),true)
-call Bof_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),0)
-call Bof_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0)
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"2620.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(5.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX2.mp3",110)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),25.)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39),25.)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$DB3E3D6,GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveReal(bof_OI,GetHandleId(ST),$3D4DC87A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3D4DC87A))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$397C5DE0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
-call TSE_TimerStart(ST,.3,true,function Bof_CWg)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set ST=null
+function Esc_FCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CWi takes nothing returns nothing
-local timer ST
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9CD60476,Location(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call SaveGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788,Bof_xk(160.,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9CD60476),Condition(function Bof_CWW)))
-call RemoveLocation(LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9CD60476))
-if IsUnitGroupEmptyBJ(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))==false then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391,FirstOfGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788)))
-if LoadBoolean(HH,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),ANTITARGET_ABILITY) then
-call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),REVERSE_TARGET,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),1.)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-return
-endif
-call SaveBoolean(HH,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)),TARGET_ABILITY,true)
-call SavePlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true)
-call UnitRemoveBuffs(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),true,false)
-call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),6)
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-27.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"Megumin-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),7)
-call Bof_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),0)
-call Bof_yt(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0)
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY2.mp3",90)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,45.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$DB3E3D6,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$3D4DC87A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3D4DC87A))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$397C5DE0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
-call TSE_TimerStart(ST,.01,true,function Bof_CWh)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),2)==0 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-16.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.2 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),true)
-else
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call ResetUnitAnimation(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SetUnitTimeScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),1.)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-endif
-call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-set ST=null
+function Esc_FSunFallTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateProjectile=LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local timer escNextTimer
+    local group escGroup
+    local unit escVictim
+    local integer escIndex
+    local trigger escTrigger
+    call SaveReal(Esc_State,escTimerId,ESC_PHASE_TIME,LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)+.01)
+    call SaveReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT,GetUnitFlyHeight(escStateProjectile))
+    call SaveReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT)-100.)
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,GetUnitX(escStateProjectile))
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,GetUnitY(escStateProjectile))
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call SetUnitXY_1(escStateProjectile,LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y),true)
+    if LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)<=.2 then
+        call SetUnitFlyHeight(escStateProjectile,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT),1000000000.)
+    else
+        call SetUnitXY_1(escStateProjectile,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),true)
+        call Esc_Sound("bof\\NL-Q2-YX.mp3",110)
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Saber-17.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.25)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Megumin-6.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.5)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Saber-18.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Fanty-2196.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.5)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.5)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call CameraSetEQNoiseForPlayer(escStateCasterPlayer,65.)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+        call TSE_TimerStart(escNextTimer,.65,false,function Esc_FCameraEnd)
+        set escGroup=CreateGroup()
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),450.,null)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escStateCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+                call Bof_Dmg(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),(I2R(Esc_Str_F(escStateCaster,true))*100.*1.)*0.001)
+                call Bof_Ctrl(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),3.,"stun")
+            endif
+        endloop
+        call DestroyGroup(escGroup)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escNextTimer=null
+    set escGroup=null
+    set escVictim=null
+    set escTrigger=null
+    set escExpiredTimer=null
+    set escStateProjectile=null
+    set escStateCaster=null
+    set escStateCasterPlayer=null
 endfunction
-function Bof_CWj takes nothing returns nothing
-local timer ST
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,80.)
-call SaveReal(bof_OI,GetHandleId(ST),$3D4DC87A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$3D4DC87A))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$9CD60476,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9CD60476))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$397C5DE0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A7A19391))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$A895BB39))
-call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6DD3A3AB))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
-call TSE_TimerStart(ST,.02,true,function Bof_CWi)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
+function Esc_FReleaseCaster takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    call SaveReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT,GetUnitFlyHeight(escStateCaster))
+    call SaveReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT)-25.)
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.4 then
+        call SetUnitFlyHeight(escStateCaster,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT),1000000000.)
+    else
+        call SetUnitFlyHeight(escStateCaster,0.,1000000000.)
+        call PauseUnit(escStateCaster,false)
+        call SetUnitInvulnerable(escStateCaster,false)
+        call SetUnitPathing(escStateCaster,true)
+        call ResetUnitAnimation(escStateCaster)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escExpiredTimer=null
+    set escStateCaster=null
 endfunction
-function Esc_R_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-call DestroyEffect(Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\0329.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_BBn("bof\\NL-F-YX1.mp3",110)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-9.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+150.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),2.)
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-17.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.5)
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YY1.mp3",90)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946),30.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call TSE_TimerStart(ST,.3,false,function Bof_CWU)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CWV)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$3D4DC87A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$3D4DC87A))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1BF14788))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$9CD60476,LoadLocationHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9CD60476))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0FD2C34))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$397C5DE0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$A7A19391,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A7A19391))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$A895BB39,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A895BB39))
-call SaveReal(bof_OI,GetHandleId(ST),$6DD3A3AB,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6DD3A3AB))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F))
-call TSE_TimerStart(ST,.45,false,function Bof_CWj)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
+function Esc_FSunLaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateProjectile=LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local timer escNextTimer
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,GetUnitX(escStateProjectile))
+    call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,GetUnitY(escStateProjectile))
+    call SaveReal(Esc_State,escTimerId,ESC_RADIUS,Esc_PlaySound(LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+    call SaveReal(Esc_State,escTimerId,ESC_MOVE_STEP,LoadReal(Esc_State,escTimerId,ESC_RADIUS)/20.)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PHASE_TIME,0.)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,escStateProjectile)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+    call TSE_TimerStart(escNextTimer,.02,true,function Esc_FSunFallTick)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT))
+    call TSE_TimerStart(escNextTimer,.02,true,function Esc_FReleaseCaster)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateProjectile=null
+    set escStateCaster=null
 endfunction
-function Bof_CWo takes nothing returns nothing
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),4)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_FChargeTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local unit escStateVictim=LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)
+    local unit escStateProjectile=LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE)
+    local timer escNextTimer
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    call SaveReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT)+LoadReal(Esc_State,escTimerId,ESC_VERTICAL_STEP))
+    call SaveReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT)+LoadReal(Esc_State,escTimerId,ESC_VERTICAL_STEP))
+    call SaveReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET,LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET)+LoadReal(Esc_State,escTimerId,ESC_VERTICAL_STEP))
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)==.19 then
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PILLAR_TIME,LoadReal(Esc_State,escTimerId,ESC_PILLAR_TIME))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_UNIT))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escStateVictim)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+        call TSE_TimerStart(escNextTimer,.02,true,function Esc_FPillarTick)
+    endif
+    if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),10)==0 then
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\Escanor-12.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.2)
+        call Bof_zU(3.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    endif
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.18 then
+        call SaveReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE)+20.*I2R(LoadInteger(Esc_State,escTimerId,ESC_TICK)))
+        call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+LoadReal(Esc_State,escTimerId,ESC_RADIUS)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+LoadReal(Esc_State,escTimerId,ESC_RADIUS)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE)))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(escStateCaster,"bof\\792.mdx",LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+50.)
+        call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE))
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.5)
+        call Bof_zU(3.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    endif
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.3 then
+        call SetUnitFlyHeight(escStateProjectile,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT),1000000000.)
+        call SetUnitFlyHeight(escStateCaster,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT),1000000000.)
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT2),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+LoadReal(Esc_State,escTimerId,ESC_HEIGHT_OFFSET))
+    else
+        call SetUnitAnimationByIndex(escStateCaster,9)
+        set escNextTimer=CreateTimer()
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_CASTER_HEIGHT))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE_HEIGHT,LoadReal(Esc_State,escTimerId,ESC_PROJECTILE_HEIGHT))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_RADIUS,LoadReal(Esc_State,escTimerId,ESC_RADIUS))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escStateVictim)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP))
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,escStateProjectile)
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+        call TSE_TimerStart(escNextTimer,.2,false,function Esc_FSunLaunch)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateCaster=null
+    set escStateVictim=null
+    set escStateProjectile=null
 endfunction
-function Bof_CWp takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_FCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local real escCastHeightOffset=0.
+    local player escCastCasterPlayer=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local unit escCastProjectile=null
+    local effect escCastEffect4=null
+    local effect escCastEffect2=null
+    local real escCastPillarTime=0.
+    local unit escCastAuxUnit=null
+    local real escCastEffectAngle=0.
+    local unit escCastVictim=null
+    local real escCastMoveStep=0.
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastHeightOffset=300.
+    set escCastCasterPlayer=OwnerOf(escCastCaster)
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-F-YY1.mp3",100)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-25.mdx",escCastTargetX,escCastTargetY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ+0.)
+    call Esc_EffSize(escCastEffect3,1.)
+    call Bof_zU(0.,escCastEffect3)
+    set escCastProjectile=CreateUnit(OwnerOf(escCastCaster),'eBJV',escCastX,escCastY,escCastAngle)
+    call UnitApplyTimedLife(escCastProjectile,$42487765,3.)
+    call Esc_UnitScale(escCastProjectile,20.,20.,20.)
+    call SetUnitFlyHeight(escCastProjectile,800.,1000000000.)
+    set escCastEffect4=Esc_AddEffV(escCastCaster,"bof\\3870.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect4,escCastGroundZ+escCastHeightOffset)
+    call Esc_EffSize(escCastEffect4,5.)
+    call Bof_zU(3.,escCastEffect4)
+    set escCastEffect2=Esc_AddEffV(escCastCaster,"bof\\Escanor-10.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect2,escCastGroundZ+escCastHeightOffset)
+    call Esc_EffSize(escCastEffect2,3.)
+    call Bof_zU(3.,escCastEffect2)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    call SetUnitPathing(escCastCaster,false)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_FWindup)
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_RADIUS,800.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE_HEIGHT,800.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_HEIGHT,0.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_HEIGHT_OFFSET,300.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VERTICAL_STEP,40.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PILLAR_TIME,escCastPillarTime)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,escCastAuxUnit)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_ANGLE,escCastEffectAngle)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,escCastMoveStep)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,escCastProjectile)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT2,escCastEffect2)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,escCastEffect4)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+    call TSE_TimerStart(escNextTimer,.03,true,function Esc_FChargeTick)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastCasterPlayer=null
+    set escCastEffect3=null
+    set escCastProjectile=null
+    set escCastEffect4=null
+    set escCastEffect2=null
+    set escCastAuxUnit=null
+    set escCastVictim=null
 endfunction
-function Bof_CWq takes nothing returns nothing
-local group TF=LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),'EGr+')
-local unit bl_TG
-local integer Sn
-local trigger SR
-local integer Ub
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)+325.)
-call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YX2.mp3",110)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.04 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),300.,null)
-set idg=GetHandleId(TF)
-loop
-set bl_TG=FirstOfGroup(TF)
-set ide=GetHandleId(bl_TG)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and GetUnitAbilityLevel(bl_TG,'Avul')==0 and bl_TG!=LoadUnitHandle(bof_OI,idg,ide) then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetHeroStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)*(1+GetUnitAbilityLevel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'EsQ1')))
-call Bof_Ctrl(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),1.5,"stun")
-call SaveUnitHandle(bof_OI,idg,ide,bl_TG)
-else
-endif
-endloop
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Arthur-3.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),4.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-set Ub=1
-loop
-exitwhen Ub>6
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+60.*I2R(Ub))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-4.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392))
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-set Ub=Ub+1
-endloop
-else
-call DestroyGroup(TF)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set TF=null
-set bl_TG=null
-set SR=null
+// W - Super Slash
+function Esc_WWindup takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),2)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CWr takes nothing returns nothing
-local timer ST
-call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YX1.mp3",100)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),30.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call TSE_TimerStart(ST,.3,false,function Bof_CWp)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,0.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),'EGr+',CreateGroup())
-call TSE_TimerStart(ST,.15,true,function Bof_CWq)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
+function Esc_WCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Esc_Q_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)+500.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)+500.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call Bof_BBn("bof\\war3mapImported\\Escanor-Q-YY1.mp3",95)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-16.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Escanor-4.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),2.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CWo)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call TSE_TimerStart(ST,.3,false,function Bof_CWr)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
+function Esc_WTargetCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CAMERA_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CWw takes nothing returns nothing
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),3)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_WJumpTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    // W Эсканора, полёт и удар — ПЕРЕДЕЛАНО (владелец 27 сен: «эффекты за ним, шлейфом за прыжком»).
+    // У bof белые шипы (Saber-18) и дым (Kakarotto-18) били в точке приземления, а у их моделей видна
+    // только анимация смерти на 2–7 c: на экране всё появлялось после прыжка и висело.
+    // Теперь шипы и дым идут шлейфом позади Эсканора по всему пути, на приземлении — короткий удар
+    // (кратер, волна, кольцо песка) там, где он встал. Шлейф копится (Bof_EffKeep) и гасится весь
+    // в момент удара (Bof_EffDrop) — владелец: «в воздухе остаётся долго, после удара сразу убирать».
+    // Эффекты удара видны 0.5 c (Bof_EffCut). Полёт, урон и оглушение — как у bof.
+    local integer escT=escTimerId
+    local unit escC=LoadUnitHandle(Esc_State,escT,ESC_CASTER)
+    local real escA=LoadReal(Esc_State,escT,ESC_ANGLE)
+    local real escTX=LoadReal(Esc_State,escT,ESC_TARGET_X)
+    local real escTY=LoadReal(Esc_State,escT,ESC_TARGET_Y)
+    local real escX
+    local real escY
+    local real escD
+    local integer escN
+    local effect escE
+    local timer escNextTimer
+    local integer Uu
+    local group escGroup
+    local unit escVictim
+    if escC==null or GetUnitTypeId(escC)==0 then
+        call Bof_EffDrop(escT)
+        call RemoveUnit(LoadUnitHandle(Esc_State,escT,ESC_PROJECTILE))
+        call Esc_EndTimer(escExpiredTimer)
+        set escC=null
+        set escExpiredTimer=null
+        return
+    endif
+    call SaveReal(Esc_State,escT,ESC_ELAPSED,LoadReal(Esc_State,escT,ESC_ELAPSED)+.01)
+    set escN=LoadInteger(Esc_State,escT,ESC_TICK)+1
+    call SaveInteger(Esc_State,escT,ESC_TICK,escN)
+    set escD=Esc_PlaySound(LoadReal(Esc_State,escT,ESC_X),LoadReal(Esc_State,escT,ESC_Y),escTX,escTY)
+    if escD>=1500. then
+        set escD=1500.
+    endif
+    call SaveReal(Esc_State,escT,ESC_RADIUS,escD)
+    if LoadReal(Esc_State,escT,ESC_ELAPSED)<=.15 and IsTerrainPathable(LoadReal(Esc_State,escT,ESC_X),LoadReal(Esc_State,escT,ESC_Y),PATHING_TYPE_FLYABILITY)==false and escD>=120. then
+        // откуда он улетает в этот тик — там и остаётся шлейф
+        set escX=GetUnitX(escC)
+        set escY=GetUnitY(escC)
+        call SaveReal(Esc_State,escT,ESC_X,escX+70.*CosBJ(escA))
+        call SaveReal(Esc_State,escT,ESC_Y,escY+70.*SinBJ(escA))
+        call SetUnitXY_1(escC,LoadReal(Esc_State,escT,ESC_X),LoadReal(Esc_State,escT,ESC_Y),true)
+        if ModuloInteger(escN,2)==0 then
+            // шлейф bof в воздухе
+            set escE=Esc_AddEffV(escC,"bof\\Shana-12.mdx",LoadReal(Esc_State,escT,ESC_X),LoadReal(Esc_State,escT,ESC_Y))
+            call Bof_EXSetEffectZ(escE,LoadReal(Esc_State,escT,ESC_GROUND_Z)+GetUnitFlyHeight(escC))
+            call Bof_EXEffectMatRotateZ(escE,escA)
+            call Esc_EffSize(escE,1.)
+            call Bof_EffKeep(escT,escE)
+            // белые шипы удара — позади него
+            set escE=Esc_AddEffV(escC,"bof\\Saber-18.mdx",escX,escY)
+            call Esc_EffSize(escE,.8)
+            call Bof_EffKeep(escT,escE)
+        endif
+        if ModuloInteger(escN,4)==1 then
+            // дым удара — позади него, реже
+            set escE=Esc_AddEffV(escC,"bof\\Kakarotto-18.mdx",escX,escY)
+            call Esc_EffSize(escE,.7)
+            call Bof_EffKeep(escT,escE)
+        endif
+        if escD>=LoadReal(Esc_State,escT,ESC_JUMP_DISTANCE)/2. then
+            call SetUnitFlyHeight(escC,GetUnitFlyHeight(escC)+35.,1000000000.)
+        endif
+        if escD<LoadReal(Esc_State,escT,ESC_JUMP_DISTANCE)/2. then
+            call SetUnitFlyHeight(escC,GetUnitFlyHeight(escC)-70.,1000000000.)
+        endif
+    else
+        if escD<=120. then
+            call SetUnitXY_1(escC,escTX,escTY,true)
+        endif
+        // удар — шлейф гаснет весь сразу, эффекты удара там, где он встал
+        call Bof_EffDrop(escT)
+        call RemoveUnit(LoadUnitHandle(Esc_State,escT,ESC_PROJECTILE))
+        call RemoveSavedHandle(Esc_State,escT,ESC_PROJECTILE)
+        set escX=GetUnitX(escC)
+        set escY=GetUnitY(escC)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-W-YX1.mp3",110)
+        call CameraSetEQNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER),45.)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER))
+        call TSE_TimerStart(escNextTimer,.45,false,function Esc_WCameraEnd)
+        set escE=Esc_AddEffV(escC,"bof\\Escanor-3.mdx",escX,escY)
+        call Esc_EffSize(escE,1.75)
+        call Bof_EffCut(escE,.5)
+        set escE=Esc_AddEffV(escC,"bof\\Fanty-2196.mdx",escX,escY)
+        call Esc_EffSize(escE,1.25)
+        call Bof_EffCut(escE,.5)
+        set Uu=1
+        loop
+            exitwhen Uu>6
+            set escE=Esc_AddEffV(escC,"bof\\Escanor-2.mdx",escX+CosBJ(60.*I2R(Uu))*240.,escY+SinBJ(60.*I2R(Uu))*240.)
+            call Esc_EffSize(escE,1.)
+            call Bof_EffCut(escE,.5)
+            set Uu=Uu+1
+        endloop
+        set escGroup=CreateGroup()
+        call GroupEnumUnitsInRange(escGroup,escX,escY,300.,null)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escC),escVictim) and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                call SaveUnitHandle(Esc_State,escT,ESC_VICTIM,escVictim)
+                call Bof_Dmg(escC,escVictim,GetHeroStr(escC,true)*(2+GetUnitAbilityLevel(escC,'EsW1')))
+                call Bof_Ctrl(escC,escVictim,1.,"stun")
+            endif
+        endloop
+        call DestroyGroup(escGroup)
+        call SavePlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER,OwnerOf(escC))
+        call SavePlayerHandle(Esc_State,escT,ESC_CAMERA_PLAYER,OwnerOf(LoadUnitHandle(Esc_State,escT,ESC_VICTIM)))
+        call CameraSetEQNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER),60.)
+        call CameraSetEQNoiseForPlayer(LoadPlayerHandle(Esc_State,escT,ESC_CAMERA_PLAYER),60.)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escT,ESC_CASTER_PLAYER))
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CAMERA_PLAYER,LoadPlayerHandle(Esc_State,escT,ESC_CAMERA_PLAYER))
+        call TSE_TimerStart(escNextTimer,.55,false,function Esc_WTargetCameraEnd)
+        call SetUnitTimeScale(escC,1.)
+        call SetUnitFlyHeight(escC,0.,1000000000.)
+        call SetUnitInvulnerable(escC,false)
+        call PauseUnit(escC,false)
+        call SetUnitPathing(escC,true)
+        call FlushChildHashtable(Esc_State,escT)
+        call TSE_DestroyTimer(escExpiredTimer)
+    endif
+    set escC=null
+    set escE=null
+    set escNextTimer=null
+    set escGroup=null
+    set escVictim=null
+    set escExpiredTimer=null
 endfunction
-function Bof_CWx takes nothing returns nothing
-local group TF=LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),'EGr+')
-local unit bl_TG
-local integer Sn
-local trigger SR
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.25 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),2)==0 then
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Shana-12.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+300.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),3.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\792.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-endif
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),true)
-if IsTerrainPathable(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+350*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+350*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)),PATHING_TYPE_FLYABILITY)==true then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.25)
-endif
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),4)==0 then
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\2177.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-endif
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),160.,null)
-set idg=GetHandleId(TF)
-loop
-set bl_TG=FirstOfGroup(TF)
-set ide=GetHandleId(bl_TG)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-if bl_TG!=LoadUnitHandle(bof_OI,idg,ide) then
-call SaveUnitHandle(bof_OI,idg,ide,bl_TG)
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetHeroStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)*2)
-endif
-if IsUnitPausedBJ(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))==false and IsUnitInGroup(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),bof_RK)!=true then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F),true)
-else
-endif
-else
-endif
-endloop
-else
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-call Bof_BBn("bof\\war3mapImported\\Megumin-E-YX1.mp3",110)
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Saber-17.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Megumin-6.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Saber-18.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Fanty-2196.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.75)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),300.,null)
-loop
-set bl_TG=FirstOfGroup(TF)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetHeroStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)*(1+GetUnitAbilityLevel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),'EsE1')))
-call Bof_Ctrl(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),2.,"stun")
-else
-endif
-endloop
-call DestroyGroup(TF)
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,.5)
-call SetUnitAnimation(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"Death")
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set TF=null
-set bl_TG=null
-set SR=null
+function Esc_WLaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escNextTimer
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,LoadUnitHandle(Esc_State,escTimerId,ESC_PROJECTILE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_RADIUS,LoadReal(Esc_State,escTimerId,ESC_RADIUS))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_JUMP_DISTANCE,LoadReal(Esc_State,escTimerId,ESC_JUMP_DISTANCE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,LoadReal(Esc_State,escTimerId,ESC_GROUND_Z))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CAMERA_PLAYER,LoadPlayerHandle(Esc_State,escTimerId,ESC_CAMERA_PLAYER))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,LoadReal(Esc_State,escTimerId,ESC_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,LoadReal(Esc_State,escTimerId,ESC_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+    call TSE_TimerStart(escNextTimer,.03,true,function Esc_WJumpTick)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
 endfunction
-function Bof_CWy takes nothing returns nothing
-local timer ST
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$82AE6639,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBF8',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call Esc_UnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),1.5,1.5,1.5)
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),$42487765,1.)
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBJ7',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call Esc_UnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),1.5,1.5,1.5)
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),$42487765,1.)
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBJV',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,1.)
-call Esc_UnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),10.,10.,10.)
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),300.,1000000000.)
-call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)),$68B72DFF,true)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,80.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),'EGr+',CreateGroup())
-call TSE_TimerStart(ST,.03,true,function Bof_CWx)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
+function Esc_WCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local player escCastCasterPlayer=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local real escCastJumpDistance=0.
+    local unit escCastProjectile=null
+    local effect escCastEffect1=null
+    local real escCastRadius=0.
+    local unit escCastVictim=null
+    local player escCastCameraPlayer=null
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastCasterPlayer=OwnerOf(escCastCaster)
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    call SetUnitPathing(escCastCaster,false)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-11.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+    call Bof_EXEffectMatRotateZ(escCastEffect3,escCastAngle)
+    call Esc_EffSize(escCastEffect3,1.)
+    call Bof_EffCut(escCastEffect3,.5)
+    set escCastJumpDistance=Esc_PlaySound(escCastX,escCastY,escCastTargetX,escCastTargetY)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-W-YY1.mp3",95)
+    set escCastProjectile=CreateUnit(OwnerOf(escCastCaster),'eBER',escCastX,escCastY,escCastAngle)
+    call UnitApplyTimedLife(escCastProjectile,$42487765,.75)
+    call MyRemoveUnit(escCastProjectile,.75)
+    set escCastEffect1=Esc_AddEffV(escCastCaster,"bof\\Saber-17.mdx",escCastX,escCastY)
+    call Bof_EXSetEffectZ(escCastEffect1,escCastGroundZ+0.)
+    call Bof_EXEffectMatRotateZ(escCastEffect1,escCastAngle)
+    call Esc_EffSize(escCastEffect1,1.5)
+    call Bof_zU(0.,escCastEffect1)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_WWindup)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_PROJECTILE,escCastProjectile)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_RADIUS,escCastRadius)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_JUMP_DISTANCE,escCastJumpDistance)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CAMERA_PLAYER,escCastCameraPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+    call TSE_TimerStart(escNextTimer,.1,false,function Esc_WLaunch)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastCasterPlayer=null
+    set escCastEffect3=null
+    set escCastProjectile=null
+    set escCastEffect1=null
+    set escCastVictim=null
+    set escCastCameraPlayer=null
 endfunction
-function Esc_E_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)+50.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)+50.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call Bof_BBn("bof\\war3mapImported\\Escanor-E-YY1.mp3",100)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CWw)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$62C50DE6,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F))
-call TSE_TimerStart(ST,.35,false,function Bof_CWy)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
+// G - The One
+function Esc_GVoiceEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-G-YY3.mp3",100)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CW3 takes nothing returns nothing
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),5)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_GVoiceNext takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local timer escNextTimer
+    call Esc_Sound("bof\\war3mapImported\\Escanor-G-YY2.mp3",100)
+    set escNextTimer=CreateTimer()
+    call TSE_TimerStart(escNextTimer,4.8,false,function Esc_GVoiceEnd)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
 endfunction
-function Bof_CW4 takes nothing returns nothing
-local group TF
-local unit bl_TG
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A)+.02)
-set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),600.,null)
-loop
-set bl_TG=FirstOfGroup(TF)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Esc_Str_F(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*1.*1.)*0.001)
-call Bof_Slow(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),0.9,0,4,1,false)
-else
-endif
-endloop
-call DestroyGroup(TF)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A)>=2.46 then
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-endif
-set TF=null
-set bl_TG=null
+function Esc_GCameraEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CW5 takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_GEffectGrow takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    call SaveReal(Esc_State,escTimerId,ESC_EFFECT_SCALE,LoadReal(Esc_State,escTimerId,ESC_EFFECT_SCALE)+.05)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=1. then
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT4),LoadReal(Esc_State,escTimerId,ESC_EFFECT_SCALE))
+    else
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escExpiredTimer=null
 endfunction
-function Bof_CW6 takes nothing returns nothing
-local timer ST
-local group TF
-local unit bl_TG
-local integer Sn
-local trigger SR
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)+.01)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0,GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0)-100.)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531),true)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)<=.2 then
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0),1000000000.)
-else
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),true)
-call Bof_BBn("bof\\NL-Q2-YX.mp3",110)
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Saber-17.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.25)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Megumin-6.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Saber-18.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Fanty-2196.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.5)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),65.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call TSE_TimerStart(ST,.65,false,function Bof_CW5)
-set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),450.,null)
-loop
-set bl_TG=FirstOfGroup(TF)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),(I2R(Esc_Str_F(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true))*100.*1.)*0.001)
-call Bof_Ctrl(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),3.,"stun")
-else
-endif
-endloop
-call DestroyGroup(TF)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set ST=null
-set TF=null
-set bl_TG=null
-set SR=null
+function Esc_GBurstTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SaveReal(Esc_State,escTimerId,ESC_PHASE_TIME,LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)+.01)
+    if LoadReal(Esc_State,escTimerId,ESC_PHASE_TIME)<=.05 then
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(null,"bof\\Megumin-1.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),2.)
+        call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(null,"bof\\Shana-11.mdx",LoadReal(Esc_State,escTimerId,ESC_X),LoadReal(Esc_State,escTimerId,ESC_Y)))
+        call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+        call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),3.)
+        call Bof_zU(0.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    else
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escExpiredTimer=null
 endfunction
-function Bof_CW7 takes nothing returns nothing
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623,GetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623)-25.)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.4 then
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623),1000000000.)
-else
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),0.,1000000000.)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call ResetUnitAnimation(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
+function Esc_GTargetFilter takes nothing returns boolean
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    set escExpiredTimer=null
+    return GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (true and true and Condition_Base(OwnerOf(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),GetFilterUnit()))
+    set escExpiredTimer=null
 endfunction
-function Bof_CW8 takes nothing returns nothing
-local timer ST
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941,Bof_BBG(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)/20.)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$5E7B9BEB,0.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$DFE7C6B0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$62C50DE6,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call TSE_TimerStart(ST,.02,true,function Bof_CW6)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$E89F2623,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623))
-call TSE_TimerStart(ST,.02,true,function Bof_CW7)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
+function Esc_GDamageEnum takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,GetEnumUnit())
+    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_X,GetUnitX(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+    call SaveReal(Esc_State,escTimerId,ESC_VICTIM_Y,GetUnitY(LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM)))
+    call Bof_Dmg(escStateCaster,GetEnumUnit(),(100.*(1.*I2R(Esc_Str_G(escStateCaster,true)*1)))*0.001)
+    call Bof_Slow(escStateCaster,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),0.9,0,4,2,false)
+    set escExpiredTimer=null
+    set escStateCaster=null
 endfunction
-function Bof_CW9 takes nothing returns nothing
-local timer ST
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8B4A5999))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8B4A5999))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8B4A5999))
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)==.19 then
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$936AD39A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$936AD39A))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$397C5DE0))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call TSE_TimerStart(ST,.02,true,function Bof_CW4)
-else
-endif
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),10)==0 then
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Escanor-12.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.2)
-call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.18 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+20.*I2R(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\792.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+50.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.5)
-call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-endif
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.3 then
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0),1000000000.)
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623),1000000000.)
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$2260746D),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DB3E3D6))
-else
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),9)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$E89F2623,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$E89F2623))
-call SaveReal(bof_OI,GetHandleId(ST),$DFE7C6B0,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$DFE7C6B0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$62C50DE6,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$62C50DE6))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call TSE_TimerStart(ST,.2,false,function Bof_CW8)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set ST=null
+function Esc_GExplosionTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local group escGroup
+    local unit escVictim
+    call SaveReal(Esc_State,escTimerId,ESC_IMPACT_TIME,LoadReal(Esc_State,escTimerId,ESC_IMPACT_TIME)+.01)
+    if LoadReal(Esc_State,escTimerId,ESC_IMPACT_TIME)<=.2 then
+        call SaveReal(Esc_State,escTimerId,ESC_X,GetUnitX(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_Y,GetUnitY(escStateCaster))
+        call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_X)+GetRandomReal(-2000.,2000.)*CosBJ(GetRandomDirectionDeg()))
+        call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_Y)+GetRandomReal(-2000.,2000.)*SinBJ(GetRandomDirectionDeg()))
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX3.mp3",90)
+        if GetRandomInt(1,2)==1 then
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\Megumin-1.mdx",LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),2.25)
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        else
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT1,Esc_AddEffV(escStateCaster,"bof\\NL-2.mdx",LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+            call Bof_EXSetEffectZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),LoadReal(Esc_State,escTimerId,ESC_GROUND_Z)+0.)
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1),2.25)
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT1))
+        endif
+        call SaveLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION,Location(LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+        call SaveGroupHandle(Esc_State,escTimerId,ESC_TARGETS,Esc_GroupAtLocation(650.,LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION),Condition(function Esc_GTargetFilter)))
+        call RemoveLocation(LoadLocationHandle(Esc_State,escTimerId,ESC_ORIGIN_LOCATION))
+        call ForGroupBJ(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS),function Esc_GDamageEnum)
+        call DestroyGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
+    else
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escGroup=null
+    set escVictim=null
+    set escExpiredTimer=null
+    set escStateCaster=null
 endfunction
-function Esc_F_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$DB3E3D6,300.)
-call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call Bof_BBn("bof\\war3mapImported\\Escanor-F-YY1.mp3",100)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-25.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBJV',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),$42487765,3.)
-call Esc_UnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),20.,20.,20.)
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),800.,1000000000.)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\3870.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$DB3E3D6))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744),5.)
-call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Escanor-10.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$DB3E3D6))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D),3.)
-call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D))
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CW3)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,800.)
-call SaveReal(bof_OI,GetHandleId(ST),$DFE7C6B0,800.)
-call SaveReal(bof_OI,GetHandleId(ST),$E89F2623,0.)
-call SaveReal(bof_OI,GetHandleId(ST),$DB3E3D6,300.)
-call SaveReal(bof_OI,GetHandleId(ST),$8B4A5999,40.)
-call SaveReal(bof_OI,GetHandleId(ST),$936AD39A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$936AD39A))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$397C5DE0))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$34D6230E))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$62C50DE6,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$2260746D,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2260746D))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call TSE_TimerStart(ST,.03,true,function Bof_CW9)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
+function Esc_GCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local real escCastClockHour=0.
+    local real escCastX=0.
+    local real escCastY=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local effect escCastEffect4=null
+    local player escCastCasterPlayer=null
+    local unit escCastVictim=null
+    local real escCastVictimX=0.
+    local real escCastVictimY=0.
+    local group escCastTargets=null
+    local location escCastOriginLocation=null
+    local unit escCastAuxUnit=null
+    local effect escCastEffect1=null
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local integer escIndex
+    local trigger escTrigger
+    local timer escNextTimer
+    local group escGroup
+    local unit escVictim
+    set escCastCaster=GetTriggerUnit()
+    set escCastClockHour=Esc_Time(escCastCaster)
+    if escCastClockHour>=9. and escCastClockHour<=15. then
+        set escCastX=GetUnitX(escCastCaster)
+        set escCastY=GetUnitY(escCastCaster)
+        set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Megumin-1.mdx",escCastX,escCastY)
+        call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ+0.)
+        call Esc_EffSize(escCastEffect3,2.)
+        call Bof_zU(1.,escCastEffect3)
+        set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-11.mdx",escCastX,escCastY)
+        call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ+0.)
+        call Esc_EffSize(escCastEffect3,3.)
+        call Bof_zU(0.,escCastEffect3)
+        set escCastEffect4=Esc_AddEffV(escCastCaster,"bof\\Megumin-6.mdx",escCastX,escCastY)
+        call Bof_EXSetEffectZ(escCastEffect4,escCastGroundZ+0.)
+        call Esc_EffSize(escCastEffect4,1.)
+        call Bof_zU(0.,escCastEffect4)
+        call CameraSetEQNoiseForPlayer(escCastCasterPlayer,80.)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-G-YY1.mp3",100)
+        set escGroup=CreateGroup()
+        call GroupEnumUnitsInRange(escGroup,escCastX,escCastY,900.,null)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(escCastCaster),escVictim) and true and true and GetUnitAbilityLevel(escVictim,'Avul')==0 then
+                set escCastVictim=escVictim
+                set escCastVictimX=GetUnitX(escCastVictim)
+                set escCastVictimY=GetUnitY(escCastVictim)
+                call Bof_Dmg(escCastCaster,escCastVictim,(I2R(Esc_Str_G(escCastCaster,true))*200.*1.)*0.001)
+                call Bof_Slow(escCastCaster,escCastVictim,0.9,0,4,2,false)
+            endif
+        endloop
+        call DestroyGroup(escGroup)
+        call Esc_TheOneStart(escCastCaster)
+        set escNextTimer=CreateTimer()
+        call TSE_TimerStart(escNextTimer,3.,false,function Esc_GVoiceNext)
+        set escNextTimer=CreateTimer()
+        call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+        call TSE_TimerStart(escNextTimer,.8,false,function Esc_GCameraEnd)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+        call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_SCALE,1.)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_SCALE,1.)
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT4,escCastEffect4)
+        call TSE_TimerStart(escNextTimer,.01,true,function Esc_GEffectGrow)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_PHASE_TIME,0.)
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+        call TSE_TimerStart(escNextTimer,.25,true,function Esc_GBurstTick)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_IMPACT_TIME,0.)
+        call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),ESC_TARGETS,escCastTargets)
+        call SaveLocationHandle(Esc_State,GetHandleId(escNextTimer),ESC_ORIGIN_LOCATION,escCastOriginLocation)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_UNIT,escCastAuxUnit)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+        call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT1,escCastEffect1)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_GROUND_Z,escCastGroundZ)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_X,escCastX)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_X,escCastVictimX)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_Y,escCastY)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM_Y,escCastVictimY)
+        call TSE_TimerStart(escNextTimer,.25,true,function Esc_GExplosionTick)
+    else
+        call Esc_ResetAbility(escCastCaster,'EsG1')
+    endif
+    set escTrigger=null
+    set escNextTimer=null
+    set escGroup=null
+    set escVictim=null
+    set escCastCaster=null
+    set escCastEffect3=null
+    set escCastEffect4=null
+    set escCastCasterPlayer=null
+    set escCastVictim=null
+    set escCastTargets=null
+    set escCastOriginLocation=null
+    set escCastAuxUnit=null
+    set escCastEffect1=null
 endfunction
-function Bof_CXF takes nothing returns nothing
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),2)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+// T - Sunshine
+function Esc_SunshineEnd takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    call SaveBoolean(bof_M9,GetHandleId(escStateCaster),ESC_SUN_FROZEN,false)
+    call Esc_SetClock(escStateCaster,LoadReal(Esc_State,escTimerId,ESC_CLOCK_HOUR),false)
+    call Esc_SunshineOff(escStateCaster)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
+    set escStateCaster=null
 endfunction
-function Bof_CXG takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+function Esc_TCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local real escCastClockHour=0.
+    local real escCastX=0.
+    local real escCastY=0.
+    local effect escCastEffect3=null
+    local real escCastGroundZ=0.
+    local real escCastAngle=0.
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastClockHour=Esc_Time(escCastCaster)
+    if escCastClockHour<6. or escCastClockHour>18. then
+        set escCastX=GetUnitX(escCastCaster)
+        set escCastY=GetUnitY(escCastCaster)
+        call Esc_Sound("bof\\war3mapImported\\Escanor-T-YY1.mp3",95)
+        call Esc_Sound("bof\\NL-F-YX1.mp3",110)
+        set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-9.mdx",escCastX,escCastY)
+        call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ+150.)
+        call Esc_EffSize(escCastEffect3,2.)
+        call DestroyEffect(escCastEffect3)
+        set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-17.mdx",GetUnitX(escCastCaster),GetUnitY(escCastCaster))
+        call Esc_EffSize(escCastEffect3,1.5)
+        call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+        call DestroyEffect(escCastEffect3)
+        set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Shana-11.mdx",escCastX,escCastY)
+        call Bof_EXSetEffectZ(escCastEffect3,escCastGroundZ)
+        call Bof_EXEffectMatRotateZ(escCastEffect3,escCastAngle)
+        call Bof_zU(0.,escCastEffect3)
+        set escCastClockHour=Esc_Time(escCastCaster)
+        call Esc_SetClock(escCastCaster,12.,true)
+        call SaveBoolean(bof_M9,GetHandleId(escCastCaster),ESC_SUN_FROZEN,true)
+        call Esc_SunStr(escCastCaster,255.) // 29 окт: на время D — полдень: ночной штраф снят, +50% белой силы
+        call Esc_SunshineOn(escCastCaster)
+        set escNextTimer=CreateTimer()
+        call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_CLOCK_HOUR,escCastClockHour)
+        call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+        call TSE_TimerStart(escNextTimer,20.,false,function Esc_SunshineEnd)
+    endif
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastEffect3=null
 endfunction
-function Bof_CXH takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$192409FE))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
+// D - Divine Sword Escanor
+function Esc_DWindup takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    call SetUnitAnimationByIndex(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),2)
+    call Esc_EndTimer(escExpiredTimer)
+    set escExpiredTimer=null
 endfunction
-function Bof_CXI takes nothing returns nothing
-// W Эсканора, полёт и удар — ПЕРЕДЕЛАНО (владелец 27 сен: «эффекты за ним, шлейфом за прыжком»).
-// У bof белые шипы (Saber-18) и дым (Kakarotto-18) били в точке приземления, а у их моделей видна
-// только анимация смерти на 2–7 c: на экране всё появлялось после прыжка и висело.
-// Теперь шипы и дым идут шлейфом позади Эсканора по всему пути, на приземлении — короткий удар
-// (кратер, волна, кольцо песка) там, где он встал. Шлейф копится (Bof_EffKeep) и гасится весь
-// в момент удара (Bof_EffDrop) — владелец: «в воздухе остаётся долго, после удара сразу убирать».
-// Эффекты удара видны 0.5 c (Bof_EffCut). Полёт, урон и оглушение — как у bof.
-local integer escT=GetHandleId(GetExpiredTimer())
-local unit escC=LoadUnitHandle(bof_OI,escT,$911D5DC2)
-local real escA=LoadReal(bof_OI,escT,$2D345649)
-local real escTX=LoadReal(bof_OI,escT,$2392447A)
-local real escTY=LoadReal(bof_OI,escT,$B0897302)
-local real escX
-local real escY
-local real escD
-local integer escN
-local effect escE
-local timer ST
-local integer Uu
-local group TF
-local unit bl_TG
-call SaveReal(bof_OI,escT,$2B0A6845,LoadReal(bof_OI,escT,$2B0A6845)+.01)
-set escN=LoadInteger(bof_OI,escT,$8B1FFFFC)+1
-call SaveInteger(bof_OI,escT,$8B1FFFFC,escN)
-set escD=Bof_BBG(LoadReal(bof_OI,escT,$A99320FA),LoadReal(bof_OI,escT,$FDF65382),escTX,escTY)
-if escD>=1500. then
-set escD=1500.
-endif
-call SaveReal(bof_OI,escT,$38AB9941,escD)
-if LoadReal(bof_OI,escT,$2B0A6845)<=.15 and IsTerrainPathable(LoadReal(bof_OI,escT,$A99320FA),LoadReal(bof_OI,escT,$FDF65382),PATHING_TYPE_FLYABILITY)==false and escD>=120. then
-// откуда он улетает в этот тик — там и остаётся шлейф
-set escX=GetUnitX(escC)
-set escY=GetUnitY(escC)
-call SaveReal(bof_OI,escT,$A99320FA,escX+70.*CosBJ(escA))
-call SaveReal(bof_OI,escT,$FDF65382,escY+70.*SinBJ(escA))
-call SetUnitXY_1(escC,LoadReal(bof_OI,escT,$A99320FA),LoadReal(bof_OI,escT,$FDF65382),true)
-if ModuloInteger(escN,2)==0 then
-// шлейф bof в воздухе
-set escE=Esc_AddEffV(escC,"bof\\Shana-12.mdx",LoadReal(bof_OI,escT,$A99320FA),LoadReal(bof_OI,escT,$FDF65382))
-call Bof_EXSetEffectZ(escE,LoadReal(bof_OI,escT,$8E206300)+GetUnitFlyHeight(escC))
-call Bof_EXEffectMatRotateZ(escE,escA)
-call Esc_EffSize(escE,1.)
-call Bof_EffKeep(escT,escE)
-// белые шипы удара — позади него
-set escE=Esc_AddEffV(escC,"bof\\Saber-18.mdx",escX,escY)
-call Esc_EffSize(escE,.8)
-call Bof_EffKeep(escT,escE)
-endif
-if ModuloInteger(escN,4)==1 then
-// дым удара — позади него, реже
-set escE=Esc_AddEffV(escC,"bof\\Kakarotto-18.mdx",escX,escY)
-call Esc_EffSize(escE,.7)
-call Bof_EffKeep(escT,escE)
-endif
-if escD>=LoadReal(bof_OI,escT,$78798ABC)/2. then
-call SetUnitFlyHeight(escC,GetUnitFlyHeight(escC)+35.,1000000000.)
-endif
-if escD<LoadReal(bof_OI,escT,$78798ABC)/2. then
-call SetUnitFlyHeight(escC,GetUnitFlyHeight(escC)-70.,1000000000.)
-endif
-else
-if escD<=120. then
-call SetUnitXY_1(escC,escTX,escTY,true)
-endif
-// удар — шлейф гаснет весь сразу, эффекты удара там, где он встал
-call Bof_EffDrop(escT)
-set escX=GetUnitX(escC)
-set escY=GetUnitY(escC)
-call Bof_BBn("bof\\war3mapImported\\Escanor-W-YX1.mp3",110)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$48656946),45.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,escT,$48656946))
-call TSE_TimerStart(ST,.45,false,function Bof_CXG)
-set escE=Esc_AddEffV(escC,"bof\\Escanor-3.mdx",escX,escY)
-call Esc_EffSize(escE,1.75)
-call Bof_EffCut(escE,.5)
-set escE=Esc_AddEffV(escC,"bof\\Fanty-2196.mdx",escX,escY)
-call Esc_EffSize(escE,1.25)
-call Bof_EffCut(escE,.5)
-set Uu=1
-loop
-exitwhen Uu>6
-set escE=Esc_AddEffV(escC,"bof\\Escanor-2.mdx",escX+CosBJ(60.*I2R(Uu))*240.,escY+SinBJ(60.*I2R(Uu))*240.)
-call Esc_EffSize(escE,1.)
-call Bof_EffCut(escE,.5)
-set Uu=Uu+1
-endloop
-set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,escX,escY,300.,null)
-loop
-set bl_TG=FirstOfGroup(TF)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(escC),bl_TG) and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,escT,$9B1A6867,bl_TG)
-call Bof_Dmg(escC,bl_TG,GetHeroStr(escC,true)*(2+GetUnitAbilityLevel(escC,'EsW1')))
-call Bof_Ctrl(escC,bl_TG,1.,"stun")
-endif
-endloop
-call DestroyGroup(TF)
-call SavePlayerHandle(bof_OI,escT,$48656946,OwnerOf(escC))
-call SavePlayerHandle(bof_OI,escT,$192409FE,OwnerOf(LoadUnitHandle(bof_OI,escT,$9B1A6867)))
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$48656946),60.)
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,escT,$192409FE),60.)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,escT,$48656946))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$192409FE,LoadPlayerHandle(bof_OI,escT,$192409FE))
-call TSE_TimerStart(ST,.55,false,function Bof_CXH)
-call SetUnitTimeScale(escC,1.)
-call SetUnitFlyHeight(escC,0.,1000000000.)
-call SetUnitInvulnerable(escC,false)
-call PauseUnit(escC,false)
-call SetUnitPathing(escC,true)
-call FlushChildHashtable(bof_OI,escT)
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set escC=null
-set escE=null
-set ST=null
-set TF=null
-set bl_TG=null
+function Esc_DProjectileTick takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local unit escStateAuxProjectile=LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE)
+    local integer escLoopIndex
+    local group escGroup=LoadGroupHandle(Esc_State,escTimerId,'EGr+')
+    local unit escVictim
+    call SaveReal(Esc_State,escTimerId,ESC_ELAPSED,LoadReal(Esc_State,escTimerId,ESC_ELAPSED)+.01)
+    call SaveInteger(Esc_State,escTimerId,ESC_TICK,LoadInteger(Esc_State,escTimerId,ESC_TICK)+1)
+    if LoadReal(Esc_State,escTimerId,ESC_ELAPSED)<=.4 then
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,GetUnitX(escStateAuxProjectile))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,GetUnitY(escStateAuxProjectile))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        call SaveReal(Esc_State,escTimerId,ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+LoadReal(Esc_State,escTimerId,ESC_MOVE_STEP)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+        if ModuloInteger(LoadInteger(Esc_State,escTimerId,ESC_TICK),2)==0 then
+            set escLoopIndex=1
+            loop
+                exitwhen escLoopIndex>2
+                call SaveInteger(Esc_State,escTimerId,ESC_JUMP_PHASE,escLoopIndex)
+                if LoadInteger(Esc_State,escTimerId,ESC_JUMP_PHASE)==1 then
+                    call SaveReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE)+90.)
+                endif
+                if LoadInteger(Esc_State,escTimerId,ESC_JUMP_PHASE)==2 then
+                    call SaveReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE)-90.)
+                endif
+                call SaveReal(Esc_State,escTimerId,ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X)+LoadReal(Esc_State,escTimerId,ESC_BURST_RADIUS)*CosBJ(LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE)))
+                call SaveReal(Esc_State,escTimerId,ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)+LoadReal(Esc_State,escTimerId,ESC_BURST_RADIUS)*SinBJ(LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE)))
+                call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Hutao-18h.mdx",LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y)))
+                call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+                call Bof_EXEffectMatRotateY(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),30.)
+                call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+                call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+                set escLoopIndex=escLoopIndex+1
+            endloop
+            call SaveEffectHandle(Esc_State,escTimerId,ESC_EFFECT3,Esc_AddEffV(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),"bof\\Hutao-2.mdx",LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y)))
+            call Esc_EffSize(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),1.)
+            call Bof_EXEffectMatRotateZ(LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3),LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+            call Bof_zU(1.,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+        endif
+        call SetUnitXY_1(escStateAuxProjectile,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),true)
+        call GroupEnumUnitsInRange(escGroup,LoadReal(Esc_State,escTimerId,ESC_TARGET_X),LoadReal(Esc_State,escTimerId,ESC_TARGET_Y),350.,null)
+        set idg=GetHandleId(escGroup)
+        loop
+            set escVictim=FirstOfGroup(escGroup)
+            set ide=GetHandleId(escVictim)
+            exitwhen escVictim==null
+            call GroupRemoveUnit(escGroup,escVictim)
+            if Condition_Base(OwnerOf(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)),escVictim) and GetUnitAbilityLevel(escVictim,'Avul')==0 and escVictim!=LoadUnitHandle(Esc_State,idg,ide) then
+                call SaveUnitHandle(Esc_State,escTimerId,ESC_VICTIM,escVictim)
+                call Bof_Dmg(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM),GetHeroStr(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),true)*10)
+                call SaveUnitHandle(Esc_State,idg,ide,escVictim)
+            endif
+        endloop
+    else
+        call DestroyGroup(escGroup)
+        call CameraClearNoiseForPlayer(LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER))
+        call SetUnitPathing(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),true)
+        call PauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+        call SetUnitInvulnerable(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
+        call Esc_EndTimer(escExpiredTimer)
+    endif
+    set escGroup=null
+    set escVictim=null
+    set escExpiredTimer=null
+    set escStateAuxProjectile=null
 endfunction
-function Bof_CXJ takes nothing returns nothing
-local timer ST
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$38AB9941))
-call SaveReal(bof_OI,GetHandleId(ST),$78798ABC,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$78798ABC))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$192409FE,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$192409FE))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call TSE_TimerStart(ST,.03,true,function Bof_CXI)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
+function Esc_DLaunch takes nothing returns nothing
+    local timer escExpiredTimer=GetExpiredTimer()
+    local integer escTimerId=GetHandleId(escExpiredTimer)
+    local player escStateCasterPlayer=LoadPlayerHandle(Esc_State,escTimerId,ESC_CASTER_PLAYER)
+    local unit escStateCaster=LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER)
+    local timer escNextTimer
+    call CameraSetEQNoiseForPlayer(escStateCasterPlayer,50.)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
+    call SaveUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE,CreateUnit(OwnerOf(escStateCaster),'eBM9',LoadReal(Esc_State,escTimerId,ESC_NEXT_X),LoadReal(Esc_State,escTimerId,ESC_NEXT_Y),LoadReal(Esc_State,escTimerId,ESC_ANGLE)))
+    call UnitApplyTimedLife(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),$42487765,1.)
+    call Esc_UnitScale(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),4.,4.,4.)
+    call SetUnitFlyHeight(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),500.,1000000000.)
+    call Bof_DzSetUnitModel(LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE),"bof\\80.mdx")
+    set escNextTimer=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ELAPSED,0.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_TICK,0)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_MOVE_STEP,100.)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_BURST_RADIUS,240.)
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_JUMP_PHASE,LoadInteger(Esc_State,escTimerId,ESC_JUMP_PHASE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escStateCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_PROJECTILE,LoadUnitHandle(Esc_State,escTimerId,ESC_AUX_PROJECTILE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,LoadReal(Esc_State,escTimerId,ESC_ANGLE))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_ANGLE,LoadReal(Esc_State,escTimerId,ESC_EFFECT_ANGLE))
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,LoadUnitHandle(Esc_State,escTimerId,ESC_VICTIM))
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,LoadEffectHandle(Esc_State,escTimerId,ESC_EFFECT3))
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escStateCasterPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,LoadReal(Esc_State,escTimerId,ESC_TARGET_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,LoadReal(Esc_State,escTimerId,ESC_NEXT_X))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,LoadReal(Esc_State,escTimerId,ESC_TARGET_Y))
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,LoadReal(Esc_State,escTimerId,ESC_NEXT_Y))
+    call SaveGroupHandle(Esc_State,GetHandleId(escNextTimer),'EGr+',CreateGroup())
+    call TSE_TimerStart(escNextTimer,.03,true,function Esc_DProjectileTick)
+    call Esc_EndTimer(escExpiredTimer)
+    set escNextTimer=null
+    set escExpiredTimer=null
+    set escStateCasterPlayer=null
+    set escStateCaster=null
 endfunction
-function Esc_W_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.)
-call Bof_EffCut(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),.5)
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$78798ABC,Bof_BBG(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)))
-call Bof_BBn("bof\\war3mapImported\\Escanor-W-YY1.mp3",95)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),'eBER',LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$62C50DE6),$42487765,.75)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Saber-17.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+0.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE),1.5)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CXF)
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$38AB9941,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38AB9941))
-call SaveReal(bof_OI,GetHandleId(ST),$78798ABC,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$78798ABC))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$192409FE,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$192409FE))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call TSE_TimerStart(ST,.1,false,function Bof_CXJ)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
-endfunction
-function Bof_CXU takes nothing returns nothing
-call Bof_BBn("bof\\war3mapImported\\Escanor-G-YY3.mp3",100)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CXV takes nothing returns nothing
-local timer ST
-call Bof_BBn("bof\\war3mapImported\\Escanor-G-YY2.mp3",100)
-set ST=CreateTimer()
-call TSE_TimerStart(ST,4.8,false,function Bof_CXU)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
-endfunction
-function Bof_CXW takes nothing returns nothing
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CXX takes nothing returns nothing
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723)+.05)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=1. then
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$7A07744),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2438D723))
-else
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-endfunction
-function Bof_CXY takes nothing returns nothing
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)+.01)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$5E7B9BEB)<=.05 then
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(null,"bof\\Megumin-1.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),2.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(null,"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),3.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-endfunction
-function Bof_CXZ takes nothing returns boolean
-return GetUnitAbilityLevel(GetFilterUnit(),'Avul')==0 and (true and true and Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),GetFilterUnit()))
-endfunction
-function Bof_CXa takes nothing returns nothing
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,GetEnumUnit())
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),GetEnumUnit(),(100.*(1.*I2R(Esc_Str_G(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)*1)))*0.001)
-call Bof_Slow(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),0.9,0,4,2,false)
-endfunction
-function Bof_CXb takes nothing returns nothing
-local group TF
-local unit bl_TG
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900)+.01)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$1CDCF900)<=.2 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$A99320FA)+GetRandomReal(-2000.,2000.)*CosBJ(GetRandomDirectionDeg()))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$FDF65382)+GetRandomReal(-2000.,2000.)*SinBJ(GetRandomDirectionDeg()))
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX3.mp3",90)
-if GetRandomInt(1,2)==1 then
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Megumin-1.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.25)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-else
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\NL-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE),2.25)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$6EAE13FE))
-endif
-call SaveLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34,Location(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call SaveGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788,Bof_xk(650.,LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34),Condition(function Bof_CXZ)))
-call RemoveLocation(LoadLocationHandle(bof_OI,GetHandleId(GetExpiredTimer()),$B0FD2C34))
-call ForGroupBJ(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788),function Bof_CXa)
-call DestroyGroup(LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),$1BF14788))
-else
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set TF=null
-set bl_TG=null
-endfunction
-function Esc_G_Act takes nothing returns nothing
-local integer Sn
-local trigger SR
-local timer ST
-local group TF
-local unit bl_TG
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)>=9. and LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)<=15. then
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Megumin-1.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),2.)
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),3.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Megumin-6.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+0.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744),1.)
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744))
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946),80.)
-call Bof_BBn("bof\\war3mapImported\\Escanor-G-YY1.mp3",100)
-set TF=CreateGroup()
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),900.,null)
-loop
-set bl_TG=FirstOfGroup(TF)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),bl_TG) and true and true and GetUnitAbilityLevel(bl_TG,'Avul')==0 then
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867,bl_TG)
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867)))
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),(I2R(Esc_Str_G(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true))*200.*1.)*0.001)
-call Bof_Slow(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867),0.9,0,4,2,false)
-else
-endif
-endloop
-call DestroyGroup(TF)
-call Esc_TheOneStart(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-set ST=CreateTimer()
-call TSE_TimerStart(ST,3.,false,function Bof_CXV)
-set ST=CreateTimer()
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call TSE_TimerStart(ST,.8,false,function Bof_CXW)
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$2438D723,1.)
-call SaveReal(bof_OI,GetHandleId(ST),$23E7B98D,1.)
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$7A07744,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$7A07744))
-call TSE_TimerStart(ST,.01,true,function Bof_CXX)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$5E7B9BEB,0.)
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call TSE_TimerStart(ST,.25,true,function Bof_CXY)
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$1CDCF900,0.)
-call SaveGroupHandle(bof_OI,GetHandleId(ST),$1BF14788,LoadGroupHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$1BF14788))
-call SaveLocationHandle(bof_OI,GetHandleId(ST),$B0FD2C34,LoadLocationHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0FD2C34))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$397C5DE0,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$397C5DE0))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$6EAE13FE,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6EAE13FE))
-call SaveReal(bof_OI,GetHandleId(ST),$8E206300,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call SaveReal(bof_OI,GetHandleId(ST),$A99320FA,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$F1DDA59B,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$F1DDA59B))
-call SaveReal(bof_OI,GetHandleId(ST),$FDF65382,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call SaveReal(bof_OI,GetHandleId(ST),$38D20A1F,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$38D20A1F))
-call TSE_TimerStart(ST,.25,true,function Bof_CXb)
-else
-call Bof_z5(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),'EsG1')
-endif
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set SR=null
-set ST=null
-set TF=null
-set bl_TG=null
-endfunction
-function Bof_CXg takes nothing returns nothing
-call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),$DF127C78,false)
-call Esc_SetClock(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$6B54C545),false)
-call Esc_SunshineOff(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Esc_T_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-if LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)<6. or LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545)>18. then
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Bof_BBn("bof\\war3mapImported\\Escanor-T-YY1.mp3",95)
-call Bof_BBn("bof\\NL-F-YX1.mp3",110)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-9.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300)+150.)
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),2.)
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-17.mdx",GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.5)
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call DestroyEffect(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Shana-11.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Bof_EXSetEffectZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$8E206300))
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call Bof_zU(0.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545,Esc_Time(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call Esc_SetClock(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),12.,true)
-call SaveBoolean(bof_M9,GetHandleId(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)),$DF127C78,true)
-call Esc_SunStr(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),255.) // 29 окт: на время D — полдень: ночной штраф снят, +50% белой силы
-call Esc_SunshineOn(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$6B54C545,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$6B54C545))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,20.,false,function Bof_CXg)
-endif
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
-endfunction
-function Bof_CXr takes nothing returns nothing
-call SetUnitAnimationByIndex(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),2)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endfunction
-function Bof_CXs takes nothing returns nothing
-local integer Ub
-local group TF=LoadGroupHandle(bof_OI,GetHandleId(GetExpiredTimer()),'EGr+')
-local unit bl_TG
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)+.01)
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC)+1)
-if LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2B0A6845)<=.4 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$34D6230E)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-if ModuloInteger(LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$8B1FFFFC),2)==0 then
-set Ub=1
-loop
-exitwhen Ub>2
-call SaveInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA,Ub)
-if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA)==1 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)+90.)
-else
-endif
-if LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA)==2 then
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)-90.)
-else
-endif
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$D47063CD)*CosBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
-call SaveReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)+LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$D47063CD)*SinBJ(LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392)))
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Hutao-18h.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_EXEffectMatRotateY(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),30.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-set Ub=Ub+1
-endloop
-call SaveEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),"bof\\Hutao-2.mdx",LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),1.)
-call Bof_EXEffectMatRotateZ(LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call Bof_zU(1.,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-else
-endif
-call SetUnitXY_1(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),true)
-call GroupEnumUnitsInRange(TF,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302),350.,null)
-set idg=GetHandleId(TF)
-loop
-set bl_TG=FirstOfGroup(TF)
-set ide=GetHandleId(bl_TG)
-exitwhen bl_TG==null
-call GroupRemoveUnit(TF,bl_TG)
-if Condition_Base(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),bl_TG) and GetUnitAbilityLevel(bl_TG,'Avul')==0 and bl_TG!=LoadUnitHandle(bof_OI,idg,ide) then
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867,bl_TG)
-call Bof_Dmg(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867),GetHeroStr(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)*10)
-call SaveUnitHandle(bof_OI,idg,ide,bl_TG)
-else
-endif
-endloop
-else
-call DestroyGroup(TF)
-call CameraClearNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),true)
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2),false)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set TF=null
-set bl_TG=null
-endfunction
-function Bof_CXt takes nothing returns nothing
-local timer ST
-call CameraSetEQNoiseForPlayer(LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946),50.)
-call Bof_BBn("bof\\war3mapImported\\Escanor-R-YX1.mp3",110)
-call SaveUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040,CreateUnit(OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2)),'eBM9',LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531),LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649)))
-call UnitApplyTimedLife(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),$42487765,1.)
-call Esc_UnitScale(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),4.,4.,4.)
-call SetUnitFlyHeight(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),500.,1000000000.)
-call Bof_DzSetUnitModel(LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040),"bof\\80.mdx")
-set ST=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(ST),$2B0A6845,0.)
-call SaveInteger(bof_OI,GetHandleId(ST),$8B1FFFFC,0)
-call SaveReal(bof_OI,GetHandleId(ST),$34D6230E,100.)
-call SaveReal(bof_OI,GetHandleId(ST),$D47063CD,240.)
-call SaveInteger(bof_OI,GetHandleId(ST),$190204BA,LoadInteger(bof_OI,GetHandleId(GetExpiredTimer()),$190204BA))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$D2A88040))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$24F5C392))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetExpiredTimer()),$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetExpiredTimer()),$321957D9))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetExpiredTimer()),$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetExpiredTimer()),$71CA3531))
-call SaveGroupHandle(bof_OI,GetHandleId(ST),'EGr+',CreateGroup())
-call TSE_TimerStart(ST,.03,true,function Bof_CXs)
-call FlushChildHashtable(bof_OI,GetHandleId(GetExpiredTimer()))
-call TSE_DestroyTimer(GetExpiredTimer())
-set ST=null
-endfunction
-function Esc_D_Act takes nothing returns nothing
-local timer ST
-local integer SJ=LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76)
-set SJ=SJ+3
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$CFDE6C76,SJ)
-call SaveInteger(bof_OI,GetHandleId(GetTriggeringTrigger()),$ECE825E7,SJ)
-call SaveUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2,GetTriggerUnit())
-call SavePlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946,OwnerOf(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA,GetUnitX(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382,GetUnitY(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A,GetSpellTargetX())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302,GetSpellTargetY())
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649,Atan2BJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A)-LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA)+50.*CosBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-call SaveReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)+50.*SinBJ(LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649)))
-set ST=CreateTimer()
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call TSE_TimerStart(ST,.01,false,function Bof_CXr)
-call Bof_BBn("bof\\war3mapImported\\Escanor-DX-YY1.mp3",160)
-call SaveEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9,Esc_AddEffV(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),"bof\\Surtr-5.mdx",LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$A99320FA),LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$FDF65382)))
-call Esc_EffSize(LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9),1.)
-call Bof_zU(3.,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call PauseUnit(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitInvulnerable(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),true)
-call SetUnitPathing(LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2),false)
-set ST=CreateTimer()
-call SaveInteger(bof_OI,GetHandleId(ST),$190204BA,LoadInteger(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$190204BA))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$911D5DC2,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$911D5DC2))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$D2A88040,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$D2A88040))
-call SaveReal(bof_OI,GetHandleId(ST),$2D345649,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2D345649))
-call SaveReal(bof_OI,GetHandleId(ST),$24F5C392,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$24F5C392))
-call SaveUnitHandle(bof_OI,GetHandleId(ST),$9B1A6867,LoadUnitHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$9B1A6867))
-call SaveEffectHandle(bof_OI,GetHandleId(ST),$321957D9,LoadEffectHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$321957D9))
-call SavePlayerHandle(bof_OI,GetHandleId(ST),$48656946,LoadPlayerHandle(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$48656946))
-call SaveReal(bof_OI,GetHandleId(ST),$2392447A,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$2392447A))
-call SaveReal(bof_OI,GetHandleId(ST),$41713DA3,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$41713DA3))
-call SaveReal(bof_OI,GetHandleId(ST),$B0897302,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$B0897302))
-call SaveReal(bof_OI,GetHandleId(ST),$71CA3531,LoadReal(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ,$71CA3531))
-call TSE_TimerStart(ST,.35,false,function Bof_CXt)
-call FlushChildHashtable(bof_OI,GetHandleId(GetTriggeringTrigger())*SJ)
-set ST=null
+function Esc_DCast takes nothing returns nothing
+    local unit escCastCaster=null
+    local player escCastCasterPlayer=null
+    local real escCastX=0.
+    local real escCastY=0.
+    local real escCastTargetX=0.
+    local real escCastTargetY=0.
+    local real escCastAngle=0.
+    local real escCastNextX=0.
+    local real escCastNextY=0.
+    local effect escCastEffect3=null
+    local integer escCastJumpPhase=0
+    local unit escCastAuxProjectile=null
+    local real escCastEffectAngle=0.
+    local unit escCastVictim=null
+    local timer escNextTimer
+    set escCastCaster=GetTriggerUnit()
+    set escCastCasterPlayer=OwnerOf(escCastCaster)
+    set escCastX=GetUnitX(escCastCaster)
+    set escCastY=GetUnitY(escCastCaster)
+    set escCastTargetX=GetSpellTargetX()
+    set escCastTargetY=GetSpellTargetY()
+    set escCastAngle=Atan2BJ(escCastTargetY-escCastY,escCastTargetX-escCastX)
+    set escCastNextX=escCastX+50.*CosBJ(escCastAngle)
+    set escCastNextY=escCastY+50.*SinBJ(escCastAngle)
+    set escNextTimer=CreateTimer()
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call TSE_TimerStart(escNextTimer,.01,false,function Esc_DWindup)
+    call Esc_Sound("bof\\war3mapImported\\Escanor-DX-YY1.mp3",160)
+    set escCastEffect3=Esc_AddEffV(escCastCaster,"bof\\Surtr-5.mdx",escCastX,escCastY)
+    call Esc_EffSize(escCastEffect3,1.)
+    call Bof_zU(3.,escCastEffect3)
+    call PauseUnit(escCastCaster,true)
+    call SetUnitInvulnerable(escCastCaster,true)
+    call SetUnitPathing(escCastCaster,false)
+    set escNextTimer=CreateTimer()
+    call SaveInteger(Esc_State,GetHandleId(escNextTimer),ESC_JUMP_PHASE,escCastJumpPhase)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER,escCastCaster)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_AUX_PROJECTILE,escCastAuxProjectile)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_ANGLE,escCastAngle)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT_ANGLE,escCastEffectAngle)
+    call SaveUnitHandle(Esc_State,GetHandleId(escNextTimer),ESC_VICTIM,escCastVictim)
+    call SaveEffectHandle(Esc_State,GetHandleId(escNextTimer),ESC_EFFECT3,escCastEffect3)
+    call SavePlayerHandle(Esc_State,GetHandleId(escNextTimer),ESC_CASTER_PLAYER,escCastCasterPlayer)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_X,escCastTargetX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_X,escCastNextX)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_TARGET_Y,escCastTargetY)
+    call SaveReal(Esc_State,GetHandleId(escNextTimer),ESC_NEXT_Y,escCastNextY)
+    call TSE_TimerStart(escNextTimer,.35,false,function Esc_DLaunch)
+    set escNextTimer=null
+    set escCastCaster=null
+    set escCastCasterPlayer=null
+    set escCastEffect3=null
+    set escCastAuxProjectile=null
+    set escCastVictim=null
 endfunction
 // ===== Эсканор: своё вместо общего кода bof (после функций героя) =====
 // Появление героя: в bof это делали CWN (+ ForGroup CWM) — запуск тика солнца раз в 0.1 c
 // и запоминание максимума здоровья. Ключи — те же, что читает Esc_Sun_Tick.
 function Esc_OnSpawn takes unit u returns nothing
-local timer t
-if LoadBoolean(bof_HT,GetHandleId(u),SH_EscSun) then
-return
-endif
-call SaveBoolean(bof_HT,GetHandleId(u),SH_EscSun,true)
-// свои часы стартуют с рассвета; значок солнца со временем на полоске статуса
-call Esc_SetClock(u,6.,false)
-call Esc_PanelInit(u)
-call Esc_PanelUpdate(u,6.)
-call SaveInteger(bof_M9,GetHandleId(u),$8CBA2711,R2I(GetUnitState(u,UNIT_STATE_MAX_LIFE)))
-call SaveInteger(bof_M9,GetHandleId(u),$410023C4,0)
-call SaveInteger(bof_M9,GetHandleId(u),$E90DB670,0)
-set t=CreateTimer()
-call SaveReal(bof_OI,GetHandleId(t),$23E7B98D,1.)
-call SaveInteger(bof_OI,GetHandleId(t),$8B1FFFFC,0)
-call SaveUnitHandle(bof_OI,GetHandleId(t),$911D5DC2,u)
-call SavePlayerHandle(bof_OI,GetHandleId(t),$E6A6EB1E,OwnerOf(u))
-call TSE_TimerStart(t,.1,true,function Esc_Sun_Tick)
-set t=null
+    local timer t
+    if LoadBoolean(bof_HT,GetHandleId(u),SH_EscSun) then
+        return
+    endif
+    call SaveBoolean(bof_HT,GetHandleId(u),SH_EscSun,true)
+    // свои часы стартуют с рассвета; значок солнца со временем на полоске статуса
+    call Esc_SetClock(u,6.,false)
+    call Esc_PanelInit(u)
+    call Esc_PanelUpdate(u,6.)
+    call SaveInteger(bof_M9,GetHandleId(u),ESC_SPAWN_LIFE,R2I(GetUnitState(u,UNIT_STATE_MAX_LIFE)))
+    call SaveInteger(bof_M9,GetHandleId(u),ESC_SPAWN_COUNTER1,0)
+    call SaveInteger(bof_M9,GetHandleId(u),ESC_SPAWN_COUNTER2,0)
+    set t=CreateTimer()
+    call SaveReal(Esc_State,GetHandleId(t),ESC_SCALE,1.)
+    call SaveInteger(Esc_State,GetHandleId(t),ESC_TICK,0)
+    call SaveUnitHandle(Esc_State,GetHandleId(t),ESC_CASTER,u)
+    call SavePlayerHandle(Esc_State,GetHandleId(t),ESC_OWNER,OwnerOf(u))
+    call TSE_TimerStart(t,.1,true,function Esc_Sun_Tick)
+    set t=null
 endfunction
 //Escanor1end
 function Condition_BaseUBW takes player p,unit e returns boolean
@@ -27875,7 +28264,7 @@ set udg_RH[146]='HDMa'//Dead Master (3.8.2, из Choice Random 5.3)
 //DeadMaster1end
 //Hit1start
 // Хит (Dragon Ball Super, 29 окт): выключен — способностей ещё нет. Для включения раскомментировать и поднять exitwhen i>=147 до 148
-//set udg_RH[147]='HHit'//Hit — на тест (30 окт)
+set udg_RH[147]='HHit'//Hit — на тест (30 окт)
 //Hit1end
 loop
 exitwhen i>=210
@@ -49158,7 +49547,7 @@ if cmb!=true then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+            exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(OwnerOf(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
@@ -49409,7 +49798,7 @@ if cmb!=true then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+                exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -49422,7 +49811,7 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=147 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+        exitwhen i>=148 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
             if GetUnitTypeId(u)==udg_RH[i] then
                 set udg_RH[i]=0
             endif
@@ -50732,6 +51121,112 @@ call SaveUnitHandle(h,GetHandleId(dt),0,u)
 call TSE_TimerStart(dt,0.15,false,function TousenDmgFixTick)
 set dt=null
 endfunction
+function TousenHideButton takes unit thbU,integer thbId returns nothing
+if GetUnitAbilityLevel(thbU,thbId)>0 and IsUnitAbilityVisible(thbU,thbId) then
+call DisableUnitAbility(thbU,thbId,true,IsAbilityEnabled(GetUnitAbility(thbU,thbId)))
+endif
+endfunction
+function TousenModeButtons takes unit tmbU returns nothing
+if GetUnitTypeId(tmbU)=='H0TF' and LoadBoolean(HH,GetHandleId(tmbU),SH_TouHollow) then
+call TousenHideButton(tmbU,'A0JA')
+call TousenHideButton(tmbU,'A0J8')
+call TousenHideButton(tmbU,'A0J9')
+call TousenHideButton(tmbU,'A0JB')
+endif
+endfunction
+function TousenRestoreButton takes unit trbU,integer trbId returns nothing
+if GetUnitAbilityLevel(trbU,trbId)>0 then
+if not IsUnitAbilityVisible(trbU,trbId) or not IsAbilityEnabled(GetUnitAbility(trbU,trbId)) then
+call EnableUnitAbility(trbU,trbId,true,true)
+endif
+endif
+endfunction
+
+function TousenCdCopy takes unit u,integer a,integer b returns nothing
+local real r
+if GetUnitAbilityLevel(u,a)>0 and GetUnitAbilityLevel(u,b)>0 then
+set r=GetAbilityRemainingCooldown(GetUnitAbility(u,a))
+if r>0.05 then
+call StartAbilityCooldown(GetUnitAbility(u,b),r)
+endif
+endif
+endfunction
+// облик пустого (G, 22 окт): модель и портрет назад, метка снимается
+function TousenHollowOff takes unit u returns nothing
+call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
+//call SetUnitModel(u,"[H321]KanameTousen2.mdl")
+//call SetUnitScale(u,1.,1.,1.)
+// назад сменой юнита H0TF -> H02K (22 окт); у мёртвого — в RemoveTransformation в начале раунда
+if GetUnitTypeId(u)=='H0TF' then
+call TousenDmgKeep(u)
+call UnitAddAbility(u,'ToMB')
+call IssueImmediateOrder(u,"bearform")
+call UnitRemoveAbility(u,'ToMB')
+endif
+// 23 окт: обычная модель — скорость и стойка с нуля (номера анимаций мухи у неё нет — T-поза)
+call SetUnitTimeScale(u,1.)
+call SetUnitAnimation(u,"stand")
+call UnitRemoveAbility(u,'ToRg')
+call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
+call RemoveSavedReal(HH,GetHandleId(u),SH_TouHeal)
+call SetUnitFlyHeight(u,0,0)
+//call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait)) // портрет — из типа (22 окт)
+// портрет назад (22 окт)
+if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
+call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
+endif
+// облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
+call UnitRemoveAbility(u,'ToFW')
+call UnitRemoveAbility(u,'ToFT')
+call UnitRemoveAbility(u,'ToFa')
+// v2 (22 окт): полёт (E3) и серо (R) убираются, Хадо назад, +15% характеристик снимаются, иконка назад
+call UnitRemoveAbility(u,'ToFE')
+call UnitRemoveAbility(u,'ToEc')
+call UnitRemoveAbility(u,'ToFG')
+call TousenRestoreButton(u,'A0J9')
+call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouStr),true)
+call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouAgi),true)
+call SetHeroInt(u,GetHeroInt(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouInt),true)
+call RemoveSavedInteger(HH,GetHandleId(u),SH_TouStr)
+call RemoveSavedInteger(HH,GetHandleId(u),SH_TouAgi)
+call RemoveSavedInteger(HH,GetHandleId(u),SH_TouInt)
+if LoadStr(HH,GetHandleId(u),SH_TouIcon)!=null and LoadStr(HH,GetHandleId(u),SH_TouIcon)!="" then
+//call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,LoadStr(HH,GetHandleId(u),SH_TouIcon))
+endif
+call IH('H02K',u,"war3mapImported\\BTNKanameTousen.blp")
+call TousenRestoreButton(u,'A0J8')
+call TousenRestoreButton(u,'A0JB')
+if GetUnitAbilityLevel(u,'Blnd')==0 then
+call UnitAddAbility(u,'Blnd')
+call UnitMakeAbilityPermanent(u,true,'Blnd')
+endif
+endfunction
+function TousenEOff takes unit u returns nothing
+// облик мухи кончается — перезарядки кнопок мухи переходят на обычные (22 окт)
+if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
+call TousenCdCopy(u,'ToFE','A0JA')
+call TousenCdCopy(u,'ToFW','A0J8')
+call TousenCdCopy(u,'ToEc','A0J9')
+call TousenCdCopy(u,'ToFT','A0JB')
+endif
+call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
+call UnitMakeAbilityPermanent(u,false,'ToE1')
+call UnitRemoveAbility(u,'ToE1')
+call UnitRemoveAbility(u,'ToE2')
+call UnitRemoveAbility(u,'ToE3')
+call UnitRemoveAbility(u,'ToE4')
+call UnitRemoveAbility(u,'ToE5')
+call UnitRemoveAbility(u,'ToE6')
+call UnitMakeAbilityPermanent(u,false,'ToEN')
+call UnitRemoveAbility(u,'ToEN')
+call UnitRemoveAbility(u,'B0TN')
+call UnitRemoveAbility(u,'ToEc')
+//call UnitRemoveAbility(u,'ToG1')
+call UnitRemoveAbility(u,'ToEf')
+call TousenHollowOff(u)
+call TousenRestoreButton(u,'A0JA')
+call SetUnitVertexColor(u,255,255,255,255)
+endfunction
 function RemoveTransformation takes unit u returns nothing
 if GetUnitTypeId(u)=='H04B' then
     call PauseUnit(u,false)
@@ -50941,41 +51436,9 @@ if GetUnitTypeId(u) == 'H03Q' then
     call UnitRemoveAbility(u, 'S191')
 endif
 // Тоусен-муха (H0TF) -> Тоусен (22 окт)
-if GetUnitTypeId(u) == 'H0TF' then
-    call TousenDmgKeep(u) // 28 окт: белая атака после смены юнита
-    call UnitAddAbility(u, 'ToMB')
-    call IssueImmediateOrder(u, "bearform")
-    call UnitRemoveAbility(u, 'ToMB')
-    call SetUnitTimeScale(u,1.) // 23 окт: скорость и стойка с нуля после модели мухи
-    call SetUnitAnimation(u,"stand")
-    call UnitRemoveAbility(u, 'ToRg')
-    call UnitRemoveAbility(u, 'ToFG')
-    call SetUnitFlyHeight(u,0,0)
-    // портрет назад (22 окт)
-    if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
-        call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
-    endif
-endif
-if GetUnitTypeId(u) == 'H02K' then
-    call UnitMakeAbilityPermanent(u,false,'ToE1')
-    call UnitRemoveAbility(u,'ToE1')
-    call UnitRemoveAbility(u,'ToE2')
-    call UnitRemoveAbility(u,'ToE3')
-    call UnitRemoveAbility(u,'ToE4')
-    call UnitRemoveAbility(u,'ToE5')
-    call UnitRemoveAbility(u,'ToE6')
-    call UnitRemoveAbility(u,'B03C')
-    call UnitMakeAbilityPermanent(u,false,'ToEN')
-    call UnitRemoveAbility(u,'ToEN')
-    call UnitRemoveAbility(u,'B0TN')
-    call ShowAbility2('A0JA', true)
-    // маска на запасе (21 окт)
-    if LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
-        call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
-        call UnitRemoveAbility(u,'ToEc')
-        call EnableUnitAbility(u,'A0JA',true,true)
-        call SetUnitVertexColor(u,255,255,255,255)
-    endif
+if GetUnitTypeId(u)=='H02K' or GetUnitTypeId(u)=='H0TF' then
+// Always remove the other mode, even if its state flag was cleared earlier.
+call TousenEOff(u)
 endif
 if GetUnitTypeId(u) == 'H00A' then
     call UnitMakeAbilityPermanent(u,false,'LmE1')
@@ -60219,11 +60682,8 @@ endfunction
 // и игра падала (Game.dll+0xD6066, R Хирако). Сначала — таблица приказов Channel (tools/channel/gen.js, ShinjiChanInit)
 function CBS_QcNcl takes unit cbU,integer cbId returns string
 local string cbOs=LoadStr(HH,SH_ShnChanO,cbId)
-if cbOs!=null and cbOs!="" then
-return cbOs
-endif
-set cbOs=GetAbilityBaseStringLevelFieldById(cbId,ABILITY_SLF_BASE_ORDER_ID_NCL6,CBS_QcLv(cbU,cbId))
-if cbOs==null or cbOs=="Default String" then
+// Only generated Channel entries: Ncl6 is not a valid field on ordinary abilities.
+if cbOs==null then
 return ""
 endif
 return cbOs
@@ -60280,7 +60740,7 @@ set CBS_AbOk[cbP*60+CBS_AbN[cbP]]=IsAbilityEnabled(cbA)
 set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=CBS_QcNcl(Hero[cbP],GetAbilityTypeId(cbA))=="" or GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(cbA),ABILITY_ILF_TARGET_TYPE,CBS_QcLv(Hero[cbP],GetAbilityTypeId(cbA)))!=0
 else
 set CBS_AbOk[cbP*60+CBS_AbN[cbP]]=false
-set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(cbA),ABILITY_ILF_TARGET_TYPE,0)!=0
+set CBS_AbTg[cbP*60+CBS_AbN[cbP]]=CBS_QcNcl(Hero[cbP],GetAbilityTypeId(cbA))=="" or GetAbilityBaseIntegerLevelFieldById(GetAbilityTypeId(cbA),ABILITY_ILF_TARGET_TYPE,0)!=0
 endif
 set CBS_AbN[cbP]=CBS_AbN[cbP]+1
 endif
@@ -69212,12 +69672,12 @@ if nb>0 and c!=null and not ShnConfHit then
     endif
 endif
 // Хирако E: маска пустоты — бонус ко всему урону Хирако
-// Хирако E: урон без маски пополняет запас маски — 1 сек. за 5*AGI (16 окт)
-if nb>0 and suid=='HShn' and isTargetEnemy and not ShnConfHit and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'SnE1')>0 then
+// Хирако E: урон пополняет запас и в маске — 1 сек. за 5*AGI
+if nb>0 and suid=='HShn' and isTargetEnemy and not ShnConfHit and GetUnitAbilityLevel(c,'SnE1')>0 then
     call SaveReal(HH,cid,SH_ShnMaskRes,RMinBJ(7.+GetUnitAbilityLevel(c,'SnE1'),LoadReal(HH,cid,SH_ShnMaskRes)+nb/RMaxBJ(5.*GetHeroAgi(c,true),1.)))
 endif
-// Тоусен E (21 окт): урон без маски пополняет запас, как у Хирако
-if nb>0 and suid=='H02K' and isTargetEnemy and not LoadBoolean(HH,cid,SH_ShnMask) and GetUnitAbilityLevel(c,'A0JA')>0 then
+// Тоусен E: урон пополняет запас и в маске, как у Хирако
+if nb>0 and suid=='H02K' and isTargetEnemy and GetUnitAbilityLevel(c,'A0JA')>0 then
     call SaveReal(HH,cid,SH_ShnMaskRes,RMinBJ(7.+GetUnitAbilityLevel(c,'A0JA'),LoadReal(HH,cid,SH_ShnMaskRes)+nb/RMaxBJ(5.*GetHeroAgi(c,true),1.)))
 endif
 if nb>0 and suid=='HShn' and not ShnConfHit and LoadBoolean(HH,cid,SH_ShnMask) then
@@ -133887,93 +134347,6 @@ endfunction
 // Бонусы прежние: ToE1 (бег 30%, атака +70%), ToE2..6 (+300..700 HP), регенерация 1.5% HP в сек., серый цвет.
 // Пока маска надета, на месте E — зелёное серо (ToEc, код серо Хирако с h 13)
 // общая перезарядка кнопки (22 окт): оставшаяся перезарядка a переносится на b
-function TousenCdCopy takes unit u,integer a,integer b returns nothing
-local real r
-if GetUnitAbilityLevel(u,a)>0 and GetUnitAbilityLevel(u,b)>0 then
-set r=GetAbilityRemainingCooldown(GetUnitAbility(u,a))
-if r>0.05 then
-call StartAbilityCooldown(GetUnitAbility(u,b),r)
-endif
-endif
-endfunction
-// облик пустого (G, 22 окт): модель и портрет назад, метка снимается
-function TousenHollowOff takes unit u returns nothing
-if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
-call SaveBoolean(HH,GetHandleId(u),SH_TouHollow,false)
-//call SetUnitModel(u,"[H321]KanameTousen2.mdl")
-//call SetUnitScale(u,1.,1.,1.)
-// назад сменой юнита H0TF -> H02K (22 окт); у мёртвого — в RemoveTransformation в начале раунда
-if GetUnitTypeId(u)=='H0TF' and UnitIsAlive(u) then
-call TousenDmgKeep(u)
-call UnitAddAbility(u,'ToMB')
-call IssueImmediateOrder(u,"bearform")
-call UnitRemoveAbility(u,'ToMB')
-endif
-// 23 окт: обычная модель — скорость и стойка с нуля (номера анимаций мухи у неё нет — T-поза)
-call SetUnitTimeScale(u,1.)
-call SetUnitAnimation(u,"stand")
-call UnitRemoveAbility(u,'ToRg')
-call RemoveSavedReal(HH,GetHandleId(u),SH_TouRegen)
-call RemoveSavedReal(HH,GetHandleId(u),SH_TouHeal)
-call SetUnitFlyHeight(u,0,0)
-//call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait)) // портрет — из типа (22 окт)
-// портрет назад (22 окт)
-if LoadStr(HH,GetHandleId(u),SH_TouPortrait)!=null and LoadStr(HH,GetHandleId(u),SH_TouPortrait)!="" then
-call SetWidgetPortrait(u,LoadStr(HH,GetHandleId(u),SH_TouPortrait))
-endif
-// облик мухи (E2): W и T назад, новые W / T и бонус поля убираются, «Слепота» возвращается (22 окт)
-call UnitRemoveAbility(u,'ToFW')
-call UnitRemoveAbility(u,'ToFT')
-call UnitRemoveAbility(u,'ToFa')
-// v2 (22 окт): полёт (E3) и серо (R) убираются, Хадо назад, +15% характеристик снимаются, иконка назад
-call UnitRemoveAbility(u,'ToFE')
-call UnitRemoveAbility(u,'ToEc')
-call UnitRemoveAbility(u,'ToFG')
-call EnableUnitAbility(u,'A0J9',true,true)
-call SetHeroStr(u,GetHeroStr(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouStr),true)
-call SetHeroAgi(u,GetHeroAgi(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouAgi),true)
-call SetHeroInt(u,GetHeroInt(u,false)-LoadInteger(HH,GetHandleId(u),SH_TouInt),true)
-call RemoveSavedInteger(HH,GetHandleId(u),SH_TouStr)
-call RemoveSavedInteger(HH,GetHandleId(u),SH_TouAgi)
-call RemoveSavedInteger(HH,GetHandleId(u),SH_TouInt)
-if LoadStr(HH,GetHandleId(u),SH_TouIcon)!=null and LoadStr(HH,GetHandleId(u),SH_TouIcon)!="" then
-//call SetUnitStringField(u,UNIT_SF_ICON_NORMAL,LoadStr(HH,GetHandleId(u),SH_TouIcon))
-endif
-call IH('H02K',u,"war3mapImported\\BTNKanameTousen.blp")
-call EnableUnitAbility(u,'A0J8',true,true)
-call EnableUnitAbility(u,'A0JB',true,true)
-if GetUnitAbilityLevel(u,'Blnd')==0 then
-call UnitAddAbility(u,'Blnd')
-call UnitMakeAbilityPermanent(u,true,'Blnd')
-endif
-endif
-endfunction
-function TousenEOff takes unit u returns nothing
-// облик мухи кончается — перезарядки кнопок мухи переходят на обычные (22 окт)
-if LoadBoolean(HH,GetHandleId(u),SH_TouHollow) then
-call TousenCdCopy(u,'ToFE','A0JA')
-call TousenCdCopy(u,'ToFW','A0J8')
-call TousenCdCopy(u,'ToEc','A0J9')
-call TousenCdCopy(u,'ToFT','A0JB')
-endif
-call SaveBoolean(HH,GetHandleId(u),SH_ShnMask,false)
-call UnitMakeAbilityPermanent(u,false,'ToE1')
-call UnitRemoveAbility(u,'ToE1')
-call UnitRemoveAbility(u,'ToE2')
-call UnitRemoveAbility(u,'ToE3')
-call UnitRemoveAbility(u,'ToE4')
-call UnitRemoveAbility(u,'ToE5')
-call UnitRemoveAbility(u,'ToE6')
-call UnitMakeAbilityPermanent(u,false,'ToEN')
-call UnitRemoveAbility(u,'ToEN')
-call UnitRemoveAbility(u,'B0TN')
-call UnitRemoveAbility(u,'ToEc')
-//call UnitRemoveAbility(u,'ToG1')
-call UnitRemoveAbility(u,'ToEf')
-call TousenHollowOff(u)
-call EnableUnitAbility(u,'A0JA',true,true)
-call SetUnitVertexColor(u,255,255,255,255)
-endfunction
 function TousenECast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
@@ -133988,6 +134361,7 @@ endif
 call SaveReal(HH,GetHandleId(u),SH_ShnMaskRes,RMaxBJ(r,0.))
 if (r>0. or ho) and UnitIsAlive(u) and udg_B==true and LoadBoolean(HH,GetHandleId(u),SH_ShnMask) then
 if ho then
+call TousenModeButtons(u)
 // муха (22 окт): регенерация падает на 0.05% в сек.; в плюсе — зелёный бонус регенерации (ToRg, 5 HP/с за уровень), в минусе — отнимает HP
 //set rg=RMaxBJ(-0.005,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // минус не больше 0.5% в сек. (22 окт)
 set rg=RMaxBJ(0.,LoadReal(HH,GetHandleId(u),SH_TouRegen)-0.00005) // до нуля, без минуса (22 окт)
@@ -135409,6 +135783,7 @@ function TousenFlyPortrait takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit u=LoadUnitHandle(h,GetHandleId(t),0)
 if GetUnitTypeId(u)=='H0TF' then
+call TousenModeButtons(u)
 call SetWidgetPortrait(u,"Tousen\\Tousen_FlyPortrait.mdx")
 //call TousenAnimFor(u,14,1.,2.4) // 23 окт: взлёт с рёвом, уже на модели мухи, потом стойка
 // 23 окт: №14 после смены модели не включался — сразу стойка и ещё раз через 0.4 с
@@ -135427,6 +135802,9 @@ endfunction
 function TousenFlyDo takes unit u returns nothing
 local integer uid=GetHandleId(u)
 local integer b
+if LoadBoolean(HH,uid,SH_TouHollow) or GetUnitTypeId(u)!='H02K' then
+return
+endif
 call SaveBoolean(HH,uid,SH_TouHollow,true)
 call SaveStr(HH,uid,SH_TouPortrait,GetWidgetPortrait(u))
 call SaveStr(HH,uid,SH_TouIcon,GetUnitStringField(u,UNIT_SF_ICON_NORMAL))
@@ -137598,7 +137976,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0KL',2)
 call SaveStr(HH,SH_ShnChanO,'A0KO',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0KO',2)
 call SaveStr(HH,SH_ShnChanO,'A0KP',"root")
-call SaveStr(HH,SH_ShnChanO,'A0KQ',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0KQ',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0KQ',1)
 call SaveStr(HH,SH_ShnChanO,'A0KR',"roar")
 call SaveInteger(HH,SH_ShnChanT,'A0KR',2)
@@ -137608,7 +137986,7 @@ call SaveStr(HH,SH_ShnChanO,'A0KU',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0KU',2)
 call SaveStr(HH,SH_ShnChanO,'A0KW',"heal")
 call SaveInteger(HH,SH_ShnChanT,'A0KW',1)
-call SaveStr(HH,SH_ShnChanO,'A0KX',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0KX',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0KX',1)
 call SaveStr(HH,SH_ShnChanO,'A0KY',"clusterrockets")
 call SaveStr(HH,SH_ShnChanO,'A0L0',"avengerform")
@@ -137635,7 +138013,7 @@ call SaveStr(HH,SH_ShnChanO,'A0LS',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0LS',1)
 call SaveStr(HH,SH_ShnChanO,'A0LU',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0LU',1)
-call SaveStr(HH,SH_ShnChanO,'A0LV',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0LV',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0LV',1)
 call SaveStr(HH,SH_ShnChanO,'A0LW',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0LY',"root")
@@ -137692,7 +138070,7 @@ call SaveStr(HH,SH_ShnChanO,'A0OM',"eattree")
 call SaveInteger(HH,SH_ShnChanT,'A0OM',2)
 call SaveStr(HH,SH_ShnChanO,'A0OR',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'A0OR',2)
-call SaveStr(HH,SH_ShnChanO,'A0OS',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0OS',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0OS',1)
 call SaveStr(HH,SH_ShnChanO,'A0OV',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0OX',"root")
@@ -137769,12 +138147,12 @@ call SaveStr(HH,SH_ShnChanO,'A0QU',"attributemodskill")
 call SaveInteger(HH,SH_ShnChanT,'A0QU',1)
 call SaveStr(HH,SH_ShnChanO,'A0QX',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'A0QX',2)
-call SaveStr(HH,SH_ShnChanO,'A0QY',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0QY',"berserk")
 call SaveStr(HH,SH_ShnChanO,'A0R0',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0R0',2)
 call SaveStr(HH,SH_ShnChanO,'A0R4',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A0R4',1)
-call SaveStr(HH,SH_ShnChanO,'A0R5',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0R5',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0R5',1)
 call SaveStr(HH,SH_ShnChanO,'A0R6',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A0R6',2)
@@ -137784,7 +138162,7 @@ call SaveStr(HH,SH_ShnChanO,'A0R9',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0R9',1)
 call SaveStr(HH,SH_ShnChanO,'A0RA',"auravampiric")
 call SaveInteger(HH,SH_ShnChanT,'A0RA',2)
-call SaveStr(HH,SH_ShnChanO,'A0RB',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0RB',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0RB',1)
 call SaveStr(HH,SH_ShnChanO,'A0RC',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A0RC',1)
@@ -137840,7 +138218,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0SY',2)
 call SaveStr(HH,SH_ShnChanO,'A0SZ',"roar")
 call SaveStr(HH,SH_ShnChanO,'A0T0',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A0T0',2)
-call SaveStr(HH,SH_ShnChanO,'A0T4',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0T4',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0T4',1)
 call SaveStr(HH,SH_ShnChanO,'A0TB',"coldarrowstarg")
 call SaveStr(HH,SH_ShnChanO,'A0TZ',"eattree")
@@ -137858,7 +138236,7 @@ call SaveStr(HH,SH_ShnChanO,'A0UJ',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A0UJ',2)
 call SaveStr(HH,SH_ShnChanO,'A0UK',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0UN',"root")
-call SaveStr(HH,SH_ShnChanO,'A0UO',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A0UO',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0UO',1)
 call SaveStr(HH,SH_ShnChanO,'A0UQ',"doom")
 call SaveStr(HH,SH_ShnChanO,'A0UR',"acidbomb")
@@ -137986,12 +138364,12 @@ call SaveStr(HH,SH_ShnChanO,'A10B',"dreadlordinferno")
 call SaveInteger(HH,SH_ShnChanT,'A10B',2)
 call SaveStr(HH,SH_ShnChanO,'A10D',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A10D',2)
-call SaveStr(HH,SH_ShnChanO,'A10E',"root")
+call SaveStr(HH,SH_ShnChanO,'A10E',"blink")
 call SaveInteger(HH,SH_ShnChanT,'A10E',2)
-call SaveStr(HH,SH_ShnChanO,'A10F',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A10F',"frostarmor")
 call SaveInteger(HH,SH_ShnChanT,'A10F',1)
-call SaveStr(HH,SH_ShnChanO,'A10J',"charm")
-call SaveStr(HH,SH_ShnChanO,'A10M',"eattree")
+call SaveStr(HH,SH_ShnChanO,'A10J',"berserk")
+call SaveStr(HH,SH_ShnChanO,'A10M',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'A10M',2)
 call SaveStr(HH,SH_ShnChanO,'A10Q',"creepthunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A10Q',1)
@@ -138023,8 +138401,10 @@ call SaveStr(HH,SH_ShnChanO,'A11N',"attributemodskill")
 call SaveInteger(HH,SH_ShnChanT,'A11N',2)
 call SaveStr(HH,SH_ShnChanO,'A11S',"autodispel")
 call SaveInteger(HH,SH_ShnChanT,'A11S',1)
+call SaveStr(HH,SH_ShnChanO,'A11T',"carrionscarabson")
 call SaveStr(HH,SH_ShnChanO,'A11V',"banish")
 call SaveInteger(HH,SH_ShnChanT,'A11V',2)
+call SaveStr(HH,SH_ShnChanO,'A11W',"coupleinstant")
 call SaveStr(HH,SH_ShnChanO,'A11X',"cloudoffog")
 call SaveInteger(HH,SH_ShnChanT,'A11X',2)
 call SaveStr(HH,SH_ShnChanO,'A11Y',"decouple")
@@ -138043,15 +138423,15 @@ call SaveInteger(HH,SH_ShnChanT,'A12L',1)
 call SaveStr(HH,SH_ShnChanO,'A12Q',"bloodluston")
 call SaveStr(HH,SH_ShnChanO,'A12T',"autoharvestlumber")
 call SaveInteger(HH,SH_ShnChanT,'A12T',2)
-call SaveStr(HH,SH_ShnChanO,'A12W',"drain")
+call SaveStr(HH,SH_ShnChanO,'A12W',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A12W',2)
-call SaveStr(HH,SH_ShnChanO,'A12X',"hex")
+call SaveStr(HH,SH_ShnChanO,'A12X',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'A12X',2)
 call SaveStr(HH,SH_ShnChanO,'A12Y',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A12Y',1)
 call SaveStr(HH,SH_ShnChanO,'A130',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A130',2)
-call SaveStr(HH,SH_ShnChanO,'A131',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A131',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'A131',2)
 call SaveStr(HH,SH_ShnChanO,'A132',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A132',2)
@@ -138155,7 +138535,7 @@ call SaveStr(HH,SH_ShnChanO,'A18K',"manaburn")
 call SaveStr(HH,SH_ShnChanO,'A18S',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A18S',2)
 call SaveStr(HH,SH_ShnChanO,'A18T',"firebolt")
-call SaveStr(HH,SH_ShnChanO,'A18V',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A18V',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A18V',1)
 call SaveStr(HH,SH_ShnChanO,'A18X',"parasite")
 call SaveInteger(HH,SH_ShnChanT,'A18X',1)
@@ -138171,7 +138551,7 @@ call SaveStr(HH,SH_ShnChanO,'A196',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A196',2)
 call SaveStr(HH,SH_ShnChanO,'A197',"autoharvestlumber")
 call SaveInteger(HH,SH_ShnChanT,'A197',1)
-call SaveStr(HH,SH_ShnChanO,'A198',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A198',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A198',1)
 call SaveStr(HH,SH_ShnChanO,'A19C',"channel")
 call SaveStr(HH,SH_ShnChanO,'A19M',"absorb")
@@ -138217,7 +138597,7 @@ call SaveStr(HH,SH_ShnChanO,'A1B2',"undivineshield")
 call SaveInteger(HH,SH_ShnChanT,'A1B2',2)
 call SaveStr(HH,SH_ShnChanO,'A1B4',"controlmagic")
 call SaveInteger(HH,SH_ShnChanT,'A1B4',1)
-call SaveStr(HH,SH_ShnChanO,'A1B5',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1B5',"berserk")
 call SaveStr(HH,SH_ShnChanO,'A1B6',"clusterrockets")
 call SaveStr(HH,SH_ShnChanO,'A1BO',"curseon")
 call SaveStr(HH,SH_ShnChanO,'A1BP',"controlmagic")
@@ -138251,7 +138631,7 @@ call SaveStr(HH,SH_ShnChanO,'A1CU',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A1CU',2)
 call SaveStr(HH,SH_ShnChanO,'A1CV',"auravampiric")
 call SaveInteger(HH,SH_ShnChanT,'A1CV',2)
-call SaveStr(HH,SH_ShnChanO,'A1CW',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1CW',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1CW',1)
 call SaveStr(HH,SH_ShnChanO,'A1CX',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A1CX',1)
@@ -138261,7 +138641,7 @@ call SaveStr(HH,SH_ShnChanO,'A1D2',"root")
 call SaveStr(HH,SH_ShnChanO,'A1D3',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1D3',2)
 call SaveStr(HH,SH_ShnChanO,'A1D4',"AImove")
-call SaveStr(HH,SH_ShnChanO,'A1D7',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1D7',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1D7',1)
 call SaveStr(HH,SH_ShnChanO,'A1D9',"eattree")
 call SaveInteger(HH,SH_ShnChanT,'A1D9',2)
@@ -138275,6 +138655,7 @@ call SaveInteger(HH,SH_ShnChanT,'A1DL',1)
 call SaveStr(HH,SH_ShnChanO,'A1DM',"bloodluston")
 call SaveStr(HH,SH_ShnChanO,'A1DN',"channel")
 call SaveStr(HH,SH_ShnChanO,'A1DR',"curseon")
+call SaveStr(HH,SH_ShnChanO,'A1DS',"controlmagic")
 call SaveStr(HH,SH_ShnChanO,'A1DT',"corporealform")
 call SaveInteger(HH,SH_ShnChanT,'A1DT',2)
 call SaveStr(HH,SH_ShnChanO,'A1DW',"hex")
@@ -138330,7 +138711,7 @@ call SaveStr(HH,SH_ShnChanO,'A1FM',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1FM',2)
 call SaveStr(HH,SH_ShnChanO,'A1FN',"auravampiric")
 call SaveInteger(HH,SH_ShnChanT,'A1FN',2)
-call SaveStr(HH,SH_ShnChanO,'A1FO',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1FO',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1FO',1)
 call SaveStr(HH,SH_ShnChanO,'A1FP',"channel")
 call SaveStr(HH,SH_ShnChanO,'A1FV',"curseon")
@@ -138341,7 +138722,7 @@ call SaveStr(HH,SH_ShnChanO,'A1FZ',"deathanddecay")
 call SaveStr(HH,SH_ShnChanO,'A1G1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A1G1',2)
 call SaveStr(HH,SH_ShnChanO,'A1G2',"sleep")
-call SaveStr(HH,SH_ShnChanO,'A1G3',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1G3',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1G3',1)
 call SaveStr(HH,SH_ShnChanO,'A1G4',"autoharvestlumber")
 call SaveStr(HH,SH_ShnChanO,'A1G5',"renewoff")
@@ -138386,7 +138767,7 @@ call SaveStr(HH,SH_ShnChanO,'A1H9',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1H9',2)
 call SaveStr(HH,SH_ShnChanO,'A1HA',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1HA',2)
-call SaveStr(HH,SH_ShnChanO,'A1HB',"awaken")
+call SaveStr(HH,SH_ShnChanO,'A1HB',"frostarmor")
 call SaveInteger(HH,SH_ShnChanT,'A1HB',1)
 call SaveStr(HH,SH_ShnChanO,'A1HC',"blackarrowoff")
 call SaveInteger(HH,SH_ShnChanT,'A1HC',2)
@@ -138726,7 +139107,7 @@ call SaveStr(HH,SH_ShnChanO,'EsE1',"flamingarrowstarg")
 call SaveInteger(HH,SH_ShnChanT,'EsE1',2)
 call SaveStr(HH,SH_ShnChanO,'EsF1',"selfdestructon")
 call SaveInteger(HH,SH_ShnChanT,'EsF1',2)
-call SaveStr(HH,SH_ShnChanO,'EsG1',"forceofnature")
+call SaveStr(HH,SH_ShnChanO,'EsG1',"berserk")
 call SaveStr(HH,SH_ShnChanO,'EsQ1',"bearform")
 call SaveInteger(HH,SH_ShnChanT,'EsQ1',2)
 call SaveStr(HH,SH_ShnChanO,'EsR1',"flamingattack")
@@ -139122,7 +139503,7 @@ call SaveStr(HH,SH_ShnChanO,'RmE1',"flamingarrowstarg")
 call SaveInteger(HH,SH_ShnChanT,'RmE1',2)
 call SaveStr(HH,SH_ShnChanO,'RmF1',"flare")
 call SaveStr(HH,SH_ShnChanO,'RmF2',"unsummon")
-call SaveStr(HH,SH_ShnChanO,'RmG1',"forceofnature")
+call SaveStr(HH,SH_ShnChanO,'RmG1',"berserk")
 call SaveStr(HH,SH_ShnChanO,'RmQ1',"flamestrike")
 call SaveInteger(HH,SH_ShnChanT,'RmQ1',2)
 call SaveStr(HH,SH_ShnChanO,'RmQ2',"absorb")
@@ -139323,7 +139704,7 @@ call SaveInteger(HH,SH_ShnChanT,'YoQ0',2)
 call SaveStr(HH,SH_ShnChanO,'YoR0',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'YoR0',2)
 call SaveStr(HH,SH_ShnChanO,'YoT0',"deathcoil")
-call SaveStr(HH,SH_ShnChanO,'YoW0',"awaken")
+call SaveStr(HH,SH_ShnChanO,'YoW0',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'YoW0',1)
 call SaveStr(HH,SH_ShnChanO,'YuF2',"creepdevour")
 call SaveStr(HH,SH_ShnChanO,'YuR2',"chemicalrage")
@@ -139750,13 +140131,13 @@ call SaveStr(HH,SH_AbOrd,'A0KI',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A0KL',"channel")
 call SaveStr(HH,SH_AbOrd,'A0KO',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0KP',"root")
-call SaveStr(HH,SH_AbOrd,'A0KQ',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0KQ',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0KR',"roar")
 call SaveStr(HH,SH_AbOrd,'A0KT',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0KU',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0KV',"cripple")
 call SaveStr(HH,SH_AbOrd,'A0KW',"heal")
-call SaveStr(HH,SH_AbOrd,'A0KX',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0KX',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0KY',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A0KZ',"entanglingroots")
 call SaveStr(HH,SH_AbOrd,'A0L0',"avengerform")
@@ -139776,7 +140157,7 @@ call SaveStr(HH,SH_AbOrd,'A0LP',"resumeharvesting")
 call SaveStr(HH,SH_AbOrd,'A0LQ',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'A0LS',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0LU',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A0LV',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0LV',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0LW',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0LY',"root")
 call SaveStr(HH,SH_AbOrd,'A0M2',"burrow")
@@ -139830,7 +140211,7 @@ call SaveStr(HH,SH_AbOrd,'A0OM',"eattree")
 call SaveStr(HH,SH_AbOrd,'A0OO',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A0OQ',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0OR',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0OS',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0OS',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0OT',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0OU',"frenzy")
 call SaveStr(HH,SH_AbOrd,'A0OV',"channel")
@@ -139885,15 +140266,15 @@ call SaveStr(HH,SH_AbOrd,'A0QR',"heal")
 call SaveStr(HH,SH_AbOrd,'A0QT',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0QU',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A0QX',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0QY',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0QY',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0R0',"channel")
 call SaveStr(HH,SH_AbOrd,'A0R4',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'A0R5',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0R5',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0R6',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0R8',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0R9',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0RA',"auravampiric")
-call SaveStr(HH,SH_AbOrd,'A0RB',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0RB',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0RC',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0RD',"web")
 call SaveStr(HH,SH_AbOrd,'A0RE',"acidbomb")
@@ -139929,7 +140310,7 @@ call SaveStr(HH,SH_AbOrd,'A0SY',"drain")
 call SaveStr(HH,SH_AbOrd,'A0SZ',"roar")
 call SaveStr(HH,SH_AbOrd,'A0T0',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0T1',"silence")
-call SaveStr(HH,SH_AbOrd,'A0T4',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0T4',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0TB',"coldarrowstarg")
 call SaveStr(HH,SH_AbOrd,'A0TC',"banish")
 call SaveStr(HH,SH_AbOrd,'A0TF',"berserk")
@@ -139945,7 +140326,7 @@ call SaveStr(HH,SH_AbOrd,'A0UG',"frostarmor")
 call SaveStr(HH,SH_AbOrd,'A0UJ',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0UK',"channel")
 call SaveStr(HH,SH_AbOrd,'A0UN',"root")
-call SaveStr(HH,SH_AbOrd,'A0UO',"awaken")
+call SaveStr(HH,SH_AbOrd,'A0UO',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0UQ',"doom")
 call SaveStr(HH,SH_AbOrd,'A0UR',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0UT',"berserk")
@@ -140055,12 +140436,12 @@ call SaveStr(HH,SH_AbOrd,'A10A',"blight")
 call SaveStr(HH,SH_AbOrd,'A10B',"dreadlordinferno")
 call SaveStr(HH,SH_AbOrd,'A10C',"selfdestruct")
 call SaveStr(HH,SH_AbOrd,'A10D',"ancestralspirit")
-call SaveStr(HH,SH_AbOrd,'A10E',"root")
-call SaveStr(HH,SH_AbOrd,'A10F',"awaken")
+call SaveStr(HH,SH_AbOrd,'A10E',"blink")
+call SaveStr(HH,SH_AbOrd,'A10F',"frostarmor")
 call SaveStr(HH,SH_AbOrd,'A10I',"lightningshield")
-call SaveStr(HH,SH_AbOrd,'A10J',"charm")
+call SaveStr(HH,SH_AbOrd,'A10J',"berserk")
 call SaveStr(HH,SH_AbOrd,'A10L',"chainlightning")
-call SaveStr(HH,SH_AbOrd,'A10M',"eattree")
+call SaveStr(HH,SH_AbOrd,'A10M',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A10N',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A10Q',"creepthunderbolt")
 call SaveStr(HH,SH_AbOrd,'A10R',"acidbomb")
@@ -140091,8 +140472,10 @@ call SaveStr(HH,SH_AbOrd,'A11L',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'A11M',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A11N',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A11S',"autodispel")
+call SaveStr(HH,SH_AbOrd,'A11T',"carrionscarabson")
 call SaveStr(HH,SH_AbOrd,'A11U',"invisibility")
 call SaveStr(HH,SH_AbOrd,'A11V',"banish")
+call SaveStr(HH,SH_AbOrd,'A11W',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'A11X',"cloudoffog")
 call SaveStr(HH,SH_AbOrd,'A11Y',"decouple")
 call SaveStr(HH,SH_AbOrd,'A125',"avatar")
@@ -140111,11 +140494,11 @@ call SaveStr(HH,SH_AbOrd,'A12L',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A12Q',"bloodluston")
 call SaveStr(HH,SH_AbOrd,'A12S',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A12T',"autoharvestlumber")
-call SaveStr(HH,SH_AbOrd,'A12W',"drain")
-call SaveStr(HH,SH_AbOrd,'A12X',"hex")
+call SaveStr(HH,SH_AbOrd,'A12W',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'A12X',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'A12Y',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A130',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A131',"awaken")
+call SaveStr(HH,SH_AbOrd,'A131',"blizzard")
 call SaveStr(HH,SH_AbOrd,'A132',"hex")
 call SaveStr(HH,SH_AbOrd,'A135',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A137',"roar")
@@ -140195,7 +140578,7 @@ call SaveStr(HH,SH_AbOrd,'A18H',"slow")
 call SaveStr(HH,SH_AbOrd,'A18K',"manaburn")
 call SaveStr(HH,SH_AbOrd,'A18S',"absorb")
 call SaveStr(HH,SH_AbOrd,'A18T',"firebolt")
-call SaveStr(HH,SH_AbOrd,'A18V',"awaken")
+call SaveStr(HH,SH_AbOrd,'A18V',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A18X',"parasite")
 call SaveStr(HH,SH_AbOrd,'A18Y',"roar")
 call SaveStr(HH,SH_AbOrd,'A18Z',"autodispeloff")
@@ -140205,7 +140588,7 @@ call SaveStr(HH,SH_AbOrd,'A193',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A194',"absorb")
 call SaveStr(HH,SH_AbOrd,'A196',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A197',"autoharvestlumber")
-call SaveStr(HH,SH_AbOrd,'A198',"awaken")
+call SaveStr(HH,SH_AbOrd,'A198',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A199',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'A19C',"channel")
 call SaveStr(HH,SH_AbOrd,'A19D',"doom")
@@ -140242,7 +140625,7 @@ call SaveStr(HH,SH_AbOrd,'A1B1',"heal")
 call SaveStr(HH,SH_AbOrd,'A1B2',"undivineshield")
 call SaveStr(HH,SH_AbOrd,'A1B3',"ensnare")
 call SaveStr(HH,SH_AbOrd,'A1B4',"controlmagic")
-call SaveStr(HH,SH_AbOrd,'A1B5',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1B5',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1B6',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A1BE',"doom")
 call SaveStr(HH,SH_AbOrd,'A1BF',"drunkenhaze")
@@ -140274,13 +140657,13 @@ call SaveStr(HH,SH_AbOrd,'A1CM',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A1CT',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1CU',"hex")
 call SaveStr(HH,SH_AbOrd,'A1CV',"auravampiric")
-call SaveStr(HH,SH_AbOrd,'A1CW',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1CW',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1CX',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A1D0',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1D2',"root")
 call SaveStr(HH,SH_AbOrd,'A1D3',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1D4',"AImove")
-call SaveStr(HH,SH_AbOrd,'A1D7',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1D7',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1D9',"eattree")
 call SaveStr(HH,SH_AbOrd,'A1DA',"autoentangleinstant")
 call SaveStr(HH,SH_AbOrd,'A1DC',"berserk")
@@ -140293,6 +140676,7 @@ call SaveStr(HH,SH_AbOrd,'A1DM',"bloodluston")
 call SaveStr(HH,SH_AbOrd,'A1DN',"channel")
 call SaveStr(HH,SH_AbOrd,'A1DQ',"innerfire")
 call SaveStr(HH,SH_AbOrd,'A1DR',"curseon")
+call SaveStr(HH,SH_AbOrd,'A1DS',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'A1DT',"corporealform")
 call SaveStr(HH,SH_AbOrd,'A1DW',"hex")
 call SaveStr(HH,SH_AbOrd,'A1DX',"root")
@@ -140333,7 +140717,7 @@ call SaveStr(HH,SH_AbOrd,'A1FI',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1FL',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A1FM',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1FN',"auravampiric")
-call SaveStr(HH,SH_AbOrd,'A1FO',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1FO',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1FP',"channel")
 call SaveStr(HH,SH_AbOrd,'A1FV',"curseon")
 call SaveStr(HH,SH_AbOrd,'A1FW',"detonate")
@@ -140341,7 +140725,7 @@ call SaveStr(HH,SH_AbOrd,'A1FX',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'A1FZ',"deathanddecay")
 call SaveStr(HH,SH_AbOrd,'A1G1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A1G2',"sleep")
-call SaveStr(HH,SH_AbOrd,'A1G3',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1G3',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1G4',"autoharvestlumber")
 call SaveStr(HH,SH_AbOrd,'A1G5',"renewoff")
 call SaveStr(HH,SH_AbOrd,'A1G6',"replenish")
@@ -140367,7 +140751,7 @@ call SaveStr(HH,SH_AbOrd,'A1H7',"weboff")
 call SaveStr(HH,SH_AbOrd,'A1H8',"farsight")
 call SaveStr(HH,SH_AbOrd,'A1H9',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1HA',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A1HB',"awaken")
+call SaveStr(HH,SH_AbOrd,'A1HB',"frostarmor")
 call SaveStr(HH,SH_AbOrd,'A1HC',"blackarrowoff")
 call SaveStr(HH,SH_AbOrd,'A1HD',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A1HM',"absorb")
@@ -141013,7 +141397,7 @@ call SaveStr(HH,SH_AbOrd,'DanI',"invisibility")
 call SaveStr(HH,SH_AbOrd,'EsD1',"darkconversion")
 call SaveStr(HH,SH_AbOrd,'EsE1',"flamingarrowstarg")
 call SaveStr(HH,SH_AbOrd,'EsF1',"selfdestructon")
-call SaveStr(HH,SH_AbOrd,'EsG1',"forceofnature")
+call SaveStr(HH,SH_AbOrd,'EsG1',"berserk")
 call SaveStr(HH,SH_AbOrd,'EsQ1',"bearform")
 call SaveStr(HH,SH_AbOrd,'EsR1',"flamingattack")
 call SaveStr(HH,SH_AbOrd,'EsT1',"wateryminion")
@@ -141291,7 +141675,7 @@ call SaveStr(HH,SH_AbOrd,'RmD1',"flamingattacktarg")
 call SaveStr(HH,SH_AbOrd,'RmE1',"flamingarrowstarg")
 call SaveStr(HH,SH_AbOrd,'RmF1',"flare")
 call SaveStr(HH,SH_AbOrd,'RmF2',"unsummon")
-call SaveStr(HH,SH_AbOrd,'RmG1',"forceofnature")
+call SaveStr(HH,SH_AbOrd,'RmG1',"berserk")
 call SaveStr(HH,SH_AbOrd,'RmQ1',"flamestrike")
 call SaveStr(HH,SH_AbOrd,'RmQ2',"absorb")
 call SaveStr(HH,SH_AbOrd,'RmR1',"incineratearrow")
@@ -141494,7 +141878,7 @@ call SaveStr(HH,SH_AbOrd,'YoG0',"renewon")
 call SaveStr(HH,SH_AbOrd,'YoQ0',"absorb")
 call SaveStr(HH,SH_AbOrd,'YoR0',"avengerform")
 call SaveStr(HH,SH_AbOrd,'YoT0',"deathcoil")
-call SaveStr(HH,SH_AbOrd,'YoW0',"awaken")
+call SaveStr(HH,SH_AbOrd,'YoW0',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'YuF2',"creepdevour")
 call SaveStr(HH,SH_AbOrd,'YuFd',"soulburn")
 call SaveStr(HH,SH_AbOrd,'YuR2',"chemicalrage")
@@ -153287,7 +153671,7 @@ local unit c
 local integer i=0
 local player p=OwnerOf(u)
 local trigger tr=CreateTrigger()
-if GetUnitCurrentOrder(u)==OrderId("root") and time<SR(x,y,x1,y1)*0.00025 then
+if GetUnitCurrentOrder(u)==OrderId("blink") and time<SR(x,y,x1,y1)*0.00025 then
 call SaveReal(h,id,4,time+0.1)
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Human\\MassTeleport\\MassTeleportTarget.mdl",x1,y1))
 else
@@ -266799,39 +267183,6 @@ function CreateModeIndicatorWithPauseFormAbility takes unit newCaster, string ne
     set NewFrame=null
     set NewFrameText=null
 endfunction
-function Effect_Visible_Timed_Act takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster0=LoadUnitHandle(HH,id,1)
-local real time=LoadReal(HH,id,5)
-local real time_max=LoadReal(HH,id,6)
-set time=time+0.02
-call SaveReal(HH,id,5,time)
-call PauseUnit(caster0,true)
-call SetUnitInvulnerable(caster0,true)
-call UnitColor(caster0,100,100,100,time/time_max*100)
-if time>=time_max then
-call RemoveUnit(caster0)
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call TSE_DestroyTimer(GetExpiredTimer())
-endif
-set caster0=null
-endfunction
-function Effect_Visible_Timed takes unit caster0,real duration returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call PauseUnit(caster0,true)
-call SetUnitInvulnerable(caster0,true)
-call SaveUnitHandle(HH,id,1,caster0)
-call SaveReal(HH,id,6,duration)
-if GetUnitAbilityLevel(caster0,'Aloc')==0  then
-call UnitAddAbility(caster0,'Aloc')
-endif
-
-call TSE_TimerStart(t,0.02,true,function Effect_Visible_Timed_Act)
-set caster0=null
-set t=null
-endfunction
 function Effect_Visible_Timed_RGB_Act takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster0=LoadUnitHandle(HH,id,1)
@@ -266990,6 +267341,346 @@ endif
 call SaveInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"),energy+R2I(value0))
 endfunction
 
+function DMFxDrainStep takes integer dmxId returns boolean
+local boolean dmxDone=false
+local unit dmxCaster=LoadUnitHandle(DMFxHT,dmxId,1)
+local unit dmxTarget=LoadUnitHandle(DMFxHT,dmxId,2)
+local unit dmxDummy=LoadUnitHandle(DMFxHT,dmxId,20)
+local real dmxTime=LoadReal(DMFxHT,dmxId,5)
+local real dmxDamage=LoadReal(DMFxHT,dmxId,15)
+local real dmxHp=LoadReal(DMFxHT,dmxId,16)
+
+local real dmxCasterX=GetUnitX(dmxCaster)
+local real dmxCasterY=GetUnitY(dmxCaster)
+local real dmxDummyX=GetUnitX(dmxDummy)
+local real dmxDummyY=GetUnitY(dmxDummy)
+local real dmxFacing=LoadReal(DMFxHT,dmxId,3)
+set dmxTime=dmxTime+0.02
+call SaveReal(DMFxHT,dmxId,5,dmxTime)
+if dmxTime>=5 then
+call EffectCreateAndMove(true,EffectID[2217],dmxFacing,1,1,1.5,100,100,100,60,0,dmxCaster,0,dmxFacing)
+call Death_Master_Drain(dmxCaster,dmxDamage)
+call MoveUnit(dmxCaster,LoadUnitHandle(DMFxHT,dmxId,20),0,0)
+call MoveUnit(dmxCaster,LoadUnitHandle(DMFxHT,dmxId,21),0,0)
+call MyRemoveUnit(LoadUnitHandle(DMFxHT,dmxId,20),0.5)
+call MyRemoveUnit(LoadUnitHandle(DMFxHT,dmxId,21),0.5)
+
+
+call DamageIndicatorFunction(dmxCaster, dmxTarget, dmxHp)
+call DamageTextTag(dmxCaster,dmxTarget,dmxHp)
+
+
+
+
+set dmxDone=true
+else
+set dmxFacing=Angle2(dmxDummyX,dmxDummyY,dmxCasterX,dmxCasterY)
+call SaveReal(DMFxHT,dmxId,3,dmxFacing)
+call MoveUnit(dmxDummy,dmxDummy,25+SR(dmxDummyX,dmxDummyY,dmxCasterX,dmxCasterY)*0.01,dmxFacing)
+call MoveUnit(dmxDummy,LoadUnitHandle(DMFxHT,dmxId,21),0,dmxFacing)
+if SR(dmxDummyX,dmxDummyY,dmxCasterX,dmxCasterY)<100 and dmxTime<5 then
+call SaveReal(DMFxHT,dmxId,5,5)
+endif
+endif
+set dmxCaster=null
+set dmxTarget=null
+set dmxDummy=null
+return dmxDone
+endfunction
+
+function DMFxFadeStep takes integer dmxId returns boolean
+local boolean dmxDone=false
+local unit dmxCaster=LoadUnitHandle(DMFxHT,dmxId,1)
+local real dmxTime=LoadReal(DMFxHT,dmxId,5)
+local real dmxDuration=LoadReal(DMFxHT,dmxId,6)
+set dmxTime=dmxTime+0.02
+call SaveReal(DMFxHT,dmxId,5,dmxTime)
+call UnitColor(dmxCaster,100,100,100,dmxTime/dmxDuration*100)
+if dmxTime>=dmxDuration then
+call RemoveUnit(dmxCaster)
+set dmxDone=true
+endif
+set dmxCaster=null
+return dmxDone
+endfunction
+
+function DMFxPoisonStep takes integer dmxId returns boolean
+local unit dmxCaster=LoadUnitHandle(DMFxHT,dmxId,1)
+local unit dmxDummy
+local real dmxTime=LoadReal(DMFxHT,dmxId,5)+0.02
+local real dmxPulse=LoadReal(DMFxHT,dmxId,6)+0.02
+local real dmxDamage=LoadReal(DMFxHT,dmxId,15)
+local integer dmxEnergy=LoadInteger(HH,PH(OwnerOf(dmxCaster)),StringHash("KimiEnergy"))
+local real dmxTargetX
+local real dmxTargetY
+local real dmxFacing
+call SaveReal(DMFxHT,dmxId,5,dmxTime)
+call SaveReal(DMFxHT,dmxId,6,dmxPulse)
+if dmxTime>5 or (dmxTime>0.02 and dmxEnergy<dmxDamage) or (dmxTime>0.02 and udg_B==false) then
+set dmxDummy=LoadUnitHandle(DMFxHT,dmxId,20)
+call SetUnitAnimationByIndex(dmxDummy,1)
+call MyRemoveUnit(dmxDummy,1.5)
+call RemoveUnit(LoadUnitHandle(DMFxHT,dmxId,21))
+set dmxCaster=null
+set dmxDummy=null
+return true
+endif
+if dmxPulse<0 then
+set dmxCaster=null
+return false
+endif
+set dmxTargetX=LoadReal(DMFxHT,dmxId,11)
+set dmxTargetY=LoadReal(DMFxHT,dmxId,12)
+set dmxFacing=GetRandomReal(0,360)
+if dmxTime==0.02 then
+set n0=CreateUnit(OwnerOf(dmxCaster),'e600',dmxTargetX,dmxTargetY,dmxFacing)
+call SetUnitModel(n0,EffectID[592])
+call UnitSize(n0,3,1,1)
+call UnitColor(n0,100,100,100,00)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(DMFxHT,dmxId,20,n0)
+set n0=null
+set n0=CreateUnit(OwnerOf(dmxCaster),'e600',dmxTargetX,dmxTargetY,dmxFacing)
+call UnitSize(n0,3.9,1,1)
+call UnitSpeed(n0,0)
+call UnitColor(n0,100,100,100,80)
+call UnitAddAbility(n0,'Amrf')
+call UnitRemoveAbility(n0,'Amrf')
+call SetUnitFlyHeight(n0,0,0)
+call SaveUnitHandle(DMFxHT,dmxId,21,n0)
+set n0=null
+endif
+if dmxPulse>=0 then
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,dmxTargetX,dmxTargetY,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if IsUnitEnemy(n0,OwnerOf(dmxCaster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
+if dmxEnergy>dmxDamage then
+
+
+set dmxDamage= Death_Master_DMG_Increase(true,dmxCaster,LoadReal(DMFxHT,dmxId,15))
+call DamageU(false,dmxCaster,n0,dmxDamage)
+
+
+if IsUnitType(n0,UNIT_TYPE_HERO)==true then
+call SaveInteger(HH,PH(OwnerOf(dmxCaster)),StringHash("KimiEnergy"),dmxEnergy-R2I(dmxDamage))
+endif
+
+endif
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+set dmxPulse=-0.2
+endif
+call SaveReal(DMFxHT,dmxId,6,dmxPulse)
+set dmxCaster=null
+set dmxDummy=null
+return false
+endfunction
+
+// Batch records with the same owner and timer phase. Keeping separate periodic batches
+// for different phases preserves first ticks/time stops without restarting a timer every tick.
+function DMFxAlloc takes integer dfxOwner,integer dfxKind returns integer
+    local integer dfxId
+    local integer dfxKey
+    local integer dfxTail
+    local timer dfxTimer=DMFxTimer[dfxOwner]
+    if dfxTimer==null then
+        set dfxTimer=CreateTimer()
+        set DMFxTimer[dfxOwner]=dfxTimer
+        call SaveInteger(DMFxHT,-GetHandleId(dfxTimer),2,dfxOwner)
+    elseif dfxTimer!=DMFxTickingTimer and TimerGetElapsed(dfxTimer)>0.000001 then
+        set dfxTimer=CreateTimer()
+        set DMFxTimer[dfxOwner]=dfxTimer
+        call SaveInteger(DMFxHT,-GetHandleId(dfxTimer),2,dfxOwner)
+    endif
+    set dfxKey=-GetHandleId(dfxTimer)
+    if DMFxFree!=0 then
+        set dfxId=DMFxFree
+        set DMFxFree=LoadInteger(DMFxHT,-2,dfxId)
+        call RemoveSavedInteger(DMFxHT,-2,dfxId)
+    else
+        set DMFxCount=DMFxCount+1
+        set dfxId=DMFxCount
+    endif
+    set dfxTail=LoadInteger(DMFxHT,dfxKey,1)
+    call SaveInteger(DMFxHT,dfxId,42,dfxTail)
+    call SaveInteger(DMFxHT,dfxId,43,dfxKey)
+    call SaveInteger(DMFxHT,dfxId,45,dfxKind)
+    call SaveTimerHandle(DMFxHT,dfxId,46,dfxTimer)
+    if dfxTail==0 then
+        call SaveInteger(DMFxHT,dfxKey,0,dfxId)
+    else
+        call SaveInteger(DMFxHT,dfxTail,41,dfxId)
+    endif
+    call SaveInteger(DMFxHT,dfxKey,1,dfxId)
+    set dfxTimer=null
+    return dfxId
+endfunction
+function DMFxRelease takes integer dfxId returns nothing
+    local integer dfxKey=LoadInteger(DMFxHT,dfxId,43)
+    local integer dfxNext=LoadInteger(DMFxHT,dfxId,41)
+    local integer dfxPrev=LoadInteger(DMFxHT,dfxId,42)
+    if dfxPrev==0 then
+        call SaveInteger(DMFxHT,dfxKey,0,dfxNext)
+    else
+        call SaveInteger(DMFxHT,dfxPrev,41,dfxNext)
+    endif
+    if dfxNext==0 then
+        call SaveInteger(DMFxHT,dfxKey,1,dfxPrev)
+    else
+        call SaveInteger(DMFxHT,dfxNext,42,dfxPrev)
+    endif
+    call FlushChildHashtable(DMFxHT,dfxId)
+    call SaveInteger(DMFxHT,-2,dfxId,DMFxFree)
+    set DMFxFree=dfxId
+endfunction
+function DMFxTick takes nothing returns nothing
+    local timer dfxTimer=GetExpiredTimer()
+    local integer dfxKey=-GetHandleId(dfxTimer)
+    local integer dfxOwner=LoadInteger(DMFxHT,dfxKey,2)
+    local integer dfxId=LoadInteger(DMFxHT,dfxKey,0)
+    local integer dfxLast=LoadInteger(DMFxHT,dfxKey,1)
+    local integer dfxNext
+    local integer dfxKind
+    local boolean dfxDone
+    set DMFxTickingTimer=dfxTimer
+    loop
+        exitwhen dfxId==0
+        set dfxNext=LoadInteger(DMFxHT,dfxId,41)
+        set dfxKind=LoadInteger(DMFxHT,dfxId,45)
+        if dfxKind==1 then
+            set dfxDone=DMFxDrainStep(dfxId)
+        elseif dfxKind==2 then
+            set dfxDone=DMFxFadeStep(dfxId)
+        else
+            set dfxDone=DMFxPoisonStep(dfxId)
+        endif
+        if dfxDone then
+            call DMFxRelease(dfxId)
+        endif
+        // A record added by a native/trigger during this tick starts on the next tick.
+        exitwhen dfxId==dfxLast
+        set dfxId=dfxNext
+    endloop
+    set DMFxTickingTimer=null
+    if LoadInteger(DMFxHT,dfxKey,0)==0 then
+        if DMFxTimer[dfxOwner]==dfxTimer then
+            set DMFxTimer[dfxOwner]=null
+        endif
+        call FlushChildHashtable(DMFxHT,dfxKey)
+        call TSE_DestroyTimer(dfxTimer)
+    endif
+    set dfxTimer=null
+endfunction
+function DMFxStart takes integer dfxId returns nothing
+    local timer dfxTimer=LoadTimerHandle(DMFxHT,dfxId,46)
+    local integer dfxKey=-GetHandleId(dfxTimer)
+    if not LoadBoolean(DMFxHT,dfxKey,3) then
+        call SaveBoolean(DMFxHT,dfxKey,3,true)
+        call TSE_TimerStart(dfxTimer,0.02,true,function DMFxTick)
+    endif
+    set dfxTimer=null
+endfunction
+
+function Effect_Visible_Timed takes unit caster0,real duration returns nothing
+local integer id=DMFxAlloc(PId(OwnerOf(caster0)),2)
+call PauseUnit(caster0,true)
+call SetUnitInvulnerable(caster0,true)
+call SaveUnitHandle(DMFxHT,id,1,caster0)
+call SaveReal(DMFxHT,id,6,duration)
+if GetUnitAbilityLevel(caster0,'Aloc')==0  then
+call UnitAddAbility(caster0,'Aloc')
+endif
+
+call DMFxStart(id)
+set caster0=null
+endfunction
+
+
+function Death_Master_Drain_Passive takes unit caster0,unit target0 returns nothing
+local integer id=DMFxAlloc(PId(OwnerOf(caster0)),1)
+local real x0=GetUnitX(caster0)
+local real y0=GetUnitY(caster0)
+local real x1=GetUnitX(target0)
+local real y1=GetUnitY(target0)
+local real facing0=Angle2(x0,y0,x1,y1)
+local real damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
+local real damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
+
+  if GetUnitAbilityLevel(caster0,'DMT2')>0 then
+    set damage0=damage0*1.3
+    set damage1=damage1*1.3
+  endif
+
+  if GetUnitState(target0,UNIT_STATE_LIFE)>damage0 then
+     call SetUnitState(target0,UNIT_STATE_LIFE,GetUnitState(target0,UNIT_STATE_LIFE)-damage0)
+  endif
+
+call SetUnitState(target0,UNIT_STATE_MANA,GetUnitState(target0,UNIT_STATE_MANA)-damage1)
+call SaveUnitHandle(DMFxHT,id,1,caster0)
+call SaveUnitHandle(DMFxHT,id,2,target0)
+call SaveReal(DMFxHT,id,3,facing0)
+
+
+
+
+
+
+set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
+call SetUnitModel(n00,EffectID[1570])
+call UnitSize(n00,0.5,1,1)
+call SetUnitFlyHeight(n00,150,0)
+call UnitSpeed(n00,0.5)
+call UnitColor(n00,100,100,100,70)
+call SaveUnitHandle(DMFxHT,id,20,n00)
+set n00=null
+
+
+set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
+call SetUnitModel(n00,EffectID[2236])
+call SetUnitFlyHeight(n00,150,0)
+call UnitSize(n00,2,1,1)
+call UnitSpeed(n00,1.5)
+call UnitColor(n00,100,100,100,0)
+call SaveUnitHandle(DMFxHT,id,21,n00)
+set n00=null
+
+
+
+
+
+call SaveReal(DMFxHT,id,15,damage0+damage1)
+call SaveReal(DMFxHT,id,16,damage0)
+
+call DMFxStart(id)
+
+
+endfunction
+
+
+function Death_Master_Poison_Act takes unit caster0,real x1,real y1 returns nothing
+local integer dmpId
+if GetHeroLevel(caster0)<20 then
+return
+endif
+set dmpId=DMFxAlloc(PId(OwnerOf(caster0)),3)
+call SaveUnitHandle(DMFxHT,dmpId,1,caster0)
+call SaveReal(DMFxHT,dmpId,11,x1)
+call SaveReal(DMFxHT,dmpId,12,y1)
+call SaveReal(DMFxHT,dmpId,15,GetHeroInt(caster0,true)*0.1)
+call DMFxStart(dmpId)
+endfunction
+
+
 
 function Death_Master_Heal takes unit caster0,unit target0,real value0 returns nothing
 local integer energy=LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))
@@ -267004,8 +267695,8 @@ local real healIncreaseReal=0
 local real healIncreaseReal2=0
 
 if value0==2 then
-set damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.03
-set damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.03
+set damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
+set damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
 endif
 
 if GetUnitAbilityLevel(caster0,'DMT2')>0 then
@@ -267057,103 +267748,8 @@ endfunction
 
 
 
-function Death_Master_Poison_Act2 takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster=LoadUnitHandle(HH,id,1)
-local unit Dummy=LoadUnitHandle(HH,id,20)
-local real time=LoadReal(HH,id,5)
-local real time1=LoadReal(HH,id,6)
-local real x1=LoadReal(HH,id,11)
-local real y1=LoadReal(HH,id,12)
-local real damage= LoadReal(HH,id,15)
-local real facing=GetRandomReal(0,360)
-local integer energy=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"))
-set time=time+0.02
-call SaveReal(HH,id,5,time)
-set time1=time1+0.02
-if time>5 or (time>0.02 and energy<damage) or(time>0.02 and udg_B==false)then
-call SetUnitAnimationByIndex(Dummy,1)
-call MyRemoveUnit(Dummy,1.5)
-call RemoveUnit(LoadUnitHandle(HH,id,21))
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-
-if time==0.02 then
-set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
-call SetUnitModel(n0,EffectID[592])
-call UnitSize(n0,3,1,1)
-call UnitColor(n0,100,100,100,00)
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call SetUnitFlyHeight(n0,0,0)
-call SetUnitAnimationByIndex(n0,0)
-call SaveUnitHandle(HH,id,20,n0)
-set n0=null
-set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing)
-call UnitSize(n0,3.9,1,1)
-call UnitSpeed(n0,0)
-call UnitColor(n0,100,100,100,80)
-call UnitAddAbility(n0,'Amrf')
-call UnitRemoveAbility(n0,'Amrf')
-call SetUnitFlyHeight(n0,0,0)
-call SaveUnitHandle(HH,id,21,n0)
-set n0=null
-endif
-if time1>=0 then
-call GroupClear(G)
-call GroupEnumUnitsInRange(G,x1,y1,400,Base)
-loop
-set n0=FirstOfGroup(G)
-exitwhen n0==null
-if IsUnitEnemy(n0,OwnerOf(caster))==true and GetUnitAbilityLevel(n0,'Avul')==0 then
-if energy>damage then
 
 
-set damage= Death_Master_DMG_Increase(true,caster,LoadReal(HH,id,15))
-call DamageU(false,caster,n0,damage)
-
-
-if IsUnitType(n0,UNIT_TYPE_HERO)==true then
-call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"),energy-R2I(damage))
-endif
-
-endif
-
-
-endif
-call GroupRemoveUnit(G,n0)
-endloop
-call GroupClear(G)
-set time1=-0.2
-endif
-call SaveReal(HH,id,6,time1)
-endif
-set caster=null
-set Dummy=null
-endfunction
-
-
-function Death_Master_Poison_Act takes unit caster0,real x1,real y1 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real damage=GetHeroInt(caster0,true)*0.1
-call SaveUnitHandle(HH,id,1,caster0)
-call SaveReal(HH,id,11,x1)
-call SaveReal(HH,id,12,y1)
-call SaveReal(HH,id,15,damage)
-
-
-
-if GetHeroLevel(caster0)>=20 then
-call TSE_TimerStart(t,0.02,true,function Death_Master_Poison_Act2)
-else
-call TSE_TimerStart(t,0.02,true,function SabracGnull)
-endif
-
-set t=null
-endfunction
 
 
 
@@ -267250,126 +267846,10 @@ endloop
 call GroupClear(G)
 endfunction
 
-function Death_Master_Drain_Passive_Act takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster=LoadUnitHandle(HH,id,1)
-local unit target=LoadUnitHandle(HH,id,2)
-local unit Dummy=LoadUnitHandle(HH,id,20)
-local real time=LoadReal(HH,id,5)
-local real time1=LoadReal(HH,id,6)
-local real damage=LoadReal(HH,id,15)
-local real damage0=LoadReal(HH,id,16)
-
-local real x0=GetUnitX(caster)
-local real y0=GetUnitY(caster)
-local real x1=GetUnitX(target)
-local real y1=GetUnitY(target)
-local real x2=GetUnitX(Dummy)
-local real y2=GetUnitY(Dummy)
-local real facing=LoadReal(HH,id,3)
-set time=time+0.02
-call SaveReal(HH,id,5,time)
-if time>=5 then
-call EffectCreateAndMove(true,EffectID[2217],facing,1,1,1.5,100,100,100,60,0,caster,0,facing)
-call Death_Master_Drain(caster,damage)
-call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,0)
-call MoveUnit(caster,LoadUnitHandle(HH,id,21),0,0)
-call MyRemoveUnit(LoadUnitHandle(HH,id,20),0.5)
-call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
-
-
-call DamageIndicatorFunction(caster, target, damage0)
-call DamageTextTag(caster,target,damage0)
 
 
 
 
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call TSE_DestroyTimer(GetExpiredTimer())
-else
-set time1=time1+0.02
-if time1>=0.2 or time==0.02 then
-set time1=0
-endif
-call SaveReal(HH,id,6,time1)
-set facing=Angle2(x2,y2,x0,y0)
-call SaveReal(HH,id,3,facing)
-call MoveUnit(Dummy,Dummy,25+SR(x2,y2,x0,y0)*0.01,facing)
-call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
-if SR(x2,y2,x0,y0)<100 and time<5 then
-call SaveReal(HH,id,5,5)
-endif
-endif
-set caster=null
-set target=null
-set Dummy=null
-endfunction
-
-
-
-
-function Death_Master_Drain_Passive takes unit caster0,unit target0 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real x0=GetUnitX(caster0)
-local real y0=GetUnitY(caster0)
-local real x1=GetUnitX(target0)
-local real y1=GetUnitY(target0)
-local real facing0=Angle2(x0,y0,x1,y1)
-local real damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
-local real damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
-
-  if GetUnitAbilityLevel(caster0,'DMT2')>0 then
-    set damage0=damage0*1.3
-    set damage1=damage1*1.3
-  endif
-
-  if GetUnitState(target0,UNIT_STATE_LIFE)>damage0 then
-     call SetUnitState(target0,UNIT_STATE_LIFE,GetUnitState(target0,UNIT_STATE_LIFE)-damage0)
-  endif
-
-call SetUnitState(target0,UNIT_STATE_MANA,GetUnitState(target0,UNIT_STATE_MANA)-damage1)
-call SaveUnitHandle(HH,id,1,caster0)
-call SaveUnitHandle(HH,id,2,target0)
-call SaveReal(HH,id,3,facing0)
-
-
-
-
-
-
-set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
-call SetUnitModel(n00,EffectID[1570])
-call UnitSize(n00,0.5,1,1)
-call SetUnitFlyHeight(n00,150,0)
-call UnitSpeed(n00,0.5)
-call UnitColor(n00,100,100,100,70)
-call SaveUnitHandle(HH,id,20,n00)
-set n00=null
-
-
-set n00=CreateUnit(OwnerOf(caster0),'e600',x1,y1,facing0)
-call SetUnitModel(n00,EffectID[2236])
-call SetUnitFlyHeight(n00,150,0)
-call UnitSize(n00,2,1,1)
-call UnitSpeed(n00,1.5)
-call UnitColor(n00,100,100,100,0)
-call SaveUnitHandle(HH,id,21,n00)
-set n00=null
-
-
-
-
-
-call SaveReal(HH,id,15,damage0+damage1)
-call SaveReal(HH,id,16,damage0)
-
-call TSE_TimerStart(t,0.02,true,function Death_Master_Drain_Passive_Act)
-
-set t=null
-
-endfunction
 
 
 
@@ -267675,7 +268155,7 @@ set time=time+0.02
 if time<=0.04 or(IsUnitPaused(caster)==false and GetUnitAbilityLevel(caster,'Avul')==0)then
 call SaveReal(HH,id,5,time)
 endif
-if time>20.04 or(time>0.02 and udg_B==false)then
+if time>15.04 or(time>0.02 and udg_B==false)then
 call UnitRemoveAbility(caster,'DME2')
 call RemoveUnit(Dummy)
 call RemoveUnit(LoadUnitHandle(HH,id,21))
@@ -267689,7 +268169,7 @@ call UnitAddAbility(caster,'DME2')
 call UnitMakeAbilityPermanent(caster,true,'DME2')
 
 
-call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterE.blp", 20,'DME2')
+call CreateModeIndicatorWithPauseFormAbility(caster, "ReplaceableTextures\\CommandButtons\\BTNDeadMasterE.blp", 15,'DME2')
 
 
 
@@ -280555,28 +281035,28 @@ function AbilitiesForChoice_Act takes nothing returns nothing//моя функц
 //Flandre1end
 //Escanor1start
     if GetSpellAbilityId()=='EsQ1' then
-        call Esc_Q_Act()
+        call Esc_QCast()
     endif
     if GetSpellAbilityId()=='EsW1' then
-        call Esc_W_Act()
+        call Esc_WCast()
     endif
     if GetSpellAbilityId()=='EsE1' then
-        call Esc_E_Act()
+        call Esc_ECast()
     endif
     if GetSpellAbilityId()=='EsR1' then
-        call Esc_R_Act()
+        call Esc_RCast()
     endif
     if GetSpellAbilityId()=='EsD1' then
-        call Esc_D_Act()
+        call Esc_DCast()
     endif
     if GetSpellAbilityId()=='EsF1' then
-        call Esc_F_Act()
+        call Esc_FCast()
     endif
     if GetSpellAbilityId()=='EsG1' then
-        call Esc_G_Act()
+        call Esc_GCast()
     endif
     if GetSpellAbilityId()=='EsT1' then
-        call Esc_T_Act()
+        call Esc_TCast()
     endif
 //Escanor1end
 if GetSpellAbilityId()=='MeiT' then
@@ -284276,7 +284756,7 @@ function HitNow takes nothing returns real
 return TimerGetElapsed(ShnClock)
 endfunction
 function HitSnd takes string sn returns nothing
-set soundplay=SndByPath("Hit\\"+sn+".mp3")
+set soundplay=SndByPath("Sound\\Hit\\"+sn+".mp3")
 call StartSound(soundplay)
 endfunction
 // реплика FighterZ: язык — по -DB Jap / -DB Eng у слушателя (SOUND_LANGUAGE); обе играют у всех (синхронно), лишняя — с громкостью 0
@@ -284285,53 +284765,53 @@ local integer v=0
 if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE) then
 set v=127
 endif
-call PickVoiceSnd("Hit\\EN\\"+sn+".mp3",v)
-call PickVoiceSnd("Hit\\JP\\"+sn+".mp3",127-v)
+call PickVoiceSnd("Sound\\Hit\\EN\\"+sn+".mp3",v)
+call PickVoiceSnd("Sound\\Hit\\JP\\"+sn+".mp3",127-v)
 endfunction
 // первый запуск незагруженного файла в WC3 молчит — прогрев тихим запуском при появлении Хита
 function HitWarm takes nothing returns nothing
-call PickVoiceSnd("Hit\\HitW1-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitW1-sfx-2.mp3",0)
-call PickVoiceSnd("Hit\\HitW1-sfx-3.mp3",0)
-call PickVoiceSnd("Hit\\HitE1-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitE2-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitE1-sfx-2.mp3",0)
-call PickVoiceSnd("Hit\\HitF1-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitF2-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitF4-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitF3-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitQ1-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitF3-sfx-2.mp3",0)
-call PickVoiceSnd("Hit\\HitT2-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitT1-sfx-1.mp3",0)
-call PickVoiceSnd("Hit\\HitT1-sfx-2.mp3",0)
-call PickVoiceSnd("Hit\\HitF4-sfx-2.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitQ1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitQ1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitW1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitW1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitE1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitE1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitE2.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitE2.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitR1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitR1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitD1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitD1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitF1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitF1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitF2.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitF2.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitF3.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitF3.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitF4.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitF4.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitG1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitG1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitT1.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitT1.mp3",0)
-call PickVoiceSnd("Hit\\EN\\HitT2.mp3",0)
-call PickVoiceSnd("Hit\\JP\\HitT2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitW1-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitW1-sfx-2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitW1-sfx-3.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitE1-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitE2-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitE1-sfx-2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF1-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF2-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF4-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF3-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitQ1-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF3-sfx-2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitT2-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitT1-sfx-1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitT1-sfx-2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\HitF4-sfx-2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitQ1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitQ1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitW1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitW1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitE1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitE1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitE2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitE2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitR1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitR1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitD1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitD1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitF1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitF1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitF2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitF2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitF3.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitF3.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitF4.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitF4.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitG1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitG1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitT1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitT1.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\EN\\HitT2.mp3",0)
+call PickVoiceSnd("Sound\\Hit\\JP\\HitT2.mp3",0)
 endfunction
 function HitAgi takes unit u returns real
 return I2R(GetHeroAgi(u,true))
@@ -285243,87 +285723,119 @@ call SetUnitInvulnerable(GetTriggerUnit(),true)
 endif
 endfunction
 function HitTEnd takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit e=LoadUnitHandle(h,id,1)
-if u!=null then
-call SetUnitInvulnerable(u,false)
-call HitSetCh(u,5)
-call SaveReal(HH,GetHandleId(u),HitK("ChLock"),HitNow()+15.)
+local timer htt=GetExpiredTimer()
+local integer hti=GetHandleId(htt)
+local unit htu=LoadUnitHandle(h,hti,0)
+local unit hte=LoadUnitHandle(h,hti,1)
+local boolean htf=LoadBoolean(h,hti,5)
+if TSE_On and TSE_Src==htu then
+call TSE_Stop()
 endif
-if e!=null and UnitIsAlive(e) then
-call SetControlToUnit(u,e,1.5,"stun")
+if htu!=null then
+call PauseUnit(htu,false)
+call SetUnitInvulnerable(htu,false)
+call SetUnitTimeScale(htu,1.)
+call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),false)
+if UnitIsAlive(htu) then
+call HitSetCh(htu,5)
+call SaveReal(HH,GetHandleId(htu),HitK("ChLock"),HitNow()+15.)
+endif
+endif
+if htf and hte!=null and UnitIsAlive(hte) and htu!=null and UnitIsAlive(htu) then
+call SetControlToUnit(htu,hte,1.5,"stun")
 call HitSnd("HitT2-sfx-1")
 call HitVo("HitT2")
-if HitMarks(e)>0 then
-call HitBurst(u,e)
+if HitMarks(hte)>0 then
+call HitBurst(htu,hte)
 endif
-call HitFx("BlackGoku\\[AB]SuperBigExpPurpleLow1.mdx",GetUnitX(e),GetUnitY(e),50.,0.8,1.5)
+call HitFx("BlackGoku\\[AB]SuperBigExpPurpleLow1.mdx",GetUnitX(hte),GetUnitY(hte),50.,0.8,1.5)
 endif
-call FlushChildHashtable(h,id)
-call TSE_DestroyTimer(t)
-set e=null
-set u=null
-set t=null
+call FlushChildHashtable(h,hti)
+call TSE_DestroyTimer(htt)
+set hte=null
+set htu=null
+set htt=null
 endfunction
 function HitTHit takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit e=LoadUnitHandle(h,id,1)
-local integer k=LoadInteger(h,id,2)+1
-local real a=GetRandomReal(0.,6.2832)
-call SaveInteger(h,id,2,k)
-if u==null or e==null or not UnitIsAlive(e) or k>5 then
-call FlushChildHashtable(h,id)
-call TSE_DestroyTimer(t)
-set u=null
-set e=null
-set t=null
+local timer htt=GetExpiredTimer()
+local integer hti=GetHandleId(htt)
+local unit htu=LoadUnitHandle(h,hti,0)
+local unit hte=LoadUnitHandle(h,hti,1)
+local integer htk=LoadInteger(h,hti,2)+1
+local integer htp=ModuloInteger(htk-1,9)
+local integer htj=(htk-1)/9
+local real hta=LoadReal(h,hti,3)+I2R(htj)*137.5*bj_DEGTORAD
+local real htr
+call SaveInteger(h,hti,2,htk)
+if htu==null or hte==null or not UnitIsAlive(htu) or not UnitIsAlive(hte) or not udg_B or not TSE_On or TSE_Src!=htu then
+call HitTEnd()
+set htu=null
+set hte=null
+set htt=null
 return
 endif
-call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(u),GetUnitY(u),0.,0.8,0.8)
-if k==1 then
+if htp==0 then
+call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
+set htr=300.+60.*I2R(ModuloInteger(htj,3))
+call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
+call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
+call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
+call SetUnitAnimationByIndex(htu,11)
+call SetUnitTimeScale(htu,2.)
+if htj==0 then
 call HitSnd("HitT1-sfx-2")
 endif
-call SetUnitX(u,GetUnitX(e)+90.*Cos(a))
-call SetUnitY(u,GetUnitY(e)+90.*Sin(a))
-call SetUnitFacingInstant(u,a*bj_RADTODEG+180.)
-call HitAnimHit(u,2.5,0.35)
-call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",e,"chest",1.,1.)
-call HitFxU("az_hitheavy.mdx",e,"chest",0.8,1.)
-call HitSlashU(u,e,0.7)
-call myCustomDamage(u,e,2.*HitAgi(u),false,false,null,null,null)
-set u=null
-set e=null
-set t=null
+elseif htp<=5 then
+set htr=115.+(300.+60.*I2R(ModuloInteger(htj,3))-115.)*(1.-I2R(htp)/5.)
+call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
+call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
+elseif htp==6 then
+if htj==9 then
+call HitAnim(htu,13,2.,0.5)
+else
+call HitAnim(htu,12,2.5,0.3)
+endif
+elseif htp==8 and ModuloInteger(htj,2)==1 then
+call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",hte,"chest",1.,0.6)
+call HitFxU("az_hitheavy.mdx",hte,"chest",0.8,0.6)
+call HitSlashU(htu,hte,0.7)
+call myCustomDamage(htu,hte,2.*HitAgi(htu),false,false,null,null,null)
+if htj==9 then
+call SaveBoolean(h,hti,5,true)
+call HitTEnd()
+elseif not UnitIsAlive(hte) then
+call HitTEnd()
+endif
+endif
+set htu=null
+set hte=null
+set htt=null
 endfunction
 function HitTCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtT1' and udg_B==true
 endfunction
 function HitTCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local unit e=GetSpellTargetUnit()
-local real dur=3.+HitStopAdd(u)
-local timer t=CreateTimer()
+local unit htu=GetTriggerUnit()
+local unit hte=GetSpellTargetUnit()
+local real htd=3.+HitStopAdd(htu)
+local timer htt=CreateTimer()
 call HitSnd("HitT")
 call HitSnd("HitT1-sfx-1")
 call HitVo("HitT1")
-call HitFx("Others\\[A]wavejojo.mdx",GetUnitX(u),GetUnitY(u),30.,2.5,2.)
-call HitFx("Others\\clockwisetimer.mdx",GetUnitX(u),GetUnitY(u),30.,2.,2.)
-call TSE_StartEx(u,dur,true,GetUnitX(u),GetUnitY(u),1200.)
-call SaveUnitHandle(h,GetHandleId(t),0,u)
-call SaveUnitHandle(h,GetHandleId(t),1,e)
-call SaveInteger(h,GetHandleId(t),2,0)
-call TSE_TimerStart(t,0.45,true,function HitTHit)
-set t=CreateTimer()
-call SaveUnitHandle(h,GetHandleId(t),0,u)
-call SaveUnitHandle(h,GetHandleId(t),1,e)
-call TSE_TimerStart(t,dur+0.05,false,function HitTEnd)
-set t=null
-set e=null
-set u=null
+call HitFx("Others\\[A]wavejojo.mdx",GetUnitX(htu),GetUnitY(htu),30.,2.5,2.)
+call HitFx("Others\\clockwisetimer.mdx",GetUnitX(htu),GetUnitY(htu),30.,2.,2.)
+call TSE_StartEx(htu,htd+0.15,true,GetUnitX(htu),GetUnitY(htu),1200.)
+call PauseUnit(htu,true)
+call SetUnitInvulnerable(htu,true)
+call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),true)
+call SaveUnitHandle(h,GetHandleId(htt),0,htu)
+call SaveUnitHandle(h,GetHandleId(htt),1,hte)
+call SaveInteger(h,GetHandleId(htt),2,0)
+call SaveReal(h,GetHandleId(htt),3,Atan2(GetUnitY(htu)-GetUnitY(hte),GetUnitX(htu)-GetUnitX(hte)))
+call TSE_TimerStart(htt,htd/90.,true,function HitTHit)
+set htt=null
+set hte=null
+set htu=null
 endfunction
 // ===== приказы Хита (цель шага W) и тик 0.1 с: шаг сквозь время, заряды D, скрытые продолжения F =====
 function HitOrder takes nothing returns nothing
@@ -291058,13 +291570,13 @@ call LANG_A('A0JA',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A0JA',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A0JA',1,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 300|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3 "+"sec.|n|r")
-call LANG_A('A0JA',1,1,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 400|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3 "+"sec.|n|r")
-call LANG_A('A0JA',1,2,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 500|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3"+" sec.|n|r")
-call LANG_A('A0JA',1,3,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 600|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3"+" sec.|n|r")
-call LANG_A('A0JA',1,4,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 700|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3"+" sec.|n|r")
+call LANG_A('A0JA',1,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 300|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed: 30%|nAttack speed: +70%|nRegenera"+"tion: 1.5% HP per sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,1,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 400|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed: 30%|nAttack speed: +70%|nRegenera"+"tion: 1.5% HP per sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,2,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 500|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed: 30%|nAttack speed: +70%|nRegener"+"ation: 1.5% HP per sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,3,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 600|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed: 30%|nAttack speed: +70%|nRegener"+"ation: 1.5% HP per sec|nCooldown: 3 sec.|r")
+call LANG_A('A0JA',1,4,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 700|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed: 30%|nAttack speed: +70%|nRegener"+"ation: 1.5% HP per sec|nCooldown: 3 sec.|r")
 call LANG_A('A0JA',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0JA',3,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 300\\400\\500\\600\\700|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nRunning Speed: 30%|nAttack speed: +70%|nRegenera"+"tion: 1.5% HP per sec|nCooldown: 3 sec.|n|r")
+call LANG_A('A0JA',3,0,"Tōsen puts on a Hollow mask: the bonuses last until the mask reserve runs out.|n|n|cFF00A5FFBonus HP: 300\\400\\500\\600\\700|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec. every 4 sec.|nRunning Speed"+": 30%|nAttack speed: +70%|nRegeneration: 1.5% HP per sec|nCooldown: 3 sec.|r")
 call LANG_A('A0JB',1,0,"Tōsen creates a space within which enemies cannot see and use abilities.|n|n|cFF00A5FF|nDuration: 5 sec.|nCast time: +0.38 sec.|nCooldown: 45 sec.")
 call LANG_A('A0JB',2,0,"Bankai: Suzumushi Tsuishiki: Enma Korogi, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0JB',3,0,"Tōsen creates a space within which enemies cannot see and use abilities.|n|n|cFF00A5FF|nDuration: 5 sec.|nCast time: +0.38 sec.|nCooldown: 45 sec.")
@@ -292591,13 +293103,13 @@ call LANG_A('A0R9',0,1,"Shining Sword Attack, [|cffffcc00Level 2|r] (|cffffcc00R
 call LANG_A('A0R9',0,2,"Shining Sword Attack, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('A0R9',0,3,"Shining Sword Attack, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A0R9',0,4,"Shining Sword Attack, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('A0R9',1,0,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
-call LANG_A('A0R9',1,1,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
-call LANG_A('A0R9',1,2,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
-call LANG_A('A0R9',1,3,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
-call LANG_A('A0R9',1,4,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
+call LANG_A('A0R9',1,0,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion AoE: 350|nCa"+"st time: +0.14 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0R9',1,1,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion AoE: 350|nCa"+"st time: +0.14 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0R9',1,2,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion AoE: 350|nCa"+"st time: +0.14 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0R9',1,3,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion AoE: 350|nCa"+"st time: +0.14 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0R9',1,4,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion AoE: 350|nCa"+"st time: +0.14 sec.|nCooldown: 25 sec.|r")
 call LANG_A('A0R9',2,0,"Shining Sword Attack, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('A0R9',3,0,"A powerful slash combo that stuns the enemy for 2 seconds, followed by an explosion that deals half damage to everyone behind the enemy.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 900|nAOE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|n|r")
+call LANG_A('A0R9',3,0,"Trunks unleashes a series of slashes on an enemy. The final strike stuns the target and creates an explosion behind it, dealing half damage to other enemies.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nExplosion damage: 50% of target damage|nStun: 2 sec.|nRange: 900|nExplosion "+"AoE: 350|nCast time: +0.14 sec.|nCooldown: 25 sec.|r")
 call LANG_A('A0RA',0,0,"Masenko, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0RA',0,1,"Masenko, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0RA',0,2,"Masenko, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -300137,12 +300649,12 @@ call LANG_A('EsR1',2,0,"Pride Flare, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('EsR1',3,0,"Dashes forward: the first enemy in the way is grabbed and burns for 2 sec. among explosions, then a fiery finale.|n|n|cFF00A5FF|nDamage: 5*|r|c00FF5555STR|r|cFF00A5FF over 2 sec.|nRange: 1600|nCooldown: 30 sec.|n|r")
 call LANG_A('EsD1',1,0,"From level 25. Enormous magic in the edge of his hand: a cleaving strike of flame.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 sec.|n|r")
 call LANG_A('EsD1',3,0,"From level 25. Enormous magic in the edge of his hand: a cleaving strike of flame.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 sec.|n|r")
-call LANG_A('EsF1',1,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
-call LANG_A('EsF1',3,0,"A pillar of flame silences the area for 5 sec. and burns everyone in it, then a blazing sun falls into it.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nStun: 3 sec.|nAoE: 600|nRange: 1600|nCooldow"+"n: 18 sec.|n|r")
+call LANG_A('EsF1',1,0,"A pillar of flame slows and burns enemies. A blazing sun then falls into it, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nSlow: 4 sec. (refreshed in the pillar)|nExplosion stun: 3 "+"sec.|nAoE: 600|nRange: 1600|nCooldown: 24 sec.|r")
+call LANG_A('EsF1',3,0,"A pillar of flame slows and burns enemies. A blazing sun then falls into it, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 3*|r|c00FF5555STR|r|cFF00A5FF by the explosion + 1.5*|r|c00FF5555STR|r|cFF00A5FF per sec. in the pillar|nSlow: 4 sec. (refreshed in the pillar)|nExplosion stun: 3 "+"sec.|nAoE: 600|nRange: 1600|nCooldown: 24 sec.|r")
 call LANG_A('EsG1',1,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +100% |r|c00FF5555STR|r|cFF00A5FF (of base value), +60% Max HP|nCooldown: 55 sec.|n|r")
 call LANG_A('EsG1',3,0,"Only from 9 to 15 by his clock. Escanor burns his own life and becomes The One: a strike on everyone around, then 15 sec. of burning everyone nearby, dropping explosions for the first 5 sec. At the end Escanor dies.|n|n|cFF00A5FF|nStrike (AoE 900): 5*|r|c00FF5555STR|r|cFF00A5FF|nNearby (AoE 450): 0."+"15*|r|c00FF5555STR|r|cFF00A5FF every 0.25 sec.|nExplosions (AoE 650): 2.5*|r|c00FF5555STR|r|cFF00A5FF|nBonus: +100% |r|c00FF5555STR|r|cFF00A5FF (of base value), +60% Max HP|nDuration: 15 sec.|nCooldown: 55 sec.|n|r")
-call LANG_A('EsT1',1,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|n|r")
-call LANG_A('EsT1',3,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon, at night it drops towards midnight.|nActive (night only, 18 to 6): noon comes for 20 sec.: the night pe"+"nalty is lifted, strength as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: up to −30% white strength (at midnight)|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|n|r")
+call LANG_A('EsT1',1,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon; at night the sunlight bonus is inactive.|nActive (night only, 18 to 6): noon comes for 20 sec.: strengt"+"h as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: no sunlight bonus and no strength penalty|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|r")
+call LANG_A('EsT1',3,0,"Escanor has his own day — 4 minutes of fighting, starting at dawn (the clock stops between rounds); the clock is in the window at the top right.|nPassive: by day his strength grows towards noon; at night the sunlight bonus is inactive.|nActive (night only, 18 to 6): noon comes for 20 sec.: strengt"+"h as at noon, health grows.|n|n|cFF00A5FF|nDay: up to +50% white strength (at noon)|nNight: no sunlight bonus and no strength penalty|nActive: +50% white strength, +20% health for 20 sec.|nCooldown: 70 sec.|r")
 call LANG_A('FlF2',1,0,"The cursor's final strike: \"You're not going anywhere now.\"")
 call LANG_A('FlF2',3,0,"The cursor's final strike: \"You're not going anywhere now.\"")
 call LANG_A('FlQ1',0,0,"Cranberry Trap, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -300419,13 +300931,13 @@ call LANG_A('SnE1',0,1,"Hollow Mask, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,2,"Hollow Mask, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,3,"Hollow Mask, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('SnE1',0,4,"Hollow Mask, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',1,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5%|nAttack speed: +20%|nRegeneration: 1% max HP per sec.|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nCooldown: 3 sec.|n|r")
-call LANG_A('SnE1',1,1,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 7.5%|nAttack speed: +25%|nRegeneration: 1% max HP per sec.|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
-call LANG_A('SnE1',1,2,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 10%|nAttack speed: +30%|nRegeneration: 1% max HP per sec.|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
-call LANG_A('SnE1',1,3,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 12.5%|nAttack speed: +35%|nRegeneration: 1% max HP per sec.|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nCooldown: 3 sec"+".|n|r")
-call LANG_A('SnE1',1,4,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 15%|nAttack speed: +40%|nRegeneration: 1% max HP per sec.|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and from damage without the mask|nCooldown: 3 sec.|"+"r")
+call LANG_A('SnE1',1,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5%|nAttack speed: +20%|nRegeneration: 1% max HP per sec.|nMask reserve: 8 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 sec"+". every 4 sec.|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,1,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 7.5%|nAttack speed: +25%|nRegeneration: 1% max HP per sec.|nMask reserve: 9 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 s"+"ec. every 4 sec.|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,2,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 10%|nAttack speed: +30%|nRegeneration: 1% max HP per sec.|nMask reserve: 10 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 s"+"ec. every 4 sec.|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,3,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 12.5%|nAttack speed: +35%|nRegeneration: 1% max HP per sec.|nMask reserve: 11 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1"+" sec. every 4 sec.|nCooldown: 3 sec.|r")
+call LANG_A('SnE1',1,4,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 15%|nAttack speed: +40%|nRegeneration: 1% max HP per sec.|nMask reserve: 12 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage, including while masked|nWithout the mask: +1 s"+"ec. every 4 sec.|nCooldown: 3 sec.|r")
 call LANG_A('SnE1',2,0,"Hollow Mask, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('SnE1',3,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. every 4 sec. and"+" from damage without the mask|nCooldown: 3 sec.|n|r")
+call LANG_A('SnE1',3,0,"Hollow mask: damage, attack speed and regeneration. While the mask is on, E is Cero.|n|n|cFF00A5FF|nDamage bonus: 5\\7.5\\10\\12.5\\15%|nAttack speed: +20\\25\\30\\35\\40%|nRegeneration: 1% max HP per sec.|nMask reserve: 8\\9\\10\\11\\12 sec. (3 sec. to put it on)|nRecovery: +1 sec. per 5*AGI damage"+", including while masked|nWithout the mask: +1 sec. every 4 sec.|nCooldown: 3 sec.|r")
 call LANG_A('SnR1',0,0,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,1,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('SnR1',0,2,"Hadō #91: Senju Kōten Taihō, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -300505,19 +301017,19 @@ call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|n|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|n|r")
 call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
-call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies, restores HP/MP to allies.|nFrom level 20 her abilities leave poison in their area for 5 sec.; it spends energy.|nA slain enemy hero leaves a soul (7000 energy); picking up a soul and every 7000 energy — +5% HP/MP.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077"+"FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 3% HP/MP every 0.5 sec.|nPoison: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 600|nRange: 2000|nCooldown: 20 sec.|n|r")
+call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies, restores HP/MP to allies.|nFrom level 20 her abilities leave poison in their area for 5 sec.; it spends energy.|nA slain enemy hero leaves a soul (7000 energy); picking up a soul and every 7000 energy — +5% HP/MP.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077"+"FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 1.5% HP/MP every 0.5 sec.|nPoison: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 600|nRange: 2000|nCooldown: 20 sec.|r")
 call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40 sec. (after it ends)|r")
-call LANG_A('DME1',1,1,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 35 sec. (after it ends)|r")
-call LANG_A('DME1',1,2,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 30 sec. (after it ends)|r")
-call LANG_A('DME1',1,3,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 25 sec. (after it ends)|r")
-call LANG_A('DME1',1,4,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 20 sec. (after it ends)|r")
+call LANG_A('DME1',1,0,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40 sec. (after it ends)|r")
+call LANG_A('DME1',1,1,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 35 sec. (after it ends)|r")
+call LANG_A('DME1',1,2,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 30 sec. (after it ends)|r")
+call LANG_A('DME1',1,3,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 25 sec. (after it ends)|r")
+call LANG_A('DME1',1,4,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 20 sec. (after it ends)|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"Empowers her for 20 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after it ends)|r")
+call LANG_A('DME1',3,0,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after it ends)|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
@@ -302453,9 +302965,9 @@ call LANG_F("IDLE_PEON_DESC","You can put things here.")
 call LANG_F("LUMBER","Victory points")
 call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by defeating heroes.")
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
-call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
-call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
-call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.2 EN|r")
+call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
+call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
+call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
 call ExecuteFunc("LANG_Data0")
