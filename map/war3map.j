@@ -8420,6 +8420,7 @@ endfunction
 // иконка индикатора -> способность (или предмет), чьё название показывается в подсказке.
 // Название берётся из данных объекта во время игры, поэтому в английской версии оно английское.
 function StatusIndicatorTipInit takes nothing returns nothing
+    call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNEscanorG.blp"),'EsG1')
     call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNRengokuF.blp"),'RenF')
     call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNSabrac3.blp"),'A17X')
     call SaveInteger(HH,SB_TIPTAB,StringHash("ReplaceableTextures\\CommandButtons\\BTNHero_Barragan_T.blp"),'BbT1')
@@ -13604,8 +13605,18 @@ function CreateModeIndicatorWithPauseForm_Periodic takes nothing returns nothing
     local string mode_name      =LoadStr(HH, id, c_NAME)
     local framehandle NewFrame  =LoadFrameHandle(HH, idp,StringHash(mode_name))
     local real duration         =LoadReal(HH, GetHandleId(NewFrame), c_DURATION)-0.05
+    local timer escLifeTimer=null
     local integer position         =LoadInteger(HH, id, c_POSITION)
 
+    // Read The One lifetime from its gameplay timer instead of a second countdown.
+    if mode_name=="ReplaceableTextures\\CommandButtons\\BTNEscanorG.blp" then
+        set escLifeTimer=LoadTimerHandle(bof_HT,GetHandleId(caster),StringHash("EscOneTimer"))
+        if escLifeTimer==null then
+            set duration=0.
+        else
+            set duration=I2R(LoadInteger(bof_HT,GetHandleId(escLifeTimer),1))*.25+TimerGetRemaining(escLifeTimer)
+        endif
+    endif
     if position>0 then
         if LoadBoolean(HH,idp,position-1)==false then
         call SaveBoolean(HH,idp,position-1,true)
@@ -13629,6 +13640,7 @@ function CreateModeIndicatorWithPauseForm_Periodic takes nothing returns nothing
         call FlushChildHashtable(HH, id)
         call TSE_DestroyTimer(t)
     endif
+    set escLifeTimer=null
     set t=null
     set caster=null
     set NewFrame=null
@@ -21004,6 +21016,7 @@ function Esc_TheOneTick takes nothing returns nothing
         if escLeft<=0 and IsUnitAliveBJ(escU) and udg_B then
             call KillUnit(escU)
         endif
+        call RemoveSavedHandle(bof_HT,GetHandleId(escU),StringHash("EscOneTimer"))
         call FlushChildHashtable(bof_HT,escId)
         call TSE_DestroyTimer(escTm)
         set escTm=null
@@ -21048,6 +21061,8 @@ function Esc_TheOneStart takes unit u returns nothing
     endif
     call Esc_BuffOn(u,"EscOne",1,0.6)
     call TSE_TimerStart(escTm,.25,true,function Esc_TheOneTick)
+    call SaveTimerHandle(bof_HT,GetHandleId(u),StringHash("EscOneTimer"),escTm)
+    call CreateModeIndicatorWithPauseForm(u,"ReplaceableTextures\\CommandButtons\\BTNEscanorG.blp",15.25)
     set escTm=null
 endfunction
 // Sunshine (D) на 20 c: +80% силы и +40% здоровья (владелец 27 сен: сначала +117%/+57% как у bof —
