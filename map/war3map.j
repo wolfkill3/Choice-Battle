@@ -285016,6 +285016,17 @@ call RemoveLocation(hdrl)
 set hdrl=null
 set hdrf=null
 endfunction
+function HitCasterFlash takes unit hcfu,real hcfs returns nothing
+local effect hcfe=AddSpecialEffect("Hit\\SkipAura.mdx",GetUnitX(hcfu),GetUnitY(hcfu))
+local location hcfl=Location(GetUnitX(hcfu),GetUnitY(hcfu))
+call SetSpecialEffectZ(hcfe,GetLocationZ(hcfl)+GetUnitFlyHeight(hcfu)+60.)
+call SetSpecialEffectScale(hcfe,hcfs)
+call SetSpecialEffectAnimationByIndex(hcfe,0)
+call HitOwnFxKeep(hcfe,0.3,false)
+call RemoveLocation(hcfl)
+set hcfl=null
+set hcfe=null
+endfunction
 function HitSlash takes real x,real y,real ang,real roll,real sc returns nothing
 set bj_lastCreatedEffect=AddSpecialEffect("war3mapImported\\SlashBlueKojiro.mdl",x,y)
 call SetSpecialEffectHeight(bj_lastCreatedEffect,60)
@@ -285217,6 +285228,12 @@ call TSE_DestroyTimer(hqt)
 set hqu=null
 set hqt=null
 endfunction
+function HitQMiss takes unit hqmu,real hqma returns nothing
+if hqmu!=null and UnitIsAlive(hqmu) then
+call HitStrikeFx(hqmu,0,hqma,0.8)
+call HitAnim(hqmu,12,2.,0.35)
+endif
+endfunction
 function HitQMove takes nothing returns nothing
 local timer hqt=GetExpiredTimer()
 local integer hqi=GetHandleId(hqt)
@@ -285229,6 +285246,8 @@ local integer hqm
 local boolean hqpush
 call SaveInteger(h,hqi,2,hqk)
 if hqu==null or hqe==null or not UnitIsAlive(hqu) or not UnitIsAlive(hqe) or not udg_B or hqk>80 then
+call HitQMiss(hqu,hqa)
+call SaveBoolean(h,hqi,6,true)
 call HitQEnd()
 set hqu=null
 set hqe=null
@@ -285244,8 +285263,13 @@ call SetUnitFacingInstant(hqu,hqa*bj_RADTODEG)
 if hqk==9 then
 call HitAnim(hqu,21,2.,1.6)
 endif
-if hqd>215. then
-set hqd=RMinBJ(75.,hqd-210.)
+if hqd>215. and LoadReal(h,hqi,8)>=600. then
+call HitQMiss(hqu,hqa)
+call SaveBoolean(h,hqi,6,true)
+call HitQEnd()
+elseif hqd>215. then
+set hqd=RMinBJ(600.-LoadReal(h,hqi,8),RMinBJ(75.,hqd-210.))
+call SaveReal(h,hqi,8,LoadReal(h,hqi,8)+hqd)
 call SetUnitXY_1(hqu,GetUnitX(hqu)+hqd*Cos(hqa),GetUnitY(hqu)+hqd*Sin(hqa),false)
 else
 call SaveBoolean(h,hqi,6,true)
@@ -285270,7 +285294,7 @@ call Push(hqe,20.,hqa,160.)
 endif
 endif
 else
-call SaveBoolean(h,hqi,6,false)
+call HitQMiss(hqu,hqa)
 endif
 call HitQEnd()
 endif
@@ -285297,6 +285321,7 @@ call SetUnitFacingInstant(hqu,hqa*bj_RADTODEG)
 call SaveBoolean(h,GetHandleId(hqt),7,IsUnitInvulnerable(hqu))
 call SetUnitInvulnerable(hqu,true)
 call PauseUnit(hqu,true)
+call HitCasterFlash(hqu,0.8)
 call HitAnim(hqu,22,2.,0.19)
 call HitVo("HitQ1")
 call TSE_TimerStart(hqt,0.02,true,function HitQMove)
@@ -285448,6 +285473,7 @@ local timer t
 call SaveUnitHandle(h,GetHandleId(g),1,u)
 call SaveBoolean(h,GetHandleId(g),2,IsUnitPaused(u))
 call SaveBoolean(h,GetHandleId(g),3,IsUnitInvulnerable(u))
+call HitCasterFlash(u,1.)
 call PauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 if v==2 then
@@ -285659,6 +285685,7 @@ call IssueTargetOrder(e,"attack",im)
 endif
 endloop
 call DestroyGroup(g)
+call HitCasterFlash(u,0.8)
 call HitInvis(u,2.)
 call SaveReal(HH,GetHandleId(u),HitK("EStep"),HitNow()+2.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(u),GetUnitY(u),0.,1.,1.)
@@ -285723,6 +285750,7 @@ call SaveUnitHandle(h,id,1,e)
 call SaveReal(h,id,2,0.05+0.05*l)
 // 30 окт: Astral Imprisonment / PurpleShield на цели вешали игру (память) — эффекты прежние
 call HitFacingIce(GetUnitX(e),GetUnitY(e),1.4,dur,false)
+call HitCasterFlash(u,1.)
 call HitAnim(u,56,1.,0.6)
 call HitSnd("HitR1")
 call HitVo("HitR1")
@@ -285893,6 +285921,7 @@ local group g=CreateGroup()
 local unit e
 local unit hit=null
 call HitFStop(u,true)
+call HitCasterFlash(u,1.)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call HitAnim(u,55,1.5,0.45)
 loop
@@ -285977,6 +286006,7 @@ local unit u=GetTriggerUnit()
 local unit e=GetSpellTargetUnit()
 local timer t=CreateTimer()
 call HitFStop(u,true)
+call HitCasterFlash(u,1.)
 call SetUnitFacingInstant(u,Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG)
 call HitAnim(u,10,1.5,0.7)
 call HitSnd("HitF3-sfx-1")
@@ -286036,6 +286066,7 @@ if hit!=null or d>=700. then
 if hit!=null then
 call SetUnitPosition(u,GetUnitX(hit)+100.*Cos(a),GetUnitY(hit)+100.*Sin(a))
 call SetUnitFacingInstant(u,a*bj_RADTODEG+180.)
+call HitCasterFlash(u,0.8)
 call HitStrikeFx(hit,4,a+bj_PI,1.)
 call myCustomDamage(u,hit,2.5*HitAgi(u),false,false,null,null,null)
 if UnitIsAlive(hit) then
@@ -286070,6 +286101,7 @@ local unit u=GetTriggerUnit()
 local real a=Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u))
 local timer t=CreateTimer()
 call HitFStop(u,true)
+call HitCasterFlash(u,1.)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call SetUnitInvulnerable(u,true)
 call SetUnitPathing(u,false)
@@ -286090,9 +286122,12 @@ return GetSpellAbilityId()=='HtG1' and udg_B==true
 endfunction
 function HitGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
+local real hgdur=RMinBJ(1.,0.5+HitStopAdd(u))
 call HitSnd("HitT")
 call HitVo("HitG1")
-call TSE_StartEx(u,RMinBJ(1.,0.5+HitStopAdd(u)),true,GetUnitX(u),GetUnitY(u),1200.)
+call HitCasterFlash(u,1.)
+call HitFacingIce(GetUnitX(u),GetUnitY(u),3.2,hgdur,true)
+call TSE_StartEx(u,hgdur,true,GetUnitX(u),GetUnitY(u),1200.)
 set u=null
 endfunction
 // ===== T — Molotov: неуязвим на касте, остановка 3 с в 1200, 5 ударов с разных сторон, урон разом, оглушение, метки взрываются =====
@@ -286107,7 +286142,12 @@ local integer hti=GetHandleId(htt)
 local unit htu=LoadUnitHandle(h,hti,0)
 local unit hte=LoadUnitHandle(h,hti,1)
 local boolean htf=LoadBoolean(h,hti,5)
+local sound htsnd=LoadSoundHandle(h,hti,13)
 local effect htice=LoadEffectHandle(h,hti,8)
+if htsnd!=null then
+call StopSound(htsnd,false,true)
+endif
+set htsnd=null
 if TSE_On and TSE_Src==htu then
 call TSE_Stop()
 endif
@@ -286180,7 +286220,7 @@ else
 call SetUnitTimeScale(htu,1.5+I2R(htj)*0.12)
 endif
 if htj==0 then
-call HitSnd("HitT1-sfx-2")
+call TSE_TimerStart(htt,0.26*LoadReal(h,hti,11)/12.,true,function HitTHit)
 endif
 elseif htp<=htm then
 set htv=I2R(htp)/I2R(htm)
@@ -286188,15 +286228,15 @@ set htv=htv*htv*(3.-2.*htv)
 set htr=115.+(300.+60.*I2R(ModuloInteger(htj,3))-115.)*(1.-htv)
 call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
-elseif htp==htm+1 then
-if htj==12 then
-call SetUnitAnimationByIndex(htu,13)
-call SetUnitTimeScale(htu,1.4)
-else
+if htj==12 and htp==12 then
+call SetUnitAnimationByIndex(htu,59)
+call SetUnitTimeScale(htu,1.767/(0.936*LoadReal(h,hti,11)*23./36.))
+elseif htj<12 and htp==4 then
 call SetUnitAnimationByIndex(htu,26+ModuloInteger(htj,2))
-call SetUnitTimeScale(htu,2.5+I2R(htj)*0.15)
+call SetUnitTimeScale(htu,0.6/((0.26-0.008*I2R(htj))*LoadReal(h,hti,11)*7./12.))
 endif
 elseif htp==htn-1 then
+call HitSnd("HitQ")
 call HitPunchImpact(hte,hta+bj_PI,0.,0.65)
 call HitPunchRay(htu,hte,0.65)
 if htj==12 then
@@ -286216,7 +286256,7 @@ call SaveInteger(h,hti,2,0)
 if htj==12 then
 set htr=0.936/36.
 else
-set htr=(0.26-0.016*I2R(htj))/12.
+set htr=(0.26-0.008*I2R(htj))/12.
 endif
 call TSE_TimerStart(htt,htr*LoadReal(h,hti,11),true,function HitTHit)
 endif
@@ -286235,13 +286275,16 @@ endfunction
 function HitTCast takes nothing returns nothing
 local unit htu=GetTriggerUnit()
 local unit hte=GetSpellTargetUnit()
-local real htd=3.+HitStopAdd(htu)
+local real htd=4.2+HitStopAdd(htu)
 local timer htt=CreateTimer()
 local effect htice
+call HitCasterFlash(htu,1.)
 call HitSnd("HitT")
+call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
 call HitSnd("HitT1-sfx-1")
 call HitVo("HitT1")
 set htice=HitFacingIce(GetUnitX(htu),GetUnitY(htu),6.3,htd+0.05,true)
+call SetSpecialEffectZ(htice,GetSpecialEffectZ(htice)+240.)
 call SaveEffectHandle(h,GetHandleId(htt),8,htice)
 call TSE_StartEx(htu,htd+0.15,true,GetUnitX(htu),GetUnitY(htu),1200.)
 call HitAnim(htu,15,3.,0.35)
@@ -286252,9 +286295,9 @@ call SaveUnitHandle(h,GetHandleId(htt),0,htu)
 call SaveUnitHandle(h,GetHandleId(htt),1,hte)
 call SaveInteger(h,GetHandleId(htt),2,0)
 call SaveReal(h,GetHandleId(htt),3,Atan2(GetUnitY(htu)-GetUnitY(hte),GetUnitX(htu)-GetUnitX(hte)))
-call SaveReal(h,GetHandleId(htt),11,htd/3.)
+call SaveReal(h,GetHandleId(htt),11,(htd-0.3)/3.528)
 call SaveInteger(h,GetHandleId(htt),12,0)
-call TSE_TimerStart(htt,0.26*(htd/3.)/12.,true,function HitTHit)
+call TSE_TimerStart(htt,0.3,true,function HitTHit)
 set htice=null
 set htt=null
 set hte=null
@@ -301534,13 +301577,13 @@ call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)"
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,3,"Flash Fist Crush, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,4,"Flash Fist Crush, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',1,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,1,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,2,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,3,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,4,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,1,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,2,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,3,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,4,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtQ1',2,0,"Flash Fist Crush, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',3,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',3,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|n"+"Range: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtW1',0,0,"Icy Glare, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,1,"Icy Glare, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,2,"Icy Glare, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -301577,8 +301620,8 @@ call LANG_A('HtR1',1,3,"The enemy is locked in a separate dimension: frozen, onl
 call LANG_A('HtR1',1,4,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30"+"%|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',3,0,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored dam"+"age on release: +10\\15\\20\\25\\30%|nRange: 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtT1',3,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 3 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',1,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',3,0,"Hit is invulnerable while casting and stops time in a 1200 radius. He strikes the target from every side; all the damage lands at once at the end, then a stun, and the Q marks burst. Afterwards Pure Progress gets 5 charges for 15 sec.|n|n|cFF00A5FF|nDamage: 12 hits of 0.625*|r|c003CFF3CAGI|r|cFF00A5"+"FF|nFinal blow: 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
 call LANG_A('HtD1',1,0,"Passive: fighting heroes gives Hit charges; charges lengthen all his time stops and burn out outside combat. Active: spends every charge and instantly recharges Q, W, E and F.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to ev"+"ery time stop|nCharges reset after 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtD1',3,0,"Passive: fighting heroes gives Hit charges; charges lengthen all his time stops and burn out outside combat. Active: spends every charge and instantly recharges Q, W, E and F.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to ev"+"ery time stop|nCharges reset after 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtF1',1,0,"A hands-in-pockets stance for 4 sec., unable to move: Q, W, E turn into three follow-ups (Death Blow, Time Release, Realized Power), R, D, G, T are locked. One cooldown for all; halved if no follow-up is used.|n|n|cFF00A5FF|nStance: 4 sec.|nCooldown: 14 sec. (7 sec. without a follow-up)|r")
