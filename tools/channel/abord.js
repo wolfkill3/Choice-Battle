@@ -16,18 +16,8 @@ for (const f of fs.readdirSync(dataDir).filter(f => /abilityfunc\.txt$/i.test(f)
     const o = l.match(/^Order=([a-z0-9]+)\s*$/i); if (sec && o) base[sec] = o[1];
   }
 }
-const L = fs.readFileSync(R + 'table/ability.ini', 'utf8').replace(/^\uFEFF/, '').replace(/\r/g, '').split('\n');
-const ab = {}; let sec = null, arr = null;
-for (const l of L) {
-  const m = l.match(/^\[([A-Za-z0-9]{4})\]$/);
-  if (m) { sec = ab[m[1]] = {}; arr = null; continue; }
-  if (!sec) continue;
-  if (arr) { if (l === '}') arr = null; else sec[arr].push(l.replace(/[",]/g, '').trim()); continue; }
-  const k = l.match(/^(_parent|DataF) = (.*)$/); if (!k) continue;
-  const v = k[2];
-  if (v === '{') { arr = k[1]; sec[arr] = []; continue; }
-  sec[k[1]] = v.startsWith('{') ? v.slice(1, -1).split(',').map(s => s.trim().replace(/"/g, '')) : [v.replace(/"/g, '')];
-}
+const { abilityFields } = require('./fields');
+const ab = abilityFields(fs.readFileSync(R + 'table/ability.ini', 'utf8'));
 const out = {};
 for (const id of Object.keys(base)) out[id] = base[id];
 for (const id of Object.keys(ab)) {
