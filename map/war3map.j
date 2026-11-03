@@ -2043,6 +2043,7 @@ string array EffectID
 boolean PresentOff
 boolean DamageOff
 boolean array itemsc
+boolean array spheresc
 boolean array AutoE
 integer array luffypunch
 boolean randcond
@@ -7320,7 +7321,6 @@ local ability a
 local item it
 call SaveInteger(TSE_HT,id,100,GetUnitCurrentAnimationId(u))
 call SaveReal(TSE_HT,id,101,GetUnitAnimationOffsetPercent(u))
-call SaveBoolean(TSE_HT,id,102,IsUnitAnimationFrozen(u))
 call SaveStr(TSE_HT,id,103,GetUnitModel(u))
 call GroupAddUnit(TSE_G,u)
 //call SaveReal(TSE_HT,id,0,GetUnitTimeScale(u))
@@ -7587,6 +7587,10 @@ function TSE_TargetFrozen takes unit tsru returns boolean
 return (TSE_On and IsUnitInGroup(tsru,TSE_G)) or LoadInteger(HH,GetHandleId(tsru),StringHash("HitFz"))>0 or LoadUnitHandle(HH,GetHandleId(tsru),StringHash("HitCage"))!=null
 endfunction
 
+function TSE_ReverseBlocked takes unit tsbu returns boolean
+return TSE_TargetFrozen(tsbu) or LoadInteger(HH,GetHandleId(tsbu),StringHash("TSEReverseIgnore"))>0
+endfunction
+
 function TSE_HoldDmg takes unit u,unit c,real tsd returns nothing
 local integer id=GetHandleId(u)
 // 30 окт (правило таймскипа): накопленный урон -50%, кроме урона от таймскипщиков (класс TSE_AddExemptType по герою владельца)
@@ -7614,7 +7618,9 @@ call SetWidgetLife(u,1.)
 if c==null then
 set c=u
 endif
+call SaveInteger(HH,id,StringHash("TSEReverseIgnore"),LoadInteger(HH,id,StringHash("TSEReverseIgnore"))+1)
 call UnitDamageTarget(c,u,tsd-(l-1.),true,false,ATTACK_TYPE_CHAOS,DAMAGE_TYPE_UNIVERSAL,null)
+call SaveInteger(HH,id,StringHash("TSEReverseIgnore"),IMaxBJ(0,LoadInteger(HH,id,StringHash("TSEReverseIgnore"))-1))
 endif
 endif
 set u=null
@@ -7710,11 +7716,9 @@ call SetUnitTimeScale(u,0.001)
 else
 call SetUnitTimeScale(u,tsurs)
 endif
-if not IsUnitType(u,UNIT_TYPE_DEAD) and LoadInteger(TSE_HT,id,100)>=0 and GetUnitModel(u)==LoadStr(TSE_HT,id,103) then
-call SetUnitAnimationByIndex(u,LoadInteger(TSE_HT,id,100))
+if not IsUnitType(u,UNIT_TYPE_DEAD) and LoadInteger(TSE_HT,id,100)>=0 and GetUnitModel(u)==LoadStr(TSE_HT,id,103) and GetUnitCurrentAnimationId(u)==LoadInteger(TSE_HT,id,100) then
 call SetUnitAnimationOffsetPercent(u,LoadReal(TSE_HT,id,101))
 endif
-call SetUnitAnimationFrozen(u,LoadBoolean(TSE_HT,id,102))
 if TSE_Dbg and u==Hero[PId(OwnerOf(u))] then
 call DisplayTextToPlayer(PlayerV(0),0,0,"|cff808080TSE: "+GetUnitName(u)+" скорость "+R2S(GetUnitTimeScale(u))+" (сохр. "+R2S(LoadReal(TSE_HT,id,0))+"), пауза "+TSE_B2S(IsUnitPaused(u))+", замороз. "+TSE_B2S(IsUnitAnimationFrozen(u))+"|r")
 endif
@@ -13125,6 +13129,10 @@ call SND_Add(4939,2,"Sound\\Hit\\HitTFinalImpact.mp3",1504)
 call SND_Add(4943,2,"Sound\\Hit\\HitFWImpact1.mp3",651)
 call SND_Add(4945,2,"Sound\\Hit\\HitFWImpact2.mp3",883)
 call SND_Add(4947,2,"Sound\\Hit\\HitFWImpact3.mp3",1812)
+call SND_Add(4949,2,"Sound\\Hit\\HitColdEyeIce.mp3",1282)
+call SND_Add(4951,2,"Sound\\Hit\\HitColdEyeBasa.mp3",651)
+call SND_Add(4953,2,"Sound\\Hit\\HitColdEyeHit.mp3",1318)
+call SND_Add(4955,2,"Sound\\Hit\\HitSeichoAttack.mp3",8592)
 call SND_Add(4941,2,"Voice\\HitSummon-jap.mp3",1524)
 call SND_Add(4933,2,"Voice\\HitSummon.mp3",1299)
 call SND_Add(4931,2,"Sound\\DeadMaster\\DeadMaster_W.mp3",12700)
@@ -15145,7 +15153,7 @@ endfunction
 // Источник не герой (дамми, клон) — отдаём героя его игрока, как обработчик урона 3.2.
 function Bof_Rev takes unit src,unit tgt returns boolean
 local unit rvS=src
-if tgt==null or src==null or not LoadBoolean(HH,GetHandleId(tgt),ANTITARGET_ABILITY) then
+if tgt==null or src==null or TSE_ReverseBlocked(tgt) or not LoadBoolean(HH,GetHandleId(tgt),ANTITARGET_ABILITY) then
 set rvS=null
 return false
 endif
@@ -32354,19 +32362,43 @@ call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",0),"ReplaceableTex
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",0),"ReplaceableTextures\\CommandButtons\\BTNHitF2.blp",1,true)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",0),"ReplaceableTextures\\CommandButtons\\BTNHitF2.blp",2,true)
 call ShowFrame(GetFrameByName("TavernAdditionalAbility",0),true)
-call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",0),GetAbilityBaseStringFieldById('HtF2',ABILITY_SF_NAME)+"|n|n"+GetAbilityBaseStringFieldById('HtF2',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",0),"     ")
+set j=0
+loop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",0),"|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById('HtF2',ABILITY_ILF_MANA_COST,j))+"|r")
+exitwhen j==GetAbilityBaseIntegerFieldById('HtF2',ABILITY_IF_LEVELS)-1
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",0),"/")
+set j=j+1
+endloop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",0),"|n|n"+GetAbilityBaseStringFieldById('HtF2',ABILITY_SF_NAME)+", (|cffffcc00Q|r)|n|n"+GetAbilityBaseStringFieldById('HtF2',ABILITY_SLF_TOOLTIP_LEARN_EXTENDED))
 call SetFrameSize(GetFrameByName("TavernAdditionalAbilityTooltip",0),.26,GetFrameHeight(GetFrameByName("TavernAdditionalAbilityTooltipText",0))+0.03)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",1),"ReplaceableTextures\\CommandButtons\\BTNHitF3.blp",0,true)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",1),"ReplaceableTextures\\CommandButtons\\BTNHitF3.blp",1,true)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",1),"ReplaceableTextures\\CommandButtons\\BTNHitF3.blp",2,true)
 call ShowFrame(GetFrameByName("TavernAdditionalAbility",1),true)
-call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",1),GetAbilityBaseStringFieldById('HtF3',ABILITY_SF_NAME)+"|n|n"+GetAbilityBaseStringFieldById('HtF3',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",1),"     ")
+set j=0
+loop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",1),"|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById('HtF3',ABILITY_ILF_MANA_COST,j))+"|r")
+exitwhen j==GetAbilityBaseIntegerFieldById('HtF3',ABILITY_IF_LEVELS)-1
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",1),"/")
+set j=j+1
+endloop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",1),"|n|n"+GetAbilityBaseStringFieldById('HtF3',ABILITY_SF_NAME)+", (|cffffcc00W|r)|n|n"+GetAbilityBaseStringFieldById('HtF3',ABILITY_SLF_TOOLTIP_LEARN_EXTENDED))
 call SetFrameSize(GetFrameByName("TavernAdditionalAbilityTooltip",1),.26,GetFrameHeight(GetFrameByName("TavernAdditionalAbilityTooltipText",1))+0.03)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",2),"ReplaceableTextures\\CommandButtons\\BTNHitF4.blp",0,true)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",2),"ReplaceableTextures\\CommandButtons\\BTNHitF4.blp",1,true)
 call SetFrameTexture(GetFrameByName("TavernAdditionalAbility",2),"ReplaceableTextures\\CommandButtons\\BTNHitF4.blp",2,true)
 call ShowFrame(GetFrameByName("TavernAdditionalAbility",2),true)
-call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",2),GetAbilityBaseStringFieldById('HtF4',ABILITY_SF_NAME)+"|n|n"+GetAbilityBaseStringFieldById('HtF4',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED))
+call SetFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",2),"     ")
+set j=0
+loop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",2),"|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById('HtF4',ABILITY_ILF_MANA_COST,j))+"|r")
+exitwhen j==GetAbilityBaseIntegerFieldById('HtF4',ABILITY_IF_LEVELS)-1
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",2),"/")
+set j=j+1
+endloop
+call AddFrameText(GetFrameByName("TavernAdditionalAbilityTooltipText",2),"|n|n"+GetAbilityBaseStringFieldById('HtF4',ABILITY_SF_NAME)+", (|cffffcc00E|r)|n|n"+GetAbilityBaseStringFieldById('HtF4',ABILITY_SLF_TOOLTIP_LEARN_EXTENDED))
 call SetFrameSize(GetFrameByName("TavernAdditionalAbilityTooltip",2),.26,GetFrameHeight(GetFrameByName("TavernAdditionalAbilityTooltipText",2))+0.03)
 call SetFrameRelativePoint(GetFrameByName("TavernAdditionalAbilityTooltip",0),FRAMEPOINT_CENTER,GetFrameByName("TavernAdditionalAbility",0),FRAMEPOINT_CENTER,.13,-.04)
 call SetFrameRelativePoint(GetFrameByName("TavernAdditionalAbilityTooltip",1),FRAMEPOINT_CENTER,GetFrameByName("TavernAdditionalAbility",1),FRAMEPOINT_CENTER,.13,-.04)
@@ -42438,6 +42470,120 @@ endloop
 endif
 set u=null
 endfunction
+function SphereInventorySync takes unit sisu returns nothing
+local integer sisi=GetHandleId(sisu)
+local integer sisk=0
+local item sisit
+local boolean sist=GetUnitAbilityLevel(sisu,'KIK0')>0
+local boolean siss=false
+local boolean sisold=GetUnitAbilityLevel(sisu,'TSkr')>0
+local integer sistt=0
+local ability sisa
+if sisu==null or not IsUnitType(sisu,UNIT_TYPE_HERO) or GetUnitTypeId(sisu)=='H00Q' then
+return
+endif
+loop
+exitwhen sisk>=10
+set sisit=UnitItemInSlot(sisu,sisk)
+if sisit!=null and (ItemP(sisit)==PlayerV(15) or ItemP(sisit)==OwnerOf(sisu)) then
+if GetItemTypeId(sisit)=='I03P' then
+set sist=true
+elseif GetItemTypeId(sisit)=='I03Q' then
+set siss=true
+endif
+endif
+set sisk=sisk+1
+endloop
+if sist then
+if not LoadBoolean(HH,sisi,StringHash("TimeSphereHeld")) then
+call SaveBoolean(HH,sisi,StringHash("TimeSphereHeld"),true)
+call SaveBoolean(HH,sisi,StringHash("TimeSphereClassOwned"),not sisold)
+endif
+if GetUnitAbilityLevel(sisu,'TSkr')==0 then
+call UnitAddAbility(sisu,'TSkr')
+call UnitMakeAbilityPermanent(sisu,true,'TSkr')
+endif
+elseif LoadBoolean(HH,sisi,StringHash("TimeSphereHeld")) then
+if LoadBoolean(HH,sisi,StringHash("TimeSphereClassOwned")) and not StringContains(GetUnitBaseStringFieldById(GetUnitTypeId(sisu),UNIT_SF_ABILITY_LIST),"TSkr",true) then
+call UnitMakeAbilityPermanent(sisu,false,'TSkr')
+call UnitRemoveAbility(sisu,'TSkr')
+endif
+call RemoveSavedBoolean(HH,sisi,StringHash("TimeSphereHeld"))
+call RemoveSavedBoolean(HH,sisi,StringHash("TimeSphereClassOwned"))
+endif
+if sisold!=(GetUnitAbilityLevel(sisu,'TSkr')>0) then
+call UpdateClassBar(sisu)
+endif
+if siss then
+set sisa=GetUnitAbility(sisu,'A0VT')
+if spheresc[PId(OwnerOf(sisu))] then
+set sistt=1
+endif
+if sisa!=null and (GetAbilityIntegerLevelField(sisa,ABILITY_ILF_TARGET_TYPE,0)!=sistt or LoadInteger(HH,StringHash("QcTT"),GetHandleId(sisa))!=sistt) then
+call CBS_SetTT(sisa,0,sistt)
+endif
+endif
+set sisa=null
+set sisit=null
+endfunction
+function SphereHealthRecord takes unit shru returns nothing
+local integer shri
+local integer shrk
+local integer shrc
+local real shrnow
+if shru==null or not IsUnitType(shru,UNIT_TYPE_HERO) then
+return
+endif
+set shri=GetHandleId(shru)
+set shrk=LoadInteger(HH,shri,StringHash("SphereHPNext"))
+set shrc=LoadInteger(HH,shri,StringHash("SphereHPCount"))
+set shrnow=TimerGetElapsed(ShnClock)
+if not UnitIsAlive(shru) then
+call RemoveSavedInteger(HH,shri,StringHash("SphereHPCount"))
+call RemoveSavedInteger(HH,shri,StringHash("SphereHPNext"))
+return
+endif
+if shrnow-LoadReal(HH,shri,StringHash("SphereHPLast"))>0.5 then
+set shrk=0
+set shrc=0
+endif
+call SaveReal(HH,shri,StringHash("SphereHP"+I2S(shrk)),GetWidgetLife(shru))
+call SaveReal(HH,shri,StringHash("SphereHPLast"),shrnow)
+call SaveInteger(HH,shri,StringHash("SphereHPNext"),ModuloInteger(shrk+1,21))
+call SaveInteger(HH,shri,StringHash("SphereHPCount"),IMinBJ(21,shrc+1))
+endfunction
+function SphereHealthPast takes unit shpu returns real
+local integer shpi=GetHandleId(shpu)
+if LoadInteger(HH,shpi,StringHash("SphereHPCount"))<21 or TimerGetElapsed(ShnClock)-LoadReal(HH,shpi,StringHash("SphereHPLast"))>0.5 then
+return GetWidgetLife(shpu)
+endif
+return LoadReal(HH,shpi,StringHash("SphereHP"+I2S(LoadInteger(HH,shpi,StringHash("SphereHPNext")))))
+endfunction
+function SphereHealthDeath takes nothing returns nothing
+local integer shdi=GetHandleId(GetTriggerUnit())
+call RemoveSavedInteger(HH,shdi,StringHash("SphereHPCount"))
+call RemoveSavedInteger(HH,shdi,StringHash("SphereHPNext"))
+endfunction
+
+function SphereInventoryLater takes nothing returns nothing
+local timer silt=GetExpiredTimer()
+local unit silu=LoadUnitHandle(h,GetHandleId(silt),0)
+call SphereInventorySync(silu)
+call FlushChildHashtable(h,GetHandleId(silt))
+call TSE_DestroyTimer(silt)
+set silu=null
+set silt=null
+endfunction
+function SphereInventoryChanged takes nothing returns nothing
+local timer sict
+if (GetItemTypeId(GetManipulatedItem())=='I03P' or GetItemTypeId(GetManipulatedItem())=='I03Q') and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO) then
+set sict=CreateTimer()
+call SaveUnitHandle(h,GetHandleId(sict),0,GetTriggerUnit())
+call TSE_TimerStart(sict,0.,false,function SphereInventoryLater)
+endif
+set sict=null
+endfunction
+
 function Trig_Set_Ability_Actions takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer idu=GetHandleId(u)
@@ -45280,6 +45426,9 @@ set i=i+1
 endloop
 endif
 set i=0
+if GetUnitTypeId(u)=='HHit' then
+call ExecuteFunc("HitFLevelEvent")
+endif
 if GetUnitTypeId(u)=='H047' and GetHeroLevel(u)>=6 then
 call SetUnitAbilityLevel(u,'A0S1',(GetHeroLevel(u)-2)/4)
 //call SetUnitAbilityLevel(u,'LaxD',(GetHeroLevel(u)-2)/4)
@@ -49085,6 +49234,7 @@ set x=0
 loop
 exitwhen x>=10
 if ingame[x]==true then
+call SphereInventorySync(Hero[x])
     if udg_B==false then
         call SetUnitInvulnerable(Hero[x],true)
     endif
@@ -51316,6 +51466,7 @@ if GetUnitAbilityLevel(u,'Blnd')==0 then
 call UnitAddAbility(u,'Blnd')
 call UnitMakeAbilityPermanent(u,true,'Blnd')
 endif
+call UpdateClassBar(u)
 endfunction
 function TousenEOff takes unit u returns nothing
 // облик мухи кончается — перезарядки кнопок мухи переходят на обычные (22 окт)
@@ -55217,6 +55368,7 @@ local integer id
 call GroupEnumUnitsInRect(GGlobal,bj_mapInitialPlayableArea,Base)
 loop
 set E=GroupForEachUnit(GGlobal)
+call SphereHealthRecord(E)
 set id=GetHandleId(E)
 set time=LoadInteger(h,id,'HerT')
 if LoadReal(HH,id,'AAcd')>0 then
@@ -56638,6 +56790,22 @@ function Trig_itemsc_Actions takes nothing returns nothing
         set itemsc[id]=false
     endif
 endfunction
+function Trig_spheresc_Actions takes nothing returns nothing
+local integer ssci=PId(CBS_TrigP())
+if ssci<0 or ssci>9 then
+return
+endif
+set spheresc[ssci]=not spheresc[ssci]
+call SphereInventorySync(Hero[ssci])
+if GetLocalPlayer()==CBS_TrigP() then
+if spheresc[ssci] then
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Сфера пространства: выбор союзника или врага.","Space Sphere: select an ally or enemy."))
+else
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Сфера пространства: применение на себя.","Space Sphere: self-cast."))
+endif
+endif
+endfunction
+
 function Trig_AutoE_Actions takes nothing returns nothing
     local integer id=PId(TrigP())
     if AutoE[id]==false then
@@ -57012,6 +57180,18 @@ function InitTrig_mr takes nothing returns nothing
     //call TriggerRegisterPlayerChatEvent(t,Player(10),"-itemsc",true)
     //call TriggerRegisterPlayerChatEvent(t,Player(11),"-itemsc",true)
     call TriggerAddAction(t,function Trig_itemsc_Actions)
+    set t=CreateTrigger()
+    call TRPCE(t,PlayerV(0),"-spheresc",true)
+    call TRPCE(t,PlayerV(1),"-spheresc",true)
+    call TRPCE(t,PlayerV(2),"-spheresc",true)
+    call TRPCE(t,PlayerV(3),"-spheresc",true)
+    call TRPCE(t,PlayerV(4),"-spheresc",true)
+    call TRPCE(t,PlayerV(5),"-spheresc",true)
+    call TRPCE(t,PlayerV(6),"-spheresc",true)
+    call TRPCE(t,PlayerV(7),"-spheresc",true)
+    call TRPCE(t,PlayerV(8),"-spheresc",true)
+    call TRPCE(t,PlayerV(9),"-spheresc",true)
+    call TriggerAddAction(t,function Trig_spheresc_Actions)
     set t=CreateTrigger()
 	call TRPCE(t,PlayerV(0),"-AutoE",true)
     call TRPCE(t,PlayerV(1),"-AutoE",true)
@@ -59879,7 +60059,9 @@ if cbP>9 or Hero[cbP]==null then
 return 0
 endif
 if GetUnitTypeId(Hero[cbP])=='HHit' and LoadInteger(HH,GetHandleId(Hero[cbP]),StringHash("HitFst"))>0 then
-if cbCode==81 then
+if cbCode==70 then
+return 'HtFc'
+elseif cbCode==81 then
 return 'HtF2'
 elseif cbCode==87 then
 return 'HtF3'
@@ -61302,7 +61484,7 @@ local integer cbS
 local integer cbO
 local integer cbPx=GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_BUTTON_POSITION_NORMAL_X)
 local integer cbPy=GetAbilityBaseIntegerFieldById(cbId,ABILITY_IF_BUTTON_POSITION_NORMAL_Y)
-if cbId=='HtF2' or cbId=='HtF3' or cbId=='HtF4' then
+if cbId=='HtFc' or cbId=='HtF2' or cbId=='HtF3' or cbId=='HtF4' then
 return false
 endif
 loop
@@ -69632,6 +69814,9 @@ function HitDmgHook takes unit u,unit c,real nb,boolean hpa returns real
 local integer uid=GetHandleId(u)
 local unit hc=LoadUnitHandle(HH,uid,StringHash("HitCage"))
 local real now=TimerGetElapsed(ShnClock)
+if nb>0. and c!=null and GetUnitTypeId(c)=='HHit' and IsUnitEnemy(u,OwnerOf(c)) then
+call SaveReal(HH,GetHandleId(c),StringHash("HitCbt"),now)
+endif
 if hc!=null then
 if c==hc then
 call SaveReal(HH,uid,StringHash("HitCageD"),LoadReal(HH,uid,StringHash("HitCageD"))+nb)
@@ -70023,7 +70208,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 //call SetEventDamage(0.05)
 set nb=0
 endif
-if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack)) then
+if not TSE_ReverseBlocked(u) and ((GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack))) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,PH(damagedPlayer),MUIAvailableHash)==false then
             call SaveInteger(HH,PH(damagedPlayer),MUIDodgeCountHash,LoadInteger(HH,PH(damagedPlayer),MUIDodgeCountHash)+1)
@@ -70041,7 +70226,7 @@ if (GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (Get
     //call SetEventDamage(0.05)
     set nb=0
 endif
-if nb>100 and LoadBoolean(HH,GetHandleId(u),SH_MadaraG)==true then
+if not TSE_ReverseBlocked(u) and (nb>100 and LoadBoolean(HH,GetHandleId(u),SH_MadaraG)==true) then
     call SaveBoolean(HH,GetHandleId(u),SH_MadaraG,false)
     call SaveReal(HH,GetHandleId(u),SH_MadaraGfacing,a2*bj_RADTODEG)
     call SetUnitFacingInstant(u,a2*bj_RADTODEG)
@@ -70050,20 +70235,20 @@ if nb>100 and LoadBoolean(HH,GetHandleId(u),SH_MadaraG)==true then
 endif
 // реверс абилка как у курапики 
 
-if nb>100 and  LoadBoolean(HH,uid,SH_DanzoWBool)==true then
+if not TSE_ReverseBlocked(u) and (nb>100 and  LoadBoolean(HH,uid,SH_DanzoWBool)==true) then
     call SaveBoolean(HH,uid,SH_DanzoWBool,false)
     call SaveUnitHandle(HH,uid,SH_DanzoW,Hero[idc])
     //call SetEventDamage(0.05)
     set nb=0
 endif
-if GetUnitAbilityLevel( u ,'BASF')>0 and nb>100 then
+if not TSE_ReverseBlocked(u) and (GetUnitAbilityLevel( u ,'BASF')>0 and nb>100) then
     //call SetEventDamage(0.05)
     set nb=0
     call SaveBoolean(HH,GetHandleId( u ),SH_AizenFB,true)
     call SaveReal(HH,GetHandleId( u ),SH_AizenFR,Angle2(GetUnitX( u ),GetUnitY( u ),GetUnitX( c ),GetUnitY( c )))
 endif
         ///KurapikaE
-if GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 and nb>0 then
+if not TSE_ReverseBlocked(u) and (GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 and nb>0) then
     if c!=UltimateDamage then
         call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     else
@@ -70073,7 +70258,7 @@ if GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHe
     set nb=0
 endif
 
-if nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0 then
+if not TSE_ReverseBlocked(u) and (nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0) then
     //call SetEventDamage(0.05)
     set nb=0
     call SaveBoolean(HH,GetHandleId(u),SH_SabracEReverse,true)
@@ -70084,18 +70269,18 @@ endif
 if (CurrentEventAttack and nb>0) or nb>50 then
     call UnitRemoveAbility(u,'cbc7')
 endif
-if nb>50 and GetUnitAbilityLevel(u,'A19B')>0 then
+if not TSE_ReverseBlocked(u) and (nb>50 and GetUnitAbilityLevel(u,'A19B')>0) then
     //call SetEventDamage(0.05)
     call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     call SakuraSlashDamage(u,c)
     set nb=0
 endif
-if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and suid!='H15O' and suid!='H05O' then
+if not TSE_ReverseBlocked(u) and (CurrentEventAttack and nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and suid!='H15O' and suid!='H05O') then
     call IchigoShikaiQ_Counter(u, c, b)
     set nb=0
 endif
-if nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and suid!='H15O' and suid!='H05O' then           // Ichigo Bankai W Counter
+if not TSE_ReverseBlocked(u) and (nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and suid!='H15O' and suid!='H05O') then           // Ichigo Bankai W Counter
     call IchigoBankaiW_Counter(u, c)
     set nb=0
 endif
@@ -74883,25 +75068,75 @@ endfunction
 function TimeLeap2Cond takes nothing returns boolean
 return GetSpellAbilityId()=='A0VT' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and udg_B
 endfunction
-function TimeLeap2Cast takes nothing returns nothing
-local unit u=GetSpellTargetUnit()
-local integer id=GetHandleId(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real time=LoadReal(h,id,'HerT')
-local player p=OwnerOf(u)
-if RectContainsUnit(gg_rct_UBW2,u)==true or RectContainsUnit(gg_rct_HibariFight,u)==true or LoadReal(h,id,'tpx_'+1)==0 or LoadReal(h,id,'tpy_'+1)==0 then 
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",x,y))
+function SpherePortalSlow takes unit spsu,real spsx,real spsy,real spsdx,real spsdy returns nothing
+local group spsg=CreateGroup()
+local group spshit=CreateGroup()
+local unit spse
+local integer spsk=0
+loop
+exitwhen spsk>=2
+if spsk==0 then
+call GroupEnumUnitsInRange(spsg,spsx,spsy,600.,null)
 else
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",x,y))
-if GetUnitAbilityLevel(u, 'BlTP')==0 then
-        call SetUnitX(u,LoadReal(h,id,'tpx_'+1))
-        call SetUnitY(u,LoadReal(h,id,'tpy_'+1))
+call GroupEnumUnitsInRange(spsg,spsdx,spsdy,600.,null)
 endif
-call SaveBoolean(HH,id,ChannelHash,false)
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(u),GetUnitY(u)))
+loop
+set spse=FirstOfGroup(spsg)
+exitwhen spse==null
+call GroupRemoveUnit(spsg,spse)
+if not IsUnitInGroup(spse,spshit) and Condition_Base(OwnerOf(spsu),spse) and not IsUnitType(spse,UNIT_TYPE_STRUCTURE) and not IsUnitInvulnerable(spse) then
+call GroupAddUnit(spshit,spse)
+call SlowUnit(spsu,spse,0.5,0.5,3.,0.,false)
 endif
-set u=null
+endloop
+set spsk=spsk+1
+endloop
+call DestroyGroup(spsg)
+call DestroyGroup(spshit)
+set spse=null
+set spsg=null
+set spshit=null
+endfunction
+
+function TimeLeap2Cast takes nothing returns nothing
+local unit splc=GetTriggerUnit()
+local unit splt=GetSpellTargetUnit()
+local real splx
+local real sply
+local integer spli
+if not spheresc[PId(OwnerOf(splc))] then
+set splt=splc
+endif
+if splt==null or not IsUnitType(splt,UNIT_TYPE_HERO) or not UnitIsAlive(splt) then
+set splc=null
+set splt=null
+return
+endif
+if spheresc[PId(OwnerOf(splc))] and SquareRootUnit(splc,splt)>2500. then
+set splc=null
+set splt=null
+return
+endif
+set spli=GetHandleId(splt)
+set splx=GetUnitX(splt)
+set sply=GetUnitY(splt)
+if IsUnitEnemy(splt,OwnerOf(splc)) and not TSE_ReverseBlocked(splt) and LoadBoolean(HH,spli,ANTITARGET_ABILITY) then
+call SaveUnitHandle(HH,spli,REVERSE_TARGET,splc)
+call SetUnitInvulnerable(splc,false)
+set splc=null
+set splt=null
+return
+endif
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(splt),GetUnitY(splt)))
+if not RectContainsUnit(gg_rct_UBW2,splt) and not RectContainsUnit(gg_rct_HibariFight,splt) and LoadReal(h,spli,'tpx_'+1)!=0 and LoadReal(h,spli,'tpy_'+1)!=0 and GetUnitAbilityLevel(splt,'BlTP')==0 then
+call SetUnitX(splt,LoadReal(h,spli,'tpx_'+1))
+call SetUnitY(splt,LoadReal(h,spli,'tpy_'+1))
+call SaveBoolean(HH,spli,ChannelHash,false)
+call SpherePortalSlow(splc,splx,sply,GetUnitX(splt),GetUnitY(splt))
+call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(splt),GetUnitY(splt)))
+endif
+set splc=null
+set splt=null
 endfunction
 function InitTrig_TimeLapse2 takes nothing returns nothing
 set gg_trg_TimeLapse2=CreateTrigger()
@@ -74910,31 +75145,37 @@ call TriggerAddCondition(gg_trg_TimeLapse2,Condition(function TimeLeap2Cond))
 call TriggerAddAction(gg_trg_TimeLapse2,function TimeLeap2Cast)
 endfunction
 function TimeLeapCond takes nothing returns boolean
-return GetSpellAbilityId()=='A0VS' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
+return udg_B and GetSpellAbilityId()=='A0VS' and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0 and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)
 endfunction
 function TimeLeapCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local integer id=GetHandleId(u)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real time=LoadReal(h,id,'HerT')
-if RectContainsUnit(gg_rct_UBW2,u) or RectContainsUnit(gg_rct_HibariFight,u) or LoadReal(h,id,'tpx_'+1)==0 or LoadReal(h,id,'tpy_'+1)==0 then 
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",x,y))
-else
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",x,y))
-if GetUnitAbilityLevel(u, 'BlTP')==0 then
-        call SetUnitX(u,LoadReal(h,id,'tpx_'+1))
-        call SetUnitY(u,LoadReal(h,id,'tpy_'+1))
-endif
-call DestroyEffect(AddSpecialEffect("war3mapImported\\Sci Teleport.mdx",GetUnitX(u),GetUnitY(u)))
-endif
-set u=null
+local unit sthru=GetTriggerUnit()
+local real sthra=RMaxBJ(0.,SphereHealthPast(sthru)-GetWidgetLife(sthru))*0.3
+local effect sthrf
+call Bof_Heal(sthru,sthru,sthra)
+set sthrf=AddSpecialEffect("Hit\\TimeIcePulse.mdx",GetUnitX(sthru),GetUnitY(sthru))
+call SetSpecialEffectZ(sthrf,GetUnitZ(sthru)+12.)
+call SetSpecialEffectScale(sthrf,0.6)
+call SetSpecialEffectVertexColour(sthrf,100,210,255,150)
+call SetSpecialEffectAnimationByIndex(sthrf,0)
+call RemoveEffect(sthrf,0.7,false,CreateTimer())
+set sthrf=null
+set sthru=null
 endfunction
 function InitTrig_TimeLeap takes nothing returns nothing
+local trigger spit=CreateTrigger()
+local trigger sphd=CreateTrigger()
 set gg_trg_TimeLeap=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(gg_trg_TimeLeap,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(gg_trg_TimeLeap,Condition(function TimeLeapCond))
 call TriggerAddAction(gg_trg_TimeLeap,function TimeLeapCast)
+call TriggerRegisterAnyUnitEventBJ(spit,EVENT_PLAYER_UNIT_PICKUP_ITEM)
+call TriggerRegisterAnyUnitEventBJ(spit,EVENT_PLAYER_UNIT_DROP_ITEM)
+call TriggerRegisterAnyUnitEventBJ(spit,EVENT_PLAYER_UNIT_PAWN_ITEM)
+call TriggerAddAction(spit,function SphereInventoryChanged)
+set spit=null
+call TriggerRegisterAnyUnitEventBJ(sphd,EVENT_PLAYER_UNIT_DEATH)
+call TriggerAddAction(sphd,function SphereHealthDeath)
+set sphd=null
 endfunction
 function BurningAxelVerXCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0TZ' and udg_B==true and GetUnitTypeId(GetTriggerUnit())!='H007' and GetUnitAbilityLevel(GetTriggerUnit(),'GIE1')==0
@@ -136168,6 +136409,7 @@ call FlushChildHashtable(h,GetHandleId(t))
 call TSE_DestroyTimer(t)
 set u=null
 set t=null
+call UpdateClassBar(u)
 endfunction
 // превращение в муху (v2, 22 окт): облик, портрет, иконка, способности, «Слепота» снимается, +15% силы / ловкости / разума
 function TousenFlyDo takes unit u returns nothing
@@ -136261,6 +136503,7 @@ call SetHeroInt(u,GetHeroInt(u,false)+b,true)
 //call SetUnitAnimationByIndex(u,14)
 //call QueueUnitAnimation(u,"stand")
 // 23 окт: анимация 14 — из таймера портрета (после смены модели); здесь у обычной модели (12 анимаций) её нет — была T-поза
+call UpdateClassBar(u)
 endfunction
 // зарядка в стиле G Гона (GonG_Periodic): 2.5 с пауза и неуязвимость, раз в 0.1 с — волна dH49 и растущий dR48,
 // с 1.2 с — dR70 и dR43; в конце — выброс как у Гона и превращение. Всё зелёное. h: 0 Тоусен, 1 время
@@ -138640,7 +138883,6 @@ call SaveStr(HH,SH_ShnChanO,'A0VQ',"charm")
 call SaveInteger(HH,SH_ShnChanT,'A0VQ',1)
 call SaveStr(HH,SH_ShnChanO,'A0VS',"resumeharvesting")
 call SaveStr(HH,SH_ShnChanO,'A0VT',"charm")
-call SaveInteger(HH,SH_ShnChanT,'A0VT',1)
 call SaveStr(HH,SH_ShnChanO,'A0W8',"drain")
 call SaveInteger(HH,SH_ShnChanT,'A0W8',2)
 call SaveStr(HH,SH_ShnChanO,'A0WA',"absorb")
@@ -139641,6 +139883,7 @@ call SaveStr(HH,SH_ShnChanO,'HtF3',"fingerofdeath")
 call SaveInteger(HH,SH_ShnChanT,'HtF3',1)
 call SaveStr(HH,SH_ShnChanO,'HtF4',"holybolt")
 call SaveInteger(HH,SH_ShnChanT,'HtF4',2)
+call SaveStr(HH,SH_ShnChanO,'HtFc',"berserk")
 call SaveStr(HH,SH_ShnChanO,'HtG1',"stomp")
 call SaveStr(HH,SH_ShnChanO,'HtQ1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'HtQ1',1)
@@ -141887,6 +142130,7 @@ call SaveStr(HH,SH_AbOrd,'HtF1',"starfall")
 call SaveStr(HH,SH_AbOrd,'HtF2',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'HtF3',"fingerofdeath")
 call SaveStr(HH,SH_AbOrd,'HtF4',"holybolt")
+call SaveStr(HH,SH_AbOrd,'HtFc',"berserk")
 call SaveStr(HH,SH_AbOrd,'HtG1',"stomp")
 call SaveStr(HH,SH_AbOrd,'HtQ1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'HtR1',"shadowstrike")
@@ -285258,6 +285502,14 @@ call TSE_DestroyTimer(hist)
 set hisf=null
 set hist=null
 endfunction
+function HitIceShade takes effect hise,integer hisv returns nothing
+if hisv==0 then
+set hisv=GetRandomInt(1,10)
+endif
+call SaveInteger(HH,GetHandleId(hise),StringHash("HitIceShade"),hisv)
+call SetSpecialEffectVertexColour(hise,255,255,255,255)
+endfunction
+
 function HitIcePop takes effect hio returns boolean
 local real hips=LoadReal(HH,GetHandleId(hio),StringHash("HitIceScale"))
 local string hipm="Hit\\TimeIceShatter.mdx"
@@ -285282,6 +285534,8 @@ set hipf=AddSpecialEffect(hipm,GetSpecialEffectX(hio),GetSpecialEffectY(hio))
 call SetSpecialEffectZ(hipf,GetSpecialEffectZ(hio))
 call SetSpecialEffectYaw(hipf,GetSpecialEffectYaw(hio))
 call SetSpecialEffectScale(hipf,hips)
+call HitIceShade(hipf,LoadInteger(HH,GetHandleId(hio),StringHash("HitIceShade")))
+call RemoveSavedInteger(HH,GetHandleId(hio),StringHash("HitIceShade"))
 call SetSpecialEffectAnimationByIndex(hipf,0)
 call SaveBoolean(HH,GetHandleId(hipf),StringHash("HitOwnFx"),true)
 if LoadBoolean(HH,GetHandleId(hio),StringHash("HitIceFacing")) then
@@ -285331,16 +285585,7 @@ endif
 set higf=null
 endfunction
 function HitIceGlow takes effect higg returns nothing
-local effect higf
-set HitGlowCounter=HitGlowCounter+1
-if ModuloInteger(HitGlowCounter,3)==0 then
-set higf=AddSpecialEffect("Hit\\IceVioletGlow.mdx",GetSpecialEffectX(higg),GetSpecialEffectY(higg))
-call SetSpecialEffectZ(higf,GetSpecialEffectZ(higg)-20.)
-call SetSpecialEffectScale(higf,0.32)
-call SetSpecialEffectVertexColour(higf,160,90,255,110)
-call SaveEffectHandle(HH,GetHandleId(higg),StringHash("HitIceGlow"),higf)
-set higf=null
-endif
+return
 endfunction
 
 function HitIceAt takes real hix,real hiy,real hia,real his,real hid,boolean hif returns effect
@@ -285353,6 +285598,7 @@ endif
 set hifx=AddSpecialEffect(him,hix,hiy)
 call SetSpecialEffectZ(hifx,GetLocationZ(hil)+4.)
 call SetSpecialEffectScale(hifx,his)
+call HitIceShade(hifx,0)
 call SetSpecialEffectYaw(hifx,hia*bj_RADTODEG)
 call SetSpecialEffectAnimationByIndex(hifx,0)
 call QueueSpecialEffectAnimationByIndex(hifx,1)
@@ -285367,6 +285613,19 @@ return hifx
 endfunction
 function HitPunchRay takes unit hpc,unit hpe,real hps returns nothing
 local effect hpf=AddSpecialEffect("Hit\\PunchBeam.mdx",GetUnitX(hpe),GetUnitY(hpe))
+local location hpl=Location(GetUnitX(hpe),GetUnitY(hpe))
+call SetSpecialEffectZ(hpf,GetLocationZ(hpl)+GetUnitFlyHeight(hpe)+65.)
+call SetSpecialEffectYaw(hpf,Atan2(GetUnitY(hpe)-GetUnitY(hpc),GetUnitX(hpe)-GetUnitX(hpc))*bj_RADTODEG)
+call SetSpecialEffectScale(hpf,hps*2.)
+call SetSpecialEffectTimeScale(hpf,1.)
+call SetSpecialEffectAnimationByIndex(hpf,0)
+call HitOwnFxKeep(hpf,0.46,false)
+call RemoveLocation(hpl)
+set hpl=null
+set hpf=null
+endfunction
+function HitTPunchRay takes unit hpc,unit hpe,real hps returns nothing
+local effect hpf=AddSpecialEffect("Hit\\TPunchBeam.mdx",GetUnitX(hpe),GetUnitY(hpe))
 local location hpl=Location(GetUnitX(hpe),GetUnitY(hpe))
 call SetSpecialEffectZ(hpf,GetLocationZ(hpl)+GetUnitFlyHeight(hpe)+65.)
 call SetSpecialEffectYaw(hpf,Atan2(GetUnitY(hpe)-GetUnitY(hpc),GetUnitX(hpe)-GetUnitX(hpc))*bj_RADTODEG)
@@ -285600,6 +285859,15 @@ call RemoveLocation(hsfl)
 set hsfl=null
 set hsfe=null
 endfunction
+function HitReverse takes unit hrvu,unit hrve returns boolean
+if hrvu==null or hrve==null or TSE_ReverseBlocked(hrve) or not LoadBoolean(HH,GetHandleId(hrve),ANTITARGET_ABILITY) then
+return false
+endif
+call SaveUnitHandle(HH,GetHandleId(hrve),REVERSE_TARGET,hrvu)
+call SetUnitInvulnerable(hrvu,false)
+return true
+endfunction
+
 function HitQCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtQ1' and udg_B==true
 endfunction
@@ -285670,6 +285938,13 @@ call SaveReal(h,hqi,8,LoadReal(h,hqi,8)+hqd)
 call SetUnitXY_1(hqu,GetUnitX(hqu)+hqd*Cos(hqa),GetUnitY(hqu)+hqd*Sin(hqa),false)
 else
 call SaveBoolean(h,hqi,6,true)
+if HitReverse(hqu,hqe) then
+call HitQEnd()
+set hqu=null
+set hqe=null
+set hqt=null
+return
+endif
 if not IsUnitInvulnerable(hqe) then
 set hqpush=not IsUnitInGroup(hqe,TSE_G) and LoadUnitHandle(HH,GetHandleId(hqe),StringHash("HitCage"))==null and LoadInteger(HH,GetHandleId(hqe),HitK("Fz"))<=0
 set hqm=HitMarks(hqe)
@@ -285736,6 +286011,7 @@ local location hsil=Location(hsix,hsiy)
 call SetSpecialEffectZ(hsif,GetLocationZ(hsil)+5.)
 call SetSpecialEffectYaw(hsif,hsia*bj_RADTODEG)
 call SetSpecialEffectScale(hsif,hsis)
+call HitIceShade(hsif,0)
 call SetSpecialEffectAnimationByIndex(hsif,0)
 call QueueSpecialEffectAnimationByIndex(hsif,1)
 call SaveBoolean(HH,GetHandleId(hsif),StringHash("HitOwnFx"),true)
@@ -285748,6 +286024,7 @@ function HitFQBeam takes unit hfqu,real hfqa returns nothing
 local effect hfqf=AddSpecialEffect("Hit\\DeathBlowBeam.mdx",GetUnitX(hfqu),GetUnitY(hfqu))
 call SetSpecialEffectZ(hfqf,GetUnitZ(hfqu)+65.)
 call SetSpecialEffectYaw(hfqf,hfqa*bj_RADTODEG)
+call SetSpecialEffectMatrixScale(hfqf,1.1,1.,1.)
 call SetSpecialEffectAnimationByIndex(hfqf,0)
 call HitOwnFxKeep(hfqf,0.46,false)
 set hfqf=null
@@ -285776,6 +286053,7 @@ call HitIceGlowEnd(hwde)
 if HitIcePop(hwde) then
 call SetSpecialEffectVisible(hwde,false)
 endif
+call RemoveSavedInteger(HH,GetHandleId(hwde),StringHash("HitIceShade"))
 call DestroyEffect(hwde)
 set hwdi=hwdi+1
 endloop
@@ -285841,13 +286119,13 @@ call SetSpecialEffectOrientation(hws,a*bj_RADTODEG,0.,0.)
 call SetSpecialEffectScale(hws,0.65)
 call HitOwnFxKeep(hws,0.35,false)
 call HitStrikeFx(e,1,a,0.45)
-call HitContactWind(e,a,0.5)
+call HitStrikeFx(e,4,a,0.65)
 call myCustomDamage(u,e,75.*l+l*HitAgi(u),false,false,null,null,null)
 if HitFreeze(u,e,0.5+0.1*l+HitStopAdd(u)) then
 call SaveReal(HH,GetHandleId(e),HitK("WFz"),HitNow()+0.5+0.1*l+HitStopAdd(u))
 set hws=HitIceAt(GetUnitX(e),GetUnitY(e),a,2.2,-1.,false)
 call HitWKeep(g,hws)
-call HitSnd("HitW1-sfx-3")
+call HitSnd("HitColdEyeHit")
 endif
 call SlowUnit(u,e,0.3,0.,0.5+0.1*l+2.,2.,false)
 endif
@@ -285888,6 +286166,7 @@ call SaveInteger(h,id,7,l)
 call SetSpecialEffectZ(hwfx,GetLocationZ(hwl)+8.)
 call SetSpecialEffectYaw(hwfx,a*bj_RADTODEG)
 call SetSpecialEffectScale(hwfx,1.8)
+call HitIceShade(hwfx,0)
 call SetSpecialEffectAnimationByIndex(hwfx,0)
 call QueueSpecialEffectAnimationByIndex(hwfx,1)
 call SaveBoolean(HH,GetHandleId(hwfx),StringHash("HitOwnFx"),true)
@@ -285896,7 +286175,7 @@ call HitWKeep(g,hwfx)
 call RemoveLocation(hwl)
 set hwl=null
 set hwfx=null
-call TSE_TimerStart(t,0.03,true,function HitWMove)
+call TSE_TimerStart(t,0.025,true,function HitWMove)
 set t=null
 endfunction
 // с обоих концов — перезарядка 15 с (ставится после события каста, иначе игра перезапишет)
@@ -285961,9 +286240,7 @@ call SaveUnitHandle(h,GetHandleId(t),0,u)
 call TSE_TimerStart(t,0.01,false,function HitWCd)
 endif
 call HitAnim(u,12,1.5,0.45)
-call HitSnd("HitW1-sfx-1")
-call HitSnd("HitW1-sfx-2")
-call HitVo("HitW1")
+call HitSnd("HitColdEyeIce")
 set g=null
 set t=null
 set u=null
@@ -286038,6 +286315,28 @@ endif
 set hce=AddSpecialEffect(hcm,hcx,hcy)
 call SetSpecialEffectZ(hce,GetLocationZ(hcl)+65.)
 call SetSpecialEffectScale(hce,hcs)
+call HitIceShade(hce,0)
+call SetSpecialEffectAnimationByIndex(hce,0)
+call QueueSpecialEffectAnimationByIndex(hce,1)
+call SaveReal(HH,GetHandleId(hce),StringHash("HitIceScale"),hcs)
+call SaveBoolean(HH,GetHandleId(hce),StringHash("HitIceField"),hcf)
+call SaveBoolean(HH,GetHandleId(hce),StringHash("HitIceFacing"),true)
+call HitOwnFxKeep(hce,hcd,true)
+call RemoveLocation(hcl)
+set hcl=null
+return hce
+endfunction
+function HitTFacingIce takes real hcx,real hcy,real hcs,real hcd,boolean hcf returns effect
+local string hcm="Hit\\TimeIceFacing.mdx"
+local effect hce
+local location hcl=Location(hcx,hcy)
+if hcf then
+set hcm="Hit\\TimeIceTVisible.mdx"
+endif
+set hce=AddSpecialEffect(hcm,hcx,hcy)
+call SetSpecialEffectZ(hce,GetLocationZ(hcl)+65.)
+call SetSpecialEffectScale(hce,hcs)
+call HitIceShade(hce,0)
 call SetSpecialEffectAnimationByIndex(hce,0)
 call QueueSpecialEffectAnimationByIndex(hce,1)
 call SaveReal(HH,GetHandleId(hce),StringHash("HitIceScale"),hcs)
@@ -286134,8 +286433,8 @@ local unit e
 call UnitCancelTimedLife(im)
 call SetUnitXY_1(im,GetUnitX(u),GetUnitY(u),false)
 call SetUnitFacingInstant(im,GetUnitFacing(u))
-call BlzSetUnitName(im,GetUnitName(u))
-call BlzSetHeroProperName(im,GetHeroProperName(u))
+call SetUnitStringField(im,UNIT_SF_NAME,GetUnitName(u))
+call SetUnitStringField(im,UNIT_SF_PROPER_NAMES,GetHeroProperName(u))
 call SetHeroLevel(im,GetHeroLevel(u),false)
 call SetUnitMaxLife(im,GetUnitState(u,UNIT_STATE_MAX_LIFE))
 call SetUnitState(im,UNIT_STATE_MAX_MANA,GetUnitState(u,UNIT_STATE_MAX_MANA))
@@ -286199,7 +286498,9 @@ endif
 if e!=null and UnitIsAlive(e) then
 call HitFx("BlackGoku\\[AB]SuperBigExpPurpleLow1.mdx",GetUnitX(e),GetUnitY(e),50.,0.6,1.5)
 if d>0 and u!=null then
+call SaveInteger(HH,eid,StringHash("TSEReverseIgnore"),LoadInteger(HH,eid,StringHash("TSEReverseIgnore"))+1)
 call myCustomDamage(u,e,d,false,false,null,null,null)
+call SaveInteger(HH,eid,StringHash("TSEReverseIgnore"),IMaxBJ(0,LoadInteger(HH,eid,StringHash("TSEReverseIgnore"))-1))
 endif
 endif
 call HitSnd("HitR2new")
@@ -286232,15 +286533,47 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,e)
 call SaveReal(h,id,2,0.05+0.05*l)
 // 30 окт: Astral Imprisonment / PurpleShield на цели вешали игру (память) — эффекты прежние
-call HitFacingIce(GetUnitX(e),GetUnitY(e),1.4,dur,false)
+call HitFacingIce(GetUnitX(e),GetUnitY(e),2.1,dur,false)
 call HitAnim(u,56,1.,0.6)
 call HitSnd("HitR1")
-call HitVo("HitR1")
 call TSE_TimerStart(t,dur,false,function HitREnd)
 set t=null
 set e=null
 set u=null
 endfunction
+function HitRAfterFade takes nothing returns nothing
+local timer hrat=GetExpiredTimer()
+local unit hrau=LoadUnitHandle(h,GetHandleId(hrat),0)
+local integer hraa=LoadInteger(h,GetHandleId(hrat),1)-20
+if hraa>0 then
+call SaveInteger(h,GetHandleId(hrat),1,hraa)
+call SetUnitVertexColor(hrau,175,140,255,hraa)
+else
+call RemoveUnit(hrau)
+call FlushChildHashtable(h,GetHandleId(hrat))
+call TSE_DestroyTimer(hrat)
+endif
+set hrau=null
+set hrat=null
+endfunction
+function HitRAfter takes unit hrcu returns nothing
+local unit hrci=CreateUnit(OwnerOf(hrcu),'e200',GetUnitX(hrcu),GetUnitY(hrcu),GetUnitFacing(hrcu))
+local timer hrct=CreateTimer()
+call SetUnitModel(hrci,GetUnitModel(hrcu))
+call SetUnitScale(hrci,GetUnitScale(hrcu),GetUnitScale(hrcu),GetUnitScale(hrcu))
+call SetUnitBlendTime(hrci,0.)
+call SetUnitAnimationByIndex(hrci,GetUnitCurrentAnimationId(hrcu))
+call SetUnitAnimationOffsetPercent(hrci,GetUnitAnimationOffsetPercent(hrcu))
+call SetUnitTimeScale(hrci,0.)
+call SetUnitFlyHeight(hrci,GetUnitFlyHeight(hrcu),0.)
+call SetUnitVertexColor(hrci,175,140,255,120)
+call SaveUnitHandle(h,GetHandleId(hrct),0,hrci)
+call SaveInteger(h,GetHandleId(hrct),1,120)
+call TSE_TimerStart(hrct,0.05,true,function HitRAfterFade)
+set hrci=null
+set hrct=null
+endfunction
+
 function HitRApproach takes nothing returns nothing
 local timer hrat=GetExpiredTimer()
 local integer hrai=GetHandleId(hrat)
@@ -286250,12 +286583,31 @@ local effect hraf=LoadEffectHandle(h,hrai,2)
 local real hraa=Atan2(GetUnitY(hrae)-GetUnitY(hrau),GetUnitX(hrae)-GetUnitX(hrau))
 local integer hran=LoadInteger(h,hrai,5)+1
 local boolean hraok=hrau!=null and hrae!=null and UnitIsAlive(hrau) and UnitIsAlive(hrae) and udg_B
-if hraok and SquareRootUnit(hrau,hrae)>125. and hran<25 then
+if hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)>125. and hran<25 then
+if ModuloInteger(hran,3)==0 then
+call HitRAfter(hrau)
+endif
 call SetUnitFacingInstant(hrau,hraa*bj_RADTODEG)
 call SetUnitXY_1(hrau,GetUnitX(hrau)+45.*Cos(hraa),GetUnitY(hrau)+45.*Sin(hraa),false)
 call SaveInteger(h,hrai,5,hran)
+elseif hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)<=125. then
+if hraf!=null then
+call SetSpecialEffectVisible(hraf,false)
+call DestroyEffect(hraf)
+call RemoveSavedHandle(h,hrai,2)
+endif
+call SaveBoolean(h,hrai,6,true)
+call SaveInteger(h,hrai,7,0)
+call SetUnitTimeScale(hrau,1.)
+if HitReverse(hrau,hrae) then
+call SaveBoolean(h,hrai,8,true)
+call SaveInteger(h,hrai,7,25)
+endif
+elseif hraok and LoadBoolean(h,hrai,6) and LoadInteger(h,hrai,7)<24 then
+call SaveInteger(h,hrai,7,LoadInteger(h,hrai,7)+1)
 else
 if hraf!=null then
+call SetSpecialEffectVisible(hraf,false)
 call DestroyEffect(hraf)
 endif
 if hrau!=null then
@@ -286263,8 +286615,10 @@ call MapPauseUnit(hrau,LoadBoolean(h,hrai,3))
 call SetUnitInvulnerable(hrau,LoadBoolean(h,hrai,4))
 call SetUnitTimeScale(hrau,1.)
 endif
-if hraok then
+if hraok and LoadBoolean(h,hrai,6) and not LoadBoolean(h,hrai,8) and SquareRootUnit(hrau,hrae)<=400. then
+if not HitReverse(hrau,hrae) then
 call HitRApply(hrau,hrae)
+endif
 endif
 call FlushChildHashtable(h,hrai)
 call TSE_DestroyTimer(hrat)
@@ -286279,14 +286633,17 @@ local unit hrcu=GetTriggerUnit()
 local unit hrce=GetSpellTargetUnit()
 local timer hrct=CreateTimer()
 local integer hrci=GetHandleId(hrct)
-local effect hrcf=AddSpecialEffectTarget("Hit\\RChargeBall.mdx",hrcu,"hand right")
-call SetSpecialEffectScale(hrcf,0.18)
-call SetSpecialEffectAnimationByIndex(hrcf,1)
+local effect hrcf=AddSpecialEffectTarget("Hit\\RTimeRasenganSmall.mdx",hrcu,"hand right")
+call SetSpecialEffectScale(hrcf,0.018)
+call SetSpecialEffectAnimationByIndex(hrcf,0)
+call SetSpecialEffectVertexColour(hrcf,190,90,255,180)
 call SaveUnitHandle(h,hrci,0,hrcu)
 call SaveUnitHandle(h,hrci,1,hrce)
 call SaveEffectHandle(h,hrci,2,hrcf)
 call SaveBoolean(h,hrci,3,IsUnitPaused(hrcu))
 call SaveBoolean(h,hrci,4,IsUnitInvulnerable(hrcu))
+call HitVo("HitR1")
+call HitSnd("HitF4-sfx-1")
 call MapPauseUnit(hrcu,true)
 call SetUnitInvulnerable(hrcu,true)
 call SetUnitAnimationByIndex(hrcu,56)
@@ -286358,6 +286715,13 @@ endfunction
 // ===== F — Vital Point Attack: стойка 2 с, Q/W/E -> HtF2/HtF3/HtF4, R/D/G/T закрыты =====
 function HitFSet takes unit u,boolean on returns nothing
 if on then
+call EnableUnitAbility(u,'HtF1',true,true)
+call EnableUnitAbility(u,'HtFc',true,true)
+else
+call EnableUnitAbility(u,'HtF1',true,true)
+call DisableUnitAbility(u,'HtFc',true,true)
+endif
+if on then
 call DisableUnitAbility(u,'HtQ1',true,true)
 else
 call EnableUnitAbility(u,'HtQ1',true,true)
@@ -286388,12 +286752,12 @@ else
 call DisableUnitAbility(u,'HtF4',true,true)
 endif
 if on then
-call DisableUnitAbility(u,'HtR1',false,true)
+call DisableUnitAbility(u,'HtR1',true,true)
 call DisableUnitAbility(u,'HtD1',false,true)
 call DisableUnitAbility(u,'HtG1',false,true)
 call DisableUnitAbility(u,'HtT1',false,true)
 else
-call EnableUnitAbility(u,'HtR1',false,true)
+call EnableUnitAbility(u,'HtR1',true,true)
 call EnableUnitAbility(u,'HtD1',false,true)
 call EnableUnitAbility(u,'HtG1',false,true)
 call EnableUnitAbility(u,'HtT1',false,true)
@@ -286411,8 +286775,8 @@ endif
 if hbon then
 set hbaf=AddSpecialEffectTarget("Hit\\TimeBlueAura.mdx",hbau,"origin")
 call SaveBoolean(HH,GetHandleId(hbaf),StringHash("HitOwnFx"),true)
-call SetSpecialEffectScale(hbaf,0.6)
-call SetSpecialEffectVertexColour(hbaf,35,95,255,110)
+call SetSpecialEffectScale(hbaf,0.3)
+call SetSpecialEffectVertexColour(hbaf,35,95,255,65)
 call SetSpecialEffectAnimationByIndex(hbaf,0)
 call SaveEffectHandle(HH,GetHandleId(hbau),StringHash(hbak),hbaf)
 endif
@@ -286454,12 +286818,35 @@ set u=null
 set t=null
 endfunction
 function HitFCond takes nothing returns boolean
-return GetSpellAbilityId()=='HtF1' and udg_B==true
+return (GetSpellAbilityId()=='HtF1' or GetSpellAbilityId()=='HtFc') and udg_B==true
 endfunction
+function HitFSetRank takes unit hflu returns nothing
+local integer hflr=IMinBJ(5,IMaxBJ(1,1+(GetHeroLevel(hflu)-12)/3))
+if GetUnitAbilityLevel(hflu,'HtF1')==0 then
+call UnitAddAbility(hflu,'HtF1')
+call UnitMakeAbilityPermanent(hflu,true,'HtF1')
+endif
+call SetUnitAbilityLevel(hflu,'HtF1',hflr)
+call SetUnitAbilityLevel(hflu,'HtF2',hflr)
+call SetUnitAbilityLevel(hflu,'HtF3',hflr)
+call SetUnitAbilityLevel(hflu,'HtF4',hflr)
+call EnableUnitAbility(hflu,'HtF1',true,true)
+endfunction
+function HitFLevelEvent takes nothing returns nothing
+call HitFSetRank(GetTriggerUnit())
+endfunction
+
 function HitFCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local timer t=CreateTimer()
 local integer n=LoadInteger(HH,GetHandleId(u),HitK("FstN"))+1
+if LoadInteger(HH,GetHandleId(u),HitK("Fst"))>0 then
+call HitFStop(u,false)
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+return
+endif
 call SaveInteger(HH,GetHandleId(u),HitK("FstN"),n)
 call HitBlueAura(u,true,"HitFAura")
 call SaveInteger(HH,GetHandleId(u),HitK("Fst"),1)
@@ -286468,12 +286855,12 @@ call UnitEnableMovement(u,false,false)
 call SaveBoolean(HH,GetHandleId(u),HitK("FAtkWas"),IsUnitAttackEnabled(u))
 call UnitEnableAttack(u,false,false)
 call HitFSet(u,true)
-call HitAnim(u,23,1.,4.)
+call HitAnim(u,23,1.,3.)
 call HitSnd("HitF1-sfx-1")
 call HitVo("HitF1")
 call SaveUnitHandle(h,GetHandleId(t),0,u)
 call SaveInteger(h,GetHandleId(t),1,n)
-call TSE_TimerStart(t,4.,false,function HitFEnd)
+call TSE_TimerStart(t,3.,false,function HitFEnd)
 set t=null
 set u=null
 endfunction
@@ -286481,6 +286868,27 @@ endfunction
 function HitF2Cond takes nothing returns boolean
 return GetSpellAbilityId()=='HtF2' and udg_B==true
 endfunction
+function HitEndVisionOff takes nothing returns nothing
+local timer hvet=GetExpiredTimer()
+local integer hvei=GetHandleId(hvet)
+local fogmodifier hvef=LoadFogModifierHandle(h,hvei,0)
+call FogModifierStop(hvef)
+call DestroyFogModifier(hvef)
+call FlushChildHashtable(h,hvei)
+call TSE_DestroyTimer(hvet)
+set hvef=null
+set hvet=null
+endfunction
+function HitEndVision takes unit hveu,real hvex,real hvey returns nothing
+local timer hvet=CreateTimer()
+local fogmodifier hvef=CreateFogModifierRadius(OwnerOf(hveu),FOG_OF_WAR_VISIBLE,hvex,hvey,250.,true,false)
+call FogModifierStart(hvef)
+call SaveFogModifierHandle(h,GetHandleId(hvet),0,hvef)
+call TSE_TimerStart(hvet,2.,false,function HitEndVisionOff)
+set hvet=null
+set hvef=null
+endfunction
+
 function HitF2Fire takes nothing returns nothing
 local timer hfqt=GetExpiredTimer()
 local integer hfqi=GetHandleId(hfqt)
@@ -286503,7 +286911,7 @@ set u=null
 return
 endif
 loop
-exitwhen d>1800. or hit!=null
+exitwhen d>1980. or hit!=null
 call GroupEnumUnitsInRange(g,x+d*Cos(a),y+d*Sin(a),110.,null)
 loop
 set e=FirstOfGroup(g)
@@ -286519,11 +286927,12 @@ call DestroyGroup(g)
 call HitSnd("HitF2-sfx-1")
 call HitVo("HitF2")
 call HitFQBeam(u,a)
+call HitEndVision(u,x+1980.*Cos(a),y+1980.*Sin(a))
 if hit!=null then
 call HitPunchImpact(hit,a,0.,0.75)
 call HitContactWind(hit,a,0.6)
 call HitImpactSound(1)
-call myCustomDamage(u,hit,6.*HitAgi(u),false,false,null,null,null)
+call myCustomDamage(u,hit,(2.+I2R(GetUnitAbilityLevel(u,'HtF2')))*HitAgi(u),false,false,null,null,null)
 endif
 set g=null
 set hit=null
@@ -286598,7 +287007,8 @@ call HitAnim(u,55,2.,0.4)
 endif
 if k<3 then
 call HitFWStrike(u,e,k,hfwda)
-call myCustomDamage(u,e,2.*HitAgi(u),false,false,null,null,null)
+call HitPunchImpact(u,hfwda,0.,0.4)
+call myCustomDamage(u,e,((2.+I2R(GetUnitAbilityLevel(u,'HtF3')))/3.)*HitAgi(u),false,false,null,null,null)
 if UnitIsAlive(e) then
 call SetUnitXY_1(e,GetUnitX(e)+22.*Cos(hfwda),GetUnitY(e)+22.*Sin(hfwda),false)
 endif
@@ -286613,7 +287023,7 @@ else
 call TSE_TimerStart(t,0.4,true,function HitF3Tick)
 endif
 else
-call myCustomDamage(u,e,2.*HitAgi(u),false,false,null,null,null)
+call myCustomDamage(u,e,((2.+I2R(GetUnitAbilityLevel(u,'HtF3')))/3.)*HitAgi(u),false,false,null,null,null)
 
 if UnitIsAlive(e) then
 call HitMarkAdd(e)
@@ -286727,6 +287137,7 @@ set hfpf=LoadEffectHandle(h,hfpi,100+hfpk)
 if hfpf!=null then
 call RemoveSavedBoolean(HH,GetHandleId(hfpf),StringHash("HitOwnFx"))
 call HitIceGlowEnd(hfpf)
+call RemoveSavedInteger(HH,GetHandleId(hfpf),StringHash("HitIceShade"))
 call DestroyEffect(hfpf)
 endif
 set hfpk=hfpk+1
@@ -286738,8 +287149,8 @@ call GroupRemoveUnit(hfpg,hfpe)
 if not LoadBoolean(h,hfpi,9) and hfpu!=null and UnitIsAlive(hfpe) then
 call HitStrikeFx(hfpe,4,LoadReal(h,hfpi,1),0.65)
 call HitContactWind(hfpe,LoadReal(h,hfpi,1),0.6)
-call HitSnd("HitFEImpact")
-call myCustomDamage(hfpu,hfpe,7.*HitAgi(hfpu),false,false,null,null,null)
+call HitSnd("HitColdEyeHit")
+call myCustomDamage(hfpu,hfpe,(3.+I2R(GetUnitAbilityLevel(hfpu,'HtF4')))*HitAgi(hfpu),false,false,null,null,null)
 set hfpv=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(hfpv),0,hfpe)
 call SaveInteger(h,GetHandleId(hfpv),1,1)
@@ -286814,10 +287225,24 @@ loop
 set hfde=FirstOfGroup(hfdegs)
 exitwhen hfde==null
 call GroupRemoveUnit(hfdegs,hfde)
+if not IsUnitInGroup(hfde,hfdg) and IsUnitEnemy(hfde,OwnerOf(hfdu)) and UnitIsAlive(hfde) and HitReverse(hfdu,hfde) then
+call DestroyGroup(hfdegs)
+call SaveBoolean(h,hfdi,9,true)
+call HitF4Pop()
+set hfdu=null
+set hfde=null
+set hfdg=null
+set hfdegs=null
+set hfdf=null
+set hfff=null
+set hfdt=null
+return
+endif
 if HitEnemy(hfdu,hfde) and not IsUnitInGroup(hfde,hfdg) then
 call GroupAddUnit(hfdg,hfde)
 call SaveBoolean(h,hfdi,GetHandleId(hfde),GetUnitFlyHeight(hfde)>GetUnitDefaultFlyHeight(hfde)+40.)
-call HitFreeze(hfdu,hfde,(1100.-hfdd)/2500.+LoadReal(h,hfdi,10))
+call HitFreeze(hfdu,hfde,(1100.-hfdd)/5000.+LoadReal(h,hfdi,10))
+call SetControlToUnit(hfdu,hfde,(1100.-hfdd)/5000.+LoadReal(h,hfdi,10),"heavystun")
 endif
 endloop
 call DestroyGroup(hfdegs)
@@ -286852,7 +287277,7 @@ call SaveReal(h,hfci,5,GetUnitY(u))
 call SaveGroupHandle(h,hfci,6,CreateGroup())
 call SaveBoolean(h,hfci,7,IsUnitInvulnerable(u))
 call SaveBoolean(h,hfci,8,IsUnitPaused(u))
-call SaveReal(h,hfci,10,0.12+HitStopAdd(u))
+call SaveReal(h,hfci,10,0.06+HitStopAdd(u)*0.5)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call SetUnitInvulnerable(u,true)
 call MapPauseUnit(u,true)
@@ -286866,9 +287291,8 @@ call SaveEffectHandle(h,hfci,22,hfff)
 call HitOwnFxKeep(hfff,0.55,false)
 set hfff=null
 call HitDashTrace(u,a)
-call HitSnd("HitF4-sfx-1")
-call HitVo("HitF4")
-call TSE_TimerStart(t,0.02,true,function HitF4Tick)
+call HitSnd("HitColdEyeBasa")
+call TSE_TimerStart(t,0.01,true,function HitF4Tick)
 set t=null
 set u=null
 endfunction
@@ -286955,7 +287379,7 @@ set htff=null
 set htft=null
 endfunction
 function HitTBeat takes integer htbk,real htbm returns real
-return 0.3+(2.592-0.26/12.)*htbm*(1.65*I2R(htbk)-1.3*I2R(htbk*(htbk-1))/46.)/24.
+return 0.3+(2.592-0.26/12.)*htbm*(1.65*I2R(htbk)-1.3*I2R(htbk*(htbk-1))/30.)/16.
 endfunction
 
 function HitTHeldFx takes integer htci,unit htcu,unit htce,real htca returns nothing
@@ -286966,8 +287390,8 @@ local timer htct
 local real htcz=65.
 local real htcp=0.
 local real htcr=0.
-local string htcm="Hit\\PunchImpact.mdx"
-if LoadInteger(h,htci,12)<24 then
+local string htcm="Hit\\TPunchImpact.mdx"
+if LoadInteger(h,htci,12)<16 then
 set htcz=GetRandomReal(40.,95.)
 set htcp=GetRandomReal(-12.,12.)
 set htcr=GetRandomReal(-18.,18.)
@@ -286975,17 +287399,17 @@ endif
 loop
 exitwhen htck>=2
 if htck==1 then
-set htcm="Hit\\PunchBeam.mdx"
+set htcm="Hit\\TPunchBeam.mdx"
 endif
 set htcf=AddSpecialEffect(htcm,GetUnitX(htce),GetUnitY(htce))
 call SetSpecialEffectZ(htcf,GetUnitZ(htce)+htcz)
 call SetSpecialEffectOrientation(htcf,htca*bj_RADTODEG,htcp,htcr)
 if htck==1 then
 call SetSpecialEffectMatrixScale(htcf,1.44,0.585,0.585)
-call SetSpecialEffectVertexColour(htcf,215,170,255,145)
+call SetSpecialEffectVertexColour(htcf,215,170,255,200)
 else
 call SetSpecialEffectScale(htcf,1.26)
-call SetSpecialEffectVertexColour(htcf,210,180,240,60)
+call SetSpecialEffectVertexColour(htcf,210,180,240,90)
 endif
 call SetSpecialEffectAnimationByIndex(htcf,0)
 call SaveBoolean(HH,GetHandleId(htcf),StringHash("HitOwnFx"),true)
@@ -287005,7 +287429,7 @@ call TimerStart(htct,0.2,false,function HitTFxPause)
 set htck=htck+1
 endloop
 call SaveInteger(h,htci,20,htcn)
-set htcf=AddSpecialEffect("Hit\\PunchImpact.mdx",GetUnitX(htce),GetUnitY(htce))
+set htcf=AddSpecialEffect("Hit\\TPunchImpact.mdx",GetUnitX(htce),GetUnitY(htce))
 call SetSpecialEffectZ(htcf,GetUnitZ(htce)+htcz)
 call SetSpecialEffectOrientation(htcf,htca*bj_RADTODEG,htcp,htcr)
 call SetSpecialEffectScale(htcf,0.675)
@@ -287018,7 +287442,7 @@ call SetSpecialEffectScale(htcf,0.585)
 call SetSpecialEffectVertexColour(htcf,220,210,240,125)
 call SetSpecialEffectTimeScale(htcf,1.8)
 call HitOwnFxKeep(htcf,0.3,false)
-set htcf=AddSpecialEffect("Hit\\MinatoHit.mdx",GetUnitX(htce),GetUnitY(htce))
+set htcf=AddSpecialEffect("Hit\\TMinatoHit.mdx",GetUnitX(htce),GetUnitY(htce))
 call SetSpecialEffectZ(htcf,GetUnitZ(htce)+htcz)
 call SetSpecialEffectOrientation(htcf,htca*bj_RADTODEG,htcp,htcr)
 call SetSpecialEffectScale(htcf,0.7)
@@ -287163,7 +287587,7 @@ local real htr
 local real htsr=LoadReal(h,hti,22)
 local real htv
 local effect htbf=LoadEffectHandle(h,hti,8)
-if htj==24 then
+if htj==16 then
 set hta=LoadReal(h,hti,3)+12.*137.5*bj_DEGTORAD
 set htn=36
 set htm=25
@@ -287179,22 +287603,21 @@ endif
 if htp==0 then
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
-set htr=145.+15.*I2R(ModuloInteger(htj,3))
-if htj==24 then
-set htr=175.
+set htr=300.+40.*I2R(ModuloInteger(htj,3))
+if htj==16 then
+set htr=300.
 elseif ModuloInteger(htj,4)==1 then
-set htr=135.
+set htr=260.
 endif
 call SaveReal(h,hti,22,htr)
 call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
-if htj==24 then
-call SetUnitAnimationByIndex(htu,11)
-call SetUnitTimeScale(htu,1.)
-else
-call SetUnitTimeScale(htu,1.)
+if htj==16 then
+call SetUnitAnimationByIndex(htu,14)
+call SetUnitAnimationOffsetPercent(htu,6167./7934.)
+call SetUnitTimeScale(htu,1.767/(0.936*LoadReal(h,hti,11)*35./36.))
 endif
 if htj==0 then
 call SaveReal(h,hti,24,0.22*0.12101381042059008*LoadReal(h,hti,11))
@@ -287206,27 +287629,19 @@ set htv=htv*htv*(3.-2.*htv)
 set htr=115.+(htsr-115.)*(1.-htv)
 call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
-if htj==24 and htp==12 then
-call SetUnitAnimationByIndex(htu,13)
-call SetUnitTimeScale(htu,2.267/(0.936*LoadReal(h,hti,11)*23./36.))
-endif
 elseif htp==htn-1 then
 call SaveInteger(h,hti,26,LoadInteger(h,hti,26)+1)
-if htj==24 then
-call HitSnd("HitTFinalImpact")
-else
-call HitSnd("HitTImpact")
-endif
 if htbf==null then
-set htbf=HitFacingIce(GetUnitX(hte),GetUnitY(hte),6.3,6.+HitStopAdd(htu),true)
+set htbf=HitTFacingIce(GetUnitX(hte),GetUnitY(hte),6.3,6.+HitStopAdd(htu),true)
 call SetSpecialEffectZ(htbf,GetUnitZ(hte)+65.)
 call SaveEffectHandle(h,hti,8,htbf)
 endif
-if htj==24 then
+if htj==16 then
 call HitTFxCancel(hti)
 endif
 call HitTHeldFx(hti,htu,hte,hta+bj_PI)
-if htj==24 then
+call HitTPunchRay(htu,hte,0.45)
+if htj==16 then
 call HitTApplyDamage(hti,11.*HitAgi(htu))
 call SaveBoolean(h,hti,5,true)
 call SaveReal(h,hti,17,hta+bj_PI)
@@ -287247,7 +287662,7 @@ else
 set htj=htj+1
 call SaveInteger(h,hti,12,htj)
 call SaveInteger(h,hti,2,0)
-if htj==24 then
+if htj==16 then
 set htr=0.936/36.
 else
 set htr=(0.22-0.0025*I2R(htj))*0.12101381042059008
@@ -287276,16 +287691,22 @@ local real htmd=HitTBeat(htmj+1,LoadReal(h,htmid,11))-HitTBeat(htmj,LoadReal(h,h
 local real htmt
 local real htma
 local real htmr=115.
-if htmj<24 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
+local real htmouter=300.+40.*I2R(ModuloInteger(htmj,3))
+if htmj<16 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
 set htmt=(TimerGetElapsed(LoadTimerHandle(h,htmid,25))-HitTBeat(htmj,LoadReal(h,htmid,11)))/htmd
 if htmt>=0. then
 set htmt=RMinBJ(1.,htmt)
 set htmt=htmt*htmt*(3.-2.*htmt)
 if htmj==0 then
 set htma=LoadReal(h,htmid,3)
-set htmr=115.+(RMinBJ(175.,LoadReal(h,htmid,29))-115.)*(1.-htmt)
+set htmr=115.+(htmouter-115.)*(1.-htmt)
 else
-set htma=LoadReal(h,htmid,3)+(I2R(htmj-1)+htmt)*137.5*bj_DEGTORAD
+set htmr=115.+(htmouter-115.)*(1.-htmt)
+set htma=LoadReal(h,htmid,3)+I2R(htmj)*137.5*bj_DEGTORAD
+endif
+if LoadInteger(h,htmid,30)!=htmj+1 then
+call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htmu),GetUnitY(htmu),0.,0.5,0.25)
+call SaveInteger(h,htmid,30,htmj+1)
 endif
 call SetUnitXY_1(htmu,GetUnitX(htme)+htmr*Cos(htma),GetUnitY(htme)+htmr*Sin(htma),false)
 call SetUnitFacingInstant(htmu,htma*bj_RADTODEG+180.)
@@ -287306,11 +287727,11 @@ loop
 exitwhen htloops>=8 or LoadUnitHandle(h,htki,0)==null or LoadBoolean(h,htki,5)
 exitwhen TimerGetElapsed(LoadTimerHandle(h,htki,25))+0.0001<LoadReal(h,htki,23)
 set htindex=LoadInteger(h,htki,12)
-if htindex<24 then
+if htindex<16 then
 call SaveInteger(h,htki,2,3)
 call HitTHit()
 if LoadUnitHandle(h,htki,0)!=null then
-if LoadInteger(h,htki,12)<24 then
+if LoadInteger(h,htki,12)<16 then
 call SaveReal(h,htki,23,HitTBeat(LoadInteger(h,htki,12)+1,htstep))
 else
 call SaveReal(h,htki,24,0.936*htstep/36.)
@@ -287329,9 +287750,7 @@ endfunction
 function HitTCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtT1' and udg_B==true
 endfunction
-function HitTCast takes nothing returns nothing
-local unit htu=GetTriggerUnit()
-local unit hte=GetSpellTargetUnit()
+function HitTBegin takes unit htu,unit hte returns nothing
 local real htd=4.2+HitStopAdd(htu)
 local real htseries=(htd-0.3)/3.528
 local timer htt=CreateTimer()
@@ -287339,7 +287758,6 @@ local timer htvc=CreateTimer()
 local timer htmeasure=CreateTimer()
 local effect htice
 local real htia=Atan2(GetUnitY(hte)-GetUnitY(htu),GetUnitX(hte)-GetUnitX(htu))
-call HitBlueAura(htu,true,"HitTAura")
 call SaveBoolean(h,GetHandleId(htt),14,IsUnitInvulnerable(htu))
 call SaveBoolean(h,GetHandleId(htt),15,IsUnitInvulnerable(hte))
 call SaveBoolean(h,GetHandleId(htt),16,IsUnitPaused(htu))
@@ -287347,18 +287765,23 @@ call SaveUnitHandle(HH,GetHandleId(htu),StringHash("HitTGuard"),htu)
 call SaveUnitHandle(HH,GetHandleId(hte),StringHash("HitTGuard"),htu)
 call SetUnitInvulnerable(htu,true)
 call SetUnitInvulnerable(hte,true)
-call HitSnd("HitT")
+call HitSnd("HitSeichoAttack")
 call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
-call HitSnd("HitT1-sfx-1")
 call HitVo("HitT1")
 call TSE_StartEx(htu,htd+0.8,true,GetUnitX(htu),GetUnitY(htu),1200.)
-call HitAnim(htu,15,3.,0.35)
+call SaveInteger(HH,GetHandleId(htu),HitK("AnN"),LoadInteger(HH,GetHandleId(htu),HitK("AnN"))+1)
+call SetUnitAnimationByIndex(htu,14)
+call SetUnitAnimationOffsetPercent(htu,0.)
+call SetUnitTimeScale(htu,6.167/(0.3+(2.592-0.26/12.)*htseries+0.936*htseries/36.))
 call MapPauseUnit(htu,true)
 call SetUnitInvulnerable(htu,true)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),true)
 call SaveUnitHandle(h,GetHandleId(htt),0,htu)
 call SaveUnitHandle(h,GetHandleId(htt),1,hte)
 call SaveInteger(h,GetHandleId(htt),2,0)
+set htice=HitTFacingIce(GetUnitX(hte),GetUnitY(hte),6.3,6.+HitStopAdd(htu),true)
+call SetSpecialEffectZ(htice,GetUnitZ(hte)+65.)
+call SaveEffectHandle(h,GetHandleId(htt),8,htice)
 call SaveReal(h,GetHandleId(htt),3,Atan2(GetUnitY(htu)-GetUnitY(hte),GetUnitX(htu)-GetUnitX(hte)))
 call SaveReal(h,GetHandleId(htt),11,htseries)
 call SaveReal(h,GetHandleId(htt),29,SquareRootUnit(htu,hte))
@@ -287378,6 +287801,54 @@ set hte=null
 set htu=null
 endfunction
 // ===== приказы Хита (цель шага W) и тик 0.1 с: шаг сквозь время, заряды D, скрытые продолжения F =====
+function HitTApproach takes nothing returns nothing
+local timer htpat=GetExpiredTimer()
+local integer htpai=GetHandleId(htpat)
+local unit htpau=LoadUnitHandle(h,htpai,0)
+local unit htpae=LoadUnitHandle(h,htpai,1)
+local integer htpak=LoadInteger(h,htpai,2)+1
+local real htpaa=Atan2(GetUnitY(htpae)-GetUnitY(htpau),GetUnitX(htpae)-GetUnitX(htpau))
+local boolean htpaok=htpau!=null and htpae!=null and UnitIsAlive(htpau) and UnitIsAlive(htpae) and udg_B
+if htpaok and SquareRootUnit(htpau,htpae)>125. and htpak<100 then
+call SetUnitFacingInstant(htpau,htpaa*bj_RADTODEG)
+call SetUnitXY_1(htpau,GetUnitX(htpau)+30.*Cos(htpaa),GetUnitY(htpau)+30.*Sin(htpaa),false)
+call SaveInteger(h,htpai,2,htpak)
+else
+if htpau!=null then
+call MapPauseUnit(htpau,LoadBoolean(h,htpai,3))
+call SetUnitInvulnerable(htpau,LoadBoolean(h,htpai,4))
+endif
+if htpaok and SquareRootUnit(htpau,htpae)<=125. then
+if not HitReverse(htpau,htpae) then
+call HitTBegin(htpau,htpae)
+endif
+endif
+call FlushChildHashtable(h,htpai)
+call TSE_DestroyTimer(htpat)
+endif
+set htpau=null
+set htpae=null
+set htpat=null
+endfunction
+function HitTCast takes nothing returns nothing
+local unit htpcu=GetTriggerUnit()
+local unit htpce=GetSpellTargetUnit()
+local timer htpct=CreateTimer()
+local integer htpci=GetHandleId(htpct)
+call SaveUnitHandle(h,htpci,0,htpcu)
+call SaveUnitHandle(h,htpci,1,htpce)
+call SaveBoolean(h,htpci,3,IsUnitPaused(htpcu))
+call SaveBoolean(h,htpci,4,IsUnitInvulnerable(htpcu))
+call MapPauseUnit(htpcu,true)
+call SetUnitInvulnerable(htpcu,true)
+call SaveInteger(HH,GetHandleId(htpcu),HitK("AnN"),LoadInteger(HH,GetHandleId(htpcu),HitK("AnN"))+1)
+call SetUnitAnimationByIndex(htpcu,11)
+call TSE_TimerStart(htpct,0.01,true,function HitTApproach)
+set htpcu=null
+set htpce=null
+set htpct=null
+endfunction
+
 function HitOrder takes nothing returns nothing
 local unit u=GetTriggerUnit()
 local integer uid=GetHandleId(u)
@@ -287453,6 +287924,8 @@ set uid=GetHandleId(u)
 set p=OwnerOf(u)
 if not LoadBoolean(HH,uid,HitK("Ini")) then
 call SaveBoolean(HH,uid,HitK("Ini"),true)
+call HitFSetRank(u)
+call DisableUnitAbility(u,'HtFc',true,true)
 call DisableUnitAbility(u,'HtF2',true,true)
 call DisableUnitAbility(u,'HtF3',true,true)
 call DisableUnitAbility(u,'HtF4',true,true)
@@ -295360,9 +295833,10 @@ call LANG_A('A0VG',3,0,"Naruto creates many clones with large rasengans that att
 call LANG_A('A0VQ',1,0,"Tsuna unleashes a powerful blast of flame at the targeted enemy.|n|n|cFF00A5FFMana cost: 150.|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nCooldown: 25 seconds|r")
 call LANG_A('A0VQ',2,0,"Burning Axel, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0VQ',3,0,"Tsuna unleashes a powerful blast of flame at the targeted enemy.|n|n|cFF00A5FFMana cost: 150.|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nCooldown: 25 seconds|r")
-call LANG_A('A0VT',1,0,"Tsuna unleashes a powerful blast of flame at the targeted enemy.|n|n|cFF00A5FFMana cost: 150.|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nCooldown: 25 seconds|r")
-call LANG_A('A0VT',2,0,"Burning Axel, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0VT',3,0,"Tsuna unleashes a powerful blast of flame at the targeted enemy.|n|n|cFF00A5FFMana cost: 150.|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nCooldown: 25 seconds|r")
+call LANG_A('A0VT',0,0,"Portal")
+call LANG_A('A0VT',1,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
+call LANG_A('A0VT',2,0,"Portal")
+call LANG_A('A0VT',3,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
 call LANG_A('A0VZ',0,0,"Hold Pain")
 call LANG_A('A0VZ',1,0,"Hold Pain")
 call LANG_A('A0W8',1,0,"Index surrounds himself with the sanctuary of St. George, then concentrates magic and fires a stream of magical energy at the specified area. At the end of the spell, holy feathers appear that fall and damage anyone they touch, also burning some mana.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF0"+"0A5FF|nFeather Damage: 1*|r|c00FF5555STR|r|cFF00A5FF|nMana Break: 5%|nCooldown: 40 seconds|r")
@@ -295476,9 +295950,9 @@ call LANG_A('A0X6',2,0,"Mantello di Vongola Primo, [|cffffcc00Level %d|r] (|cfff
 call LANG_A('A0X6',3,0,"Tsuna uses a defensive cambio form to protect herself from damage.|n|n|cFF00A5FFDuration: 3,3.5,4,4.5,5 seconds|nCooldown: 30\\31\\32\\33\\34 sec. |r")
 call LANG_A('A0X7',0,0,"Shinban, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A0X7',1,0,"Reconnaissance of the specified area, reveals invisible.|n|nDuration: 10 sec.|nRange: 4000|nAoE: 1250|nCooldown: 30 sec")
-call LANG_A('A0X8',0,0,"Mario Mushroom, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 endfunction
 function LANG_Data23 takes nothing returns nothing
+call LANG_A('A0X8',0,0,"Mario Mushroom, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A0X8',0,1,"Mario Mushroom, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('A0X8',0,2,"Mario Mushroom, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
 call LANG_A('A0X8',0,3,"Mario Mushroom, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
@@ -295728,9 +296202,9 @@ call LANG_A('A0ZB',1,5,"While Sinon is in ambush, she becomes invisible, if Sino
 call LANG_A('A0ZB',2,0,"Stealth, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('A0ZB',3,0,"While Sinon is in ambush, she becomes invisible, if Sinon fires a shot, she will become visible for a short time. |c003CFF3CAGI|r Sinon is also passively upgraded.|n|n|cFF00A5FFTime: 3\\2.5\\2\\1.5\\1 sec.|nAdd. |c003CFF3CAGI|r: 20\\30\\40\\50\\60")
 call LANG_A('A0ZD',0,0,"Concentrated Shot!, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0ZD',1,0,"Sinon fires a penetrating projectile from her rifle.|n|n|cFF00A5FF|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 5700|nAoE: 220|nCooldown: 15 seconds|r")
 endfunction
 function LANG_Data24 takes nothing returns nothing
+call LANG_A('A0ZD',1,0,"Sinon fires a penetrating projectile from her rifle.|n|n|cFF00A5FF|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 5700|nAoE: 220|nCooldown: 15 seconds|r")
 call LANG_A('A0ZD',2,0,"Concentrated Shot!, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0ZD',3,0,"Sinon fires a penetrating projectile from her rifle.|n|n|cFF00A5FF|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nRange: 5700|nAoE: 220|nCooldown: 15 seconds|r")
 call LANG_A('A0ZE',0,0,"Concentration, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
@@ -295980,9 +296454,9 @@ call LANG_A('A10D',0,2,"Explosion, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A10D',0,3,"Explosion, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A10D',0,4,"Explosion, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('A10D',1,0,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
-call LANG_A('A10D',1,1,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
 endfunction
 function LANG_Data25 takes nothing returns nothing
+call LANG_A('A10D',1,1,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
 call LANG_A('A10D',1,2,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
 call LANG_A('A10D',1,3,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
 call LANG_A('A10D',1,4,"Louise creates multiple explosions in the target area that damage and stun enemies.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF. +50|nStun: 2s|nAoE: 600|nCooldown: 20 seconds|r")
@@ -296232,9 +296706,9 @@ call LANG_A('A11S',0,4,"Dark Cloud Tempo, [|cffffcc00Level 5|r] (|cffffcc00B|r)"
 call LANG_A('A11S',1,0,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/16|nCooldown: 25 seconds|r")
 call LANG_A('A11S',1,1,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/18|nCooldown: 22 seconds|r")
 call LANG_A('A11S',1,2,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/20|nCooldown: 19 seconds|r")
-call LANG_A('A11S',1,3,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/22|nCooldown: 16 seconds|r")
 endfunction
 function LANG_Data26 takes nothing returns nothing
+call LANG_A('A11S',1,3,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/22|nCooldown: 16 seconds|r")
 call LANG_A('A11S',1,4,"Nami creates a small storm cloud that attacks enemies with bolts of lightning.|n|n|cFF00A5FFDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nRanks: Strength/24|nCooldown: 13 seconds|r")
 call LANG_A('A11S',2,0,"Tornado Tempo, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A11S',3,0,"Nami spawns a giant tornado that pulls in all enemies and deals damage.|n|n|cFF00A5FFDamage: 15% of |c0077FFFFINT|r ( every 0.025 seconds)|nCooldown: 35 seconds|r")
@@ -296484,9 +296958,9 @@ call LANG_A('A13E',3,0,"Shiro creates a shield that blocks damage.|n|n|cFF00A5FF
 call LANG_A('A13F',0,0,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,1,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,2,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
-call LANG_A('A13F',0,3,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 endfunction
 function LANG_Data27 takes nothing returns nothing
+call LANG_A('A13F',0,3,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,4,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
 call LANG_A('A13F',1,0,"Shirou uses Hercules' sword for a series of 9 devastating attacks.|n|n|cFF00A5FF|nDamage: 4(6)*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nAoE: 350|nCooldown: 25(20) seconds|r")
 call LANG_A('A13F',1,1,"Shirou uses Hercules' sword for a series of 9 devastating attacks.|n|n|cFF00A5FF|nDamage: 5(7)*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nAoE: 350|nCooldown: 25(20) seconds|r")
@@ -296736,9 +297210,9 @@ call LANG_A('A15L',3,0,"Killua dashes in the specified direction, dealing damage
 call LANG_A('A15N',0,0,"Gravita, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,1,"Gravita, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,2,"Gravita, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
-call LANG_A('A15N',0,3,"Gravita, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data28 takes nothing returns nothing
+call LANG_A('A15N',0,3,"Gravita, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,4,"Gravita, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('A15N',1,0,"Fujitora increases gravity in the target area, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 75|nRange: 1000|nAoE: 600|nStun: 2 sec|nCooldown: 20 seconds|r")
 call LANG_A('A15N',1,1,"Fujitora increases gravity in the target area, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 75|nRange: 1000|nAoE: 600|nStun: 2 sec|nCooldown: 20 seconds|r")
@@ -296988,9 +297462,9 @@ call LANG_A('A17R',1,0,"Miss 50% Sinon")
 call LANG_A('A17S',1,0,"Kuuka creates an area, if the specified enemy leaves this area, he will receive serious damage, as well as periodic damage to all enemies inside.|n|n|cFF00A5FF|nDamage: 7 *|r|c0077FFFFINT|r|cFF00A5FF (Chaos damage/Unblockable)|nDamage (Internal): 2*|r|c0077FFFFINT|r|cFF00A5FF per second|nDuration: 6"+" sec.|nRange: 1000|nAoE: 1200|nCooldown: 35 seconds|r")
 call LANG_A('A17S',2,0,"Nodens Sokutei, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A17S',3,0,"Kuuka creates an area, if the specified enemy leaves this area, he will receive serious damage, as well as periodic damage to all enemies inside.|n|n|cFF00A5FF|nDamage: 7 *|r|c0077FFFFINT|r|cFF00A5FF (Chaos damage/Unblockable)|nDamage (Internal): 2*|r|c0077FFFFINT|r|cFF00A5FF per second|nDuration: 6"+" sec.|nRange: 1000|nAoE: 1200|nCooldown: 35 seconds|r")
-call LANG_A('A17T',1,0,"Sabrak's weapons leave unhealed wounds, dealing pure damage. There are more of them with every hit. If the one-time damage from each of the wounds exceeds the limit of 25 damage, then the damage becomes equal to the limit.|nDoes not work with Yata's Mirror.|n|n|cFF00A5FFDamage: 0.09*|r|c003CFF3CAGI|"+"r|cFF00A5FF per second|nMinimum Damage: 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|r")
 endfunction
 function LANG_Data29 takes nothing returns nothing
+call LANG_A('A17T',1,0,"Sabrak's weapons leave unhealed wounds, dealing pure damage. There are more of them with every hit. If the one-time damage from each of the wounds exceeds the limit of 25 damage, then the damage becomes equal to the limit.|nDoes not work with Yata's Mirror.|n|n|cFF00A5FFDamage: 0.09*|r|c003CFF3CAGI|"+"r|cFF00A5FF per second|nMinimum Damage: 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|r")
 call LANG_A('A17T',2,0,"Bone Armor, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('A17T',3,0,"Kimimaro's bones reduce damage he takes.|n|n|cFF00A5FFDamage Absorbed: 5% - 10%\\20%\\30%\\40%\\50%|r")
 call LANG_A('A17U',0,0,"Fuiuchi, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -297240,9 +297714,9 @@ call LANG_A('A19R',1,4,"Frenda scatters bears in the specified area. They will a
 call LANG_A('A19R',2,0,"Toy Shop, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A19R',3,0,"Frenda scatters bears in the specified area. They will activate after 0.5 seconds.|n|n|cFF00A5FFDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF + 0.02*|r|c0077FFFFINT|r|cFF00A5FF*Hero level + 50 + 2% of enemy's current HP|nQuantity: 5\\6\\7\\8\\9|nLifetime of bears: 80 seconds.|nRange: 1250|nCooldown: 25\\2"+"3\\21\\19\\17 sec|r")
 call LANG_A('A19S',0,0,"Bomb Rush, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
-call LANG_A('A19S',0,1,"Bomb Rush, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 endfunction
 function LANG_Data30 takes nothing returns nothing
+call LANG_A('A19S',0,1,"Bomb Rush, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,2,"Bomb Rush, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,3,"Bomb Rush, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,4,"Bomb Rush, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
@@ -297492,9 +297966,9 @@ call LANG_A('HSR1',1,2,"Hashirama creates a wood dragon underground that binds e
 call LANG_A('HSR1',1,3,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 16% Max|nStun: 2 sec|nDamage: 7*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 7% Max per second|nDamage: 100% received+7*|r|c00FF5555STR|"+"r|cFF00A5FF|nCooldown: 35 seconds")
 call LANG_A('HSR1',1,4,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 20% Max|nStun: 2 sec|nDamage: 8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 8% Max per second|nDamage: 100% received+8*|r|c00FF5555STR|"+"r|cFF00A5FF|nCooldown: 35 seconds")
 call LANG_A('HSR1',2,0,"Mokuryu No Jutsu, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('HSR1',3,0,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 4/8/12/16/20% Max|nStun: 2 sec|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 4\\5\\6\\7\\8% Max per second|nDamage"+": 100% taken+4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 se")
 endfunction
 function LANG_Data31 takes nothing returns nothing
+call LANG_A('HSR1',3,0,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 4/8/12/16/20% Max|nStun: 2 sec|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 4\\5\\6\\7\\8% Max per second|nDamage"+": 100% taken+4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 se")
 call LANG_A('HST1',0,0,"Mokujin No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('HST1',1,0,"Hashirama forms a tree golem that increases health from Hashirama's strength, grants additional attack damage by 2*|c00FF5555STR|r, and grants the ability to jump onto an area with a hit.|n|cff2b95ff|n• HP Increase: 250 for every 50 |c00FF5555STR|r|cff2b95ff|nDuration: 20 sec|nPreparation: 1 sec|n"+"Damage: 50|nArmor: 10|nCooldown: 50 seconds")
 call LANG_A('HST1',2,0,"Mokujin No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
@@ -297744,9 +298218,9 @@ call LANG_A('SaQ1',0,1,"Hystrix, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,2,"Hystrix, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,3,"Hystrix, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,4,"Hystrix, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('SaQ1',1,0,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 endfunction
 function LANG_Data32 takes nothing returns nothing
+call LANG_A('SaQ1',1,0,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,1,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3.5x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 pe"+"r sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,2,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 4x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,3,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 4.5x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 pe"+"r sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
@@ -297996,9 +298470,9 @@ call LANG_A('A1C8',2,0,"Change Vector, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A1C8',3,0,"The accelerator changes the vector of the building and throws it in the specified direction.|n|n|cFF00A5FFDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 10 sec.")
 call LANG_A('A1C9',0,0,"Pari Tenu Blauserum, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,1,"Pari Tenu Blauserum, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
-call LANG_A('A1C9',0,2,"Pari Tenu Blauserum, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 endfunction
 function LANG_Data33 takes nothing returns nothing
+call LANG_A('A1C9',0,2,"Pari Tenu Blauserum, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,3,"Pari Tenu Blauserum, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,4,"Pari Tenu Blauserum, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',1,0,"Nero dashes in the target direction and attacks with a series of strikes from the first enemy hit.|n|n|cFF00A5FF|nDamage: 75+2*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1250|nCast time: +0.08 sec.|nCooldown: 19 seconds|r")
@@ -298248,9 +298722,9 @@ call LANG_A('A1DS',1,20,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF
 call LANG_A('A1DS',1,23,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
 call LANG_A('A1DS',1,26,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
 call LANG_A('A1DS',1,29,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
-call LANG_A('A1DT',0,0,"Tauropolos: Bow of Heaven, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 endfunction
 function LANG_Data34 takes nothing returns nothing
+call LANG_A('A1DT',0,0,"Tauropolos: Bow of Heaven, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,1,"Tauropolos: Bow of Heaven, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,2,"Tauropolos: Bow of Heaven, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,3,"Tauropolos: Bow of Heaven, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
@@ -298500,9 +298974,9 @@ call LANG_A('A1FC',0,4,"Gae Bolg Rush, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('A1FC',1,0,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,1,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 4.25*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,2,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 5.5*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
-call LANG_A('A1FC',1,3,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 6.75*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 endfunction
 function LANG_Data35 takes nothing returns nothing
+call LANG_A('A1FC',1,3,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 6.75*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,4,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',2,0,"Gae Bolg Rush, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A1FC',3,0,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 3\\4.25\\5.5\\6.75\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
@@ -298752,9 +299226,9 @@ call LANG_A('A1GU',2,0,"Azrael: The Angel That Announces Death, [|cffffcc00Level
 call LANG_A('A1GU',3,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nChase speed: +1% per sec"+".|nRange: 1200|nCooldown: 30 sec. after the end of ability")
 call LANG_A('A1GW',0,0,"God's Resolution, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,1,"God's Resolution, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
-call LANG_A('A1GW',0,2,"God's Resolution, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 endfunction
 function LANG_Data36 takes nothing returns nothing
+call LANG_A('A1GW',0,2,"God's Resolution, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,3,"God's Resolution, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,4,"God's Resolution, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',1,0,"Jeanne stuns enemies in the target area, reducing them |c00FFFF66AllStat|r for 15 seconds|n|n|cFF00A5FF|nStun: 3 sec|n|c00FFFF66AllStat|r|cFF00A5FF: 10|nCooldown: 38 sec")
@@ -299004,9 +299478,9 @@ call LANG_A('A215',2,0,"Fire Shield, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A215',3,0,"Ace surrounds himself with flames, dealing heavy damage to all enemies around him and protecting him.|n|n|cFF00A5FFMana spent: 1%\\sec|nDamage Blocked: 5%\\10%\\15%\\20%\\25%.|nDamage: 0.25\\0.5\\0.75\\1\\1.25*|r|c003CFF3CAGI|r|cFF00A5FF sec|r")
 call LANG_A('A215',4,0,"Dispel ''Fire Shield'' (|cffffcc00F|r).")
 call LANG_A('A215',5,0,"Dispel ''Fire Shield'' .")
-call LANG_A('A21N',0,0,"Byakugan, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 endfunction
 function LANG_Data37 takes nothing returns nothing
+call LANG_A('A21N',0,0,"Byakugan, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A21N',1,0,"Passive: Neji can detect invisible enemies that are close to him. Neji is also immune to Shortsight.|nActive: Increases sight range, detection range of invisible enemies, and any damage dealt by Neji burns mana from enemies hit.|n|n|cFF00A5FF|nBonus Vision Range: 1000|nInvisible Enemies Detection Ra"+"nge: 700(1500)|nAmount of burned mana: 0.25*Damage.|nDuration: 10 sec.|nCooldown: 35 seconds|r")
 call LANG_A('A21N',2,0,"Dragon Force, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A21N',3,0,"Laxus uses the power of the thunder dragon.|n|n|cFF00A5FF|nHealth Boost: 500\\750\\1000\\1250\\1500|nIgnore Damage: 15%\\18%\\21%\\24%\\27%|nProtection: 5\\10\\15\\20\\25.|nCooldown: 60 sec.|nDuration: 15 seconds|r")
@@ -299256,9 +299730,9 @@ call LANG_A('A3G2',0,1,"Hakkeshō Kaiten, [|cffffcc00Level 2|r] (|cffffcc00E|r)"
 call LANG_A('A3G2',0,2,"Hakkeshō Kaiten, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A3G2',0,3,"Hakkeshō Kaiten, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A3G2',0,4,"Hakkeshō Kaiten, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A3G2',1,0,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1 sec.|nCooldown: 23 sec.")
 endfunction
 function LANG_Data38 takes nothing returns nothing
+call LANG_A('A3G2',1,0,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,1,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1.5 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,2,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 2 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,3,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 2.5 sec.|nCooldown: 23 sec.")
@@ -299508,9 +299982,9 @@ call LANG_A('Ao66',0,3,"Command Seal Reinforced Keys, [|cffffcc00Level 4|r] (|cf
 call LANG_A('Ao66',0,4,"Command Seal Reinforced Keys, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('Ao66',1,0,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 500|nSilence: 2 sec|nCooldown: 15 sec.")
 call LANG_A('Ao66',1,1,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 600|nSilence: 2 sec|nCooldown: 14 sec.")
-call LANG_A('Ao66',1,2,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 700|nSilence: 2 sec|nCooldown: 13 sec.")
 endfunction
 function LANG_Data39 takes nothing returns nothing
+call LANG_A('Ao66',1,2,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 700|nSilence: 2 sec|nCooldown: 13 sec.")
 call LANG_A('Ao66',1,3,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 6*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 800|nSilence: 2 sec|nCooldown: 12 sec.")
 call LANG_A('Ao66',1,4,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 7*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 900|nSilence: 2 sec|nCooldown: 11 sec.")
 call LANG_A('Ao66',2,0,"Command Seal Reinforced Keys, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
@@ -299760,9 +300234,9 @@ call LANG_A('GGS4',2,0,"Super Saiyan 4, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('GGS4',3,0,"Increase |c00FFFF66AllStat|r by 30. |c00FF5555STR|r an additional 8 pts. Grants access to the Soul Punisher after Ultimate Impact. Increases E damage by 50%.|n|n|cFF00A5FFMP Consumption: 1.05% per second|r")
 call LANG_A('GGSG',1,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 call LANG_A('GGSG',2,0,"Super Saiyan God Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('GGSG',3,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 endfunction
 function LANG_Data40 takes nothing returns nothing
+call LANG_A('GGSG',3,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 call LANG_A('GGSS',1,0,"Increase |c00FFFF66AllStat|r by 8. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 0.3% per second|r")
 call LANG_A('GGSS',2,0,"Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('GGSS',3,0,"Increase |c00FFFF66AllStat|r by 8. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 0.3% per second|r")
@@ -300012,9 +300486,9 @@ call LANG_A('LCR1',1,0,"Lucci fires a projectile of sharply compressed air with 
 call LANG_A('LCR1',1,1,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 5*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
 call LANG_A('LCR1',1,2,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 6*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
 call LANG_A('LCR1',1,3,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 7*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
-call LANG_A('LCR1',1,4,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 8*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
 endfunction
 function LANG_Data41 takes nothing returns nothing
+call LANG_A('LCR1',1,4,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 8*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
 call LANG_A('LCR1',2,0,"Tobu Shigan Bachi/Shigan Oren, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('LCR1',3,0,"Lucci fires a projectile of sharply compressed air with a flick of his finger. The enhanced version deals additional damage. If G is active and the distance to the target is less than 800, then Lucci performs a combo with increased damage by 2*|c003CFF3CAGI|r and stuns for 1 sec.|n|n|cFF00A5FF|nDama"+"ge: 4/5/6/7/8*|c003CFF3CAGI|r|cFF00A5FF (+1*|c003CFF3CAGI|r|cFF00A5FF)|nRange: 2000|nCooldown: 30 seconds.|r")
 call LANG_A('LCT1',1,0,"Rokushiki's secret and strongest technique. Lucci holds his fists almost point-blank to the opponent's chest, after which he releases a powerful shock wave from his hands through his body. The enhanced version creates a shockwave that deals damage to other enemies. Lucci's target cannot be pushed un"+"til the spell animation ends.|n|n|cFF00A5FF|nDamage: 10*|c003CFF3CAGI|r|cFF00A5FF (+2*|c003CFF3CAGI|r|cFF00A5FF)|nWave Damage: 10*|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec|nCast Range: 800|nCooldown: 35 seconds.|r")
@@ -300264,9 +300738,9 @@ call LANG_A('YoR0',1,2,"Yoruichi charges his attack for a second and hits the ta
 call LANG_A('YoR0',1,3,"Yoruichi charges his attack for a second and hits the target area with it. For the next 2 seconds, lightning strikes at a random point in the area every 0.25 seconds.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF + 0.35*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nAOE: 550|nCast Range: 2500|n"+"Cooldown: 30 seconds|r")
 call LANG_A('YoR0',1,4,"Yoruichi charges his attack for a second and hits the target area with it. For the next 2 seconds, lightning strikes at a random point in the area every 0.25 seconds.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF + 0.4*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nAOE: 550|nCast Range: 2500|nC"+"ooldown: 30 seconds|r")
 call LANG_A('YoR0',2,0,"Shunko: Raijin Senkei, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('YoR0',3,0,"Yoruichi charges his attack for a second and hits the target area with it. The attack persists for 2 seconds, dealing damage over time every 0.25 seconds.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF + 0.2\\0.25\\0.3\\0.35\\0.4*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nAOE: 55"+"0|nCast Range: 2500|nCooldown: 30 seconds|r")
 endfunction
 function LANG_Data42 takes nothing returns nothing
+call LANG_A('YoR0',3,0,"Yoruichi charges his attack for a second and hits the target area with it. The attack persists for 2 seconds, dealing damage over time every 0.25 seconds.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF + 0.2\\0.25\\0.3\\0.35\\0.4*|r|c003CFF3CAGI|r|cFF00A5FF every 0.25 sec.|nAOE: 55"+"0|nCast Range: 2500|nCooldown: 30 seconds|r")
 call LANG_A('YoT0',1,0,"Shunko's energy temporarily turns Yoruichi into an uncontrollable likeness of a cat, after which she begins to quickly run to random points, attacking all opponents in her path.|n|n|cFF00A5FF|nDamage: 2.25*|r|c003CFF3CAGI|r|cFF00A5FF per hit (no more than once every 0.4 seconds).|nStun: 0.1 sec|nAoE"+": 2000|nDuration: 6 sec.|nCooldown: 45 seconds|r")
 call LANG_A('YoT0',2,0,"Shunryū Kokubyō Senki, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('YoT0',3,0,"Shunko's energy temporarily turns Yoruichi into an uncontrollable likeness of a cat, after which she begins to quickly run to random points, attacking all opponents in her path.|n|n|cFF00A5FF|nDamage: 2.25*|r|c003CFF3CAGI|r|cFF00A5FF per hit (no more than once every 0.4 seconds).|nStun: 0.1 sec|nAoE"+": 2000|nDuration: 6 sec.|nCooldown: 45 seconds|r")
@@ -300516,9 +300990,9 @@ call LANG_A('WE05',0,2,"Shattering Light: Sky Drill, [|cffffcc00Level 3|r] (|cff
 call LANG_A('WE05',0,3,"Shattering Light: Sky Drill, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('WE05',0,4,"Shattering Light: Sky Drill, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
 call LANG_A('WE05',1,0,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
-call LANG_A('WE05',1,1,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
 endfunction
 function LANG_Data43 takes nothing returns nothing
+call LANG_A('WE05',1,1,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
 call LANG_A('WE05',1,2,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 9*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
 call LANG_A('WE05',1,3,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 10*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
 call LANG_A('WE05',1,4,"Wendy, by surrounding the targeted point with an air barrier that enemies cannot pass through, releases a sharp stream of air there, stunning the affected enemies.|n|n|cFF00A5FF|nDamage: 11*|r|c0077FFFFINT|r|cFF00A5FF.|nStun: 3 sec|nRange: 2000|nAoE: 400|nCooldown: 30 sec.")
@@ -300768,9 +301242,9 @@ call LANG_A('KI56',2,0,"Vongola Sun Ring")
 call LANG_A('KI56',3,0,"Increase |c00FF5555STR|r by 30 and HP Regen for 35.")
 call LANG_A('KI58',0,0,"True Vongola Sun Ring")
 call LANG_A('KI58',1,0,"Increase |c00FF5555STR|r by 35, HP Regen by 35 and HP recovery efficiency by 15%.")
-call LANG_A('KI58',2,0,"True Vongola Sun Ring")
 endfunction
 function LANG_Data44 takes nothing returns nothing
+call LANG_A('KI58',2,0,"True Vongola Sun Ring")
 call LANG_A('KI58',3,0,"Increase |c00FF5555STR|r by 35, HP Regen by 35 and HP recovery efficiency by 15%.")
 call LANG_A('KI60',0,0,"Vongola Mist Ring, Rank D")
 call LANG_A('KI60',1,0,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
@@ -301020,9 +301494,9 @@ call LANG_A('KII2',2,0,"Death Scythe")
 call LANG_A('KII2',3,0,"Increase |c003CFF3CAGI|r by 50, HP by 500, Attack by 125. Sweeping Strikes - 70% splash in 600. AoE")
 call LANG_A('KII4',0,0,"Alastor")
 call LANG_A('KII4',1,0,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals (8*Hero level) damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.")
-call LANG_A('KII4',2,0,"Alastor")
 endfunction
 function LANG_Data45 takes nothing returns nothing
+call LANG_A('KII4',2,0,"Alastor")
 call LANG_A('KII4',3,0,"Increases |c00FFFF66AllStat|r by 35, increases regeneration up to 50 per sec., \"Alastor's Fire\" - deals (8*Hero level) damage per sec. to all enemies within a radius of 700.|nThe aura does not activate the Onizuka Set.")
 call LANG_A('KII6',0,0,"Anbu Sword")
 call LANG_A('KII6',1,0,"Increases AS by 30%, each attack deals 55 additional damage. pure damage that pierces resists but not shields, the effect does not stack.")
@@ -301053,9 +301527,9 @@ call LANG_A('KIJ8',1,0,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Atta
 call LANG_A('KIJ8',2,0,"Samehada (Bleeding)")
 call LANG_A('KIJ8',3,0,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 50, and AS by 50%. Each attack deals 150+20% of your auto attack as true damage.")
 call LANG_A('KIK0',0,0,"Time Sphere")
-call LANG_A('KIK0',1,0,"Increases |c00FFFF66AllStat|r by 30.")
+call LANG_A('KIK0',1,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class.")
 call LANG_A('KIK0',2,0,"Time Sphere")
-call LANG_A('KIK0',3,0,"Increases |c00FFFF66AllStat|r by 30.")
+call LANG_A('KIK0',3,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class.")
 call LANG_A('KIK2',0,0,"Space Sphere")
 call LANG_A('KIK2',1,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.")
 call LANG_A('KIK2',2,0,"Space Sphere")
@@ -301272,9 +301746,9 @@ call LANG_A('KIU8',0,0,"True Rain Mare Ring")
 call LANG_A('KIU8',1,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 35, slows the AS of an enemy that attacks you by 230%.")
 call LANG_A('KIU8',2,0,"True Rain Mare Ring")
 call LANG_A('KIU8',3,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 35, slows the AS of an enemy that attacks you by 230%.")
-call LANG_A('KIV0',0,0,"Mist Mare Ring, Rank D")
 endfunction
 function LANG_Data46 takes nothing returns nothing
+call LANG_A('KIV0',0,0,"Mist Mare Ring, Rank D")
 call LANG_A('KIV0',1,0,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
 call LANG_A('KIV0',2,0,"Mist Mare Ring, Rank D")
 call LANG_A('KIV0',3,0,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
@@ -301524,9 +301998,9 @@ call LANG_A('KaA8',0,0,"Light of Buddha, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('KaA8',0,1,"Light of Buddha, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('KaA8',0,2,"Light of Buddha, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('KaA8',0,3,"Light of Buddha, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
-call LANG_A('KaA8',0,4,"Light of Buddha, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 endfunction
 function LANG_Data47 takes nothing returns nothing
+call LANG_A('KaA8',0,4,"Light of Buddha, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('KaA8',1,0,"After preparation, Karna makes a dash, pulls enemies together and lifts them into the air. Then you can press RMB to select a landing point. If Karna dropped his armor, the delay of the ability disappears, and the cooldown can be reset by 50% if Karna misses.|n |n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI|"+"r|cFF00A5FF.|nRange: 1200.|nStun: 2 seconds.|nAOE: 500|nCooldown: 25 sec.|r")
 call LANG_A('KaA8',1,1,"After preparation, Karna makes a dash, pulls enemies together and lifts them into the air. Then you can press RMB to select a landing point. If Karna dropped his armor, the delay of the ability disappears, and the cooldown can be reset by 50% if Karna misses.|n |n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI|"+"r|cFF00A5FF.|nRange: 1200.|nStun: 2 seconds.|nAOE: 500|nCooldown: 25 sec.|r")
 call LANG_A('KaA8',1,2,"After preparation, Karna makes a dash, pulls enemies together and lifts them into the air. Then you can press RMB to select a landing point. If Karna dropped his armor, the delay of the ability disappears, and the cooldown can be reset by 50% if Karna misses.|n |n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI|"+"r|cFF00A5FF.|nRange: 1200.|nStun: 2 seconds.|nAOE: 500|nCooldown: 25 sec.|r")
@@ -301776,9 +302250,9 @@ call LANG_A('AKR1',1,1,"Tsuru + Hana:|n|nKimimaro pulls the enemy in with a whip
 call LANG_A('AKR1',1,2,"Tsuru + Hana:|n|nKimimaro pulls the enemy in with a whip, then pierces right through him.|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nCooldown: 25 sec|r|n|nHana:|n|nKimimaro dashes forward, piercing right through the enemy.|n|cFF00A5FF|nDamage: 150+5*|r|c003CFF"+"3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nPreparation: 0.3 sec|nCooldown: 25 sec")
 call LANG_A('AKR1',1,3,"Tsuru + Hana:|n|nKimimaro pulls the enemy in with a whip, then pierces right through him.|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nCooldown: 25 sec|r|n|nHana:|n|nKimimaro dashes forward, piercing right through the enemy.|n|cFF00A5FF|nDamage: 150+6*|r|c003CFF"+"3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nPreparation: 0.3 sec|nCooldown: 25 sec")
 call LANG_A('AKR1',1,4,"Tsuru + Hana:|n|nKimimaro pulls the enemy in with a whip, then pierces right through him.|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nCooldown: 25 sec|r|n|nHana:|n|nKimimaro dashes forward, piercing right through the enemy.|n|cFF00A5FF|nDamage: 150+7*|r|c003CFF"+"3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nPreparation: 0.3 sec|nCooldown: 25 sec")
-call LANG_A('AKR1',2,0,"Tessenka no Mai: Hana, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 endfunction
 function LANG_Data48 takes nothing returns nothing
+call LANG_A('AKR1',2,0,"Tessenka no Mai: Hana, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('AKR1',3,0,"Tsuru + Hana:|n|nKimimaro pulls the enemy in with a whip, then pierces right through him.|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nCooldown: 25 sec|r|n|nHana:|n|nKimimaro dashes forward, piercing right through the enemy.|n|cFF00A5FF|nDamage: 150+"+"3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF |nStun: 2 sec|nRange: 1000 sec|nPreparation: 0.3 sec|nCooldown: 25 sec")
 call LANG_A('AKT1',0,0,"Sawarabi No Mai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('AKT1',1,0,"Kimimaro impales all enemies around him with bones.|n|cFF00A5FF|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec|nAoE: 200-1000|nDuration: 0.5|nCooldown: 30 sec.|r")
@@ -302028,9 +302502,9 @@ call LANG_A('RsD2',1,0,"Roshi pushes himself back by 1000 with a Kamehameha, dea
 call LANG_A('RsD3',1,0,"Roshi pushes himself back by 1000 with a Kamehameha, dealing damage behind him or attacking the first enemy in front and stunning him for 0.5.|n• Has up to 3 charges at levels 6/12/18, displayed above Roshi|nKamehameha:|cFF00A5FF|nDamage (behind): 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: up to 1000 |"+"nAoE: 200|nDamage (in front): 1*|r|c0077FFFFINT|r|cFF00A5FF|nRange: up to 1000 |nAoE: 200|nCast time: +0.1 sec.|nConsumes: 5% of Roshi's MAX MP|nCooldown: 35 sec for each ability.|n")
 call LANG_A('RsF1',1,0,"Roshi attempts to seal an enemy/ally in a bottle after 2.5 seconds.|nThe ability will be interrupted if it fails to reach the target after 3.5 seconds of the projectile's flight and another 3.5 seconds after pulling back.|n|cFF00A5FF|nBottle Health: 50% of the target|nRoshi can throw the bottle or r"+"elease the target.|nKilling the bottle will free the sealed target.|nRange: 1000|nDuration: Up to 10 seconds|nCast Time: +0.3 seconds|nCooldown: 40 seconds|r")
 call LANG_A('RsF2',1,0,"Roshi throws the bottle with telekinesis.|n|cFF00A5FF|nRange:  1000 |n")
-call LANG_A('RsF3',1,0,"Roshi releases the target from the bottle.|n")
 endfunction
 function LANG_Data49 takes nothing returns nothing
+call LANG_A('RsF3',1,0,"Roshi releases the target from the bottle.|n")
 call LANG_A('RsG1',0,0,"Saimin jutsu, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('RsG1',0,1,"Saimin jutsu, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
 call LANG_A('RsG1',0,2,"Saimin jutsu, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
@@ -302280,9 +302754,9 @@ call LANG_A('RmQ1',1,0,"Remilia leaps past the point and releases 4 homing chain
 call LANG_A('RmQ1',1,1,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.75*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 sec.|nRange: 1000|nCa"+"st time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmQ1',1,2,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 sec.|nRange: 1000|nCast "+"time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmQ1',1,3,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1.25*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 sec.|nRange: 1000|nCa"+"st time: +0.1 sec.|nCooldown: 23 sec.|r")
-call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 sec.|nRange: 1000|nCas"+"t time: +0.1 sec.|nCooldown: 23 sec.|r")
 endfunction
 function LANG_Data50 takes nothing returns nothing
+call LANG_A('RmQ1',1,4,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 1.5*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 sec.|nRange: 1000|nCas"+"t time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmQ1',2,0,"Scarlet Shoot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
 call LANG_A('RmQ1',3,0,"Remilia leaps past the point and releases 4 homing chains of scarlet aura.|nFor 8 sec. Q is replaced by Bad Lady Scramble; after using it, Q returns immediately.|n|n|cFF00A5FF|nDamage: 0.5\\0.75\\1\\1.25\\1.5*|r|c0077FFFFINT|r|cFF00A5FF per hit (all 4 chains on one target — four times)|nStun: 1 se"+"c.|nRange: 1000|nCast time: +0.1 sec.|nCooldown: 23 sec.|r")
 call LANG_A('RmQ2',1,0,"Remilia swaps places with the Scarlet Shoot point and stuns everyone around.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec.|nCast time: +0.1 sec.|r")
@@ -302532,9 +303006,9 @@ call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',3,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
 call LANG_A('ToFG',1,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
 call LANG_A('ToFG',3,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
-call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
+call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
@@ -302661,63 +303135,79 @@ call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)"
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,3,"Flash Fist Crush, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,4,"Flash Fist Crush, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',1,0,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,1,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,2,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,3,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
-call LANG_A('HtQ1',1,4,"Hit steps back, lunges at the target and punches it forward. He is paused and invulnerable throughout the movement. Targets already frozen in time are not pushed. Every hit leaves a vital point mark (up to 3, 15 sec.). A hit on a target with 3 marks bursts the point: damage, silence and no regenerat"+"ion. The forward lunge travels at most 600; a miss releases a short strike forward.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,0,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 40 + 1.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback"+": 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,1,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 80 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 200 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback: "+"160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,2,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 120 + 2.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockbac"+"k: 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,3,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 160 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 400 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockback:"+" 160|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',1,4,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 200 + 3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 500 + 6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec.|nFreeze: 0.2 sec.|nKnockbac"+"k: 160|nRange: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtQ1',2,0,"Flash Fist Crush, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('HtQ1',3,0,"Step back, dash forward and punch. Hits build marks; hitting three marks bursts them.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSilence: 1.5 sec., no regeneration: 4 sec."+"|nRange: 600|nCooldown: 6 sec.|r")
+call LANG_A('HtQ1',3,0,"Hit steps back, then lunges at his opponent and knocks them back. His strikes leave marks that explode upon reaching three.|n|n|cFF00A5FF|nDamage: 40\\80\\120\\160\\200 + 1.5\\2\\2.5\\3\\3.5*|r|c003CFF3CAGI|r|cFF00A5FF|nBurst: 100\\200\\300\\400\\500 + 2\\3\\4\\5\\6*|r|c003CFF3CAGI|r|cFF00A5FF|nSile"+"nce: 1.5 sec., no regeneration: 4 sec.|nRange: 600|nCooldown: 6 sec.|r")
 call LANG_A('HtW1',0,0,"Icy Glare, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,1,"Icy Glare, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,2,"Icy Glare, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,3,"Icy Glare, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,4,"Icy Glare, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('HtW1',1,0,"A wave of ice runs along a line to the point (Ctrl+W picks where it starts: from Hit, to Hit or from both ends to the middle) and hits every enemy once: damage, a freeze, then a slow. The click sets direction only; the full line is 1400 long. Hit is paused and invulnerable until the waves finish. Hi"+"t radius: 300.|n|n|cFF00A5FF|nDamage: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,1,"A wave of ice runs along a line to the point (Ctrl+W picks where it starts: from Hit, to Hit or from both ends to the middle) and hits every enemy once: damage, a freeze, then a slow. The click sets direction only; the full line is 1400 long. Hit is paused and invulnerable until the waves finish. Hi"+"t radius: 300.|n|n|cFF00A5FF|nDamage: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.7 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,2,"A wave of ice runs along a line to the point (Ctrl+W picks where it starts: from Hit, to Hit or from both ends to the middle) and hits every enemy once: damage, a freeze, then a slow. The click sets direction only; the full line is 1400 long. Hit is paused and invulnerable until the waves finish. Hi"+"t radius: 300.|n|n|cFF00A5FF|nDamage: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.8 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,3,"A wave of ice runs along a line to the point (Ctrl+W picks where it starts: from Hit, to Hit or from both ends to the middle) and hits every enemy once: damage, a freeze, then a slow. The click sets direction only; the full line is 1400 long. Hit is paused and invulnerable until the waves finish. Hi"+"t radius: 300.|n|n|cFF00A5FF|nDamage: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.9 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,4,"A wave of ice runs along a line to the point (Ctrl+W picks where it starts: from Hit, to Hit or from both ends to the middle) and hits every enemy once: damage, a freeze, then a slow. The click sets direction only; the full line is 1400 long. Hit is paused and invulnerable until the waves finish. Hi"+"t radius: 300.|n|n|cFF00A5FF|nDamage: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 1.0 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,0,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,1,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.7 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,2,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.8 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,3,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.9 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,4,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 1.0 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
 call LANG_A('HtW1',2,0,"Icy Glare, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('HtW1',3,0,"Send a wave of time ice forward. Each enemy is hit once.|n|n|cFF00A5FF|nDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6\\0.7\\0.8\\0.9\\1 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',3,0,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6\\0.7\\0.8\\0.9\\1 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 "+"sec., mana +30%)|r")
 call LANG_A('HtE1',0,0,"Tides of Time, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,1,"Tides of Time, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,2,"Tides of Time, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,3,"Tides of Time, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,4,"Tides of Time, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('HtE1',1,0,"Hit skips time: an afterimage stays behind and Hit turns invisible. The first hit on the afterimage is parried, Ctrl+E picks the answer: a counter (the attacker freezes, Hit appears behind him and strikes) or a vanish (invisibility up to 3 sec.). While invisible, Hit skips time as he moves and ends "+"up further along his path. If nobody hits the afterimage, the cooldown is halved.|n|n|cFF00A5FF|nCounter: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 16 sec.|r")
-call LANG_A('HtE1',1,1,"Hit skips time: an afterimage stays behind and Hit turns invisible. The first hit on the afterimage is parried, Ctrl+E picks the answer: a counter (the attacker freezes, Hit appears behind him and strikes) or a vanish (invisibility up to 3 sec.). While invisible, Hit skips time as he moves and ends "+"up further along his path. If nobody hits the afterimage, the cooldown is halved.|n|n|cFF00A5FF|nCounter: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 15 sec.|r")
-call LANG_A('HtE1',1,2,"Hit skips time: an afterimage stays behind and Hit turns invisible. The first hit on the afterimage is parried, Ctrl+E picks the answer: a counter (the attacker freezes, Hit appears behind him and strikes) or a vanish (invisibility up to 3 sec.). While invisible, Hit skips time as he moves and ends "+"up further along his path. If nobody hits the afterimage, the cooldown is halved.|n|n|cFF00A5FF|nCounter: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 14 sec.|r")
-call LANG_A('HtE1',1,3,"Hit skips time: an afterimage stays behind and Hit turns invisible. The first hit on the afterimage is parried, Ctrl+E picks the answer: a counter (the attacker freezes, Hit appears behind him and strikes) or a vanish (invisibility up to 3 sec.). While invisible, Hit skips time as he moves and ends "+"up further along his path. If nobody hits the afterimage, the cooldown is halved.|n|n|cFF00A5FF|nCounter: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 13 sec.|r")
-call LANG_A('HtE1',1,4,"Hit skips time: an afterimage stays behind and Hit turns invisible. The first hit on the afterimage is parried, Ctrl+E picks the answer: a counter (the attacker freezes, Hit appears behind him and strikes) or a vanish (invisibility up to 3 sec.). While invisible, Hit skips time as he moves and ends "+"up further along his path. If nobody hits the afterimage, the cooldown is halved.|n|n|cFF00A5FF|nCounter: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 12 sec.|r")
+call LANG_A('HtE1',1,0,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 16 sec.|r")
+call LANG_A('HtE1',1,1,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 15 sec.|r")
+call LANG_A('HtE1',1,2,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 14 sec.|r")
+call LANG_A('HtE1',1,3,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 13 sec.|r")
+call LANG_A('HtE1',1,4,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 12 sec.|r")
 call LANG_A('HtE1',2,0,"Tides of Time, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('HtE1',3,0,"Vanish and leave a decoy. An attack on it triggers a counter.|n|n|cFF00A5FF|nCounter: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|nCooldown: 16\\15\\1"+"4\\13\\12 sec.|r")
+call LANG_A('HtE1',3,0,"Hit leaves a double and disappears. Striking the double triggers a counterattack.|n|n|cFF00A5FF|nCounter: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF, attacker freezes for 0.8 sec.|nAfterimage: 1.2 sec., invisibility: 2 sec.|nTime skip step: 250 every 0.5 sec. while invisible|"+"nCooldown: 16\\15\\14\\13\\12 sec.|r")
 call LANG_A('HtR1',0,0,"Time Cage, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',0,1,"Time Cage, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',0,2,"Time Cage, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',0,3,"Time Cage, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',0,4,"Time Cage, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('HtR1',1,0,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 1.50 sec. (+1 sec. after W)|nStored damage on release: +10"+"%|nRange: 600|nCooldown: 30 sec.|r")
-call LANG_A('HtR1',1,1,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 1.75 sec. (+1 sec. after W)|nStored damage on release: +15"+"%|nRange: 600|nCooldown: 28 sec.|r")
-call LANG_A('HtR1',1,2,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 2.00 sec. (+1 sec. after W)|nStored damage on release: +20"+"%|nRange: 600|nCooldown: 26 sec.|r")
-call LANG_A('HtR1',1,3,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 2.25 sec. (+1 sec. after W)|nStored damage on release: +25"+"%|nRange: 600|nCooldown: 24 sec.|r")
-call LANG_A('HtR1',1,4,"The enemy is locked in a separate dimension: frozen, only Hit can hit him. Hit's damage piles up and lands on release with a bonus. After a W freeze the cage lasts longer. Works on time manipulators too, 25% shorter.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30"+"%|nRange: 600|nCooldown: 22 sec.|r")
+call LANG_A('HtR1',1,0,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.50 sec. (+1 sec. after W)|nStored damage on release: +10%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 30 sec.|r")
+call LANG_A('HtR1',1,1,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.75 sec. (+1 sec. after W)|nStored damage on release: +15%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 28 sec.|r")
+call LANG_A('HtR1',1,2,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.00 sec. (+1 sec. after W)|nStored damage on release: +20%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 26 sec.|r")
+call LANG_A('HtR1',1,3,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.25 sec. (+1 sec. after W)|nStored damage on release: +25%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 24 sec.|r")
+call LANG_A('HtR1',1,4,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('HtR1',3,0,"Trap the enemy in time. Only Hit can damage the target; damage lands when the trap ends.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored damage on release: +10\\15\\20\\25\\30%|nRange: 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Stop time and strike the target 24 times, then deliver the final blow.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtT1',3,0,"Stop time and strike the target 24 times, then deliver the final blow.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtD1',1,0,"Gain charges in combat. Activate to reduce remaining Q/W/E/F cooldowns by one second per charge. Charges are kept.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset after 10 sec. out of combat|nCoo"+"ldown: 30 sec.|r")
-call LANG_A('HtD1',3,0,"Gain charges in combat. Activate to reduce remaining Q/W/E/F cooldowns by one second per charge. Charges are kept.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset after 10 sec. out of combat|nCoo"+"ldown: 30 sec.|r")
-call LANG_A('HtF1',1,0,"Choose Q, W or E within 4 seconds. Hit cannot move or attack during selection.|n|n|cFF00A5FF|nStance: 4 sec.|nCooldown: 14 sec. (7 sec. without a follow-up)|r")
-call LANG_A('HtF1',3,0,"Choose Q, W or E within 4 seconds. Hit cannot move or attack during selection.|n|n|cFF00A5FF|nStance: 4 sec.|nCooldown: 14 sec. (7 sec. without a follow-up)|r")
-call LANG_A('HtF2',1,0,"After a short wind-up, fire a beam that hits the first enemy.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1800|r")
-call LANG_A('HtF2',3,0,"After a short wind-up, fire a beam that hits the first enemy.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1800|r")
-call LANG_A('HtF3',1,0,"Strike from three sides without moving. The final hit knocks back and stuns.|n|n|cFF00A5FF|nDamage: 3 hits of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
-call LANG_A('HtF3',3,0,"Strike from three sides without moving. The final hit knocks back and stuns.|n|n|cFF00A5FF|nDamage: 3 hits of 2*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
-call LANG_A('HtF4',1,0,"Dash 1100 in the chosen direction. Enemies freeze, then take damage when the ice shatters.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
-call LANG_A('HtF4',3,0,"Dash 1100 in the chosen direction. Enemies freeze, then take damage when the ice shatters.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
-call LANG_A('HtG1',1,0,"Time stops for everyone within 1200 of Hit, while Hit moves freely. Damage to frozen units piles up and lands when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
-call LANG_A('HtG1',3,0,"Time stops for everyone within 1200 of Hit, while Hit moves freely. Damage to frozen units piles up and lands when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
+call LANG_A('HtR1',3,0,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored damage on release: +10\\15\\20\\25\\30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange"+": 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
+call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtD1',1,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
+call LANG_A('HtD1',3,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
+call LANG_A('HtF1',1,0,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF1',1,1,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF1',1,2,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF1',1,3,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF1',1,4,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF1',3,0,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
+call LANG_A('HtF2',1,0,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF2',1,1,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF2',1,2,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF2',1,3,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF2',1,4,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF2',3,0,"Hit winds up and delivers a powerful ranged strike against the first enemy in its path.|n|n|cFF00A5FF|nDamage: 3/4/5/6/7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1980|r")
+call LANG_A('HtF3',1,0,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF3',1,1,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF3',1,2,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF3',1,3,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF3',1,4,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF3',3,0,"Hit strikes his opponent three times from different directions. The final strike knocks them back and stuns them.|n|n|cFF00A5FF|nDamage: 3/4/5/6/7*|r|c003CFF3CAGI|r|cFF00A5FF|nKnockback: 300, stun: 0.5 sec.|nRange: 700|r")
+call LANG_A('HtF4',1,0,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtF4',1,1,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtF4',1,2,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtF4',1,3,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtF4',1,4,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtF4',3,0,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 4/5/6/7/8*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
+call LANG_A('HtG1',1,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
+call LANG_A('HtG1',3,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
 call LANG_A('TSkr',1,0,"This hero is a time manipulator. Other heroes' time stops do not affect him. Damage he deals to frozen targets lands in full, everyone else's is halved. Some abilities break through this class but are weaker.")
 call LANG_A('HtWa',1,0,"The ice runs from Hit to the point along the whole line. Line length: 1400; click direction only.|n|n|cFF00A5FFMana cost: 80\\95\\110\\125\\140|nCooldown: 12 sec.|r")
 call LANG_A('HtWb',1,0,"The ice runs from the point back to Hit along the whole line. Line length: 1400; click direction only.|n|n|cFF00A5FFMana cost: 80\\95\\110\\125\\140|nCooldown: 12 sec.|r")
@@ -302728,6 +303218,12 @@ call LANG_A('SnE2',0,0,"Remove Hollow Mask (|cffffcc00E|r)")
 call LANG_A('SnE2',1,0,"Remove the mask and keep its remaining reserve.")
 call LANG_A('ToEo',0,0,"Remove Hollow Mask (|cffffcc00E|r)")
 call LANG_A('ToEo',1,0,"Remove the mask and keep its remaining reserve.")
+call LANG_A('HtFc',0,0,"Leave stance (|cffffcc00F|r)")
+call LANG_A('HtFc',1,0,"Restore normal abilities.")
+call LANG_A('A0VS',0,0,"Health Rewind")
+call LANG_A('A0VS',1,0,"Restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_A('A0VS',2,0,"Health Rewind")
+call LANG_A('A0VS',3,0,"Restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -302762,6 +303258,8 @@ call LANG_It('I009',2,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
 call LANG_It('I009',3,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
 call LANG_It('I00A',0,"Vongola Sun Ring, Rank B")
 call LANG_It('I00A',1,"Vongola Sun Ring, Rank B")
+endfunction
+function LANG_Data52 takes nothing returns nothing
 call LANG_It('I00A',2,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
 call LANG_It('I00A',3,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
 call LANG_It('I00B',0,"Vongola Sun Ring, Rank A")
@@ -302785,8 +303283,6 @@ call LANG_It('I00F',1,"Vongola Mist Ring, Rank D")
 call LANG_It('I00F',2,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
 call LANG_It('I00F',3,"Increase |c0077FFFFINT|r by 10 and |c00FF5555STR|r by 5.")
 call LANG_It('I00G',0,"Vongola Mist Ring, Rank C")
-endfunction
-function LANG_Data52 takes nothing returns nothing
 call LANG_It('I00G',1,"Vongola Mist Ring, Rank C")
 call LANG_It('I00G',2,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
 call LANG_It('I00G',3,"Increase |c0077FFFFINT|r by 15 and |c00FF5555STR|r by 10.")
@@ -303014,6 +303510,8 @@ call LANG_It('I020',2,"Increasing attack power by 100, AS +100%, increasing |c00
 call LANG_It('I020',3,"Increasing attack power by 100, AS +100%, increasing |c00FFFF66AllStat|r by 30|n|nAura of Darkness: Reduces outgoing physical damage from an enemy by 20% within a 1000 radius.|nActive: The target cannot move further than 400 from its current position for 6 seconds. If the target is an enemy, it also"+" cannot attack for 6 sec.|n|cFFFF0000Cannot be used on enemies affected by Imagine Breaker.|r|n|nRange: 1100|nCD: 30 sec.")
 call LANG_It('I021',0,"Gift :)")
 call LANG_It('I021',1,"Gift :)")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I021',2,"A gift, a secret inside... :)")
 call LANG_It('I021',3,"A gift, a secret inside... :)")
 call LANG_It('I022',0,"Gift :)")
@@ -303037,8 +303535,6 @@ call LANG_It('I026',1,"Gift :)")
 call LANG_It('I026',2,"A gift, a secret inside... :)")
 call LANG_It('I026',3,"A gift, a secret inside... :)")
 call LANG_It('I027',0,"Gift :)")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I027',1,"Gift :)")
 call LANG_It('I027',2,"A gift, a secret inside... :)")
 call LANG_It('I027',3,"A gift, a secret inside... :)")
@@ -303260,20 +303756,22 @@ call LANG_It('I03O',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attac
 call LANG_It('I03O',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 50, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 call LANG_It('I03P',0,"Time Sphere")
 call LANG_It('I03P',1,"Time Sphere")
-call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30. Ability: \"Return\" - instantly teleports the hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.")
-call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30. Ability: \"Return\" - instantly teleports the hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.")
+call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_It('ITS0',0,"Time Sphere (Recipe)")
 call LANG_It('ITS0',1,"Time Sphere (Recipe)")
-call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30. Ability: \"Return\" - instantly teleports the hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
-call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30. Ability: \"Return\" - instantly teleports the hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I03Q',0,"Space Sphere")
 call LANG_It('I03Q',1,"Space Sphere")
-call LANG_It('I03Q',2,"Increases |c00FFFF66AllStat|r by 30 and mana regen by 25%.|nActive: \"Portal\" - instantly teleports the specified hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.")
-call LANG_It('I03Q',3,"Increases |c00FFFF66AllStat|r by 30 and mana regen by 25%.|nActive: \"Portal\" - instantly teleports the specified hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.")
+call LANG_It('I03Q',2,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
+call LANG_It('I03Q',3,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
 call LANG_It('ISS0',0,"Space Sphere (Recipe)")
 call LANG_It('ISS0',1,"Space Sphere (Recipe)")
-call LANG_It('ISS0',2,"Increases |c00FFFF66AllStat|r by 30 and mana regen by 25%.|nActive: \"Portal\" - instantly teleports the specified hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
-call LANG_It('ISS0',3,"Increases |c00FFFF66AllStat|r by 30 and mana regen by 25%.|nActive: \"Portal\" - instantly teleports the specified hero to the place where he was 4 seconds ago. Doesnt work in Shirou T.|n|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
+call LANG_It('ISS0',2,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
+call LANG_It('ISS0',3,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
 call LANG_It('I03R',0,"Void Sphere")
 call LANG_It('I03R',1,"Void Sphere")
 call LANG_It('I03R',2,"Increases |c00FFFF66AllStat|r by 30. Passive: Void Shield - Blocks 1 ability every 30 sec, minimum DMG - 500|nCannot be bought with Boros Armor.|nCD: 30 sec.")
@@ -303289,8 +303787,6 @@ call LANG_It('I12R',3,"Increases HP by 500, reduces control by the owner by 20%.
 call LANG_It('I13R',0,"Boros Armor")
 call LANG_It('I13R',1,"Boros Armor")
 call LANG_It('I13R',2,"Increases |c00FFFF66AllStat|r by 30, HP by 500, reduces the duration of control on the owner by 25% and the strength of slows/weaks/debuffs on misses by 35%.|nPassive: \"Limit Break\" - blocks 1 ability, after which, for 6 sec. increases |c00FF5555STR|r by 15 and increases the duration reduction fro"+"m 25% to 75%, minimum DMG - 500. While the armor is intact - the hero is invulnerable to abilities that return damage.|nCannot be purchased with Imagine Breaker and Medusa. CD: 30 sec.|nActive: For the next 5 sec., damage is guaranteed to be blocked. CD: 15 sec.")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I13R',3,"Increases |c00FFFF66AllStat|r by 30, HP by 500, reduces the duration of control on the owner by 25% and the strength of slows/weaks/debuffs on misses by 35%.|nPassive: \"Limit Break\" - blocks 1 ability, after which, for 6 sec. increases |c00FF5555STR|r by 15 and increases the duration reduction fro"+"m 25% to 75%, minimum DMG - 500. While the armor is intact - the hero is invulnerable to abilities that return damage.|nCannot be purchased with Imagine Breaker and Medusa. CD: 30 sec.|nActive: For the next 5 sec., damage is guaranteed to be blocked. CD: 15 sec.")
 call LANG_It('I14R',0,"Boros Armor (Recipe)")
 call LANG_It('I14R',1,"Boros Armor (Recipe)")
@@ -303518,6 +304014,8 @@ call LANG_It('I059',0,"Thunder Mare Ring, Rank A")
 call LANG_It('I059',1,"Thunder Mare Ring, Rank A")
 call LANG_It('I059',2,"Increase |c00FFFF66AllStat|r by 19.")
 call LANG_It('I059',3,"Increase |c00FFFF66AllStat|r by 19.")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I05A',0,"Fake Thunder Mare Ring")
 call LANG_It('I05A',1,"Fake Thunder Mare Ring")
 call LANG_It('I05A',2,"Increase |c00FFFF66AllStat|r by 22.")
@@ -303541,8 +304039,6 @@ call LANG_It('I05E',3,"Increase |c00FF5555STR|r by 20 HP regen: 12% of |c0077FFF
 call LANG_It('I05F',0,"Sun Mare Ring, Rank A")
 call LANG_It('I05F',1,"Sun Mare Ring, Rank A")
 call LANG_It('I05F',2,"Increase |c00FF5555STR|r by 25 HP regen: 13% of |c0077FFFFINT|r.")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I05F',3,"Increase |c00FF5555STR|r by 25 HP regen: 13% of |c0077FFFFINT|r.")
 call LANG_It('I05G',0,"Fake Sun Mare Ring")
 call LANG_It('I05G',1,"Fake Sun Mare Ring")
@@ -303770,6 +304266,8 @@ call LANG_It('IGDr',0,"Gae Dearg (Recipe)")
 call LANG_It('IGDr',1,"Gae Dearg (Recipe)")
 call LANG_It('IGDr',2,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|n• [|c00FF5555Crimson Rose of Exorcism|r] - Shoots a spear at an enemy and "+"deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.|nBuild: True Vongola Storm Ring + Recipe")
 call LANG_It('IGDr',3,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|nActive: [|c00FF5555Crimson Rose of Exorcism|r] - Fires a spear at an enemy a"+"nd deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_It('IHYi',0,"Yukirin's Hourglass")
 call LANG_It('IHYi',1,"Yukirin's Hourglass")
 call LANG_It('IHYi',2,"Raise |c00FF5555STR|r and |c003CFF3CAGI|r by 35, |c0077FFFFINT|r by 20.|n|n• [|c0000FFFFTrial of Time|r] - Dealing damage reduces the efficiency of the target's HP regeneration for 5 seconds. Dealing damage refreshes the duration and increases the heal rez: -25/50/75%. CD: 0.5 sec. At 3 charges, h"+"alf of the enemy's unrecovered HP is transferred to the wearer.|nRemoved by cleansing. (see Recipe)")
@@ -303793,8 +304291,6 @@ call LANG_It('IOS4',0,"Onizuka's Earrings")
 call LANG_It('IOS4',1,"Onizuka's Earrings")
 call LANG_It('IOS4',2,"Increase |c0000FF00HP|r by 300, |c0077FFFFINT|r by 5, Regen MP by 50%.|n|n• [|c000080FFExtraordinary|r] - when dealing damage, restores HP in the amount of 5% Max HP. Cooldown: 10 seconds.")
 call LANG_It('IOS4',3,"Increase |c0000FF00HP|r by 300, |c0077FFFFINT|r by 5, Regen MP by 50%.|n|n• [|c000080FFExtraordinary|r] - when dealing damage, restores HP in the amount of 5% Max HP. Cooldown: 10 seconds.")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_It('IPar',0,"Patriot (Recipe)")
 call LANG_It('IPar',1,"Patriot (Recipe)")
 call LANG_It('IPar',2,"Increases attack power by 75, |c00FFFF66AllStat|r by 25, Passive: \"Patriotism\" - Each hit steals 3 enemy stats for 10 sec.|n\"Meaninglessness\" - Steals 30 |c00FFFF66AllStat|r for 10 sec, in addition, the target's resistances and shields will register incoming damage as 25% more. The target will n"+"ot take more damage than was originally dealt.|n|nCooldown: 45 sec.|n|nBuild: Tempered Sword + Medal of Courage + Recipe")
@@ -304022,6 +304518,8 @@ call LANG_U('H02X',3,"Killer Bee, the jinchuriki of the Eight-Tails, has mastere
 call LANG_U('H02Y',3,"Genkishi - one of the pseudo-funeral wreaths, master of illusions and 4 swords.|n|nRole: Carry, Caster, Exhauster, Swordsman|n|n")
 call LANG_U('H02Z',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.|n|nRole: Caster, Carry|n|n")
 call LANG_U('H030',2,"Final Form")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_U('H030',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.")
 call LANG_U('H031',3,"Sanji is the cook on the Straw Hats' ship.|n|nRole: Caster, Assassin|n|n")
 call LANG_U('H032',3,"The fifth mizukage of the village \"Kirigakure\", owns the elements: water, fire and earth, is also able to use yōton techniques.|n|nRole: Caster, Disabler|n|n")
@@ -304045,8 +304543,6 @@ call LANG_U('H03O',0,"Virgil")
 call LANG_U('H03P',3,"Katsura Kotaro is the leader of the terrorist organization \"Joy\", who fought against the Amanto in his youth.|n|nRole: Caster, Support, Swordsman|n|n")
 call LANG_U('H03Q',3,"Luffy - A carefree guy who loves to eat and dreams of becoming the Pirate King, ate the \"Gomu-Gomu\" fruit and became a rubber man.")
 call LANG_U('H03R',3,"Youmu Konpaku learned swordsmanship from her father in her childhood, also receiving her sword from him.|n|nRole: Caster, Assassin, Swordsman|n|n")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_U('H03S',3,"The world of the gods, one of the 6 Paths of Pain, governs gravity, attraction and repulsion.|n|nRole: Caster, Disabler, Durable, Semi-Support|n|n")
 call LANG_U('H03T',0,"Demon World")
 call LANG_U('H03T',2,"Payne")
@@ -304274,6 +304770,8 @@ call LANG_B('B00X',0,"Pouring Rain")
 call LANG_B('B00X',1,"Pouring Rain")
 call LANG_B('B00Y',0,"Thunder Shield")
 call LANG_B('B00Y',1,"Thunder Shield")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_B('B00Z',0,"Clear Sky")
 call LANG_B('B00Z',1,"Clear Sky")
 call LANG_B('B010',1,"This warrior is slow.")
@@ -304297,8 +304795,6 @@ call LANG_B('B024',1,"This warrior is wounded")
 call LANG_B('B025',1,"This warrior heard the soul piano.")
 call LANG_B('B026',1,"This warrior heard the soul piano.")
 call LANG_B('B027',1,"This warrior heard the soul piano.")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_B('B02D',1,"This warrior is on fire.")
 call LANG_B('B02E',1,"This warrior is protected by a mantle.")
 call LANG_B('B02F',1,"This warrior is slow.")
