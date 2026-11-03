@@ -137027,6 +137027,7 @@ endfunction
 function TousenFGSlash takes unit u,unit e,integer k,real cr returns nothing
 local real ex=GetUnitX(e)
 local real ey=GetUnitY(e)
+local boolean tgsPaused=IsUnitPaused(e)
 local real sd=2*ModuloInteger(k,2)-1
 // 23 окт: удары — выпад с клинком вперёд (17) и рывок с размашистым ударом (8), было Attack 1 / Combo Attack
 call SetUnitTimeScale(u,3.)
@@ -137040,7 +137041,10 @@ endif
 if k==1 then
 call TousenSnd("TousenGrilloG-sfx2")
 endif
+// Release only for the synchronous damage event; keep time-stop bookkeeping unchanged.
+call PauseUnit(e,false)
 call myCustomDamage(u,e,GetHeroAgi(u,true),false,false,null,null,null)
+call PauseUnit(e,tgsPaused)
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1,1.3,1.5,40,100,50,40,0,e,0,cr*bj_RADTODEG)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\az_jugggreen_e2_impact.mdl",ex,ey))
 // два перекрещенных слеша, наклон чередуется
