@@ -3003,7 +3003,13 @@ endfunction
 //LANG_CORE_END
 function MapPauseUnit takes unit mppu,boolean mppb returns nothing
 local integer mppi=GetHandleId(mppu)
+if LoadInteger(HH,mppi,StringHash("HitTPauseCount"))>0 then
+call SaveBoolean(HH,mppi,StringHash("HitTPauseWanted"),mppb)
 if LoadInteger(TSE_HT,mppi,104)>0 then
+call SaveBoolean(TSE_HT,mppi,105,mppb)
+endif
+call PauseUnit(mppu,true)
+elseif LoadInteger(TSE_HT,mppi,104)>0 then
 call SaveBoolean(TSE_HT,mppi,105,mppb)
 call PauseUnit(mppu,true)
 else
@@ -7588,7 +7594,7 @@ return (TSE_On and IsUnitInGroup(tsru,TSE_G)) or LoadInteger(HH,GetHandleId(tsru
 endfunction
 
 function TSE_ReverseBlocked takes unit tsbu returns boolean
-return TSE_TargetFrozen(tsbu) or LoadInteger(HH,GetHandleId(tsbu),StringHash("TSEReverseIgnore"))>0
+return TSE_TargetFrozen(tsbu) or LoadInteger(HH,GetHandleId(tsbu),StringHash("HitTPauseCount"))>0 or LoadInteger(HH,GetHandleId(tsbu),StringHash("TSEReverseIgnore"))>0
 endfunction
 
 function TSE_HoldDmg takes unit u,unit c,real tsd returns nothing
@@ -7702,7 +7708,11 @@ local unit u=GetEnumUnit()
 local integer id=GetHandleId(u)
 local real tsurs=LoadReal(TSE_HT,id,0)
 call SaveInteger(TSE_HT,id,104,IMaxBJ(0,LoadInteger(TSE_HT,id,104)-1))
+if LoadInteger(HH,id,StringHash("HitTPauseCount"))>0 then
+call PauseUnit(u,true)
+else
 call PauseUnit(u,LoadBoolean(TSE_HT,id,105))
+endif
 // 29 окт: PauseUnitEx(false) паузу не снимал (пауза da после выхода) — если до остановки паузы не было, снять до конца
 if LoadReal(TSE_HT,id,8)>0. and not IsUnitType(u,UNIT_TYPE_DEAD) then
 call UnitApplyTimedLife(u,'BTLF',LoadReal(TSE_HT,id,8))
@@ -43943,7 +43953,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD)+3500)
+call SetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD)+GetBaseItemIntegerFieldById('I03Q',ITEM_IF_GOLD_COST))
 call DisplayTextToPlayer(PlayerV(id),0,0,Lng("Нельзя иметь больше одного такого предмета!","You can't have more than one of these items!"))
 endif
 set i=0
@@ -43957,7 +43967,7 @@ set i=i+1
 endloop
 if count>1 then
 call RemoveItem(it)
-call SetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD)+3500)
+call SetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(PlayerV(id),PLAYER_STATE_RESOURCE_GOLD)+GetBaseItemIntegerFieldById('I03P',ITEM_IF_GOLD_COST))
 call DisplayTextToPlayer(PlayerV(id),0,0,Lng("Нельзя иметь больше одного такого предмета!","You can't have more than one of these items!"))
 endif
 set i=0
@@ -75149,7 +75159,7 @@ return udg_B and GetSpellAbilityId()=='A0VS' and GetUnitTypeId(GetTriggerUnit())
 endfunction
 function TimeLeapCast takes nothing returns nothing
 local unit sthru=GetTriggerUnit()
-local real sthra=RMaxBJ(0.,SphereHealthPast(sthru)-GetWidgetLife(sthru))*0.3
+local real sthra=RMaxBJ(0.,SphereHealthPast(sthru)-GetWidgetLife(sthru))*0.25
 local effect sthrf
 call Bof_Heal(sthru,sthru,sthra)
 set sthrf=AddSpecialEffect("Hit\\TimeIcePulse.mdx",GetUnitX(sthru),GetUnitY(sthru))
@@ -266343,15 +266353,15 @@ set body=BlzGetAbilityExtendedTooltip(sel,0)
 endif
 // длинное описание лезет за подложку — обрезаем и закрываем цвет,
 // иначе оборванный |c... красит весь остальной интерфейс
-if StringLength(body)>560 then
-// режем по последнему переносу строки перед 560-м символом
-set i=560
+if StringLength(body)>760 then
+// режем по последнему переносу строки перед 760-м символом
+set i=760
 loop
-exitwhen i<=400 or SubString(body,i-1,i)=="\n"
+exitwhen i<=600 or SubString(body,i-1,i)=="\n"
 set i=i-1
 endloop
-if i<=400 then
-set i=560
+if i<=600 then
+set i=760
 endif
 // и не посреди цветового кода |cAARRGGBB (10 символов)
 set j=i-1
@@ -267220,8 +267230,8 @@ call Sh_Preload()
 // сопротивлений. Она однородная, так что плитка движка не даёт стыков.
 // Раньше: рамка EscMenuBackdrop + shop_window.tga + отдельная текстура каждой панели.
 set ShMain=BlzCreateFrameByType("BACKDROP","ShMain",gameUI,"",0)
-call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.368)
-call BlzFrameSetSize(ShMain,0.76,0.384)
+call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.3355)
+call BlzFrameSetSize(ShMain,0.76,0.449)
 call BlzFrameSetTexture(ShMain,"TooltipLessVisible.blp",0,true)
 // обводка окна — синяя рамка карты, как у подсказок таверны (Choice-tooltip-border.blp)
 call SetFrameBackdropTexture(ShMain,0,"TooltipLessVisible.blp",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
@@ -267238,19 +267248,19 @@ call Sh_Box(0.308,0.369,0.32,0.30,0.008)     // каталог 0.148..0.468 по
 call Sh_Box(0.564,0.509,0.18,0.020,0.008)    // заголовок «Сборка» 0.499..0.519
 call Sh_Box(0.564,0.469,0.18,0.056,0.008)    // сборка 0.441..0.497: один ряд до 6 компонентов
 call Sh_Box(0.564,0.429,0.18,0.020,0.008)    // название предмета 0.419..0.439
-call Sh_Box(0.564,0.318,0.18,0.198,0.008)    // описание 0.219..0.417
+call Sh_Box(0.564,0.2855,0.18,0.263,0.008)    // описание 0.219..0.417
 call Sh_Box(0.7125,0.509,0.105,0.020,0.008)  // заголовок «Собирается в» 0.499..0.519
 call Sh_Box(0.7125,0.459,0.105,0.076,0.008)  // собирается в 0.421..0.497: 2 ряда по 3
 call Sh_Box(0.7125,0.405,0.105,0.020,0.008)  // заголовок «Инвентарь» 0.395..0.415
 call Sh_Box(0.7125,0.306,0.105,0.174,0.008)  // ячейки инвентаря 0.219..0.393
-call Sh_Box(0.6195,0.202,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
+call Sh_Box(0.6195,0.137,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
 call Sh_Box(0.215,0.202,0.060,0.022,0.008)   // золото: правее колонки разделов, под каталогом
 call Sh_Box(0.360,0.202,0.210,0.030,0.008)   // поиск (на месте листания страниц)
 
 // панели остались только для раскладки, своих текстур у них нет
 set ShList=Sh_Panel(0.308,0.369,0.32,0.30,"war3mapImported\\shop_none.tga")
 set ShCraft=Sh_Panel(0.564,0.480,0.18,0.078,"war3mapImported\\shop_none.tga")
-set ShDesc=Sh_Panel(0.564,0.329,0.18,0.220,"war3mapImported\\shop_none.tga")
+set ShDesc=Sh_Panel(0.564,0.2965,0.18,0.285,"war3mapImported\\shop_none.tga")
 set ShInv=Sh_Panel(0.7125,0.316,0.105,0.198,"war3mapImported\\shop_none.tga")
 
 set ShTrgClick=CreateTrigger()
@@ -267445,7 +267455,7 @@ set i=i+1
 endloop
 set ShBuyBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShBuyBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShBuyBtn,410)
-call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.202)
+call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.137)
 call BlzFrameSetSize(ShBuyBtn,0.128,0.048)
 call BlzFrameSetScale(ShBuyBtn,0.70)
 call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
@@ -267454,7 +267464,7 @@ call Sh_ActText(ShBuyBtn,Lng("|cFFFFA500КУПИТЬ|r","|cFFFFA500BUY|r"))
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShSellBtn,411)
-call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.202)
+call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.137)
 call BlzFrameSetSize(ShSellBtn,0.128,0.048)
 call BlzFrameSetScale(ShSellBtn,0.70)
 call Sh_Skin(ShSellBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
@@ -267464,7 +267474,7 @@ call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
 // быстрая покупка свитка «Улучшить предмет» (I00E, 750)
 set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShUpgBtn,403)
-call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.202)
+call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.137)
 call BlzFrameSetSize(ShUpgBtn,0.128,0.048)
 call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
 call Sh_NoGlow(ShUpgBtn)
@@ -286592,6 +286602,9 @@ call SetUnitXY_1(hrau,GetUnitX(hrau)+45.*Cos(hraa),GetUnitY(hrau)+45.*Sin(hraa),
 call SaveInteger(h,hrai,5,hran)
 elseif hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)<=125. then
 if hraf!=null then
+call SetSpecialEffectTimeScale(hraf,1.)
+call SetSpecialEffectAnimationByIndex(hraf,1)
+call SetSpecialEffectAlpha(hraf,0)
 call SetSpecialEffectVisible(hraf,false)
 call DestroyEffect(hraf)
 call RemoveSavedHandle(h,hrai,2)
@@ -286607,6 +286620,9 @@ elseif hraok and LoadBoolean(h,hrai,6) and LoadInteger(h,hrai,7)<24 then
 call SaveInteger(h,hrai,7,LoadInteger(h,hrai,7)+1)
 else
 if hraf!=null then
+call SetSpecialEffectTimeScale(hraf,1.)
+call SetSpecialEffectAnimationByIndex(hraf,1)
+call SetSpecialEffectAlpha(hraf,0)
 call SetSpecialEffectVisible(hraf,false)
 call DestroyEffect(hraf)
 endif
@@ -287472,13 +287488,34 @@ endloop
 call SaveInteger(h,htri,20,0)
 set htrf=null
 endfunction
+function HitTTargetRelease takes integer htpri returns nothing
+local unit htpru=LoadUnitHandle(h,htpri,1)
+local integer htprid=GetHandleId(htpru)
+local integer htprn
+local boolean htprb
+if htpru!=null and LoadBoolean(h,htpri,32) then
+call SaveBoolean(h,htpri,32,false)
+set htprn=IMaxBJ(0,LoadInteger(HH,htprid,StringHash("HitTPauseCount"))-1)
+call SaveInteger(HH,htprid,StringHash("HitTPauseCount"),htprn)
+if htprn==0 then
+set htprb=LoadBoolean(HH,htprid,StringHash("HitTPauseWanted"))
+call RemoveSavedInteger(HH,htprid,StringHash("HitTPauseCount"))
+call RemoveSavedBoolean(HH,htprid,StringHash("HitTPauseWanted"))
+call MapPauseUnit(htpru,htprb)
+endif
+endif
+set htpru=null
+endfunction
+
 function HitTApplyDamage takes integer htai,real htad returns nothing
 local unit htau=LoadUnitHandle(h,htai,0)
 local unit htae=LoadUnitHandle(h,htai,1)
 if htau!=null and htae!=null and not LoadBoolean(h,htai,15) then
 call SaveBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"),true)
 call SetUnitInvulnerable(htae,false)
+call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))+1)
 call myCustomDamage(htau,htae,htad,false,false,null,null,null)
+call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),IMaxBJ(0,LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))-1))
 call SetUnitInvulnerable(htae,true)
 call RemoveSavedBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"))
 endif
@@ -287518,6 +287555,7 @@ if htsnd!=null then
 call StopSound(htsnd,false,true)
 endif
 set htsnd=null
+call HitTTargetRelease(hti)
 if TSE_On and TSE_Src==htu then
 call TSE_Stop()
 endif
@@ -287642,6 +287680,7 @@ endif
 call HitTHeldFx(hti,htu,hte,hta+bj_PI)
 call HitTPunchRay(htu,hte,0.45)
 if htj==16 then
+call HitTTargetRelease(hti)
 call HitTApplyDamage(hti,11.*HitAgi(htu))
 call SaveBoolean(h,hti,5,true)
 call SaveReal(h,hti,17,hta+bj_PI)
@@ -287722,6 +287761,9 @@ local integer htki=GetHandleId(htkt)
 local integer htloops=0
 local integer htindex
 local real htstep=LoadReal(h,htki,11)
+if LoadBoolean(h,htki,32) then
+call PauseUnit(LoadUnitHandle(h,htki,1),true)
+endif
 call HitTMove(htki)
 loop
 exitwhen htloops>=8 or LoadUnitHandle(h,htki,0)==null or LoadBoolean(h,htki,5)
@@ -287769,6 +287811,16 @@ call HitSnd("HitSeichoAttack")
 call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
 call HitVo("HitT1")
 call TSE_StartEx(htu,htd+0.8,true,GetUnitX(htu),GetUnitY(htu),1200.)
+if LoadInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"))==0 then
+if LoadInteger(TSE_HT,GetHandleId(hte),104)>0 then
+call SaveBoolean(HH,GetHandleId(hte),StringHash("HitTPauseWanted"),LoadBoolean(TSE_HT,GetHandleId(hte),105))
+else
+call SaveBoolean(HH,GetHandleId(hte),StringHash("HitTPauseWanted"),IsUnitPaused(hte))
+endif
+endif
+call SaveInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"),LoadInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"))+1)
+call SaveBoolean(h,GetHandleId(htt),32,true)
+call PauseUnit(hte,true)
 call SaveInteger(HH,GetHandleId(htu),HitK("AnN"),LoadInteger(HH,GetHandleId(htu),HitK("AnN"))+1)
 call SetUnitAnimationByIndex(htu,14)
 call SetUnitAnimationOffsetPercent(htu,0.)
@@ -295834,9 +295886,9 @@ call LANG_A('A0VQ',1,0,"Tsuna unleashes a powerful blast of flame at the targete
 call LANG_A('A0VQ',2,0,"Burning Axel, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0VQ',3,0,"Tsuna unleashes a powerful blast of flame at the targeted enemy.|n|n|cFF00A5FFMana cost: 150.|nDamage: 10*|r|c003CFF3CAGI|r|cFF00A5FF.|nCooldown: 25 seconds|r")
 call LANG_A('A0VT',0,0,"Portal")
-call LANG_A('A0VT',1,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
+call LANG_A('A0VT',1,0,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.")
 call LANG_A('A0VT',2,0,"Portal")
-call LANG_A('A0VT',3,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
+call LANG_A('A0VT',3,0,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.")
 call LANG_A('A0VZ',0,0,"Hold Pain")
 call LANG_A('A0VZ',1,0,"Hold Pain")
 call LANG_A('A0W8',1,0,"Index surrounds himself with the sanctuary of St. George, then concentrates magic and fires a stream of magical energy at the specified area. At the end of the spell, holy feathers appear that fall and damage anyone they touch, also burning some mana.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF0"+"0A5FF|nFeather Damage: 1*|r|c00FF5555STR|r|cFF00A5FF|nMana Break: 5%|nCooldown: 40 seconds|r")
@@ -303221,9 +303273,9 @@ call LANG_A('ToEo',1,0,"Remove the mask and keep its remaining reserve.")
 call LANG_A('HtFc',0,0,"Leave stance (|cffffcc00F|r)")
 call LANG_A('HtFc',1,0,"Restore normal abilities.")
 call LANG_A('A0VS',0,0,"Health Rewind")
-call LANG_A('A0VS',1,0,"Restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_A('A0VS',1,0,"Restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_A('A0VS',2,0,"Health Rewind")
-call LANG_A('A0VS',3,0,"Restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_A('A0VS',3,0,"Restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -303756,22 +303808,22 @@ call LANG_It('I03O',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attac
 call LANG_It('I03O',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 50, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 call LANG_It('I03P',0,"Time Sphere")
 call LANG_It('I03P',1,"Time Sphere")
-call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
-call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_It('ITS0',0,"Time Sphere (Recipe)")
 call LANG_It('ITS0',1,"Time Sphere (Recipe)")
-call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
-call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 30% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
 call LANG_It('I03Q',0,"Space Sphere")
 call LANG_It('I03Q',1,"Space Sphere")
-call LANG_It('I03Q',2,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
-call LANG_It('I03Q',3,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.")
+call LANG_It('I03Q',2,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.")
+call LANG_It('I03Q',3,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.")
 call LANG_It('ISS0',0,"Space Sphere (Recipe)")
 call LANG_It('ISS0',1,"Space Sphere (Recipe)")
-call LANG_It('ISS0',2,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
-call LANG_It('ISS0',3,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.|n|nActive: \"Portal\" returns a hero to their position 4 sec. ago. Use -spheresc to toggle between self-cast and selecting any hero, including yourself. Does not work in Shirou T, Hibari's arena or while teleportation is blocked.|n|nS"+"lows the owner's enemies at both locations: AS/MS -50% for 3 sec.|nAoE: 600|nTarget cast range: 2500|nMana: 50|nCooldown: 10 sec.|n|nRequires: Medal of Courage, Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
+call LANG_It('ISS0',2,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.|n|nRequires: Medal of Courage"+", Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
+call LANG_It('ISS0',3,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.|n|nRequires: Medal of Courage"+", Magic Staff, Vongola Cloud Ring, Rank D, Recipe.")
 call LANG_It('I03R',0,"Void Sphere")
 call LANG_It('I03R',1,"Void Sphere")
 call LANG_It('I03R',2,"Increases |c00FFFF66AllStat|r by 30. Passive: Void Shield - Blocks 1 ability every 30 sec, minimum DMG - 500|nCannot be bought with Boros Armor.|nCD: 30 sec.")
