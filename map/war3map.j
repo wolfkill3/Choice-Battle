@@ -72646,7 +72646,7 @@ endif
     //     //set nb=nb+0.5*GetHeroInt(Hero[idc],true)+0.25*GetHeroInt(Hero[idc],true)*GetUnitAbilityLevel(Hero[idc],'MrF1')*myCustomDamage2(u,1)
     // endif
 
-    if CurrentEventAttack then
+    if CurrentEventAttack==false then
         if nb>0 and GetUnitAbilityLevel(c,'B03J')>0 and GetUnitAbilityLevel(c,'A3WR')==0 then
             if GetUnitAbilityLevel(u,'B03I')==0 then
                 //call SetEventDamage(nb+GetHeroInt(c,true)*2*myCustomDamage2(u,1))
@@ -72833,28 +72833,28 @@ endif
         endif
 //DeadMaster6Start
 
-    if GetUnitTypeId(c)=='HDMa'  and GetUnitAbilityLevel(c,'DME2')>0 and nb>0  and (GetUnitAbilityLevel(u,'B017')>0 or GetUnitAbilityLevel(u,'B019')>0 ) and udg_B==true and DU2==true then
+        if GetUnitTypeId(c)=='HDMa'  and GetUnitAbilityLevel(c,'DME2')>0 and nb>0  and (GetUnitAbilityLevel(u,'B017')>0 or GetUnitAbilityLevel(u,'B019')>0 ) and udg_B==true and DU2==true then
+            
+            //GetUnitAbilityLevel(c, 'YECD')==0
+            //call UnitAddAbility(c, 'YECD')
+            //call UnitMakeAbilityPermanent(c, true, 'YECD')
+            //call UnitRemoveAbilityTimed(c, 'YECD', 0.1)
+            //set tyam=CreateTimer()
+            //set A=Atan2(y-y1,x-x1)
+        // call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",u,"origin"))
+            call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"chest"))
+            call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"origin"))
+
+
+            call DestroyEffect(AddSpecialEffectTarget(EffectID[2251],u,"chest"))
+
+            //call DestroyEffect(AddSpecialEffectTarget(EffectID[1570],u,"chest"))
+            call UnitRemoveAbility(u,'B017')
+            call UnitRemoveAbility(u,'B019')
+            call myCustomDamage(c,u,0.5*GetHeroInt(c,true),false,false,null,null,null)
+            call CC_UnitEx( u, u, 0., 1, "ensnare", false, EffectID[2502], "origin",0,0)
         
-          //GetUnitAbilityLevel(c, 'YECD')==0
-        //call UnitAddAbility(c, 'YECD')
-        //call UnitMakeAbilityPermanent(c, true, 'YECD')
-        //call UnitRemoveAbilityTimed(c, 'YECD', 0.1)
-        //set tyam=CreateTimer()
-        //set A=Atan2(y-y1,x-x1)
-       // call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",u,"origin"))
-        call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"chest"))
-        call DestroyEffect(AddSpecialEffectTarget(EffectID[2236],u,"origin"))
-
-
-        call DestroyEffect(AddSpecialEffectTarget(EffectID[2251],u,"chest"))
-
-        //call DestroyEffect(AddSpecialEffectTarget(EffectID[1570],u,"chest"))
-        call UnitRemoveAbility(u,'B017')
-        call UnitRemoveAbility(u,'B019')
-        call myCustomDamage(c,u,0.5*GetHeroInt(c,true),false,false,null,null,null)
-        call CC_UnitEx( u, u, 0., 1, "ensnare", false, EffectID[2502], "origin",0,0)
-      
-    endif
+        endif
 
 //DeadMaster6End
         //if nb>0 and GetUnitAbilityLevel(c,'B03C')>0 then
@@ -138545,7 +138545,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0IO',2)
 call SaveStr(HH,SH_ShnChanO,'A0IQ',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0IU',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A0IU',1)
-call SaveStr(HH,SH_ShnChanO,'A0IV',"channel")
+call SaveStr(HH,SH_ShnChanO,'A0IV',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'A0IV',2)
 call SaveStr(HH,SH_ShnChanO,'A0IZ',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0IZ',2)
@@ -138553,7 +138553,7 @@ call SaveStr(HH,SH_ShnChanO,'A0J1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0J1',2)
 call SaveStr(HH,SH_ShnChanO,'A0J2',"banish")
 call SaveInteger(HH,SH_ShnChanT,'A0J2',2)
-call SaveStr(HH,SH_ShnChanO,'A0J5',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0J5',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'A0J5',2)
 call SaveStr(HH,SH_ShnChanO,'A0J6',"spiritlink")
 call SaveStr(HH,SH_ShnChanO,'A0J8',"acidbomb")
@@ -138873,7 +138873,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0UR',1)
 call SaveStr(HH,SH_ShnChanO,'A0UU',"bloodluston")
 call SaveStr(HH,SH_ShnChanO,'A0UX',"root")
 call SaveStr(HH,SH_ShnChanO,'A0UY',"channel")
-call SaveStr(HH,SH_ShnChanO,'A0UZ',"hex")
+call SaveStr(HH,SH_ShnChanO,'A0UZ',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0UZ',2)
 call SaveStr(HH,SH_ShnChanO,'A0V1',"berserk")
 call SaveStr(HH,SH_ShnChanO,'A0V2',"burrow")
@@ -139295,11 +139295,11 @@ call SaveStr(HH,SH_ShnChanO,'A1DZ',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A1DZ',2)
 call SaveStr(HH,SH_ShnChanO,'A1E0',"ensnare")
 call SaveInteger(HH,SH_ShnChanT,'A1E0',2)
-call SaveStr(HH,SH_ShnChanO,'A1E5',"acidbomb")
+call SaveStr(HH,SH_ShnChanO,'A1E5',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1E5',2)
 call SaveStr(HH,SH_ShnChanO,'A1E6',"autodispelon")
 call SaveInteger(HH,SH_ShnChanT,'A1E6',1)
-call SaveStr(HH,SH_ShnChanO,'A1E8',"drain")
+call SaveStr(HH,SH_ShnChanO,'A1E8',"web")
 call SaveInteger(HH,SH_ShnChanT,'A1E8',2)
 call SaveStr(HH,SH_ShnChanO,'A1E9',"gold2lumber")
 call SaveInteger(HH,SH_ShnChanT,'A1E9',1)
@@ -139506,7 +139506,7 @@ call SaveInteger(HH,SH_ShnChanT,'AJIT',2)
 call SaveStr(HH,SH_ShnChanO,'AKE1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'AKE1',2)
 call SaveStr(HH,SH_ShnChanO,'AKF1',"acolyteharvest")
-call SaveStr(HH,SH_ShnChanO,'AKG1',"acidbomb")
+call SaveStr(HH,SH_ShnChanO,'AKG1',"weboff")
 call SaveInteger(HH,SH_ShnChanT,'AKG1',2)
 call SaveStr(HH,SH_ShnChanO,'AKQ1',"charm")
 call SaveInteger(HH,SH_ShnChanT,'AKQ1',2)
@@ -139955,7 +139955,7 @@ call SaveStr(HH,SH_ShnChanO,'JNQ1',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'JNQ1',3)
 call SaveStr(HH,SH_ShnChanO,'JNR1',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'JNR1',1)
-call SaveStr(HH,SH_ShnChanO,'JNT1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'JNT1',"web")
 call SaveInteger(HH,SH_ShnChanT,'JNT1',2)
 call SaveStr(HH,SH_ShnChanO,'JNW1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'JNW1',2)
@@ -140024,7 +140024,7 @@ call SaveStr(HH,SH_ShnChanO,'LawQ',"charm")
 call SaveInteger(HH,SH_ShnChanT,'LawQ',2)
 call SaveStr(HH,SH_ShnChanO,'LawW',"chemicalrage")
 call SaveInteger(HH,SH_ShnChanT,'LawW',2)
-call SaveStr(HH,SH_ShnChanO,'LaxD',"acidbomb")
+call SaveStr(HH,SH_ShnChanO,'LaxD',"weboff")
 call SaveInteger(HH,SH_ShnChanT,'LaxD',2)
 call SaveStr(HH,SH_ShnChanO,'MUE1',"blight")
 call SaveInteger(HH,SH_ShnChanT,'MUE1',1)
@@ -140727,7 +140727,7 @@ call SaveStr(HH,SH_AbOrd,'A0IY',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0IZ',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0J1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0J2',"banish")
-call SaveStr(HH,SH_AbOrd,'A0J5',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0J5',"blizzard")
 call SaveStr(HH,SH_AbOrd,'A0J6',"spiritlink")
 call SaveStr(HH,SH_AbOrd,'A0J7',"sleep")
 call SaveStr(HH,SH_AbOrd,'A0J8',"acidbomb")
@@ -140964,7 +140964,7 @@ call SaveStr(HH,SH_AbOrd,'A0UT',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0UU',"bloodluston")
 call SaveStr(HH,SH_AbOrd,'A0UX',"root")
 call SaveStr(HH,SH_AbOrd,'A0UY',"channel")
-call SaveStr(HH,SH_AbOrd,'A0UZ',"hex")
+call SaveStr(HH,SH_AbOrd,'A0UZ',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0V1',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0V2',"burrow")
 call SaveStr(HH,SH_AbOrd,'A0V3',"blight")
@@ -141314,10 +141314,10 @@ call SaveStr(HH,SH_AbOrd,'A1DX',"root")
 call SaveStr(HH,SH_AbOrd,'A1DY',"heal")
 call SaveStr(HH,SH_AbOrd,'A1DZ',"channel")
 call SaveStr(HH,SH_AbOrd,'A1E0',"ensnare")
-call SaveStr(HH,SH_AbOrd,'A1E5',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'A1E5',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1E6',"autodispelon")
 call SaveStr(HH,SH_AbOrd,'A1E7',"berserk")
-call SaveStr(HH,SH_AbOrd,'A1E8',"drain")
+call SaveStr(HH,SH_AbOrd,'A1E8',"web")
 call SaveStr(HH,SH_AbOrd,'A1E9',"gold2lumber")
 call SaveStr(HH,SH_AbOrd,'A1EE',"purge")
 call SaveStr(HH,SH_AbOrd,'A1EF',"battleroar")
@@ -141624,7 +141624,7 @@ call SaveStr(HH,SH_AbOrd,'AKE1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'AKF1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'AKF2',"bearform")
 call SaveStr(HH,SH_AbOrd,'AKF3',"bearform")
-call SaveStr(HH,SH_AbOrd,'AKG1',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'AKG1',"weboff")
 call SaveStr(HH,SH_AbOrd,'AKQ1',"charm")
 call SaveStr(HH,SH_AbOrd,'AKR1',"heal")
 call SaveStr(HH,SH_AbOrd,'AKT1',"tornado")
@@ -142054,7 +142054,7 @@ call SaveStr(HH,SH_AbOrd,'GGSS',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'GIE0',"AImove")
 call SaveStr(HH,SH_AbOrd,'GIE1',"divineshield")
 call SaveStr(HH,SH_AbOrd,'GIF0',"ambush")
-call SaveStr(HH,SH_AbOrd,'GIQ0',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'GIQ0',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'GIT0',"autoharvestlumber")
 call SaveStr(HH,SH_AbOrd,'GIW0',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'GKBB',"earthquake")
@@ -142189,7 +142189,7 @@ call SaveStr(HH,SH_AbOrd,'JNF4',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'JNG1',"purge")
 call SaveStr(HH,SH_AbOrd,'JNQ1',"absorb")
 call SaveStr(HH,SH_AbOrd,'JNR1',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'JNT1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'JNT1',"web")
 call SaveStr(HH,SH_AbOrd,'JNW1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'JiE2',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'KHG1',"acolyteharvest")
@@ -142233,7 +142233,7 @@ call SaveStr(HH,SH_AbOrd,'LawD',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'LawF',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'LawQ',"charm")
 call SaveStr(HH,SH_AbOrd,'LawW',"chemicalrage")
-call SaveStr(HH,SH_AbOrd,'LaxD',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'LaxD',"weboff")
 call SaveStr(HH,SH_AbOrd,'LcE4',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'MDs2',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'MUE1',"blight")
@@ -266353,15 +266353,15 @@ set body=BlzGetAbilityExtendedTooltip(sel,0)
 endif
 // длинное описание лезет за подложку — обрезаем и закрываем цвет,
 // иначе оборванный |c... красит весь остальной интерфейс
-if StringLength(body)>760 then
-// режем по последнему переносу строки перед 760-м символом
-set i=760
+if StringLength(body)>1160 then
+// режем по последнему переносу строки перед 1000-м символом
+set i=1160
 loop
-exitwhen i<=600 or SubString(body,i-1,i)=="\n"
+exitwhen i<=1000 or SubString(body,i-1,i)=="\n"
 set i=i-1
 endloop
-if i<=600 then
-set i=760
+if i<=1000 then
+set i=1160
 endif
 // и не посреди цветового кода |cAARRGGBB (10 символов)
 set j=i-1
@@ -267230,8 +267230,8 @@ call Sh_Preload()
 // сопротивлений. Она однородная, так что плитка движка не даёт стыков.
 // Раньше: рамка EscMenuBackdrop + shop_window.tga + отдельная текстура каждой панели.
 set ShMain=BlzCreateFrameByType("BACKDROP","ShMain",gameUI,"",0)
-call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.3355)
-call BlzFrameSetSize(ShMain,0.76,0.449)
+call BlzFrameSetAbsPoint(ShMain,FRAMEPOINT_CENTER,0.40,0.368)
+call BlzFrameSetSize(ShMain,0.76,0.384)
 call BlzFrameSetTexture(ShMain,"TooltipLessVisible.blp",0,true)
 // обводка окна — синяя рамка карты, как у подсказок таверны (Choice-tooltip-border.blp)
 call SetFrameBackdropTexture(ShMain,0,"TooltipLessVisible.blp",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
@@ -267248,19 +267248,19 @@ call Sh_Box(0.308,0.369,0.32,0.30,0.008)     // каталог 0.148..0.468 по
 call Sh_Box(0.564,0.509,0.18,0.020,0.008)    // заголовок «Сборка» 0.499..0.519
 call Sh_Box(0.564,0.469,0.18,0.056,0.008)    // сборка 0.441..0.497: один ряд до 6 компонентов
 call Sh_Box(0.564,0.429,0.18,0.020,0.008)    // название предмета 0.419..0.439
-call Sh_Box(0.564,0.2855,0.18,0.263,0.008)    // описание 0.219..0.417
+call Sh_Box(0.564,0.318,0.18,0.198,0.008)    // описание 0.219..0.417
 call Sh_Box(0.7125,0.509,0.105,0.020,0.008)  // заголовок «Собирается в» 0.499..0.519
 call Sh_Box(0.7125,0.459,0.105,0.076,0.008)  // собирается в 0.421..0.497: 2 ряда по 3
 call Sh_Box(0.7125,0.405,0.105,0.020,0.008)  // заголовок «Инвентарь» 0.395..0.415
 call Sh_Box(0.7125,0.306,0.105,0.174,0.008)  // ячейки инвентаря 0.219..0.393
-call Sh_Box(0.6195,0.137,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
+call Sh_Box(0.6195,0.202,0.300,0.034,0.008)  // купить / продать / улучшить — строкой внизу
 call Sh_Box(0.215,0.202,0.060,0.022,0.008)   // золото: правее колонки разделов, под каталогом
 call Sh_Box(0.360,0.202,0.210,0.030,0.008)   // поиск (на месте листания страниц)
 
 // панели остались только для раскладки, своих текстур у них нет
 set ShList=Sh_Panel(0.308,0.369,0.32,0.30,"war3mapImported\\shop_none.tga")
 set ShCraft=Sh_Panel(0.564,0.480,0.18,0.078,"war3mapImported\\shop_none.tga")
-set ShDesc=Sh_Panel(0.564,0.2965,0.18,0.285,"war3mapImported\\shop_none.tga")
+set ShDesc=Sh_Panel(0.564,0.329,0.18,0.220,"war3mapImported\\shop_none.tga")
 set ShInv=Sh_Panel(0.7125,0.316,0.105,0.198,"war3mapImported\\shop_none.tga")
 
 set ShTrgClick=CreateTrigger()
@@ -267406,7 +267406,7 @@ set ShDescBody=BlzCreateFrameByType("TEXT","ShDescBody",ShDesc,"",0)
 // масштабированный фрейм съезжал со своих точек на левую кайму
 call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_TOPLEFT,ShDesc,FRAMEPOINT_TOPLEFT,0.007,-0.027)
 call BlzFrameSetPoint(ShDescBody,FRAMEPOINT_BOTTOMRIGHT,ShDesc,FRAMEPOINT_BOTTOMRIGHT,-0.007,0.005)
-call BlzFrameSetFont(ShDescBody,"Fonts\\FRIZQT__.TTF",0.0105,0)
+call BlzFrameSetFont(ShDescBody,"Fonts\\FRIZQT__.TTF",0.0095,0)
 call BlzFrameSetText(ShDescBody,"")
 
 // ---- инвентарь: как игровая панель предметов — один сверху, ниже сетка 3x3 ----
@@ -267455,7 +267455,7 @@ set i=i+1
 endloop
 set ShBuyBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShBuyBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShBuyBtn,410)
-call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.137)
+call BlzFrameSetAbsPoint(ShBuyBtn,FRAMEPOINT_CENTER,0.525,0.202)
 call BlzFrameSetSize(ShBuyBtn,0.128,0.048)
 call BlzFrameSetScale(ShBuyBtn,0.70)
 call Sh_Skin(ShBuyBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
@@ -267464,7 +267464,7 @@ call Sh_ActText(ShBuyBtn,Lng("|cFFFFA500КУПИТЬ|r","|cFFFFA500BUY|r"))
 call BlzTriggerRegisterFrameEvent(ShTrgClick,ShBuyBtn,FRAMEEVENT_CONTROL_CLICK)
 set ShSellBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShSellBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShSellBtn,411)
-call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.137)
+call BlzFrameSetAbsPoint(ShSellBtn,FRAMEPOINT_CENTER,0.6195,0.202)
 call BlzFrameSetSize(ShSellBtn,0.128,0.048)
 call BlzFrameSetScale(ShSellBtn,0.70)
 call Sh_Skin(ShSellBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
@@ -267474,7 +267474,7 @@ call BlzTriggerRegisterFrameEvent(ShTrgClick,ShSellBtn,FRAMEEVENT_CONTROL_CLICK)
 // быстрая покупка свитка «Улучшить предмет» (I00E, 750)
 set ShUpgBtn=BlzCreateFrameByType("GLUETEXTBUTTON","ShUpgBtn",ShInv,"ScriptDialogButton",0)
 call Sh_Tag(ShUpgBtn,403)
-call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.137)
+call BlzFrameSetAbsPoint(ShUpgBtn,FRAMEPOINT_CENTER,0.714,0.202)
 call BlzFrameSetSize(ShUpgBtn,0.128,0.048)
 call Sh_Skin(ShUpgBtn,"war3mapImported\\shop_act_blue.tga",0.0896)
 call Sh_NoGlow(ShUpgBtn)
@@ -277425,7 +277425,7 @@ call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",facing,1.5,1,1.5,100,100
 call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,60,0,caster,150,facing)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 set n0=CreateUnit(OwnerOf(caster),'e200',GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
-call SetUnitModel(n0,"Lambo\\gyuudo.mdl")
+call SetUnitModel(n0,"war3mapimported\\gyuudo.mdl")
 call MoveUnit(n0,n0,150,LoadReal(HH,id,3))
 call UnitSize(n0,1.5,1,1)
 call UnitSpeed(n0,1)
@@ -303110,7 +303110,7 @@ call LANG_A('MeiT',0,0,"Yoton: Yokai no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00
 call LANG_A('MeiT',1,0,"Mei creates a ring of hardened magma that does not let anyone enter or leave it.|n|cFF00A5FF|nDamage (DPS): 2*|r|c0077FFFFINT|r|cFF00A5FF per sec |nDamage (instant): 0.2*|r|c0077FFFFINT|r|cFF00A5FF. every 0.2 sec|nSilence: up to 6 sec|nDuration: 6 sec.|nRange: 1700|nArea (damage/hold): 600|nArea (en"+"try border): 950|nPreparation: from 0.4 sec|nCooldown: 40 sec.|r")
 call LANG_A('MeiT',2,0,"Yoton: Yokai no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('MeiT',3,0,"Mei creates a ring of hardened magma that does not let anyone enter or leave it.|n|cFF00A5FF|nDamage (DPS): 2*|r|c0077FFFFINT|r|cFF00A5FF per sec |nDamage (instant): 0.2*|r|c0077FFFFINT|r|cFF00A5FF. every 0.2 sec|nSilence: up to 6 sec|nDuration: 6 sec.|nRange: 1700|nArea (damage/hold): 600|nArea (en"+"try border): 950|nPreparation: from 0.4 sec|nCooldown: 40 sec.|r")
-call LANG_A('MeiG',0,0,"Suiton: Suiryudani, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
+call LANG_A('MeiG',0,0,"Suiton: Suiryudan, (|cffffcc00G|r)")
 call LANG_A('MeiG',1,0,"Mei jumps and creates a water dragon that flies to the target area, damaging and stunning enemies.|n• Range over 600: jump forward|n• Range under 600: jump back|n|cFF00A5FF |nDamage: 50+5*|r|c0077FFFFINT|r|cFF00A5FF |nRange: 1800|nArea: 400|nPreparation: 0.5 sec|nStun: 1.5 sec|nCooldown: 25 sec."+"|r")
 call LANG_A('SnQ1',0,0,"Sakanade: Slash, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,1,"Sakanade: Slash, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
