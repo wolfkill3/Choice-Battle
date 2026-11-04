@@ -72877,6 +72877,41 @@ endif
             call myCustomDamage(Hero[idc],u,GetHeroStr(Hero[idc],true)*1.5,false,false,null,null,null)
         endif
 
+        if GetUnitAbilityLevel(u,'A3WR')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetUnitAbilityLevel(c,'STR1')==0 and GetUnitAbilityLevel(c,'B064')>0 and nb>100 and c!=UltimateDamage then
+            call GroupEnumUnitsInRange(strm,x,y,600,Base)
+            call GroupRemoveUnit(strm,u)
+            call GroupRemoveUnit(strm,c)
+            loop
+            set strmu=FirstOfGroup(strm)
+            exitwhen strmu==null
+            if Condition_Base(sourcePlayer,strmu) and GetUnitAbilityLevel(strmu,'STR2')==0  then
+                call UnitAddAbility(strmu,'STR2')
+                call UnitRemoveAbilityTimed(strmu,'STR2',.03)
+                call UnitAddAbility(strmu,'A3WR')
+                if LoadBoolean(DMG_IHT,cid,'I05N') or GetUnitAbilityLevel(c, 'KIT6')>0 then  
+                call myCustomDamage(c,strmu,b*0.4,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                elseif LoadBoolean(DMG_IHT,cid,'I05M') or GetUnitAbilityLevel(c, 'KIT4')>0 then
+                call myCustomDamage(c,strmu,b*0.35,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                elseif LoadBoolean(DMG_IHT,cid,'I05L') or GetUnitAbilityLevel(c, 'KIT2')>0 then
+                call myCustomDamage(c,strmu,b*0.3,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                elseif LoadBoolean(DMG_IHT,cid,'I05K') or GetUnitAbilityLevel(c, 'KIT0')>0 then
+                call myCustomDamage(c,strmu,b*0.25,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                elseif LoadBoolean(DMG_IHT,cid,'I05J') or GetUnitAbilityLevel(c, 'KIS8')>0 then
+                call myCustomDamage(c,strmu,b*0.2,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                elseif LoadBoolean(DMG_IHT,cid,'I05I') or GetUnitAbilityLevel(c, 'KIS6')>0 then
+                call myCustomDamage(c,strmu,b*0.15,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+                endif
+                call UnitRemoveAbility(strmu,'A3WR')
+                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\ImmolationRed\\ImmolationRedDamage.mdl",strmu,"head"))
+            endif
+            call GroupRemoveUnit(strm,strmu)
+            endloop
+            call UnitAddAbilityTimed3(c,'STR1',0.02)
+            call UnitRemoveAbilityTimed(c,'STR1',2.02)
+        endif
+
+    else
+
         if GetUnitAbilityLevel(c,'A0WG')>0 or GetUnitAbilityLevel(c,'A1WG')>0 and nb>0 then
             set cjlocgn_00000000=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,Hero[idc])
@@ -72974,12 +73009,12 @@ endif
             call UnitRemoveAbility(c,'A1WG')
             set cjlocgn_00000000=null
         endif
+
         if suid=='h02E' and nb>0 then
             call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e03S',x,y,GetRandomReal(0,359)),'BTLF',0.5)
             call UnitRemoveAbility(u,'B018')
             call myCustomDamage(Hero[idc],u,GetHeroInt(Hero[idc],true)*1,false,false,null,null,null)
         endif
-
         if GetUnitAbilityLevel(c,'B018')>0 and nb>0 and LoadBoolean(h,cid,pb)==false then
             call UnitRemoveAbility(c,'B018')
             call myCustomDamage(Hero[idc],u,GetUnitAbilityLevel(Hero[idc],'A11O')*GetHeroInt(Hero[idc],true)*.5,false,false,null,null,null)
@@ -72993,7 +73028,6 @@ endif
             call TSE_TimerStart(cjlocgn_00000000,0,false,function Block_Damage2)
             set cjlocgn_00000000=null
         endif
-
         if (GetUnitAbilityLevel(c,'B01A')>0 and nb>0 )then
             set cjlocgn_00000000=CreateTimer()
             call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,c)
@@ -73017,7 +73051,6 @@ endif
             call TSE_TimerStart(cjlocgn_00000000,0.025,true,function Trig_Getsuga_Damage)
             set cjlocgn_00000000=null
         endif
-
         if GetUnitAbilityLevel(c, 'YECD')==0 and GetUnitAbilityLevel(c,'A08L')>0 and nb>0 and GetRandomIntMem(0,100)<12+3*GetUnitAbilityLevel(c,'A08L')and udg_B==true and DU2==true then
             call UnitAddAbility(c, 'YECD')
             call UnitMakeAbilityPermanent(c, true, 'YECD')
@@ -73200,39 +73233,6 @@ endif
             call SetUnitY(c,y1)
             call SetUnitFacingInstant(c,Atan2(y-y1,x-x1)*bj_RADTODEG)
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
-        endif
-    else
-        if GetUnitAbilityLevel(u,'A3WR')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and GetUnitAbilityLevel(c,'STR1')==0 and GetUnitAbilityLevel(c,'B064')>0 and nb>100 and c!=UltimateDamage then
-            call GroupEnumUnitsInRange(strm,x,y,600,Base)
-            call GroupRemoveUnit(strm,u)
-            call GroupRemoveUnit(strm,c)
-            loop
-            set strmu=FirstOfGroup(strm)
-            exitwhen strmu==null
-            if Condition_Base(sourcePlayer,strmu) and GetUnitAbilityLevel(strmu,'STR2')==0  then
-                call UnitAddAbility(strmu,'STR2')
-                call UnitRemoveAbilityTimed(strmu,'STR2',.03)
-                call UnitAddAbility(strmu,'A3WR')
-                if LoadBoolean(DMG_IHT,cid,'I05N') or GetUnitAbilityLevel(c, 'KIT6')>0 then  
-                call myCustomDamage(c,strmu,b*0.4,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                elseif LoadBoolean(DMG_IHT,cid,'I05M') or GetUnitAbilityLevel(c, 'KIT4')>0 then
-                call myCustomDamage(c,strmu,b*0.35,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                elseif LoadBoolean(DMG_IHT,cid,'I05L') or GetUnitAbilityLevel(c, 'KIT2')>0 then
-                call myCustomDamage(c,strmu,b*0.3,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                elseif LoadBoolean(DMG_IHT,cid,'I05K') or GetUnitAbilityLevel(c, 'KIT0')>0 then
-                call myCustomDamage(c,strmu,b*0.25,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                elseif LoadBoolean(DMG_IHT,cid,'I05J') or GetUnitAbilityLevel(c, 'KIS8')>0 then
-                call myCustomDamage(c,strmu,b*0.2,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                elseif LoadBoolean(DMG_IHT,cid,'I05I') or GetUnitAbilityLevel(c, 'KIS6')>0 then
-                call myCustomDamage(c,strmu,b*0.15,false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
-                endif
-                call UnitRemoveAbility(strmu,'A3WR')
-                call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\ImmolationRed\\ImmolationRedDamage.mdl",strmu,"head"))
-            endif
-            call GroupRemoveUnit(strm,strmu)
-            endloop
-            call UnitAddAbilityTimed3(c,'STR1',0.02)
-            call UnitRemoveAbilityTimed(c,'STR1',2.02)
         endif
 
         if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) then
@@ -139604,7 +139604,7 @@ call SaveStr(HH,SH_ShnChanO,'Ao6W',"autoharvestlumber")
 call SaveInteger(HH,SH_ShnChanT,'Ao6W',2)
 call SaveStr(HH,SH_ShnChanO,'Ao6Y',"weboff")
 call SaveInteger(HH,SH_ShnChanT,'Ao6Y',1)
-call SaveStr(HH,SH_ShnChanO,'Ao7A',"channel")
+call SaveStr(HH,SH_ShnChanO,'Ao7A',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'Ao7A',2)
 call SaveStr(HH,SH_ShnChanO,'Ao7B',"weboff")
 call SaveInteger(HH,SH_ShnChanT,'Ao7B',2)
@@ -141881,7 +141881,7 @@ call SaveStr(HH,SH_AbOrd,'Ao69',"vengeanceon")
 call SaveStr(HH,SH_AbOrd,'Ao6V',"deathanddecay")
 call SaveStr(HH,SH_AbOrd,'Ao6W',"autoharvestlumber")
 call SaveStr(HH,SH_AbOrd,'Ao6Y',"weboff")
-call SaveStr(HH,SH_AbOrd,'Ao7A',"channel")
+call SaveStr(HH,SH_AbOrd,'Ao7A',"blizzard")
 call SaveStr(HH,SH_AbOrd,'Ao7B',"weboff")
 call SaveStr(HH,SH_AbOrd,'Ao7C',"farsight")
 call SaveStr(HH,SH_AbOrd,'Ao7D',"berserk")
