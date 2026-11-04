@@ -134449,7 +134449,7 @@ function ShinjiMaskOff takes unit smoU returns nothing
     set smoT=null
 endfunction
 function MaskOffCond takes nothing returns boolean
-    return udg_B and ((GetSpellAbilityId()=='SnE2' and GetUnitTypeId(GetTriggerUnit())=='HShn') or (GetSpellAbilityId()=='ToEo' and GetUnitTypeId(GetTriggerUnit())=='H02K'))
+    return udg_B and LoadBoolean(HH,GetHandleId(GetTriggerUnit()),SH_ShnMask) and ((GetSpellAbilityId()=='SnE2' and GetUnitTypeId(GetTriggerUnit())=='HShn') or (GetSpellAbilityId()=='ToEo' and GetUnitTypeId(GetTriggerUnit())=='H02K'))
 endfunction
 function MaskOffDo takes nothing returns nothing
     local timer mofExpired=GetExpiredTimer()
@@ -139747,24 +139747,24 @@ call SaveStr(HH,SH_ShnChanO,'FSF1',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'FSF1',2)
 call SaveStr(HH,SH_ShnChanO,'FSG1',"blackarrow")
 call SaveInteger(HH,SH_ShnChanT,'FSG1',2)
-call SaveStr(HH,SH_ShnChanO,'FlD1',"flamingattacktarg")
+call SaveStr(HH,SH_ShnChanO,'FlD1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'FlD1',2)
-call SaveStr(HH,SH_ShnChanO,'FlE1',"flamingarrowstarg")
+call SaveStr(HH,SH_ShnChanO,'FlE1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'FlE1',2)
-call SaveStr(HH,SH_ShnChanO,'FlF1',"flare")
-call SaveStr(HH,SH_ShnChanO,'FlF2',"flare")
+call SaveStr(HH,SH_ShnChanO,'FlF1',"stomp")
+call SaveStr(HH,SH_ShnChanO,'FlF2',"stomp")
 call SaveStr(HH,SH_ShnChanO,'FlG1',"forceofnature")
 call SaveInteger(HH,SH_ShnChanT,'FlG1',2)
-call SaveStr(HH,SH_ShnChanO,'FlG2',"unsummon")
+call SaveStr(HH,SH_ShnChanO,'FlG2',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'FlG2',1)
-call SaveStr(HH,SH_ShnChanO,'FlQ1',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'FlQ1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'FlQ1',1)
-call SaveStr(HH,SH_ShnChanO,'FlR1',"incineratearrow")
-call SaveStr(HH,SH_ShnChanO,'FlT1',"wateryminion")
+call SaveStr(HH,SH_ShnChanO,'FlR1',"roar")
+call SaveStr(HH,SH_ShnChanO,'FlT1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'FlT1',2)
-call SaveStr(HH,SH_ShnChanO,'FlW1',"flamingarrows")
+call SaveStr(HH,SH_ShnChanO,'FlW1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'FlW1',1)
-call SaveStr(HH,SH_ShnChanO,'FlW2',"forceboard")
+call SaveStr(HH,SH_ShnChanO,'FlW2',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'FlW2',2)
 call SaveStr(HH,SH_ShnChanO,'GGBB',"earthquake")
 call SaveStr(HH,SH_ShnChanO,'GGBS',"hex")
@@ -139901,7 +139901,7 @@ call SaveStr(HH,SH_ShnChanO,'HtR1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'HtR1',1)
 call SaveStr(HH,SH_ShnChanO,'HtT1',"deathcoil")
 call SaveInteger(HH,SH_ShnChanT,'HtT1',1)
-call SaveStr(HH,SH_ShnChanO,'HtW1',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'HtW1',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'HtW1',2)
 call SaveStr(HH,SH_ShnChanO,'IGDs',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'IGDs',1)
@@ -139964,13 +139964,13 @@ call SaveStr(HH,SH_ShnChanO,'KHG2',"antimagicshell")
 call SaveStr(HH,SH_ShnChanO,'KHG3',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'KZF1',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'KZF1',1)
-call SaveStr(HH,SH_ShnChanO,'KaA1',"shockwave")
+call SaveStr(HH,SH_ShnChanO,'KaA1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'KaA1',2)
 call SaveStr(HH,SH_ShnChanO,'KaA2',"chainlightning")
 call SaveStr(HH,SH_ShnChanO,'KaA3',"charm")
 call SaveStr(HH,SH_ShnChanO,'KaA4',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'KaA4',2)
-call SaveStr(HH,SH_ShnChanO,'KaA5',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'KaA5',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'KaA5',2)
 call SaveStr(HH,SH_ShnChanO,'KaA6',"channel")
 call SaveStr(HH,SH_ShnChanO,'KaA7',"breathoffire")
@@ -140036,7 +140036,7 @@ call SaveStr(HH,SH_ShnChanO,'MUQ2',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'MUQ2',2)
 call SaveStr(HH,SH_ShnChanO,'MUT1',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'MUT1',2)
-call SaveStr(HH,SH_ShnChanO,'MUT2',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'MUT2',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'MUT2',2)
 call SaveStr(HH,SH_ShnChanO,'MUW1',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'MUW1',2)
@@ -140126,20 +140126,20 @@ call SaveStr(HH,SH_ShnChanO,'RenT',"coldarrows")
 call SaveInteger(HH,SH_ShnChanT,'RenT',1)
 call SaveStr(HH,SH_ShnChanO,'RenW',"charm")
 call SaveInteger(HH,SH_ShnChanT,'RenW',2)
-call SaveStr(HH,SH_ShnChanO,'RmD1',"flamingattacktarg")
+call SaveStr(HH,SH_ShnChanO,'RmD1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'RmD1',2)
-call SaveStr(HH,SH_ShnChanO,'RmE1',"flamingarrowstarg")
+call SaveStr(HH,SH_ShnChanO,'RmE1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'RmE1',2)
-call SaveStr(HH,SH_ShnChanO,'RmF1',"flare")
-call SaveStr(HH,SH_ShnChanO,'RmF2',"unsummon")
+call SaveStr(HH,SH_ShnChanO,'RmF1',"stomp")
+call SaveStr(HH,SH_ShnChanO,'RmF2',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'RmG1',"berserk")
-call SaveStr(HH,SH_ShnChanO,'RmQ1',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'RmQ1',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'RmQ1',2)
 call SaveStr(HH,SH_ShnChanO,'RmQ2',"absorb")
-call SaveStr(HH,SH_ShnChanO,'RmR1',"incineratearrow")
-call SaveStr(HH,SH_ShnChanO,'RmT1',"wateryminion")
+call SaveStr(HH,SH_ShnChanO,'RmR1',"roar")
+call SaveStr(HH,SH_ShnChanO,'RmT1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'RmT1',1)
-call SaveStr(HH,SH_ShnChanO,'RmW1',"flamingarrows")
+call SaveStr(HH,SH_ShnChanO,'RmW1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'RmW1',2)
 call SaveStr(HH,SH_ShnChanO,'RsD1',"curse")
 call SaveInteger(HH,SH_ShnChanT,'RsD1',2)
@@ -140226,32 +140226,32 @@ call SaveStr(HH,SH_ShnChanO,'SnF1',"blink")
 call SaveInteger(HH,SH_ShnChanT,'SnF1',2)
 call SaveStr(HH,SH_ShnChanO,'SnG1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'SnG1',1)
-call SaveStr(HH,SH_ShnChanO,'SnQ1',"shockwave")
+call SaveStr(HH,SH_ShnChanO,'SnQ1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'SnQ1',1)
-call SaveStr(HH,SH_ShnChanO,'SnR1',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'SnR1',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'SnR1',2)
 call SaveStr(HH,SH_ShnChanO,'SnT1',"starfall")
 call SaveStr(HH,SH_ShnChanO,'SnTc',"stomp")
 call SaveStr(HH,SH_ShnChanO,'SnW1',"thunderclap")
-call SaveStr(HH,SH_ShnChanO,'SuD1',"weboff")
+call SaveStr(HH,SH_ShnChanO,'SuD1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'SuD1',2)
-call SaveStr(HH,SH_ShnChanO,'SuD2',"darkportal")
-call SaveStr(HH,SH_ShnChanO,'SuE1',"flamingarrowstarg")
+call SaveStr(HH,SH_ShnChanO,'SuD2',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'SuE1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'SuE1',2)
-call SaveStr(HH,SH_ShnChanO,'SuE2',"forceboard")
+call SaveStr(HH,SH_ShnChanO,'SuE2',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'SuE2',2)
-call SaveStr(HH,SH_ShnChanO,'SuF1',"flare")
+call SaveStr(HH,SH_ShnChanO,'SuF1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'SuF1',2)
-call SaveStr(HH,SH_ShnChanO,'SuF2',"flare")
+call SaveStr(HH,SH_ShnChanO,'SuF2',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'SuF2',2)
-call SaveStr(HH,SH_ShnChanO,'SuG1',"darksummoning")
+call SaveStr(HH,SH_ShnChanO,'SuG1',"rainofchaos")
 call SaveInteger(HH,SH_ShnChanT,'SuG1',2)
-call SaveStr(HH,SH_ShnChanO,'SuQ1',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'SuQ1',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'SuQ1',2)
-call SaveStr(HH,SH_ShnChanO,'SuR1',"flamingattack")
+call SaveStr(HH,SH_ShnChanO,'SuR1',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'SuR1',2)
-call SaveStr(HH,SH_ShnChanO,'SuT1',"blackarrowoff")
-call SaveStr(HH,SH_ShnChanO,'SuW1',"flamingarrows")
+call SaveStr(HH,SH_ShnChanO,'SuT1',"roar")
+call SaveStr(HH,SH_ShnChanO,'SuW1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'SuW1',2)
 call SaveStr(HH,SH_ShnChanO,'TMD0',"blackarrow")
 call SaveStr(HH,SH_ShnChanO,'TME0',"ancestralspirittarget")
@@ -140341,12 +140341,12 @@ call SaveStr(HH,SH_ShnChanO,'YuF2',"creepdevour")
 call SaveStr(HH,SH_ShnChanO,'YuR2',"chemicalrage")
 call SaveInteger(HH,SH_ShnChanT,'YuR2',2)
 call SaveStr(HH,SH_ShnChanO,'YujD',"coupletarget")
-call SaveStr(HH,SH_ShnChanO,'YujE',"cloudoffog")
+call SaveStr(HH,SH_ShnChanO,'YujE',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'YujE',3)
 call SaveStr(HH,SH_ShnChanO,'YujF',"creepanimatedead")
-call SaveStr(HH,SH_ShnChanO,'YujQ',"channel")
+call SaveStr(HH,SH_ShnChanO,'YujQ',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'YujQ',2)
-call SaveStr(HH,SH_ShnChanO,'YujR',"flamestrike")
+call SaveStr(HH,SH_ShnChanO,'YujR',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'YujR',2)
 call SaveStr(HH,SH_ShnChanO,'YujT',"coupleinstant")
 call SaveStr(HH,SH_ShnChanO,'YujW',"blizzard")
@@ -140722,7 +140722,7 @@ call SaveStr(HH,SH_AbOrd,'A0IO',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A0IQ',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0IT',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A0IU',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'A0IV',"channel")
+call SaveStr(HH,SH_AbOrd,'A0IV',"blizzard")
 call SaveStr(HH,SH_AbOrd,'A0IY',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0IZ',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0J1',"acidbomb")
@@ -142035,17 +142035,17 @@ call SaveStr(HH,SH_AbOrd,'EsT1',"wateryminion")
 call SaveStr(HH,SH_AbOrd,'EsW1',"flamingarrows")
 call SaveStr(HH,SH_AbOrd,'FSF1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'FSG1',"blackarrow")
-call SaveStr(HH,SH_AbOrd,'FlD1',"flamingattacktarg")
-call SaveStr(HH,SH_AbOrd,'FlE1',"flamingarrowstarg")
-call SaveStr(HH,SH_AbOrd,'FlF1',"flare")
-call SaveStr(HH,SH_AbOrd,'FlF2',"flare")
+call SaveStr(HH,SH_AbOrd,'FlD1',"clusterrockets")
+call SaveStr(HH,SH_AbOrd,'FlE1',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'FlF1',"stomp")
+call SaveStr(HH,SH_AbOrd,'FlF2',"stomp")
 call SaveStr(HH,SH_AbOrd,'FlG1',"forceofnature")
-call SaveStr(HH,SH_AbOrd,'FlG2',"unsummon")
-call SaveStr(HH,SH_AbOrd,'FlQ1',"flamestrike")
-call SaveStr(HH,SH_AbOrd,'FlR1',"incineratearrow")
-call SaveStr(HH,SH_AbOrd,'FlT1',"wateryminion")
-call SaveStr(HH,SH_AbOrd,'FlW1',"flamingarrows")
-call SaveStr(HH,SH_AbOrd,'FlW2',"forceboard")
+call SaveStr(HH,SH_AbOrd,'FlG2',"thunderbolt")
+call SaveStr(HH,SH_AbOrd,'FlQ1',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'FlR1',"roar")
+call SaveStr(HH,SH_AbOrd,'FlT1',"blizzard")
+call SaveStr(HH,SH_AbOrd,'FlW1',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'FlW2',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'GGBB',"earthquake")
 call SaveStr(HH,SH_AbOrd,'GGBS',"hex")
 call SaveStr(HH,SH_AbOrd,'GGS4',"breathoffrost")
@@ -142116,7 +142116,7 @@ call SaveStr(HH,SH_AbOrd,'GrF1',"berserk")
 call SaveStr(HH,SH_AbOrd,'GrG2',"stomp")
 call SaveStr(HH,SH_AbOrd,'GrQ1',"auravampiric")
 call SaveStr(HH,SH_AbOrd,'GrR1',"carrionswarm")
-call SaveStr(HH,SH_AbOrd,'GrT1',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'GrT1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'GrW1',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'HSC1',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'HSE1',"healingspray")
@@ -142145,7 +142145,7 @@ call SaveStr(HH,SH_AbOrd,'HtG1',"stomp")
 call SaveStr(HH,SH_AbOrd,'HtQ1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'HtR1',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'HtT1',"deathcoil")
-call SaveStr(HH,SH_AbOrd,'HtW1',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'HtW1',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'IGDs',"blizzard")
 call SaveStr(HH,SH_AbOrd,'IMDs',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'ISTs',"carrionswarm")
@@ -142196,11 +142196,11 @@ call SaveStr(HH,SH_AbOrd,'KHG1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'KHG2',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'KHG3',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'KZF1',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'KaA1',"shockwave")
+call SaveStr(HH,SH_AbOrd,'KaA1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'KaA2',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'KaA3',"charm")
 call SaveStr(HH,SH_AbOrd,'KaA4',"blizzard")
-call SaveStr(HH,SH_AbOrd,'KaA5',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'KaA5',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'KaA6',"channel")
 call SaveStr(HH,SH_AbOrd,'KaA7',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'KaA8',"carrionswarm")
@@ -142241,7 +142241,7 @@ call SaveStr(HH,SH_AbOrd,'MUE2',"blizzard")
 call SaveStr(HH,SH_AbOrd,'MUQ1',"blink")
 call SaveStr(HH,SH_AbOrd,'MUQ2',"shockwave")
 call SaveStr(HH,SH_AbOrd,'MUT1',"faeriefire")
-call SaveStr(HH,SH_AbOrd,'MUT2',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'MUT2',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'MUW1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'MUW2',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'MaDs',"attributemodskill")
@@ -142303,16 +142303,16 @@ call SaveStr(HH,SH_AbOrd,'RenR',"cloudoffog")
 call SaveStr(HH,SH_AbOrd,'RenS',"slow")
 call SaveStr(HH,SH_AbOrd,'RenT',"coldarrows")
 call SaveStr(HH,SH_AbOrd,'RenW',"charm")
-call SaveStr(HH,SH_AbOrd,'RmD1',"flamingattacktarg")
-call SaveStr(HH,SH_AbOrd,'RmE1',"flamingarrowstarg")
-call SaveStr(HH,SH_AbOrd,'RmF1',"flare")
-call SaveStr(HH,SH_AbOrd,'RmF2',"unsummon")
+call SaveStr(HH,SH_AbOrd,'RmD1',"clusterrockets")
+call SaveStr(HH,SH_AbOrd,'RmE1',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'RmF1',"stomp")
+call SaveStr(HH,SH_AbOrd,'RmF2',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'RmG1',"berserk")
-call SaveStr(HH,SH_AbOrd,'RmQ1',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'RmQ1',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'RmQ2',"absorb")
-call SaveStr(HH,SH_AbOrd,'RmR1',"incineratearrow")
-call SaveStr(HH,SH_AbOrd,'RmT1',"wateryminion")
-call SaveStr(HH,SH_AbOrd,'RmW1',"flamingarrows")
+call SaveStr(HH,SH_AbOrd,'RmR1',"roar")
+call SaveStr(HH,SH_AbOrd,'RmT1',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'RmW1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'RsD1',"curse")
 call SaveStr(HH,SH_AbOrd,'RsD2',"darkconversion")
 call SaveStr(HH,SH_AbOrd,'RsD3',"deathcoil")
@@ -142431,23 +142431,23 @@ call SaveStr(HH,SH_AbOrd,'SnE2',"unimmolation")
 call SaveStr(HH,SH_AbOrd,'SnEc',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'SnF1',"blink")
 call SaveStr(HH,SH_AbOrd,'SnG1',"shadowstrike")
-call SaveStr(HH,SH_AbOrd,'SnQ1',"shockwave")
-call SaveStr(HH,SH_AbOrd,'SnR1',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'SnQ1',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'SnR1',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'SnT1',"starfall")
 call SaveStr(HH,SH_AbOrd,'SnTc',"stomp")
 call SaveStr(HH,SH_AbOrd,'SnW1',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'Sshm',"ambush")
-call SaveStr(HH,SH_AbOrd,'SuD1',"weboff")
-call SaveStr(HH,SH_AbOrd,'SuD2',"darkportal")
-call SaveStr(HH,SH_AbOrd,'SuE1',"flamingarrowstarg")
-call SaveStr(HH,SH_AbOrd,'SuE2',"forceboard")
-call SaveStr(HH,SH_AbOrd,'SuF1',"flare")
-call SaveStr(HH,SH_AbOrd,'SuF2',"flare")
-call SaveStr(HH,SH_AbOrd,'SuG1',"darksummoning")
-call SaveStr(HH,SH_AbOrd,'SuQ1',"flamestrike")
-call SaveStr(HH,SH_AbOrd,'SuR1',"flamingattack")
-call SaveStr(HH,SH_AbOrd,'SuT1',"blackarrowoff")
-call SaveStr(HH,SH_AbOrd,'SuW1',"flamingarrows")
+call SaveStr(HH,SH_AbOrd,'SuD1',"shockwave")
+call SaveStr(HH,SH_AbOrd,'SuD2',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'SuE1',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'SuE2',"clusterrockets")
+call SaveStr(HH,SH_AbOrd,'SuF1',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'SuF2',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'SuG1',"rainofchaos")
+call SaveStr(HH,SH_AbOrd,'SuQ1',"breathoffrost")
+call SaveStr(HH,SH_AbOrd,'SuR1',"breathoffire")
+call SaveStr(HH,SH_AbOrd,'SuT1',"roar")
+call SaveStr(HH,SH_AbOrd,'SuW1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'Suhf',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'TMD0',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'TME0',"ancestralspirittarget")
@@ -142518,10 +142518,10 @@ call SaveStr(HH,SH_AbOrd,'YuFd',"soulburn")
 call SaveStr(HH,SH_AbOrd,'YuR2',"chemicalrage")
 call SaveStr(HH,SH_AbOrd,'YuWd',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'YujD',"coupletarget")
-call SaveStr(HH,SH_AbOrd,'YujE',"cloudoffog")
+call SaveStr(HH,SH_AbOrd,'YujE',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'YujF',"creepanimatedead")
-call SaveStr(HH,SH_AbOrd,'YujQ',"channel")
-call SaveStr(HH,SH_AbOrd,'YujR',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'YujQ',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'YujR',"breathoffrost")
 call SaveStr(HH,SH_AbOrd,'YujT',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'YujW',"blizzard")
 call SaveStr(HH,SH_AbOrd,'ore7',"acidbomb")
@@ -222119,7 +222119,7 @@ function YujiE_AOE_Periodic takes nothing returns nothing
         local real target_y= LoadReal(h, id, c_POINT_Y)
         local real angle= 0
         local real time= LoadReal(h, id, c_TIME)
-        if GetUnitCurrentOrder(LoadUnitHandle(h, id, c_CASTER)) == OrderId("cloudoffog") or time<8.0 then
+        if GetUnitCurrentOrder(LoadUnitHandle(h, id, c_CASTER)) == OrderId("acidbomb") or time<8.0 then
         call SaveReal(h, id, c_TIME, time + 0.02)
         if LoadInteger(h, id, c_EFFPERIOD) == 0 then
                         set n=CreateUnit(OwnerOf(LoadUnitHandle(h,id,c_CASTER)), 'dR52', target_x, target_y, GetRandomInt(0,360))
@@ -285945,7 +285945,7 @@ call HitQEnd()
 elseif hqd>215. then
 set hqd=RMinBJ(600.-LoadReal(h,hqi,8),RMinBJ(75.,hqd-210.))
 call SaveReal(h,hqi,8,LoadReal(h,hqi,8)+hqd)
-call SetUnitXY_1(hqu,GetUnitX(hqu)+hqd*Cos(hqa),GetUnitY(hqu)+hqd*Sin(hqa),false)
+call SetUnitXY_1(hqu,GetUnitX(hqu)+(hqd+5)*Cos(hqa),GetUnitY(hqu)+(hqd+5)*Sin(hqa),false)
 else
 call SaveBoolean(h,hqi,6,true)
 if HitReverse(hqu,hqe) then
@@ -286048,6 +286048,75 @@ endif
 call SaveEffectHandle(h,hwki,100+hwkn,hwke)
 call SaveInteger(h,hwki,99,hwkn+1)
 endfunction
+function HitWImpact takes group hwg returns nothing
+local integer hwid=GetHandleId(hwg)
+local unit hwcu=LoadUnitHandle(h,hwid,1)
+local integer hwlv=LoadInteger(h,hwid,4)
+local integer hwline=0
+local group hwscan=CreateGroup()
+local unit hwtarget
+local real hwx
+local real hwy
+local real hwa
+local real hwlen
+local real hwproj
+local real hwdx
+local real hwdy
+local real hwfreeze=0.5+0.1*hwlv+HitStopAdd(hwcu)
+local effect hwhit
+if hwcu!=null and UnitIsAlive(hwcu) and udg_B then
+loop
+exitwhen hwline>=LoadInteger(h,hwid,9)
+set hwx=LoadReal(h,hwid,10+hwline*4)
+set hwy=LoadReal(h,hwid,11+hwline*4)
+set hwa=LoadReal(h,hwid,12+hwline*4)
+set hwlen=LoadReal(h,hwid,13+hwline*4)
+call GroupEnumUnitsInRange(hwscan,hwx+0.5*hwlen*Cos(hwa),hwy+0.5*hwlen*Sin(hwa),0.5*hwlen+300.,null)
+loop
+set hwtarget=FirstOfGroup(hwscan)
+exitwhen hwtarget==null
+call GroupRemoveUnit(hwscan,hwtarget)
+set hwproj=RMaxBJ(0.,RMinBJ(hwlen,(GetUnitX(hwtarget)-hwx)*Cos(hwa)+(GetUnitY(hwtarget)-hwy)*Sin(hwa)))
+set hwdx=GetUnitX(hwtarget)-hwx-hwproj*Cos(hwa)
+set hwdy=GetUnitY(hwtarget)-hwy-hwproj*Sin(hwa)
+if HitEnemy(hwcu,hwtarget) and hwdx*hwdx+hwdy*hwdy<=90000. and not IsUnitInGroup(hwtarget,hwg) then
+call GroupAddUnit(hwg,hwtarget)
+call SaveReal(h,hwid,GetHandleId(hwtarget),hwa)
+endif
+endloop
+set hwline=hwline+1
+endloop
+loop
+set hwtarget=FirstOfGroup(hwg)
+exitwhen hwtarget==null
+call GroupRemoveUnit(hwg,hwtarget)
+if HitEnemy(hwcu,hwtarget) then
+set hwa=LoadReal(h,hwid,GetHandleId(hwtarget))
+set hwhit=AddSpecialEffect("Hit\\PunchBeam.mdx",GetUnitX(hwtarget),GetUnitY(hwtarget))
+call SetSpecialEffectZ(hwhit,GetUnitZ(hwtarget)+65.)
+call SetSpecialEffectOrientation(hwhit,hwa*bj_RADTODEG,0.,0.)
+call SetSpecialEffectScale(hwhit,0.65)
+call HitOwnFxKeep(hwhit,0.35,false)
+call HitStrikeFx(hwtarget,1,hwa,0.45)
+call HitStrikeFx(hwtarget,4,hwa,0.65)
+call myCustomDamage(hwcu,hwtarget,75.*hwlv+hwlv*HitAgi(hwcu),false,false,null,null,null)
+if UnitIsAlive(hwtarget) then
+if HitFreeze(hwcu,hwtarget,hwfreeze) then
+call SaveReal(HH,GetHandleId(hwtarget),HitK("WFz"),HitNow()+hwfreeze)
+call HitIceAt(GetUnitX(hwtarget),GetUnitY(hwtarget),hwa,2.2,hwfreeze,false)
+call HitSnd("HitColdEyeHit")
+endif
+call SlowUnit(hwcu,hwtarget,0.3,0.,0.5+0.1*hwlv+2.,2.,false)
+endif
+endif
+endloop
+endif
+call DestroyGroup(hwscan)
+set hwcu=null
+set hwtarget=null
+set hwhit=null
+set hwscan=null
+endfunction
 function HitWDone takes group g returns nothing
 local unit hwu=LoadUnitHandle(h,GetHandleId(g),1)
 local integer n=LoadInteger(h,GetHandleId(g),0)-1
@@ -286072,6 +286141,7 @@ if hwu!=null then
 call MapPauseUnit(hwu,LoadBoolean(h,GetHandleId(g),2))
 call SetUnitInvulnerable(hwu,LoadBoolean(h,GetHandleId(g),3))
 endif
+call HitWImpact(g)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
 endif
@@ -286123,21 +286193,8 @@ exitwhen e==null
 call GroupRemoveUnit(tg,e)
 if HitEnemy(u,e) and not IsUnitInGroup(e,g) then
 call GroupAddUnit(g,e)
-set hws=AddSpecialEffect("Hit\\PunchBeam.mdx",GetUnitX(e),GetUnitY(e))
-call SetSpecialEffectZ(hws,GetUnitZ(e)+65.)
-call SetSpecialEffectOrientation(hws,a*bj_RADTODEG,0.,0.)
-call SetSpecialEffectScale(hws,0.65)
-call HitOwnFxKeep(hws,0.35,false)
-call HitStrikeFx(e,1,a,0.45)
-call HitStrikeFx(e,4,a,0.65)
-call myCustomDamage(u,e,75.*l+l*HitAgi(u),false,false,null,null,null)
-if HitFreeze(u,e,0.5+0.1*l+HitStopAdd(u)) then
-call SaveReal(HH,GetHandleId(e),HitK("WFz"),HitNow()+0.5+0.1*l+HitStopAdd(u))
-set hws=HitIceAt(GetUnitX(e),GetUnitY(e),a,2.2,-1.,false)
-call HitWKeep(g,hws)
-call HitSnd("HitColdEyeHit")
-endif
-call SlowUnit(u,e,0.3,0.,0.5+0.1*l+2.,2.,false)
+call SaveReal(h,GetHandleId(g),GetHandleId(e),a)
+call SetControlToUnit(u,e,RMaxBJ(0.025,LoadReal(h,GetHandleId(g),6)-HitNow()),"ensnare")
 endif
 endloop
 call DestroyGroup(tg)
@@ -286164,6 +286221,13 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local effect hwfx=AddSpecialEffect("Hit\\IceFront.mdx",x,y)
 local location hwl=Location(x,y)
+call SaveInteger(h,GetHandleId(g),4,l)
+call SaveReal(h,GetHandleId(g),6,RMaxBJ(LoadReal(h,GetHandleId(g),6),HitNow()+0.025*I2R((R2I(len)+44)/45+2*(((R2I(len)+44)/45-1)/4))))
+call SaveReal(h,GetHandleId(g),10+LoadInteger(h,GetHandleId(g),9)*4,x)
+call SaveReal(h,GetHandleId(g),11+LoadInteger(h,GetHandleId(g),9)*4,y)
+call SaveReal(h,GetHandleId(g),12+LoadInteger(h,GetHandleId(g),9)*4,a)
+call SaveReal(h,GetHandleId(g),13+LoadInteger(h,GetHandleId(g),9)*4,len)
+call SaveInteger(h,GetHandleId(g),9,LoadInteger(h,GetHandleId(g),9)+1)
 call SaveInteger(h,GetHandleId(g),0,LoadInteger(h,GetHandleId(g),0)+1)
 call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,1,g)
@@ -286261,7 +286325,7 @@ local timer t=GetExpiredTimer()
 local unit u=LoadUnitHandle(h,GetHandleId(t),0)
 if u!=null and LoadInteger(HH,GetHandleId(u),HitK("InvN"))==LoadInteger(h,GetHandleId(t),1) then
 call RemoveSavedBoolean(HH,GetHandleId(u),StringHash("HitEGuard"))
-call UnitRemoveAbility(u,'Apiv')
+call UnitRemoveAbility(u,'A0ZA')
 call SetUnitVertexColor(u,255,255,255,255)
 endif
 call FlushChildHashtable(h,GetHandleId(t))
@@ -286274,7 +286338,7 @@ local timer t=CreateTimer()
 local integer n=LoadInteger(HH,GetHandleId(u),HitK("InvN"))+1
 call SaveInteger(HH,GetHandleId(u),HitK("InvN"),n)
 call SaveBoolean(HH,GetHandleId(u),StringHash("HitEGuard"),true)
-call UnitAddAbility(u,'Apiv')
+call UnitAddAbility(u,'A0ZA')
 call SetUnitVertexColor(u,255,255,255,0)
 call SaveUnitHandle(h,GetHandleId(t),0,u)
 call SaveInteger(h,GetHandleId(t),1,n)
@@ -286284,7 +286348,7 @@ endfunction
 function HitInvisOff takes unit u returns nothing
 call SaveInteger(HH,GetHandleId(u),HitK("InvN"),LoadInteger(HH,GetHandleId(u),HitK("InvN"))+1)
 call RemoveSavedBoolean(HH,GetHandleId(u),StringHash("HitEGuard"))
-call UnitRemoveAbility(u,'Apiv')
+call UnitRemoveAbility(u,'A0ZA')
 call SetUnitVertexColor(u,255,255,255,255)
 endfunction
 function HitEImgEnd takes nothing returns nothing
@@ -286438,8 +286502,6 @@ local unit im=CreateIllusionFromUnit(u)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local trigger tr=CreateTrigger()
-local group g=CreateGroup()
-local unit e
 call UnitCancelTimedLife(im)
 call SetUnitXY_1(im,GetUnitX(u),GetUnitY(u),false)
 call SetUnitFacingInstant(im,GetUnitFacing(u))
@@ -286469,23 +286531,11 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,im)
 call SaveTriggerHandle(h,id,2,tr)
 call SaveBoolean(h,id,3,false)
-// послеобраз отвлекает: ближние враги не-герои бьют его
-call GroupEnumUnitsInRange(g,GetUnitX(u),GetUnitY(u),600.,null)
-loop
-set e=FirstOfGroup(g)
-exitwhen e==null
-call GroupRemoveUnit(g,e)
-if HitEnemy(u,e) and not IsUnitType(e,UNIT_TYPE_HERO) and GetPlayerController(OwnerOf(e))!=MAP_CONTROL_USER then
-call IssueTargetOrder(e,"attack",im)
-endif
-endloop
-call DestroyGroup(g)
 call HitInvis(u,2.)
 call SaveReal(HH,GetHandleId(u),HitK("EStep"),HitNow()+2.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(u),GetUnitY(u),0.,1.,1.)
 call HitSnd("HitE1-sfx-1")
 call TSE_TimerStart(t,1.2,false,function HitEImgEnd)
-set g=null
 set tr=null
 set t=null
 set im=null
@@ -286650,7 +286700,7 @@ local unit hrce=GetSpellTargetUnit()
 local timer hrct=CreateTimer()
 local integer hrci=GetHandleId(hrct)
 local effect hrcf=AddSpecialEffectTarget("Hit\\RTimeRasenganSmall.mdx",hrcu,"hand right")
-call SetSpecialEffectScale(hrcf,0.018)
+call SetSpecialEffectScale(hrcf,0.5)
 call SetSpecialEffectAnimationByIndex(hrcf,0)
 call SetSpecialEffectVertexColour(hrcf,190,90,255,180)
 call SaveUnitHandle(h,hrci,0,hrcu)
@@ -286731,7 +286781,7 @@ endfunction
 // ===== F — Vital Point Attack: стойка 2 с, Q/W/E -> HtF2/HtF3/HtF4, R/D/G/T закрыты =====
 function HitFSet takes unit u,boolean on returns nothing
 if on then
-call EnableUnitAbility(u,'HtF1',true,true)
+call DisableUnitAbility(u,'HtF1',true,true)
 call EnableUnitAbility(u,'HtFc',true,true)
 else
 call EnableUnitAbility(u,'HtF1',true,true)
@@ -286768,12 +286818,12 @@ else
 call DisableUnitAbility(u,'HtF4',true,true)
 endif
 if on then
-call DisableUnitAbility(u,'HtR1',true,true)
+call DisableUnitAbility(u,'HtR1',false,true)
 call DisableUnitAbility(u,'HtD1',false,true)
 call DisableUnitAbility(u,'HtG1',false,true)
 call DisableUnitAbility(u,'HtT1',false,true)
 else
-call EnableUnitAbility(u,'HtR1',true,true)
+call EnableUnitAbility(u,'HtR1',false,true)
 call EnableUnitAbility(u,'HtD1',false,true)
 call EnableUnitAbility(u,'HtG1',false,true)
 call EnableUnitAbility(u,'HtT1',false,true)
@@ -286834,7 +286884,45 @@ set u=null
 set t=null
 endfunction
 function HitFCond takes nothing returns boolean
-return (GetSpellAbilityId()=='HtF1' or GetSpellAbilityId()=='HtFc') and udg_B==true
+return (GetSpellAbilityId()=='HtF1' or GetSpellAbilityId()=='HtFc') and udg_B==true and not IsUnitPaused(GetTriggerUnit()) and not LoadBoolean(HH,GetHandleId(GetTriggerUnit()),HitK("TAct"))
+endfunction
+function HitFRefresh takes unit hfru returns nothing
+if IsUnitPaused(hfru) or LoadBoolean(HH,GetHandleId(hfru),HitK("TAct")) then
+if IsUnitAbilityVisible(hfru,'HtR1') then
+call SaveBoolean(HH,GetHandleId(hfru),HitK("RPauseHidden"),true)
+call SaveBoolean(HH,GetHandleId(hfru),HitK("RPauseEnabled"),IsAbilityEnabled(GetUnitAbility(hfru,'HtR1')))
+call DisableUnitAbility(hfru,'HtR1',true,true)
+endif
+elseif LoadBoolean(HH,GetHandleId(hfru),HitK("RPauseHidden")) then
+call RemoveSavedBoolean(HH,GetHandleId(hfru),HitK("RPauseHidden"))
+call EnableUnitAbility(hfru,'HtR1',true,true)
+if not LoadBoolean(HH,GetHandleId(hfru),HitK("RPauseEnabled")) or LoadInteger(HH,GetHandleId(hfru),HitK("Fst"))>0 then
+call DisableUnitAbility(hfru,'HtR1',false,true)
+endif
+call RemoveSavedBoolean(HH,GetHandleId(hfru),HitK("RPauseEnabled"))
+endif
+if IsUnitPaused(hfru) or LoadBoolean(HH,GetHandleId(hfru),HitK("TAct")) then
+if IsUnitAbilityVisible(hfru,'HtF1') then
+call DisableUnitAbility(hfru,'HtF1',true,true)
+endif
+if IsUnitAbilityVisible(hfru,'HtFc') then
+call DisableUnitAbility(hfru,'HtFc',true,true)
+endif
+elseif LoadInteger(HH,GetHandleId(hfru),HitK("Fst"))>0 then
+if IsUnitAbilityVisible(hfru,'HtF1') then
+call DisableUnitAbility(hfru,'HtF1',true,true)
+endif
+if not IsUnitAbilityVisible(hfru,'HtFc') then
+call EnableUnitAbility(hfru,'HtFc',true,true)
+endif
+else
+if IsUnitAbilityVisible(hfru,'HtFc') then
+call DisableUnitAbility(hfru,'HtFc',true,true)
+endif
+if not IsUnitAbilityVisible(hfru,'HtF1') then
+call EnableUnitAbility(hfru,'HtF1',true,true)
+endif
+endif
 endfunction
 function HitFSetRank takes unit hflu returns nothing
 local integer hflr=IMinBJ(5,IMaxBJ(1,1+(GetHeroLevel(hflu)-12)/3))
@@ -286846,14 +286934,13 @@ call SetUnitAbilityLevel(hflu,'HtF1',hflr)
 call SetUnitAbilityLevel(hflu,'HtF2',hflr)
 call SetUnitAbilityLevel(hflu,'HtF3',hflr)
 call SetUnitAbilityLevel(hflu,'HtF4',hflr)
-call EnableUnitAbility(hflu,'HtF1',true,true)
+call HitFRefresh(hflu)
 endfunction
 function HitFLevelEvent takes nothing returns nothing
 call HitFSetRank(GetTriggerUnit())
 endfunction
 
-function HitFCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
+function HitFRun takes unit u returns nothing
 local timer t=CreateTimer()
 local integer n=LoadInteger(HH,GetHandleId(u),HitK("FstN"))+1
 if LoadInteger(HH,GetHandleId(u),HitK("Fst"))>0 then
@@ -286881,6 +286968,31 @@ set t=null
 set u=null
 endfunction
 // F > Q — Death Blow: первый враг на линии до 1800, вспышка и ударная волна
+function HitFDeferred takes nothing returns nothing
+local timer hfdt=GetExpiredTimer()
+local integer hfdi=GetHandleId(hfdt)
+local unit hfdu=LoadUnitHandle(h,hfdi,0)
+local integer hfda=LoadInteger(h,hfdi,2)
+if hfdu!=null and GetUnitTypeId(hfdu)=='HHit' and UnitIsAlive(hfdu) and udg_B and not IsUnitPaused(hfdu) and not LoadBoolean(HH,GetHandleId(hfdu),HitK("TAct")) and LoadInteger(HH,GetHandleId(hfdu),HitK("FstN"))==LoadInteger(h,hfdi,1) then
+if (hfda=='HtFc' and LoadInteger(HH,GetHandleId(hfdu),HitK("Fst"))>0) or (hfda=='HtF1' and LoadInteger(HH,GetHandleId(hfdu),HitK("Fst"))==0) then
+call HitFRun(hfdu)
+endif
+endif
+call FlushChildHashtable(h,hfdi)
+call TSE_DestroyTimer(hfdt)
+set hfdu=null
+set hfdt=null
+endfunction
+function HitFCast takes nothing returns nothing
+local timer hfct=CreateTimer()
+local unit hfcu=GetTriggerUnit()
+call SaveUnitHandle(h,GetHandleId(hfct),0,hfcu)
+call SaveInteger(h,GetHandleId(hfct),1,LoadInteger(HH,GetHandleId(hfcu),HitK("FstN")))
+call SaveInteger(h,GetHandleId(hfct),2,GetSpellAbilityId())
+call TSE_TimerStart(hfct,0.,false,function HitFDeferred)
+set hfcu=null
+set hfct=null
+endfunction
 function HitF2Cond takes nothing returns boolean
 return GetSpellAbilityId()=='HtF2' and udg_B==true
 endfunction
@@ -287322,7 +287434,7 @@ local real hgdur=RMinBJ(1.,0.5+HitStopAdd(u))
 call HitSnd("HitT")
 call HitVo("HitG1")
 call HitFacingIce(GetUnitX(u),GetUnitY(u),3.2,hgdur,true)
-call TSE_StartEx(u,hgdur,true,GetUnitX(u),GetUnitY(u),1200.)
+call TSE_StartEx(u,hgdur,false,GetUnitX(u),GetUnitY(u),0.)
 set u=null
 endfunction
 // ===== T — Molotov: неуязвим на касте, остановка 3 с в 1200, 5 ударов с разных сторон, урон разом, оглушение, метки взрываются =====
@@ -287510,13 +287622,27 @@ endfunction
 function HitTApplyDamage takes integer htai,real htad returns nothing
 local unit htau=LoadUnitHandle(h,htai,0)
 local unit htae=LoadUnitHandle(h,htai,1)
+call HitTTargetRelease(htai)
+if TSE_On and TSE_Src==htau then
+call TSE_Stop()
+endif
+if htau!=null then
+call MapPauseUnit(htau,LoadBoolean(h,htai,16))
+if LoadUnitHandle(HH,GetHandleId(htau),StringHash("HitTGuard"))==htau then
+call RemoveSavedHandle(HH,GetHandleId(htau),StringHash("HitTGuard"))
+call SetUnitInvulnerable(htau,LoadBoolean(h,htai,14))
+endif
+endif
+if htae!=null and LoadUnitHandle(HH,GetHandleId(htae),StringHash("HitTGuard"))==htau then
+call RemoveSavedHandle(HH,GetHandleId(htae),StringHash("HitTGuard"))
+call SetUnitInvulnerable(htae,LoadBoolean(h,htai,15))
+endif
 if htau!=null and htae!=null and not LoadBoolean(h,htai,15) then
 call SaveBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"),true)
 call SetUnitInvulnerable(htae,false)
 call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))+1)
 call myCustomDamage(htau,htae,htad,false,false,null,null,null)
 call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),IMaxBJ(0,LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))-1))
-call SetUnitInvulnerable(htae,true)
 call RemoveSavedBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"))
 endif
 set htau=null
@@ -287572,6 +287698,7 @@ call SetUnitInvulnerable(htu,LoadBoolean(h,hti,14))
 endif
 call SetUnitTimeScale(htu,1.)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),false)
+call HitFRefresh(htu)
 if UnitIsAlive(htu) then
 call HitSetCh(htu,5)
 call SaveReal(HH,GetHandleId(htu),HitK("ChLock"),HitNow()+15.)
@@ -287810,7 +287937,7 @@ call SetUnitInvulnerable(hte,true)
 call HitSnd("HitSeichoAttack")
 call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
 call HitVo("HitT1")
-call TSE_StartEx(htu,htd+0.8,true,GetUnitX(htu),GetUnitY(htu),1200.)
+call TSE_StartEx(htu,htd+0.8,false,GetUnitX(htu),GetUnitY(htu),0.)
 if LoadInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"))==0 then
 if LoadInteger(TSE_HT,GetHandleId(hte),104)>0 then
 call SaveBoolean(HH,GetHandleId(hte),StringHash("HitTPauseWanted"),LoadBoolean(TSE_HT,GetHandleId(hte),105))
@@ -287828,6 +287955,7 @@ call SetUnitTimeScale(htu,6.167/(0.3+(2.592-0.26/12.)*htseries+0.936*htseries/36
 call MapPauseUnit(htu,true)
 call SetUnitInvulnerable(htu,true)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),true)
+call HitFRefresh(htu)
 call SaveUnitHandle(h,GetHandleId(htt),0,htu)
 call SaveUnitHandle(h,GetHandleId(htt),1,hte)
 call SaveInteger(h,GetHandleId(htt),2,0)
@@ -287892,6 +288020,7 @@ call SaveUnitHandle(h,htpci,1,htpce)
 call SaveBoolean(h,htpci,3,IsUnitPaused(htpcu))
 call SaveBoolean(h,htpci,4,IsUnitInvulnerable(htpcu))
 call MapPauseUnit(htpcu,true)
+call HitFRefresh(htpcu)
 call SetUnitInvulnerable(htpcu,true)
 call SaveInteger(HH,GetHandleId(htpcu),HitK("AnN"),LoadInteger(HH,GetHandleId(htpcu),HitK("AnN"))+1)
 call SetUnitAnimationByIndex(htpcu,11)
@@ -287987,6 +288116,7 @@ endif
 if not UnitIsAlive(u) and LoadInteger(HH,uid,HitK("Fst"))>0 then
 call HitFStop(u,false)
 endif
+call HitFRefresh(u)
 call HitWMana(u)
 call HitPanelUpdate(u)
 if UnitIsAlive(u) and not IsUnitInGroup(u,TSE_G) then
@@ -303199,13 +303329,13 @@ call LANG_A('HtW1',0,1,"Icy Glare, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,2,"Icy Glare, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,3,"Icy Glare, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('HtW1',0,4,"Icy Glare, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('HtW1',1,0,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,1,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.7 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,2,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.8 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,3,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.9 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
-call LANG_A('HtW1',1,4,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 1.0 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,0,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 75 + 1*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 1"+"2 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,1,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 150 + 2*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.7 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: "+"12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,2,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 225 + 3*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.8 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: "+"12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,3,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 300 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.9 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: "+"12 sec. (both ends: 15 sec., mana +30%)|r")
+call LANG_A('HtW1',1,4,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 375 + 5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 1.0 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: "+"12 sec. (both ends: 15 sec., mana +30%)|r")
 call LANG_A('HtW1',2,0,"Icy Glare, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('HtW1',3,0,"Hit sends a wave of temporal ice forward, freezing and slowing enemies caught in its path.|n|n|cFF00A5FF|nDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6\\0.7\\0.8\\0.9\\1 sec., then slow 30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 "+"sec., mana +30%)|r")
+call LANG_A('HtW1',3,0,"Hit sends a wave of temporal ice forward. Enemies caught are rooted until the wave ends, then the entire line shatters, dealing damage, freezing and slowing them.|n|n|cFF00A5FF|nDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nFreeze: 0.6\\0.7\\0.8\\0.9\\1 sec., then slow "+"30% for 2 sec.|nLine: 1400, width 150|nCooldown: 12 sec. (both ends: 15 sec., mana +30%)|r")
 call LANG_A('HtE1',0,0,"Tides of Time, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,1,"Tides of Time, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('HtE1',0,2,"Tides of Time, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -303230,8 +303360,8 @@ call LANG_A('HtR1',1,3,"Hit closes in and traps his opponent in time. Only Hit c
 call LANG_A('HtR1',1,4,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',3,0,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored damage on release: +10\\15\\20\\25\\30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange"+": 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec., radius 1200|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
+call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
 call LANG_A('HtD1',1,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtD1',3,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
 call LANG_A('HtF1',1,0,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
@@ -303258,8 +303388,8 @@ call LANG_A('HtF4',1,2,"Hit dashes forward, trapping enemies in temporal ice. Th
 call LANG_A('HtF4',1,3,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
 call LANG_A('HtF4',1,4,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
 call LANG_A('HtF4',3,0,"Hit dashes forward, trapping enemies in temporal ice. The ice shatters, damaging every enemy caught.|n|n|cFF00A5FF|nDamage: 4/5/6/7/8*|r|c003CFF3CAGI|r|cFF00A5FF|nDash: 1100|nLaunch: 1 sec.|r")
-call LANG_A('HtG1',1,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
-call LANG_A('HtG1',3,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: 1200|nCooldown: 16 sec.|r")
+call LANG_A('HtG1',1,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: Whole map|nCooldown: 16 sec.|r")
+call LANG_A('HtG1',3,0,"Hit stops time around himself and moves freely among frozen opponents. Stored damage is dealt when time resumes.|n|n|cFF00A5FF|nDuration: 0.5 sec., +0.1 sec. per Pure Progress charge (up to 1 sec.)|nRadius: Whole map|nCooldown: 16 sec.|r")
 call LANG_A('TSkr',1,0,"This hero is a time manipulator. Other heroes' time stops do not affect him. Damage he deals to frozen targets lands in full, everyone else's is halved. Some abilities break through this class but are weaker.")
 call LANG_A('HtWa',1,0,"The ice runs from Hit to the point along the whole line. Line length: 1400; click direction only.|n|n|cFF00A5FFMana cost: 80\\95\\110\\125\\140|nCooldown: 12 sec.|r")
 call LANG_A('HtWb',1,0,"The ice runs from the point back to Hit along the whole line. Line length: 1400; click direction only.|n|n|cFF00A5FFMana cost: 80\\95\\110\\125\\140|nCooldown: 12 sec.|r")
