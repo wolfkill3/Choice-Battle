@@ -1,0 +1,6 @@
+// A standalone backdrop: no inherited tile flag or square background size.
+Frame "BACKDROP" "ChoiceGuidePurchaseBackdrop" {
+    BackdropBackground "UI\ChoiceGuides\Purchase.tga",
+    BackdropBlendAll,
+    BackdropBackgroundInsets 0.0 0.0 0.0 0.0,
+}
