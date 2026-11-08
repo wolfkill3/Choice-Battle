@@ -1,5 +1,59 @@
 ﻿//W3x2lni Data: 2021-11-04 17:40:09.089
 globals
+integer BOT_AllianceMode=-1
+integer array BOT_TeamCache
+group TSE_CDG=null
+timer TSE_CDT=null
+boolean TSE_CDRunning=false
+boolean SG_HeroPicker=false
+integer SG_HeroPage=0
+boolean SG_Picker=false
+integer SG_Page=0
+integer SG_PageStart=0
+framehandle SG_PagePrev=null
+framehandle SG_PageNext=null
+hashtable BOT_DB=InitHashtable()
+boolean BOT_Enabled=false
+boolean BOT_Locked=false
+boolean array BOT_Active
+boolean array BOT_Casting
+integer BOT_Clock=0
+integer array BOT_Type
+integer array BOT_Pool
+integer array BOT_Buy
+integer array BOT_Spell
+integer array BOT_Wait
+integer array BOT_Mode
+integer array BOT_Leader
+integer array BOT_Until
+integer array BOT_EmoteWait
+real array BOT_X
+real array BOT_Y
+unit array BOT_Attack
+hashtable SG_Custom=InitHashtable()
+integer SG_Total=0
+integer SG_Read=0
+integer SG_OwnerHero=0
+integer SG_RosterN=0
+integer array SG_Roster
+boolean SG_Loaded=false
+framehandle SG_NameBox=null
+framehandle SG_Panel=null
+framehandle SG_Title=null
+framehandle SG_Hint=null
+framehandle SG_Choose=null
+framehandle array SG_Row
+framehandle array SG_Icon
+framehandle array SG_Text
+trigger SG_Trg=null
+integer SG_Hero=0
+integer SG_Mode=0
+integer SG_Stage=0
+integer SG_Select=-1
+boolean SG_Open=false
+hashtable SG_DB=InitHashtable()
+group TSE_RG=null
+integer array ShInvCache
 integer HitGlowCounter=0
 integer ShHotCode=66
 boolean ShHotWait=false
@@ -3051,6 +3105,11 @@ return Player(SlotJudge[i]-1)
 endif
 return Player(i)
 endfunction
+function BOT_SlotPlaying takes player bp returns boolean
+local integer bi=PId(bp)
+return GetPlayerSlotState(bp)==PLAYER_SLOT_STATE_PLAYING or (bi>=0 and bi<10 and BOT_Active[bi])
+endfunction
+
 function PlayerVC takes integer i returns player
 return PlayerV(i-1)
 endfunction
@@ -3087,8 +3146,18 @@ endif
 return LoadBoolean(TSE_HT,-1,GetUnitTypeId(Hero[PId(p)])) or GetUnitAbilityLevel(Hero[PId(p)],'TSkr')>0
 endfunction
 // для игрока стоит время (его таймеры, ожидания, звуки): не исключён; при остановке по области — его герой заморожен
+function TSE_PlayerResistant takes player tsrp returns boolean
+local unit tsrh=Hero[PId(tsrp)]
+local boolean tsrb=tsrh!=null and GetUnitAbilityLevel(tsrh,'TSrs')>0 and GetUnitAbilityLevel(tsrh,'TSkr')==0 and not LoadBoolean(TSE_HT,-1,GetUnitTypeId(tsrh))
+set tsrh=null
+return tsrb
+endfunction
+function TSE_PlayerActive takes player tsap returns boolean
+return TSE_PlayerExempt(tsap) or TSE_PlayerResistant(tsap)
+endfunction
+
 function TSE_PlayerStopped takes player p returns boolean
-if p==null or TSE_PlayerExempt(p) then
+if p==null or TSE_PlayerActive(p) then
 return false
 endif
 return not TSE_Area or IsUnitInGroup(Hero[PId(p)],TSE_G)
@@ -4107,7 +4176,7 @@ endfunction
 // помощнику не меньше 10% (контроль, лечение, щит без урона); без помощников всё убийце. Помощники — в PlayerH.
 // 28 окт (3.8.2): Ключ Баб-Илу — множитель золота игрока pi: 1+k с ключом у героя, иначе 1
 function BabiluGoldK takes integer pi,real k returns real
-    if pi>=0 and pi<12 and UnitHasItemOfTypeBJ(Hero[pi],'IBBi') then
+    if pi>=0 and pi<12 and (UnitHasItemOfTypeBJ(Hero[pi],'IBBi') or GetUnitAbilityLevel(Hero[pi],'KIBK')>0) then
         return 1.+k
     endif
     return 1.
@@ -7318,6 +7387,51 @@ endloop
 set TSE_PN=0
 set tm=null
 endfunction
+// One cooldown registry for global stops and Hit's short freezes.
+function TSE_CDActive takes unit cu returns boolean
+return cu!=null and ((TSE_On and (IsUnitInGroup(cu,TSE_G) or IsUnitInGroup(cu,TSE_RG))) or LoadInteger(HH,GetHandleId(cu),StringHash("HitFz"))>0 or LoadInteger(HH,GetHandleId(cu),StringHash("HitSoft"))>0 or LoadInteger(HH,GetHandleId(cu),StringHash("HitTPauseCount"))>0)
+endfunction
+function TSE_CDProxy takes nothing returns nothing
+call ExecuteFunc("TSE_CDTick")
+endfunction
+function TSE_CDTrack takes unit cu returns nothing
+call GroupAddUnit(TSE_CDG,cu)
+if not TSE_CDRunning then
+set TSE_CDRunning=true
+call TimerStart(TSE_CDT,.05,true,function TSE_CDProxy)
+endif
+endfunction
+
+function TSE_WatchCooldowns takes unit twu returns nothing
+local integer twi=0
+local ability twa
+local item twit
+call TSE_CDTrack(twu)
+loop
+exitwhen twi>=CountUnitAbilities(twu,false) or twi>=300
+set twa=GetUnitAbilityByIndex(twu,twi)
+if twa!=null and IsAbilityOnCooldown(twa) and not HandleListContainsHandle(TSE_Abl,twa) then
+call SaveReal(TSE_HT,GetHandleId(twa),1,GetAbilityRemainingCooldown(twa))
+call SaveUnitHandle(TSE_HT,GetHandleId(twa),140,twu)
+call HandleListAddHandle(TSE_Abl,twa)
+endif
+set twi=twi+1
+endloop
+set twi=0
+loop
+exitwhen twi>=10
+set twit=UnitItemInSlot(twu,twi)
+if twit!=null and GetItemRemainingCooldown(twit)>0 and not HandleListContainsHandle(TSE_Itm,twit) then
+call SaveReal(TSE_HT,GetHandleId(twit),1,GetItemRemainingCooldown(twit))
+call SaveUnitHandle(TSE_HT,GetHandleId(twit),140,twu)
+call HandleListAddHandle(TSE_Itm,twit)
+endif
+set twi=twi+1
+endloop
+set twa=null
+set twit=null
+endfunction
+
 function TSE_FreezeUnit takes unit u returns nothing
 local integer id=GetHandleId(u)
 local integer i=0
@@ -7381,31 +7495,147 @@ call HandleListAddHandle(TSE_Buf,b)
 endif
 set i=i+1
 endloop
-set i=0
-loop
-set a=GetUnitAbilityByIndex(u,i)
-exitwhen a==null or i>=300
-if IsAbilityOnCooldown(a) then
-call SaveReal(TSE_HT,GetHandleId(a),1,GetAbilityRemainingCooldown(a))
-call HandleListAddHandle(TSE_Abl,a)
-endif
-set i=i+1
-endloop
-set i=0
-loop
-exitwhen i>=10
-set it=UnitItemInSlot(u,i)
-if it!=null and GetItemRemainingCooldown(it)>0 then
-call SaveReal(TSE_HT,GetHandleId(it),1,GetItemRemainingCooldown(it))
-call HandleListAddHandle(TSE_Itm,it)
-endif
-set i=i+1
-endloop
+call TSE_WatchCooldowns(u)
 set b=null
 set a=null
 set it=null
 endfunction
 // все юниты всех слотов: перебор по игрокам (даммиков с Aloc он не отдаёт — 29 окт) + список хэндлов; исключение — по OwnerOf (учитывает -take)
+
+function TSE_ResRefresh takes nothing returns nothing
+local unit trfu=GetEnumUnit()
+if not TSE_PlayerResistant(OwnerOf(trfu)) or TSE_PlayerExempt(OwnerOf(trfu)) or IsUnitType(trfu,UNIT_TYPE_DEAD) or (TSE_Area and not IsUnitInRangeXY(trfu,TSE_AX,TSE_AY,TSE_AR)) then
+if LoadInteger(HH,GetHandleId(trfu),StringHash("HitSoft"))==0 then
+call UnitRemoveAbility(trfu,'BTRs')
+endif
+call GroupRemoveUnit(TSE_RG,trfu)
+endif
+set trfu=null
+endfunction
+function TSE_Slow takes unit su returns nothing
+local buff sb
+if GetUnitBuff(su,'BTRs')==null then
+set sb=CreateBuff('BTRs')
+call SetBuffRealField(sb,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,.5)
+call SetBuffRealField(sb,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,.5)
+call SetBuffRemainingDuration(sb,999999.)
+call SetBuffDispellable(sb,false)
+call UnitAddBuff(su,sb)
+set sb=null
+endif
+endfunction
+
+function TSE_ResUnit takes unit tru returns nothing
+local buff trb
+if GetUnitAbilityLevel(tru,'Aloc')>0 then
+return
+endif
+call GroupAddUnit(TSE_RG,tru)
+call TSE_Slow(tru)
+call TSE_WatchCooldowns(tru)
+endfunction
+function TSE_ResClear takes nothing returns nothing
+call UnitRemoveAbility(GetEnumUnit(),'BTRs')
+endfunction
+function TSE_HoldCooldowns takes nothing returns nothing
+local integer ci
+local ability ca
+local item ct
+local unit cu
+local real cr
+call HandleListRemoveEmpty(TSE_Abl)
+call HandleListRemoveEmpty(TSE_Itm)
+set ci=HandleListGetAbilityCount(TSE_Abl)-1
+loop
+exitwhen ci<0
+set ca=HandleListGetAbilityByIndex(TSE_Abl,ci)
+set cu=LoadUnitHandle(TSE_HT,GetHandleId(ca),140)
+if TSE_CDActive(cu) then
+set cr=LoadReal(TSE_HT,GetHandleId(ca),1)
+if GetAbilityRemainingCooldown(ca)>cr+.16 then
+set cr=GetAbilityRemainingCooldown(ca)
+call SaveReal(TSE_HT,GetHandleId(ca),1,cr)
+endif
+call SaveBoolean(TSE_HT,GetHandleId(ca),141,true)
+call SetAbilityRemainingCooldown(ca,cr+.15)
+else
+if LoadBoolean(TSE_HT,GetHandleId(ca),141) then
+call SetAbilityRemainingCooldown(ca,LoadReal(TSE_HT,GetHandleId(ca),1))
+endif
+call HandleListRemoveHandle(TSE_Abl,ca)
+call FlushChildHashtable(TSE_HT,GetHandleId(ca))
+endif
+set ci=ci-1
+endloop
+set ci=HandleListGetItemCount(TSE_Itm)-1
+loop
+exitwhen ci<0
+set ct=HandleListGetItemByIndex(TSE_Itm,ci)
+set cu=GetItemOwner(ct)
+if TSE_CDActive(cu) then
+set cr=LoadReal(TSE_HT,GetHandleId(ct),1)
+if GetItemRemainingCooldown(ct)>cr+.16 then
+set cr=GetItemRemainingCooldown(ct)
+call SaveReal(TSE_HT,GetHandleId(ct),1,cr)
+endif
+call SaveBoolean(TSE_HT,GetHandleId(ct),141,true)
+call SetItemRemainingCooldown(ct,cr+.15)
+else
+if LoadBoolean(TSE_HT,GetHandleId(ct),141) then
+call SetItemRemainingCooldown(ct,LoadReal(TSE_HT,GetHandleId(ct),1))
+endif
+call HandleListRemoveHandle(TSE_Itm,ct)
+call FlushChildHashtable(TSE_HT,GetHandleId(ct))
+endif
+set ci=ci-1
+endloop
+set ca=null
+set ct=null
+set cu=null
+endfunction
+function TSE_CDWatch takes nothing returns nothing
+local unit cu=GetEnumUnit()
+if TSE_CDActive(cu) then
+call TSE_WatchCooldowns(cu)
+else
+call GroupRemoveUnit(TSE_CDG,cu)
+endif
+set cu=null
+endfunction
+function TSE_CDTick takes nothing returns nothing
+call ForGroup(TSE_CDG,function TSE_CDWatch)
+call TSE_HoldCooldowns()
+if CountUnitsInGroup(TSE_CDG)==0 then
+call PauseTimer(TSE_CDT)
+set TSE_CDRunning=false
+endif
+endfunction
+function TSE_SoftEnd takes nothing returns nothing
+local timer st=GetExpiredTimer()
+local integer sid=GetHandleId(st)
+local unit su=LoadUnitHandle(TSE_HT,sid,160)
+local integer n=IMaxBJ(0,LoadInteger(HH,GetHandleId(su),StringHash("HitSoft"))-1)
+call SaveInteger(HH,GetHandleId(su),StringHash("HitSoft"),n)
+if n==0 and not IsUnitInGroup(su,TSE_RG) then
+call UnitRemoveAbility(su,'BTRs')
+endif
+call TSE_HoldCooldowns()
+call FlushChildHashtable(TSE_HT,sid)
+call TSE_DestroyTimer(st)
+set su=null
+set st=null
+endfunction
+function TSE_SoftTimed takes unit su,real sd returns nothing
+local timer st=CreateTimer()
+call SaveInteger(HH,GetHandleId(su),StringHash("HitSoft"),LoadInteger(HH,GetHandleId(su),StringHash("HitSoft"))+1)
+call TSE_Slow(su)
+call TSE_WatchCooldowns(su)
+call TSE_HoldCooldowns()
+call SaveUnitHandle(TSE_HT,GetHandleId(st),160,su)
+call TSE_TimerStart(st,sd,false,function TSE_SoftEnd)
+set st=null
+endfunction
+
 function TSE_ScanUnits takes nothing returns nothing
 local integer i=0
 local unit u
@@ -7421,7 +7651,11 @@ exitwhen u==null
 call GroupRemoveUnit(TSE_Tmp,u)
 // 29 окт: умирающие и мёртвые (анимация смерти, даммики с истёкшим временем жизни) не замораживаются — их смерть зависала
 if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+if TSE_PlayerResistant(OwnerOf(u)) then
+call TSE_ResUnit(u)
+else
 call TSE_FreezeUnit(u)
+endif
 endif
 endloop
 set i=i+1
@@ -7439,7 +7673,11 @@ loop
 exitwhen k>=cnt
 set u=HandleListGetUnitByIndex(l,k)
 if u!=null and not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+if TSE_PlayerResistant(OwnerOf(u)) then
+call TSE_ResUnit(u)
+else
 call TSE_FreezeUnit(u)
+endif
 endif
 set k=k+1
 endloop
@@ -7465,7 +7703,7 @@ exitwhen i>=cnt
 set pr=HandleListGetProjectileByIndex(l,i)
 if pr!=null and not HandleListContainsHandle(TSE_Prj,pr) then
 set pu=GetProjectileSource(pr)
-set fr=pu==null or not TSE_PlayerExempt(OwnerOf(pu))
+set fr=pu==null or not TSE_PlayerActive(OwnerOf(pu))
 // снаряд неуязвимого: замечен — запоминается тик, через 1 тик (0.1–0.2 с полёта) зависает
 if not fr then
 if not HaveSavedInteger(TSE_HT,GetHandleId(pr),2) then
@@ -7687,8 +7925,13 @@ set tm=null
 set p=null
 endfunction
 // раз в 0.1 с: новые юниты и снаряды не исключённых игроков тоже встают
+function TSE_WatchFrozen takes nothing returns nothing
+call TSE_WatchCooldowns(GetEnumUnit())
+endfunction
+
 function TSE_TickF takes nothing returns nothing
 set TSE_TickN=TSE_TickN+1
+call ForGroup(TSE_RG,function TSE_ResRefresh)
 call TSE_ScanUnits()
 call TSE_ScanProjectiles()
 call ForGroup(TSE_G,function TSE_ZeroScale)
@@ -7796,24 +8039,6 @@ call PauseBuff(HandleListGetBuffByIndex(TSE_Buf,i),false)
 set i=i+1
 endloop
 set i=0
-set cnt=HandleListGetAbilityCount(TSE_Abl)
-loop
-exitwhen i>=cnt
-set a=HandleListGetAbilityByIndex(TSE_Abl,i)
-call SetAbilityRemainingCooldown(a,LoadReal(TSE_HT,GetHandleId(a),1))
-call FlushChildHashtable(TSE_HT,GetHandleId(a))
-set i=i+1
-endloop
-set i=0
-set cnt=HandleListGetItemCount(TSE_Itm)
-loop
-exitwhen i>=cnt
-set it=HandleListGetItemByIndex(TSE_Itm,i)
-call SetItemRemainingCooldown(it,LoadReal(TSE_HT,GetHandleId(it),1))
-call FlushChildHashtable(TSE_HT,GetHandleId(it))
-set i=i+1
-endloop
-set i=0
 set cnt=HandleListGetEffectCount(TSE_Eff)
 loop
 exitwhen i>=cnt
@@ -7847,8 +8072,9 @@ call FlushChildHashtable(TSE_HT,GetHandleId(pr))
 set i=i+1
 endloop
 call HandleListClear(TSE_Buf)
-call HandleListClear(TSE_Abl)
-call HandleListClear(TSE_Itm)
+call ForGroup(TSE_RG,function TSE_ResClear)
+call GroupClear(TSE_RG)
+call TSE_HoldCooldowns()
 call HandleListClear(TSE_Eff)
 call HandleListClear(TSE_Prj)
 set i=0
@@ -7883,6 +8109,7 @@ if not area then
 call TSE_Filter()
 endif
 call TSE_ScanUnits()
+call TSE_HoldCooldowns()
 call ExecuteFunc("TSE_ScanEffects")
 call TSE_ScanProjectiles()
 call TSE_PauseTimers(null)
@@ -7971,7 +8198,10 @@ endfunction
 function TSE_Init takes nothing returns nothing
 local trigger tr=CreateTrigger()
 call TimerStart(CreateTimer(),0.,false,function TSE_ReadyF)
+set TSE_CDG=CreateGroup()
+set TSE_CDT=CreateTimer()
 set TSE_G=CreateGroup()
+set TSE_RG=CreateGroup()
 set TSE_Tmp=CreateGroup()
 set TSE_HT=InitHashtable()
 set TSE_DH=InitHashtable()
@@ -10016,7 +10246,7 @@ function HeroBarBars takes nothing returns nothing
         exitwhen hbi>9
         set hbh=Hero[hbi]
         set hbv=2
-        if HB_Shown and HB_Blocked==false and hbh!=null and GetUnitTypeId(hbh)!=0 and GetPlayerSlotState(PlayerV(hbi))!=PLAYER_SLOT_STATE_EMPTY then
+        if HB_Shown and HB_Blocked==false and hbh!=null and GetUnitTypeId(hbh)!=0 and BOT_SlotPlaying(PlayerV(hbi)) then
             if ViewAlly(PlayerV(hbi)) or IsLocalJudge() then
                 set hbv=1
             endif
@@ -10292,7 +10522,7 @@ function HeroBarUpdate takes nothing returns nothing
         if GetPlayerSlotState(hbp)==PLAYER_SLOT_STATE_LEFT and SlotJudge[hbi]==0 then
             set hbc=0xFF404040
         endif
-        if GetPlayerSlotState(hbp)!=PLAYER_SLOT_STATE_EMPTY and hbh!=null then
+        if BOT_SlotPlaying(hbp) and hbh!=null then
             set hbs=GetUnitBaseStringFieldById(GetUnitTypeId(hbh),UNIT_SF_ICON_NORMAL)
             if hbs==null or hbs=="" then
                 set hbs="UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp"
@@ -10327,7 +10557,7 @@ function HeroBarUpdate takes nothing returns nothing
             endif
         endif
         set hbn=""
-        if FFAMode and GetPlayerSlotState(hbp)!=PLAYER_SLOT_STATE_EMPTY then
+        if FFAMode and BOT_SlotPlaying(hbp) then
             set hbn=udg_Color[hbi+1]+I2S(win[hbi])+"|r"
         endif
         if hbn!=HeroBarScoreTxt[hbi] then
@@ -14604,7 +14834,7 @@ function InitForfeit takes nothing returns nothing
 endfunction
 
 function PlayerOn takes integer i returns boolean
-        return GetPlayerSlotState(PlayerV(i)) == PLAYER_SLOT_STATE_PLAYING
+        return BOT_SlotPlaying(PlayerV(i))
 endfunction
 
 function LastDamageIndicator takes nothing returns nothing
@@ -28151,6 +28381,7 @@ call SetPlayerAbilityAvailableBJ(false,'KI0L',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0N',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0P',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0R',PlayerVC(GetForLoopIndexA()))
+call SetPlayerAbilityAvailableBJ(false,'KIBL',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0T',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0V',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'KI0X',PlayerVC(GetForLoopIndexA()))
@@ -29654,7 +29885,7 @@ return "-"
 endfunction
 
 function Sh_Typing takes nothing returns boolean
-return ShSearch!=null and IsFrameFocused(ShSearch)
+return (ShSearch!=null and IsFrameFocused(ShSearch)) or (SG_NameBox!=null and IsFrameFocused(SG_NameBox))
 endfunction
 
 function Trig_Sync_Actions takes nothing returns nothing
@@ -30442,6 +30673,24 @@ function ToggleOpenEmoteBar takes nothing returns nothing
     set p = null
 endfunction
 
+function BOT_SendEmote takes integer be,real x,real y returns nothing
+local integer mode=-1
+if be==2 then
+set mode=2
+elseif be==13 then
+set mode=1
+elseif be==14 then
+set mode=3
+elseif be==3 then
+set mode=4
+elseif be==4 then
+set mode=0
+endif
+if mode>=0 then
+call SendSyncData("BEMT",I2S(mode)+";"+R2S(x)+";"+R2S(y))
+endif
+endfunction
+
 function OnButtonEmoteClick2 takes nothing returns nothing
     local player p=TrigP()
     // вторая метка (иконка героя над эмодзи) выглядела как второе эмодзи — убрана (11 окт); эмодзи и так в цвете игрока
@@ -30456,6 +30705,9 @@ function OnButtonEmoteClick2 takes nothing returns nothing
     //call SetSpecialEffectZ(EFF,350)
     //call RemoveEffect(EFF,2.5,false,CreateTimer())
     //endif
+    if BOT_Enabled and p==GetLocalPlayer() then
+call BOT_SendEmote(GetFrameContext(LoadFrameHandle(HH,PH(p),SH_1488)),GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
+endif
     set EFF=AddSpecialEffect("Emote.mdx",GetTriggerPlayerMouseWorldX(),GetTriggerPlayerMouseWorldY())
     if LoadBoolean(HH,PH( p ),SH_1489) then
         call SaveBoolean(HH,PH( p ),SH_1489,false)
@@ -30499,6 +30751,9 @@ function OnButtonEmoteClick takes nothing returns nothing
                 call SaveFrameHandle(HH,pHid,SH_1488,but)
             elseif GetTriggerFrameMouseButton()==MOUSE_BUTTON_TYPE_LEFT then
                 if p!=PlayerV(10) and p!=PlayerV(11) then
+                    if BOT_Enabled and p==GetLocalPlayer() then
+call BOT_SendEmote(GetFrameContext(but),GetUnitX(Hero[PId(p)]),GetUnitY(Hero[PId(p)]))
+endif
                     set EFF=AddSpecialEffect("Emote.mdx",GetUnitX(Hero[PId(p)]),GetUnitY(Hero[PId(p)]))
                     call SetSpecialEffectPlayerColour(EFF,GetPlayerColor(p))
                     call SetSpecialEffectTexture(EFF,GetFrameTexture(but,0),0)
@@ -42471,6 +42726,18 @@ call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIF
 call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
 set i=i+1
 endif
+if GetUnitAbilityLevel(u,'TSrs')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "TSrs" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "TSrs" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
 loop
 call ShowFrame(GetFrameByName( "ClassBarIcon", i ),false)
 call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
@@ -42486,7 +42753,7 @@ local integer sisk=0
 local item sisit
 local boolean sist=GetUnitAbilityLevel(sisu,'KIK0')>0
 local boolean siss=false
-local boolean sisold=GetUnitAbilityLevel(sisu,'TSkr')>0
+local boolean sisold=GetUnitAbilityLevel(sisu,'TSrs')>0
 local integer sistt=0
 local ability sisa
 if sisu==null or not IsUnitType(sisu,UNIT_TYPE_HERO) or GetUnitTypeId(sisu)=='H00Q' then
@@ -42504,24 +42771,18 @@ endif
 endif
 set sisk=sisk+1
 endloop
-if sist then
-if not LoadBoolean(HH,sisi,StringHash("TimeSphereHeld")) then
-call SaveBoolean(HH,sisi,StringHash("TimeSphereHeld"),true)
-call SaveBoolean(HH,sisi,StringHash("TimeSphereClassOwned"),not sisold)
+if GetUnitAbilityLevel(sisu,'TSkr')>0 or LoadBoolean(TSE_HT,-1,GetUnitTypeId(sisu)) then
+call UnitRemoveAbility(sisu,'TSrs')
+elseif sist or StringContains(GetUnitBaseStringFieldById(GetUnitTypeId(sisu),UNIT_SF_ABILITY_LIST),"TSrs",true) then
+if GetUnitAbilityLevel(sisu,'TSrs')==0 then
+call UnitAddAbility(sisu,'TSrs')
+call UnitMakeAbilityPermanent(sisu,true,'TSrs')
 endif
-if GetUnitAbilityLevel(sisu,'TSkr')==0 then
-call UnitAddAbility(sisu,'TSkr')
-call UnitMakeAbilityPermanent(sisu,true,'TSkr')
+else
+call UnitMakeAbilityPermanent(sisu,false,'TSrs')
+call UnitRemoveAbility(sisu,'TSrs')
 endif
-elseif LoadBoolean(HH,sisi,StringHash("TimeSphereHeld")) then
-if LoadBoolean(HH,sisi,StringHash("TimeSphereClassOwned")) and not StringContains(GetUnitBaseStringFieldById(GetUnitTypeId(sisu),UNIT_SF_ABILITY_LIST),"TSkr",true) then
-call UnitMakeAbilityPermanent(sisu,false,'TSkr')
-call UnitRemoveAbility(sisu,'TSkr')
-endif
-call RemoveSavedBoolean(HH,sisi,StringHash("TimeSphereHeld"))
-call RemoveSavedBoolean(HH,sisi,StringHash("TimeSphereClassOwned"))
-endif
-if sisold!=(GetUnitAbilityLevel(sisu,'TSkr')>0) then
+if sisold!=(GetUnitAbilityLevel(sisu,'TSrs')>0) then
 call UpdateClassBar(sisu)
 endif
 if siss then
@@ -42612,6 +42873,9 @@ call UnitMakeAbilityPermanent(u,true,'Wome')
 endif
 if GetUnitAbilityLevel(u,'Blnd')>0 then
 call UnitMakeAbilityPermanent(u,true,'Blnd')
+endif
+if GetUnitAbilityLevel(u,'TSrs')>0 then
+call UnitMakeAbilityPermanent(u,true,'TSrs')
 endif
 if GetUnitAbilityLevel(u,'TSkr')>0 then
 call UnitMakeAbilityPermanent(u,true,'TSkr')
@@ -45174,25 +45438,25 @@ endif
 //if GetUnitTypeId(Hero[i])=='H01A' and GetRandomInt(1,100)<5 then
 //call PlayMusic(music[50])
 //endif
-if i==0 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+if i==0 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,0,0,true)
-elseif i==1 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==1 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,0,0,255,true)
-elseif i==2 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==2 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,0,255,255,true)
-elseif i==3 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==3 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,127,0,128,true)
-elseif i==4 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==4 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,255,0,true)
-elseif i==5 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==5 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,144,15,true)
-elseif i==6 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==6 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,33,192,0,true)
-elseif i==7 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==7 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,229,91,177,true)
-elseif i==8 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==8 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,128,128,128,true)
-elseif i==9 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+elseif i==9 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
 call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,175,234,239,true)
 endif
 if i==0 and UnitIsAlive(Lucy[i])then
@@ -48400,7 +48664,7 @@ local integer y=0
 local integer x=0
 loop
 exitwhen x>=10
-if GetPlayerSlotState(PlayerV(x))==PLAYER_SLOT_STATE_PLAYING then
+if BOT_SlotPlaying(PlayerV(x)) then
 call ShowFrame( OpenStatusButton, false )
 set nick[x]=udg_Color[x+1]+GetPlayerName(PlayerV(x))+"["+I2S(x+1)+"]"
 set y=y+1
@@ -48462,7 +48726,7 @@ call MultiboardReleaseItem(mbitem)
 set x=0
 loop
 exitwhen x>=10
-if GetPlayerSlotState(PlayerV(x))==PLAYER_SLOT_STATE_PLAYING then
+if BOT_SlotPlaying(PlayerV(x)) then
 set mbitem=MultiboardGetItem(mbg,row[x],0)
 call MultiboardSetItemIcon(mbitem,"UI\\Widgets\\Console\\Human\\human-inventory-slotfiller.blp")
 call MultiboardSetItemValue(mbitem,nick[x])
@@ -49080,7 +49344,7 @@ if ModuloInteger(seconds,10)<1 and GetFrameHeight( GetFrameChild(GetOriginFrame(
 endif
 loop
 exitwhen x>=12
-    if GetPlayerSlotState(PlayerV(x))!=PLAYER_SLOT_STATE_PLAYING and SlotJudge[x]==0 then
+    if not BOT_SlotPlaying(PlayerV(x)) and SlotJudge[x]==0 then
         set ingame[x]=false
     endif
     if LoadInteger(HH,PH( PlayerV(x) ),SH_1486)>0 then
@@ -58223,7 +58487,7 @@ if UnitIsAlive(Hero[i])==false or AllIsVisible==true then
         call SaveFogModifierHandle(HH,id,i,f)
         call FogModifierStart(f)
     endif
-elseif ((GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and JudgeSlot[i]==0) or SlotJudge[i]>0) and Hero[i]!=null and UnitIsAlive(Hero[i])then
+elseif ((BOT_SlotPlaying(PlayerV(i)) and JudgeSlot[i]==0) or SlotJudge[i]>0) and Hero[i]!=null and UnitIsAlive(Hero[i])then
     if GetUnitData( Hero[i], "combo4" ) <= 1 and GetUnitAbilityLevel(Hero[i],'B01L')>0 then
         call UnitRemoveAbility(Hero[i], 'A2VJ')
         call UnitRemoveAbility(Hero[i], 'B01L')
@@ -59624,6 +59888,9 @@ endloop
 endfunction
 // место привязки для ячейки вкладки: предметы 0..5 как есть, панель команд — по открытой странице
 function CBS_CellSlot takes integer cbC returns integer
+if cbC>=18 then
+return cbC+12
+endif
 if cbC<6 then
 return cbC
 endif
@@ -59631,6 +59898,9 @@ return 6+CBS_HkPage*12+(cbC-6)
 endfunction
 // ячейка вкладки для места привязки (-1 — место с другой страницы)
 function CBS_SlotCell takes integer cbS returns integer
+if cbS>=30 then
+return cbS-12
+endif
 if cbS<6 then
 return cbS
 endif
@@ -59682,8 +59952,8 @@ endloop
 //call CBS_RingShow(3,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0)
 set cbK=0
 loop
-exitwhen cbK>17
-call CBS_RingShow(22+cbK,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0 and CBS_BindWait==CBS_CellSlot(cbK))
+exitwhen cbK>20
+call CBS_RingShow(25+cbK,HPB_MOpen and CBS_Tab==1 and CBS_BindWait>=0 and CBS_BindWait==CBS_CellSlot(cbK))
 //call CBS_RingShow(4+cbK,HPB_MOpen and CBS_Tab==1 and (CBS_Bind[cbK]>0 or CBS_BindWait==cbK))
 call CBS_RingShow(4+cbK,HPB_MOpen and CBS_Tab==1 and (CBS_Bind[CBS_CellSlot(cbK)]>0 or CBS_BindWait==CBS_CellSlot(cbK)))
 set cbK=cbK+1
@@ -59890,6 +60160,9 @@ endloop
 return 0
 endfunction
 function CBS_SlotFrame takes integer cbS returns framehandle
+if cbS>=18 then
+return GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON,cbS-12)
+endif
 if cbS<6 then
 return GetOriginFrame(ORIGIN_FRAME_ITEM_BUTTON,cbS)
 endif
@@ -59911,7 +60184,7 @@ call SetFrameText(ShHotText,"Shop: "+Sh_HotName())
 endif
 endif
 loop
-exitwhen cbC>17
+exitwhen cbC>20
 set cbS=CBS_CellSlot(cbC)
 if CBS_BindWait==cbS then
 set cbT="|cFFFFFF00?|r"
@@ -59973,9 +60246,9 @@ local string cbT
 //local item cbI
 local integer cbP=CBS_Me(PId(GetLocalPlayer()))
 loop
-exitwhen cbS>17
+exitwhen cbS>20
 set cbT=""
-if cbS<6 then
+if cbS<6 or cbS>=18 then
 // предмет в слоте своего героя — по типу из общего опроса (GetUnitSelected / UnitItemInSlot только у себя давали
 // рассинхрон: handle предмета или юнита, созданного игрой, появляется при первом обращении из скрипта)
 //if cbU!=null then
@@ -59984,8 +60257,8 @@ if cbS<6 then
 //set cbT=BlzGetItemIconPath(cbI)
 //endif
 //endif
-if cbP<10 and CBS_ItT[cbP*6+cbS]!=0 then
-set cbT=GetBaseItemStringFieldById(CBS_ItT[cbP*6+cbS],ITEM_SF_ICON)
+if cbP<10 and CBS_ItT[cbP*9+cbS-12*(cbS/18)]!=0 then
+set cbT=GetBaseItemStringFieldById(CBS_ItT[cbP*9+cbS-12*(cbS/18)],ITEM_SF_ICON)
 endif
 elseif CBS_SlotFr[cbS]!=null and IsFrameVisible(CBS_SlotFr[cbS]) then
 set cbT=GetFrameTexture(CBS_SlotFr[cbS],1)
@@ -60108,8 +60381,8 @@ function CBS_ItSlotByKey takes integer cbK returns integer
 local integer cbS=0
 local integer cbC=CBS_KeyCode[cbK]
 loop
-exitwhen cbS>5
-if CBS_Bind[cbS]==cbK+1 then
+exitwhen cbS>8
+if (cbS<6 and CBS_Bind[cbS]==cbK+1) or (cbS>=6 and CBS_Bind[cbS+24]==cbK+1) then
 return cbS
 endif
 set cbS=cbS+1
@@ -60172,7 +60445,7 @@ call ForceUICancel()
 if CBS_QcIt>0 then
 // поле 4 — тип предмета на момент нажатия (из общего опроса CBS_ItT): синхронизация приходит с задержкой,
 // за это время предмет могли переложить — обработчик ищет его по типу
-call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY)+cbS+";"+I2S(CBS_ItT[CBS_Me(PId(GetLocalPlayer()))*6+CBS_QcIt-1]))
+call SendSyncData("CBQI",I2S(CBS_QcIt-1)+";"+R2S(cbX)+";"+R2S(cbY)+cbS+";"+I2S(CBS_ItT[CBS_Me(PId(GetLocalPlayer()))*9+CBS_QcIt-1]))
 else
 call SendSyncData("CBQC",I2S(cbId)+";"+R2S(cbX)+";"+R2S(cbY)+cbS)
 endif
@@ -60204,7 +60477,7 @@ if cbE>=0 and CBS_QcAb==0 then
 set CBS_QcAb=CBS_AbByKey(CBS_KeyCode[cbE])
 set CBS_QcIt=0
 // не способность — предмет в слоте по этой клавише (значение CBS_QcAb для предмета — просто «ждём»)
-if CBS_QcAb==0 and CBS_ItSlotByKey(cbE)>=0 and CBS_ItT[cbPl*6+CBS_ItSlotByKey(cbE)]!=0 then
+if CBS_QcAb==0 and CBS_ItSlotByKey(cbE)>=0 and CBS_ItT[cbPl*9+CBS_ItSlotByKey(cbE)]!=0 then
 set CBS_QcIt=CBS_ItSlotByKey(cbE)+1
 set CBS_QcAb=-1
 endif
@@ -60345,9 +60618,7 @@ return
 endif
 set cbP=IsKeyPressed(ConvertOsKeyType(ShHotCode))
 if ShHotCode>0 and cbP and not ShHotWas and not HPB_MOpen and not Sh_Typing() and not IsKeyPressed(OSKEY_CONTROL) and not IsKeyPressed(OSKEY_SHIFT) then
-set ShHotLocal=true
-call ExecuteFunc("Sh_Toggle")
-set ShHotLocal=false
+call SendSyncData("SHHK","")
 endif
 set ShHotWas=cbP
 if CBS_BindWait>=0 then
@@ -60369,8 +60640,8 @@ if cbP and CBS_KeyWas[cbK]==false and CBS_BindWait>=0 then
 // одна клавиша — одно место: убрать её с предметов и с той же страницы панели (на разных страницах — можно одну)
 set cbS=0
 loop
-exitwhen cbS>29
-if CBS_Bind[cbS]==cbK+1 and (CBS_BindWait<6 or cbS<6 or (cbS-6)/12==(CBS_BindWait-6)/12) then
+exitwhen cbS>32
+if CBS_Bind[cbS]==cbK+1 and (CBS_BindWait<6 or CBS_BindWait>=30 or cbS<6 or cbS>=30 or (cbS-6)/12==(CBS_BindWait-6)/12) then
 set CBS_Bind[cbS]=0
 endif
 set cbS=cbS+1
@@ -60418,7 +60689,7 @@ set cbK=cbK+1
 endloop
 set cbS=0
 loop
-exitwhen cbS>29
+exitwhen cbS>32
 if CBS_Bind[cbS]>0 then
 set cbK=CBS_Bind[cbS]-1
 set CBS_KeyEdge[cbK]=IsKeyPressed(CBS_Key[cbK]) and CBS_KeyWas[cbK]==false
@@ -60427,13 +60698,15 @@ set cbS=cbS+1
 endloop
 set cbS=0
 loop
-exitwhen cbS>29
+exitwhen cbS>32
 if CBS_Bind[cbS]>0 then
 set cbK=CBS_Bind[cbS]-1
 if CBS_KeyEdge[cbK] then
 set cbF=null
 // предметы с буквой / цифрой — хоткей самого предмета (CBS_ItemHkUnit); нажимать кнопку — NumPad и способности
-if cbS<6 then
+if cbS>=30 then
+set cbF=CBS_SlotFr[cbS-12]
+elseif cbS<6 then
 //if CBS_KeyCode[cbK]>=0x60 then
 set cbF=CBS_SlotFr[cbS]
 //endif
@@ -60538,7 +60811,18 @@ set cbD=cbD+";1"
 else
 set cbD=cbD+";0"
 endif
-return cbD+";"+I2S(ShHotCode)
+set cbD=cbD+";"+I2S(ShHotCode)
+set cbI=30
+loop
+exitwhen cbI>32
+if CBS_Bind[cbI]>0 then
+set cbD=cbD+";"+I2S(CBS_KeyCode[CBS_Bind[cbI]-1])
+else
+set cbD=cbD+";0"
+endif
+set cbI=cbI+1
+endloop
+return cbD
 endfunction
 // файл — скрипт Preload: при чтении (Preloader) выполняется вставленный вызов SetPlayerName(Player(14), данные)
 function CBS_Save takes nothing returns nothing
@@ -60605,6 +60889,12 @@ endloop
 set CBS_QC=CBS_Tok(cbD,44)=="1"
 set CBS_SC=CBS_Tok(cbD,45)=="1" and CBS_QC==false
 set CBS_MmOpt=CBS_Tok(cbD,46)!="0"
+set cbI=30
+loop
+exitwhen cbI>32
+set CBS_Bind[cbI]=CBS_KeyByCode(S2I(CBS_Tok(cbD,cbI+20)))
+set cbI=cbI+1
+endloop
 set ShHotCode=66
 if CBS_Tok(cbD,49)!="" and CBS_KeyByCode(S2I(CBS_Tok(cbD,49)))>0 then
 set ShHotCode=S2I(CBS_Tok(cbD,49))
@@ -61076,8 +61366,8 @@ endfunction
 function CBS_KeyTaken takes integer cbCode,integer cbPg returns boolean
 local integer cbS=0
 loop
-exitwhen cbS>29
-if CBS_Bind[cbS]>0 and (cbS<6 or (cbS-6)/12==cbPg) then
+exitwhen cbS>32
+if CBS_Bind[cbS]>0 and (cbS<6 or cbS>=30 or (cbS-6)/12==cbPg) then
 if CBS_KeyCode[CBS_Bind[cbS]-1]==cbCode then
 return true
 endif
@@ -61196,10 +61486,10 @@ endif
 // типы предметов в слотах (общий код — обращение к предметам у всех одинаково)
 set cbI=0
 loop
-exitwhen cbI>5
-set CBS_ItT[cbP*6+cbI]=0
+exitwhen cbI>8
+set CBS_ItT[cbP*9+cbI]=0
 if Hero[cbP]!=null and GetUnitTypeId(Hero[cbP])!=0 then
-set CBS_ItT[cbP*6+cbI]=GetItemTypeId(UnitItemInSlot(Hero[cbP],cbI))
+set CBS_ItT[cbP*9+cbI]=GetItemTypeId(UnitItemInSlot(Hero[cbP],cbI))
 endif
 set cbI=cbI+1
 endloop
@@ -61236,6 +61526,76 @@ endfunction
 // больше 1), затем способность с наименьшим уровнем; SelectHeroSkill сам проверяет уровень героя — не взялось, следующая
 // способность героя из списка, во что её сейчас превратил Engineering Upgrade (ANeg, шаринган Мадары: MUE1 -> MUE2):
 // у героя её нет — ищем у его ANeg пару «id,новая» на текущем уровне (поля Neg3..Neg6). Общий код
+function CBS_MukuroLearn takes unit mlU,integer mlId returns integer
+if GetUnitAbilityLevel(mlU,'A0AA')>0 then
+if mlId=='A0A7' then
+return 'A0A3'
+endif
+if mlId=='A0A8' then
+return 'A01E'
+endif
+if mlId=='A0A9' then
+return 'A0A6'
+endif
+endif
+if GetUnitAbilityLevel(mlU,'A0AC')>0 then
+if mlId=='A0A7' then
+return 'A0AN'
+endif
+if mlId=='A0A8' then
+return 'A0AM'
+endif
+if mlId=='A0A9' then
+return 'A0AO'
+endif
+endif
+if GetUnitAbilityLevel(mlU,'A0AF')>0 then
+if mlId=='A0A7' then
+return 'A0AP'
+endif
+if mlId=='A0A8' then
+return 'A0AQ'
+endif
+if mlId=='A0A9' then
+return 'A0AS'
+endif
+endif
+if GetUnitAbilityLevel(mlU,'A0AH')>0 then
+if mlId=='A0A7' then
+return 'A0AZ'
+endif
+if mlId=='A0A8' then
+return 'A0B0'
+endif
+if mlId=='A0A9' then
+return 'A0B1'
+endif
+endif
+if GetUnitAbilityLevel(mlU,'A0AJ')>0 then
+if mlId=='A0A7' then
+return 'A0B2'
+endif
+if mlId=='A0A8' then
+return 'A0B3'
+endif
+if mlId=='A0A9' then
+return 'A0B4'
+endif
+endif
+if GetUnitAbilityLevel(mlU,'A0AL')>0 then
+if mlId=='A0A7' then
+return 'A0B6'
+endif
+if mlId=='A0A8' then
+return 'A0B7'
+endif
+if mlId=='A0A9' then
+return 'A02K'
+endif
+endif
+return mlId
+endfunction
+
 function CBS_LearnId takes unit cbU,integer cbId returns integer
 local integer cbI=0
 local integer cbN
@@ -61243,6 +61603,9 @@ local integer cbK
 local ability cbA
 local string cbS
 local integer cbR=cbId
+if GetUnitTypeId(cbU)=='H01A' or GetUnitTypeId(cbU)=='H00G' then
+return CBS_MukuroLearn(cbU,cbId)
+endif
 set cbN=CountUnitAbilities(cbU,false)
 loop
 exitwhen cbI>=cbN or cbR!=cbId
@@ -61384,7 +61747,7 @@ local item cbI
 local unit cbT
 local unit cbB=null
 local real cbR=100.*100.
-if cbP>9 or Hero[cbP]==null or cbS<0 or cbS>5 then
+if cbP>9 or Hero[cbP]==null or cbS<0 or cbS>8 then
 return
 endif
 set cbU=Hero[cbP]
@@ -61394,7 +61757,7 @@ if S2I(CBS_Tok(cbD,4))!=0 and (cbI==null or GetItemTypeId(cbI)!=S2I(CBS_Tok(cbD,
 set cbI=null
 set cbS=0
 loop
-exitwhen cbS>5 or cbI!=null
+exitwhen cbS>8 or cbI!=null
 if GetItemTypeId(UnitItemInSlot(cbU,cbS))==S2I(CBS_Tok(cbD,4)) then
 set cbI=UnitItemInSlot(cbU,cbS)
 endif
@@ -61787,7 +62150,7 @@ call CBS_TabPaint()
 // кнопки игры и полоса чата — один раз у всех (не создавать handle локально)
 set cbK=0
 loop
-exitwhen cbK>17
+exitwhen cbK>20
 set CBS_SlotFr[cbK]=CBS_SlotFrame(cbK)
 set CBS_HkTex[cbK]=""
 set cbK=cbK+1
@@ -61861,8 +62224,11 @@ call CBS_AddHk(CBS_HkHead[1])
 // ячейки: предметы 2x3 (как инвентарь), панель команд 4x3; иконка — как сейчас на кнопке игры, клавиша — снизу
 set cbK=0
 loop
-exitwhen cbK>17
-if cbK<6 then
+exitwhen cbK>20
+if cbK>=18 then
+set cbX=.112
+set cbY=-.056-(cbK-18)*.046
+elseif cbK<6 then
 set cbX=.020+ModuloInteger(cbK,2)*.046
 set cbY=-.056-(cbK/2)*.046
 else
@@ -61894,9 +62260,9 @@ call TriggerRegisterFrameEvent(cbT,CBS_HkBtn[cbK],FRAMEEVENT_CONTROL_CLICK)
 call CBS_AddHk(CBS_HkBtn[cbK])
 // клавиша — в чёрной рамке с жёлтой обводкой внизу ячейки (видна, когда клавиша задана или ячейка ждёт клавишу)
 // рамка ожидания клавиши
-//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBtn[cbK],22+cbK,.038,.038,.0025,14),FRAMEPOINT_CENTER,CBS_HkBtn[cbK],FRAMEPOINT_CENTER,0.,0.)
-//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBox[cbK],22+cbK,.038,.038,.0025,3),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
-call SetFrameRelativePoint(CBS_Ring(22+cbK,.038,.038,.0025,6),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
+//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBtn[cbK],25+cbK,.038,.038,.0025,14),FRAMEPOINT_CENTER,CBS_HkBtn[cbK],FRAMEPOINT_CENTER,0.,0.)
+//call SetFrameRelativePoint(CBS_RingIn(CBS_HkBox[cbK],25+cbK,.038,.038,.0025,3),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
+call SetFrameRelativePoint(CBS_Ring(25+cbK,.038,.038,.0025,6),FRAMEPOINT_CENTER,CBS_HkBox[cbK],FRAMEPOINT_CENTER,0.,0.)
 //set cbF=CBS_Ring(4+cbK,.027,.013,.0012,17)
 // рамка клавиши — ребёнок ячейки (иначе иконка ячейки рисуется поверх и чёрного фона не видно); создаётся сразу внутри ячейки
 //set cbF=CBS_RingIn(CBS_HkBtn[cbK],4+cbK,.027,.013,.0012,17)
@@ -64039,6 +64405,7 @@ if DraftOn and not DraftDone and round==1 and FFAMode==false then
     return
 endif
 call Draft_FixCG()
+call ExecuteFunc("BOT_Fill")
 call FlushParentHashtable(h)
 set h=InitHashtable()
 call DestroyTimerDialog(udg_TB)
@@ -64139,6 +64506,7 @@ endif
 call PauseTimer(TD2)
 call PauseTimer(TD3)
 call PauseTimer(TD4)
+set BOT_Locked=true
 set udg_B=true
 call ShowFrame( KingOfHillIcon, false)
 loop
@@ -73385,7 +73753,7 @@ endif
         call SaveInteger(HH, GetHandleId(c), SH_GaeDeargP_CD, 0)
         call GaeDearg_Passive(c)
     endif
-    if nb>30 and (LoadBoolean(DMG_IHT,cid,'IOS1') or LoadBoolean(DMG_IHT,cid,'IBBi') or GetUnitAbilityLevel(c, 'KI0I')>0) and LoadBoolean(DMG_IHT,cid,'I1S4')==false and GetUnitAbilityLevel(c, 'KI0Q')==0 and GetUnitAbilityLevel(c, 'MuCD')==0 then
+    if nb>30 and (LoadBoolean(DMG_IHT,cid,'IOS1') or LoadBoolean(DMG_IHT,cid,'IBBi') or GetUnitAbilityLevel(c,'KIBK')>0 or GetUnitAbilityLevel(c, 'KI0I')>0) and LoadBoolean(DMG_IHT,cid,'I1S4')==false and GetUnitAbilityLevel(c, 'KI0Q')==0 and GetUnitAbilityLevel(c, 'MuCD')==0 then
         call UnitAddAbility(c, 'MuCD')
         call UnitMakeAbilityPermanent(c, true, 'MuCD')
         call UnitRemoveAbilityTimed(c, 'MuCD', 1.0)
@@ -73751,7 +74119,7 @@ if nb>0 then
         set nb=0
     endif
     // 3.8.2: Ключ Баб-Илу — добивание вражеского героя ниже 3% HP (урон любого юнита владельца ключа)
-    if nb>0 and u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and UnitHasItemOfTypeBJ(Hero[idc],'IBBi') then
+    if nb>0 and u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and (UnitHasItemOfTypeBJ(Hero[idc],'IBBi') or GetUnitAbilityLevel(c,'KIBK')>0) then
         call BabiluExec(Hero[idc],u)
     endif
     if GetUnitAbilityLevel(u,'A4DF')>0 then
@@ -138160,7 +138528,7 @@ call SaveStr(HH,SH_ShnChanO,'A018',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A018',2)
 call SaveStr(HH,SH_ShnChanO,'A01A',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A01D',"channel")
-call SaveStr(HH,SH_ShnChanO,'A01E',"absorb")
+call SaveStr(HH,SH_ShnChanO,'A01E',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'A01E',2)
 call SaveStr(HH,SH_ShnChanO,'A01F',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A01F',2)
@@ -138197,9 +138565,9 @@ call SaveInteger(HH,SH_ShnChanT,'A02A',2)
 call SaveStr(HH,SH_ShnChanO,'A02D',"absorb")
 call SaveStr(HH,SH_ShnChanO,'A02G',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A02G',1)
-call SaveStr(HH,SH_ShnChanO,'A02J',"roar")
+call SaveStr(HH,SH_ShnChanO,'A02J',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'A02J',2)
-call SaveStr(HH,SH_ShnChanO,'A02K',"ancestralspirittarget")
+call SaveStr(HH,SH_ShnChanO,'A02K',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A02K',1)
 call SaveStr(HH,SH_ShnChanO,'A02P',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A02P',2)
@@ -138337,35 +138705,35 @@ call SaveStr(HH,SH_ShnChanO,'A09W',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A09X',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'A09X',2)
 call SaveStr(HH,SH_ShnChanO,'A0A0',"channel")
-call SaveStr(HH,SH_ShnChanO,'A0A3',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0A3',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A0A3',2)
-call SaveStr(HH,SH_ShnChanO,'A0A6',"ancestralspirit")
+call SaveStr(HH,SH_ShnChanO,'A0A6',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A0A6',1)
 call SaveStr(HH,SH_ShnChanO,'A0A7',"berserk")
 call SaveStr(HH,SH_ShnChanO,'A0A8',"burrow")
 call SaveStr(HH,SH_ShnChanO,'A0A9',"blight")
-call SaveStr(HH,SH_ShnChanO,'A0AM',"entanglingroots")
-call SaveStr(HH,SH_ShnChanO,'A0AN',"curse")
+call SaveStr(HH,SH_ShnChanO,'A0AM',"fanofknives")
+call SaveStr(HH,SH_ShnChanO,'A0AN',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A0AN',2)
-call SaveStr(HH,SH_ShnChanO,'A0AO',"drunkenhaze")
-call SaveStr(HH,SH_ShnChanO,'A0AP',"curse")
+call SaveStr(HH,SH_ShnChanO,'A0AO',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'A0AP',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A0AP',2)
-call SaveStr(HH,SH_ShnChanO,'A0AQ',"drain")
-call SaveStr(HH,SH_ShnChanO,'A0AS',"eattree")
+call SaveStr(HH,SH_ShnChanO,'A0AQ',"fanofknives")
+call SaveStr(HH,SH_ShnChanO,'A0AS',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A0AS',1)
-call SaveStr(HH,SH_ShnChanO,'A0AZ',"curse")
+call SaveStr(HH,SH_ShnChanO,'A0AZ',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A0AZ',2)
-call SaveStr(HH,SH_ShnChanO,'A0B0',"ensnare")
+call SaveStr(HH,SH_ShnChanO,'A0B0',"cripple")
 call SaveInteger(HH,SH_ShnChanT,'A0B0',1)
-call SaveStr(HH,SH_ShnChanO,'A0B1',"ancestralspirittarget")
+call SaveStr(HH,SH_ShnChanO,'A0B1',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A0B1',1)
-call SaveStr(HH,SH_ShnChanO,'A0B2',"autodispeloff")
-call SaveStr(HH,SH_ShnChanO,'A0B3',"drunkenhaze")
-call SaveStr(HH,SH_ShnChanO,'A0B4',"eattree")
+call SaveStr(HH,SH_ShnChanO,'A0B2',"roar")
+call SaveStr(HH,SH_ShnChanO,'A0B3',"fanofknives")
+call SaveStr(HH,SH_ShnChanO,'A0B4',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'A0B4',1)
-call SaveStr(HH,SH_ShnChanO,'A0B6',"autodispeloff")
-call SaveStr(HH,SH_ShnChanO,'A0B7',"drain")
-call SaveStr(HH,SH_ShnChanO,'A0B9',"blizzard")
+call SaveStr(HH,SH_ShnChanO,'A0B6',"roar")
+call SaveStr(HH,SH_ShnChanO,'A0B7',"fanofknives")
+call SaveStr(HH,SH_ShnChanO,'A0B9',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0B9',2)
 call SaveStr(HH,SH_ShnChanO,'A0BC',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0BC',1)
@@ -139773,7 +140141,7 @@ call SaveStr(HH,SH_ShnChanO,'GGSG',"creepanimatedead")
 call SaveStr(HH,SH_ShnChanO,'GGSS',"faeriefire")
 call SaveStr(HH,SH_ShnChanO,'GIE0',"AImove")
 call SaveStr(HH,SH_ShnChanO,'GIF0',"ambush")
-call SaveStr(HH,SH_ShnChanO,'GIQ0',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'GIQ0',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'GIQ0',2)
 call SaveStr(HH,SH_ShnChanO,'GIT0',"autoharvestlumber")
 call SaveInteger(HH,SH_ShnChanT,'GIT0',2)
@@ -139857,7 +140225,7 @@ call SaveStr(HH,SH_ShnChanO,'GrQ1',"auravampiric")
 call SaveInteger(HH,SH_ShnChanT,'GrQ1',2)
 call SaveStr(HH,SH_ShnChanO,'GrR1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'GrR1',2)
-call SaveStr(HH,SH_ShnChanO,'GrT1',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'GrT1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'GrT1',2)
 call SaveStr(HH,SH_ShnChanO,'GrW1',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'GrW1',1)
@@ -140088,7 +140456,7 @@ call SaveStr(HH,SH_ShnChanO,'MiT1',"darkritual")
 call SaveInteger(HH,SH_ShnChanT,'MiT1',2)
 call SaveStr(HH,SH_ShnChanO,'MinF',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'MinW',"channel")
-call SaveStr(HH,SH_ShnChanO,'MkCX',"stampede")
+call SaveStr(HH,SH_ShnChanO,'MkCX',"berserk")
 call SaveStr(HH,SH_ShnChanO,'MrE1',"charm")
 call SaveInteger(HH,SH_ShnChanT,'MrE1',1)
 call SaveStr(HH,SH_ShnChanO,'MrF1',"absorb")
@@ -140396,7 +140764,7 @@ call SaveStr(HH,SH_AbOrd,'A019',"cripple")
 call SaveStr(HH,SH_AbOrd,'A01A',"ambush")
 call SaveStr(HH,SH_AbOrd,'A01B',"metamorphosis")
 call SaveStr(HH,SH_AbOrd,'A01D',"channel")
-call SaveStr(HH,SH_AbOrd,'A01E',"absorb")
+call SaveStr(HH,SH_AbOrd,'A01E',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'A01F',"absorb")
 call SaveStr(HH,SH_AbOrd,'A01H',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A01I',"thunderbolt")
@@ -140430,8 +140798,8 @@ call SaveStr(HH,SH_AbOrd,'A02F',"innerfire")
 call SaveStr(HH,SH_AbOrd,'A02G',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A02H',"entanglingroots")
 call SaveStr(HH,SH_AbOrd,'A02I',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'A02J',"roar")
-call SaveStr(HH,SH_AbOrd,'A02K',"ancestralspirittarget")
+call SaveStr(HH,SH_AbOrd,'A02J',"clusterrockets")
+call SaveStr(HH,SH_AbOrd,'A02K',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A02P',"absorb")
 call SaveStr(HH,SH_AbOrd,'A02Q',"tornado")
 call SaveStr(HH,SH_AbOrd,'A02R',"ambush")
@@ -140548,9 +140916,9 @@ call SaveStr(HH,SH_AbOrd,'A09Y',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A09Z',"silence")
 call SaveStr(HH,SH_AbOrd,'A0A0',"channel")
 call SaveStr(HH,SH_AbOrd,'A0A2',"windwalk")
-call SaveStr(HH,SH_AbOrd,'A0A3',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0A3',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'A0A5',"soulburn")
-call SaveStr(HH,SH_AbOrd,'A0A6',"ancestralspirit")
+call SaveStr(HH,SH_AbOrd,'A0A6',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A0A7',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0A8',"burrow")
 call SaveStr(HH,SH_AbOrd,'A0A9',"blight")
@@ -140560,21 +140928,21 @@ call SaveStr(HH,SH_AbOrd,'A0AE',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'A0AG',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'A0AI',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'A0AK',"engineeringupgrade")
-call SaveStr(HH,SH_AbOrd,'A0AM',"entanglingroots")
-call SaveStr(HH,SH_AbOrd,'A0AN',"curse")
-call SaveStr(HH,SH_AbOrd,'A0AO',"drunkenhaze")
-call SaveStr(HH,SH_AbOrd,'A0AP',"curse")
-call SaveStr(HH,SH_AbOrd,'A0AQ',"drain")
-call SaveStr(HH,SH_AbOrd,'A0AS',"eattree")
-call SaveStr(HH,SH_AbOrd,'A0AZ',"curse")
-call SaveStr(HH,SH_AbOrd,'A0B0',"ensnare")
-call SaveStr(HH,SH_AbOrd,'A0B1',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'A0B2',"autodispeloff")
-call SaveStr(HH,SH_AbOrd,'A0B3',"drunkenhaze")
-call SaveStr(HH,SH_AbOrd,'A0B4',"eattree")
-call SaveStr(HH,SH_AbOrd,'A0B6',"autodispeloff")
-call SaveStr(HH,SH_AbOrd,'A0B7',"drain")
-call SaveStr(HH,SH_AbOrd,'A0B9',"blizzard")
+call SaveStr(HH,SH_AbOrd,'A0AM',"fanofknives")
+call SaveStr(HH,SH_AbOrd,'A0AN',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'A0AO',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'A0AP',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'A0AQ',"fanofknives")
+call SaveStr(HH,SH_AbOrd,'A0AS',"thunderbolt")
+call SaveStr(HH,SH_AbOrd,'A0AZ',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'A0B0',"cripple")
+call SaveStr(HH,SH_AbOrd,'A0B1',"thunderbolt")
+call SaveStr(HH,SH_AbOrd,'A0B2',"roar")
+call SaveStr(HH,SH_AbOrd,'A0B3',"fanofknives")
+call SaveStr(HH,SH_AbOrd,'A0B4',"thunderbolt")
+call SaveStr(HH,SH_AbOrd,'A0B6',"roar")
+call SaveStr(HH,SH_AbOrd,'A0B7',"fanofknives")
+call SaveStr(HH,SH_AbOrd,'A0B9',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0BA',"silence")
 call SaveStr(HH,SH_AbOrd,'A0BC',"channel")
 call SaveStr(HH,SH_AbOrd,'A0BD',"acidbomb")
@@ -142276,7 +142644,7 @@ call SaveStr(HH,SH_AbOrd,'MiR1',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'MiT1',"darkritual")
 call SaveStr(HH,SH_AbOrd,'MinF',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'MinW',"channel")
-call SaveStr(HH,SH_AbOrd,'MkCX',"stampede")
+call SaveStr(HH,SH_AbOrd,'MkCX',"berserk")
 call SaveStr(HH,SH_AbOrd,'MrE1',"charm")
 call SaveStr(HH,SH_AbOrd,'MrF1',"absorb")
 call SaveStr(HH,SH_AbOrd,'MrF2',"divineshield")
@@ -152183,25 +152551,25 @@ loop
 exitwhen i>=10
 call KurapikaPingDummy(u,Hero[i])
 if GetLocalPlayer()==p then
-if i==0 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+if i==0 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,255,0,0,true)
-elseif i==1 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==1 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,0,0,255,true)
-elseif i==2 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==2 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,0,255,255,true)
-elseif i==3 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==3 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,127,0,128,true)
-elseif i==4 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==4 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,255,255,0,true)
-elseif i==5 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==5 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,255,144,15,true)
-elseif i==6 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==6 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,33,192,0,true)
-elseif i==7 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==7 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,229,91,177,true)
-elseif i==8 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==8 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,128,128,128,true)
-elseif i==9 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING then
+elseif i==9 and IsUnitType(Hero[i],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) then
 call PingMinimapEx(GetUnitX(Hero[i]),GetUnitY(Hero[i]),3,175,234,239,true)
 endif
 endif
@@ -206311,6 +206679,12 @@ function FKazumaList takes unit u, integer id returns nothing
         call UnitRemoveAbilityTimed(u,'KI0O',10)
         call UnitAddAbility(u,'KI0P')
         call UnitRemoveAbilityTimed(u,'KI0P',10)
+    endif
+    if id=='IBBi' then
+        call UnitAddAbility(u,'KIBK')
+        call UnitRemoveAbilityTimed(u,'KIBK',10)
+        call UnitAddAbility(u,'KIBL')
+        call UnitRemoveAbilityTimed(u,'KIBL',10)
     endif
     if id=='I1S4' then //Комплект Онидзуки
         call UnitAddAbility(u,'KI0Q')
@@ -265660,6 +266034,26 @@ endfunction
 
 // Снимок инвентаря: 10 ячеек героя и 10 ячеек сундука (у обоих по десять).
 // Возвращает true, если что-то поменялось с прошлого снимка.
+function Sh_Snapshot takes nothing returns nothing
+local integer spi=0
+local integer sps
+loop
+exitwhen spi>=12
+set sps=0
+loop
+exitwhen sps>=20
+set ShInvCache[spi*20+sps]=0
+if sps<10 and Hero[spi]!=null then
+set ShInvCache[spi*20+sps]=GetItemTypeId(UnitItemInSlot(Hero[spi],sps))
+elseif sps>=10 and Chest[spi]!=null then
+set ShInvCache[spi*20+sps]=GetItemTypeId(UnitItemInSlot(Chest[spi],sps-10))
+endif
+set sps=sps+1
+endloop
+set spi=spi+1
+endloop
+endfunction
+
 function Sh_ScanInv takes integer pid returns boolean
 local integer i=0
 local integer id
@@ -265667,12 +266061,7 @@ local boolean ch=false
 set pid=JudgeHid(pid)
 loop
 exitwhen i==20
-set id=0
-if i<10 and Hero[pid]!=null then
-set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
-elseif i>=10 and Chest[pid]!=null then
-set id=GetItemTypeId(UnitItemInSlot(Chest[pid],i-10))
-endif
+set id=ShInvCache[pid*20+i]
 if id!=ShLastInv[i] then
 set ShLastInv[i]=id
 set ch=true
@@ -266385,10 +266774,7 @@ local integer i=0
 local integer id
 loop
 exitwhen i==10
-set id=0
-if Hero[pid]!=null then
-set id=GetItemTypeId(UnitItemInSlot(Hero[pid],i))
-endif
+set id=ShInvCache[pid*20+i]
 if id==0 then
 call BlzFrameSetTexture(ShInvBack[i],"war3mapImported\\shop_none.tga",0,true)
 call BlzFrameSetText(ShInvCost[i],"")
@@ -266491,6 +266877,7 @@ call Sh_DrawCraft()
 call Sh_DrawDesc()
 call Sh_DrawUses()
 call Sh_DrawInv()
+call ExecuteFunc("SG_Refresh")
 endfunction
 
 // Золото и предметы меняются мимо магазина. Раньше окно перерисовывалось
@@ -266499,6 +266886,10 @@ endfunction
 function Sh_Tick takes nothing returns nothing
 local integer id
 local boolean inv
+call Sh_Snapshot()
+if SG_Loaded and SG_Read<SG_Total then
+call ExecuteFunc("SG_ReadBatch")
+endif
 // строка итога гаснет через 5 с
 if ShMsgLeft>0.0 then
 set ShMsgLeft=ShMsgLeft-0.4
@@ -266586,8 +266977,8 @@ call Sh_Redraw()
 endif
 elseif tag>=300 and tag<310 then
 set ShInvSel[pid]=tag-300
-if Hero[JudgeHid(pid)]!=null and UnitItemInSlot(Hero[JudgeHid(pid)],tag-300)!=null then
-set ShSel[pid]=GetItemTypeId(UnitItemInSlot(Hero[JudgeHid(pid)],tag-300))
+if Hero[JudgeHid(pid)]!=null and ShInvCache[JudgeHid(pid)*20+tag-300]!=0 then
+set ShSel[pid]=ShInvCache[JudgeHid(pid)*20+tag-300]
 endif
 call Sh_Redraw()
 elseif tag==410 then
@@ -266709,6 +267100,16 @@ endif
 set itm=null
 endfunction
 
+function Sh_Purchase takes player p,integer pid,integer id returns boolean
+local integer cost=Sh_Cost(id)
+if id==0 or not Sh_ItemAllowed(id) or not Sh_InZone(Hero[pid]) or GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)<cost then
+return false
+endif
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)-cost)
+call Sh_Give(p,pid,id)
+return true
+endfunction
+
 function Sh_Sync takes nothing returns nothing
 local player p=GetTriggerSyncPlayer()
 local integer pid=PId(p)
@@ -266763,8 +267164,7 @@ set p=null
 set hu=null
 return
 endif
-call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)-cost)
-call Sh_Give(p,JudgeHid(pid),val)
+call Sh_Purchase(p,JudgeHid(pid),val)
 if GetLocalPlayer()==p then
 call Sh_Msg(Lng("|c0066ff66Куплено: ","|c0066ff66Bought: ")+Sh_Name(val)+Lng(" за "," for ")+I2S(cost)+"|r")
 endif
@@ -267210,6 +267610,1567 @@ endloop
 set s=null
 endfunction
 
+
+
+
+
+
+
+
+
+
+
+
+function SG_Data0 takes nothing returns nothing
+call SaveStr(SG_DB,'H00I',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H00I',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H00I',20,7)
+call SaveStr(SG_DB,'H00E',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H00E',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H00E',20,6)
+call SaveStr(SG_DB,'H00A',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H00A',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H00A',20,6)
+call SaveStr(SG_DB,'H00J',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H00J',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H00J',20,5)
+call SaveStr(SG_DB,'H016',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H016',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H016',20,6)
+call SaveStr(SG_DB,'H018',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H018',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H018',20,4)
+call SaveStr(SG_DB,'H01A',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H01A',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H01A',20,1)
+call SaveStr(SG_DB,'H00M',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H00M',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H00M',20,5)
+call SaveStr(SG_DB,'H00H',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H00H',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H00H',20,5)
+call SaveStr(SG_DB,'H00C',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H00C',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H00C',20,5)
+call SaveStr(SG_DB,'H006',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H006',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H006',20,0)
+call SaveStr(SG_DB,'H017',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03QI04LIMDiI068")
+call SaveStr(SG_DB,'H017',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03QI04LIMDi")
+call SaveInteger(SG_DB,'H017',20,0)
+call SaveStr(SG_DB,'H00P',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H00P',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H00P',20,6)
+call SaveStr(SG_DB,'H00D',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H00D',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H00D',20,0)
+call SaveStr(SG_DB,'H00K',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H00K',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H00K',20,0)
+call SaveStr(SG_DB,'H00X',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H00X',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H00X',20,8)
+call SaveStr(SG_DB,'H032',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H032',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H032',20,0)
+call SaveStr(SG_DB,'H00Z',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H00Z',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H00Z',20,3)
+call SaveStr(SG_DB,'H012',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H012',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H012',20,3)
+call SaveStr(SG_DB,'H014',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H014',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H014',20,4)
+call SaveStr(SG_DB,'H00N',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H00N',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H00N',20,1)
+call SaveStr(SG_DB,'H01C',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H01C',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H01C',20,1)
+call SaveStr(SG_DB,'H01D',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H01D',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H01D',20,5)
+call SaveStr(SG_DB,'H01F',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H01F',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H01F',20,8)
+call SaveStr(SG_DB,'H01H',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H01H',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H01H',20,4)
+call SaveStr(SG_DB,'H01J',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H01J',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H01J',20,1)
+call SaveStr(SG_DB,'H01L',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H01L',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H01L',20,1)
+call SaveStr(SG_DB,'H01M',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H01M',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H01M',20,5)
+call SaveStr(SG_DB,'H027',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H027',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H027',20,5)
+call SaveStr(SG_DB,'H02B',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H02B',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H02B',20,6)
+endfunction
+
+function SG_Data1 takes nothing returns nothing
+call SaveStr(SG_DB,'H02D',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H02D',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H02D',20,3)
+call SaveStr(SG_DB,'H01B',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H01B',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H01B',20,0)
+call SaveStr(SG_DB,'H02F',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H02F',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H02F',20,8)
+call SaveStr(SG_DB,'H02G',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H02G',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H02G',20,0)
+call SaveStr(SG_DB,'H02H',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H02H',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H02H',20,5)
+call SaveStr(SG_DB,'H02I',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H02I',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H02I',20,5)
+call SaveStr(SG_DB,'H02J',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H02J',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H02J',20,3)
+call SaveStr(SG_DB,'H02K',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H02K',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H02K',20,2)
+call SaveStr(SG_DB,'H02L',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H02L',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H02L',20,5)
+call SaveStr(SG_DB,'H02M',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H02M',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H02M',20,1)
+call SaveStr(SG_DB,'H02O',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H02O',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H02O',20,6)
+call SaveStr(SG_DB,'H02P',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H02P',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H02P',20,1)
+call SaveStr(SG_DB,'H02R',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H02R',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H02R',20,0)
+call SaveStr(SG_DB,'H02S',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H02S',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H02S',20,0)
+call SaveStr(SG_DB,'H02U',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H02U',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H02U',20,0)
+call SaveStr(SG_DB,'H02V',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H02V',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H02V',20,0)
+call SaveStr(SG_DB,'H02X',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H02X',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H02X',20,5)
+call SaveStr(SG_DB,'H02Y',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H02Y',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H02Y',20,5)
+call SaveStr(SG_DB,'H033',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H033',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H033',20,0)
+call SaveStr(SG_DB,'H034',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H034',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H034',20,5)
+call SaveStr(SG_DB,'H03B',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H03B',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H03B',20,2)
+call SaveStr(SG_DB,'H00Y',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H00Y',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H00Y',20,3)
+call SaveStr(SG_DB,'H03K',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H03K',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H03K',20,5)
+call SaveStr(SG_DB,'H03L',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H03L',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H03L',20,2)
+call SaveStr(SG_DB,'H03N',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H03N',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H03N',20,8)
+call SaveStr(SG_DB,'H03P',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H03P',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H03P',20,3)
+call SaveStr(SG_DB,'H03R',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H03R',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H03R',20,8)
+call SaveStr(SG_DB,'H03S',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H03S',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H03S',20,1)
+call SaveStr(SG_DB,'H031',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H031',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H031',20,5)
+call SaveStr(SG_DB,'H042',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H042',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H042',20,5)
+endfunction
+
+function SG_Data2 takes nothing returns nothing
+call SaveStr(SG_DB,'H043',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H043',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H043',20,5)
+call SaveStr(SG_DB,'H044',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H044',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H044',20,0)
+call SaveStr(SG_DB,'H045',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H045',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H045',20,2)
+call SaveStr(SG_DB,'H047',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H047',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H047',20,3)
+call SaveStr(SG_DB,'H048',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H048',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H048',20,4)
+call SaveStr(SG_DB,'HYuj',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03QIAoFI04VI068")
+call SaveStr(SG_DB,'HYuj',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03QIAoFI04VI068")
+call SaveInteger(SG_DB,'HYuj',20,5)
+call SaveStr(SG_DB,'H04A',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H04A',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H04A',20,5)
+call SaveStr(SG_DB,'H04C',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H04C',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H04C',20,7)
+call SaveStr(SG_DB,'H04E',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H04E',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H04E',20,8)
+call SaveStr(SG_DB,'H04F',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H04F',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H04F',20,3)
+call SaveStr(SG_DB,'H04H',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H04H',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H04H',20,6)
+call SaveStr(SG_DB,'H04L',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H04L',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H04L',20,0)
+call SaveStr(SG_DB,'H04O',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H04O',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H04O',20,0)
+call SaveStr(SG_DB,'H04T',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H04T',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H04T',20,4)
+call SaveStr(SG_DB,'H052',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H052',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H052',20,4)
+call SaveStr(SG_DB,'H053',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H053',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H053',20,0)
+call SaveStr(SG_DB,'H054',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H054',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H054',20,5)
+call SaveStr(SG_DB,'H057',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H057',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H057',20,8)
+call SaveStr(SG_DB,'H055',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H055',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H055',20,0)
+call SaveStr(SG_DB,'H059',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H059',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H059',20,1)
+call SaveStr(SG_DB,'H05A',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H05A',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H05A',20,1)
+call SaveStr(SG_DB,'H05D',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H05D',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H05D',20,7)
+call SaveStr(SG_DB,'H05N',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H05N',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H05N',20,5)
+call SaveStr(SG_DB,'H05Q',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H05Q',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H05Q',20,0)
+call SaveStr(SG_DB,'H05R',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H05R',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H05R',20,3)
+call SaveStr(SG_DB,'H060',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H060',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H060',20,5)
+call SaveStr(SG_DB,'H061',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H061',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H061',20,8)
+call SaveStr(SG_DB,'H063',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H063',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H063',20,0)
+call SaveStr(SG_DB,'H066',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H066',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H066',20,5)
+call SaveStr(SG_DB,'H067',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H067',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H067',20,7)
+endfunction
+
+function SG_Data3 takes nothing returns nothing
+call SaveStr(SG_DB,'H069',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H069',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H069',20,8)
+call SaveStr(SG_DB,'H06B',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H06B',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H06B',20,5)
+call SaveStr(SG_DB,'H06F',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H06F',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H06F',20,2)
+call SaveStr(SG_DB,'H051',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H051',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H051',20,7)
+call SaveStr(SG_DB,'H06G',0,"I01FI01MISPBI008I046IPRBI06JI01UIBBiI00WI13RI04TI04LIBSII03FI06E")
+call SaveStr(SG_DB,'H06G',1,"I01FI01MISPBI008I046I13RI04TIPRBI06JI01UIBBiI00WI04LIBSII03FI06E")
+call SaveInteger(SG_DB,'H06G',20,4)
+call SaveStr(SG_DB,'H06M',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H06M',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H06M',20,5)
+call SaveStr(SG_DB,'H06C',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H06C',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H06C',20,8)
+call SaveStr(SG_DB,'H06Y',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H06Y',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H06Y',20,8)
+call SaveStr(SG_DB,'H072',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H072',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H072',20,1)
+call SaveStr(SG_DB,'H075',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'H075',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'H075',20,2)
+call SaveStr(SG_DB,'H076',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H076',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H076',20,7)
+call SaveStr(SG_DB,'H077',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'H077',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'H077',20,6)
+call SaveStr(SG_DB,'H112',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H112',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H112',20,0)
+call SaveStr(SG_DB,'H074',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'H074',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'H074',20,7)
+call SaveStr(SG_DB,'H05C',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H05C',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H05C',20,5)
+call SaveStr(SG_DB,'Ho0Z',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'Ho0Z',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'Ho0Z',20,8)
+call SaveStr(SG_DB,'H078',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H078',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H078',20,1)
+call SaveStr(SG_DB,'H073',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H073',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H073',20,0)
+call SaveStr(SG_DB,'ORH1',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'ORH1',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'ORH1',20,0)
+call SaveStr(SG_DB,'H06T',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'H06T',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'H06T',20,1)
+call SaveStr(SG_DB,'WEND',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'WEND',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'WEND',20,7)
+call SaveStr(SG_DB,'Hbel',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'Hbel',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'Hbel',20,2)
+call SaveStr(SG_DB,'Ho11',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'Ho11',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'Ho11',20,0)
+call SaveStr(SG_DB,'H116',0,"I01FI01MI01HI008I046I03FI01UIBBiI00WI03LI13RI04TIBSII06EI02VI04L")
+call SaveStr(SG_DB,'H116',1,"I01FI01MI01HI008I046I13RI04TI03FI01UIBBiI00WI03LIBSII06EI02VI04L")
+call SaveInteger(SG_DB,'H116',20,3)
+call SaveStr(SG_DB,'Ho0O',0,"I01FI01MIMS0I008I054I04GIPlAI012I03PI04TI13RI06RIMDiI06WI00DI044")
+call SaveStr(SG_DB,'Ho0O',1,"I01FI01MIMS0I008I054I13RI04TI04GIPlAI012I03PI06RIMDiI06WI00DI044")
+call SaveInteger(SG_DB,'Ho0O',20,7)
+call SaveStr(SG_DB,'HAlb',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveStr(SG_DB,'HAlb',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03PI1S4I02YI04VI03QI036")
+call SaveInteger(SG_DB,'HAlb',20,6)
+call SaveStr(SG_DB,'HRen',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'HRen',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'HRen',20,5)
+call SaveStr(SG_DB,'HMin',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'HMin',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'HMin',20,8)
+call SaveStr(SG_DB,'HMad',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'HMad',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'HMad',20,1)
+call SaveStr(SG_DB,'H10L',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'H10L',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'H10L',20,5)
+endfunction
+
+function SG_Data4 takes nothing returns nothing
+call SaveStr(SG_DB,'HIc1',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'HIc1',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'HIc1',20,5)
+call SaveStr(SG_DB,'Ho14',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'Ho14',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'Ho14',20,2)
+call SaveStr(SG_DB,'H35Z',0,"I01FI01MI01HI008I046I03FI01OI02VIBBiI01UI13RI04TIBSII00WI04LI06E")
+call SaveStr(SG_DB,'H35Z',1,"I01FI01MI01HI008I046I13RI04TI03FI01OI02VIBBiI01UIBSII00WI04LI06E")
+call SaveInteger(SG_DB,'H35Z',20,8)
+call SaveStr(SG_DB,'HHSN',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'HHSN',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'HHSN',20,0)
+call SaveStr(SG_DB,'H34Z',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'H34Z',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'H34Z',20,0)
+call SaveStr(SG_DB,'HDSN',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'HDSN',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'HDSN',20,0)
+call SaveStr(SG_DB,'HKar',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'HKar',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'HKar',20,5)
+call SaveStr(SG_DB,'HBGN',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'HBGN',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'HBGN',20,2)
+call SaveStr(SG_DB,'HSab',0,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03QI1S4I02YI04VI036I068")
+call SaveStr(SG_DB,'HSab',1,"I01FI01MIMT0I008I054I13RI04TI00DIAoFI042I03QI1S4I02YI04VI036I068")
+call SaveInteger(SG_DB,'HSab',20,6)
+call SaveStr(SG_DB,'HJi1',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03QIAoFI04VI068")
+call SaveStr(SG_DB,'HJi1',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03QIAoFI04VI068")
+call SaveInteger(SG_DB,'HJi1',20,5)
+call SaveStr(SG_DB,'HGoj',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'HGoj',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'HGoj',20,0)
+call SaveStr(SG_DB,'HGrp',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'HGrp',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'HGrp',20,5)
+call SaveStr(SG_DB,'HSig',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'HSig',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'HSig',20,2)
+call SaveStr(SG_DB,'Rosh',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'Rosh',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'Rosh',20,5)
+call SaveStr(SG_DB,'HBrg',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'HBrg',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'HBrg',20,0)
+call SaveStr(SG_DB,'HSui',0,"I01FI01MI01WISt0I054I020I03AI044IPlAI06QI04TI06WI03PI04LIMDiI068")
+call SaveStr(SG_DB,'HSui',1,"I01FI01MI01WISt0I054I13RI04TI020I03AI044IPlAI06QI06WI03PI04LIMDi")
+call SaveInteger(SG_DB,'HSui',20,0)
+call SaveStr(SG_DB,'HRem',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'HRem',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'HRem',20,2)
+call SaveStr(SG_DB,'HFla',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03QI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'HFla',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03QI02VI03RIHYi")
+call SaveInteger(SG_DB,'HFla',20,2)
+call SaveStr(SG_DB,'HEsc',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03PIAoFI04VI068")
+call SaveStr(SG_DB,'HEsc',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03PIAoFI04VI068")
+call SaveInteger(SG_DB,'HEsc',20,5)
+call SaveStr(SG_DB,'HShn',0,"I01FI01MI01HI008I046I042I1S4I00KI04LI03AI04TI03PI13RI02VI03RIHYi")
+call SaveStr(SG_DB,'HShn',1,"I01FI01MI01HI008I046I13RI04TI042I1S4I00KI04LI03AI03PI02VI03RIHYi")
+call SaveInteger(SG_DB,'HShn',20,2)
+call SaveStr(SG_DB,'HDMa',0,"I01FI01MI01WISt0I054I020I043IPlAI06RI06WI04TI03PI068I06OI03RI04L")
+call SaveStr(SG_DB,'HDMa',1,"I01FI01MI01WISt0I054I13RI04TI020I043IPlAI06RI06WI03PI068I06OI03R")
+call SaveInteger(SG_DB,'HDMa',20,1)
+call SaveStr(SG_DB,'HHit',0,"I01FI01MIMT0I008I02WI042I1S4I02VI00DIAS0I13RI04TI03QIAoFI04VI068")
+call SaveStr(SG_DB,'HHit',1,"I01FI01MIMT0I008I02WI13RI04TI042I1S4I02VI00DIAS0I03QIAoFI04VI068")
+call SaveInteger(SG_DB,'HHit',20,5)
+call SaveInteger(SG_DB,-2,'H006','H006')
+call SaveInteger(SG_DB,-2,'H007','H006')
+call SaveInteger(SG_DB,-2,'H009','H10L')
+call SaveInteger(SG_DB,-2,'H00A','H00A')
+call SaveInteger(SG_DB,-2,'H00C','H00C')
+call SaveInteger(SG_DB,-2,'H00D','H00D')
+call SaveInteger(SG_DB,-2,'H00E','H00E')
+call SaveInteger(SG_DB,-2,'H00F','H00E')
+call SaveInteger(SG_DB,-2,'H00G','H01A')
+call SaveInteger(SG_DB,-2,'H00H','H00H')
+call SaveInteger(SG_DB,-2,'H00I','H00I')
+call SaveInteger(SG_DB,-2,'H00J','H00J')
+call SaveInteger(SG_DB,-2,'H00K','H00K')
+call SaveInteger(SG_DB,-2,'H00L','H10L')
+call SaveInteger(SG_DB,-2,'H00M','H00M')
+call SaveInteger(SG_DB,-2,'H00N','H00N')
+call SaveInteger(SG_DB,-2,'H00O','H00I')
+call SaveInteger(SG_DB,-2,'H00P','H00P')
+call SaveInteger(SG_DB,-2,'H00X','H00X')
+call SaveInteger(SG_DB,-2,'H00Y','H00Y')
+call SaveInteger(SG_DB,-2,'H00Z','H00Z')
+call SaveInteger(SG_DB,-2,'H012','H012')
+call SaveInteger(SG_DB,-2,'H014','H014')
+call SaveInteger(SG_DB,-2,'H016','H016')
+endfunction
+
+function SG_Data5 takes nothing returns nothing
+call SaveInteger(SG_DB,-2,'H017','H017')
+call SaveInteger(SG_DB,-2,'H018','H018')
+call SaveInteger(SG_DB,-2,'H01A','H01A')
+call SaveInteger(SG_DB,-2,'H01B','H01B')
+call SaveInteger(SG_DB,-2,'H01C','H01C')
+call SaveInteger(SG_DB,-2,'H01D','H01D')
+call SaveInteger(SG_DB,-2,'H01E','H01D')
+call SaveInteger(SG_DB,-2,'H01F','H01F')
+call SaveInteger(SG_DB,-2,'H01G','H01F')
+call SaveInteger(SG_DB,-2,'H01H','H01H')
+call SaveInteger(SG_DB,-2,'H01I','H01H')
+call SaveInteger(SG_DB,-2,'H01J','H01J')
+call SaveInteger(SG_DB,-2,'H01L','H01L')
+call SaveInteger(SG_DB,-2,'H01M','H01M')
+call SaveInteger(SG_DB,-2,'H01N','H01M')
+call SaveInteger(SG_DB,-2,'H01R','H01M')
+call SaveInteger(SG_DB,-2,'H027','H027')
+call SaveInteger(SG_DB,-2,'H02B','H02B')
+call SaveInteger(SG_DB,-2,'H02D','H02D')
+call SaveInteger(SG_DB,-2,'H02F','H02F')
+call SaveInteger(SG_DB,-2,'H02G','H02G')
+call SaveInteger(SG_DB,-2,'H02H','H02H')
+call SaveInteger(SG_DB,-2,'HJi1','HJi1')
+call SaveInteger(SG_DB,-2,'HGoj','HGoj')
+call SaveInteger(SG_DB,-2,'H02I','H02I')
+call SaveInteger(SG_DB,-2,'H02J','H02J')
+call SaveInteger(SG_DB,-2,'H02K','H02K')
+call SaveInteger(SG_DB,-2,'H0TF','H02K')
+call SaveInteger(SG_DB,-2,'H02L','H02L')
+call SaveInteger(SG_DB,-2,'H02M','H02M')
+call SaveInteger(SG_DB,-2,'H12M','H02M')
+call SaveInteger(SG_DB,-2,'H02O','H02O')
+call SaveInteger(SG_DB,-2,'H02P','H02P')
+call SaveInteger(SG_DB,-2,'H02R','H02R')
+call SaveInteger(SG_DB,-2,'H02S','H02S')
+call SaveInteger(SG_DB,-2,'H02T','H02S')
+call SaveInteger(SG_DB,-2,'H02U','H02U')
+call SaveInteger(SG_DB,-2,'H02V','H02V')
+call SaveInteger(SG_DB,-2,'H02X','H02X')
+call SaveInteger(SG_DB,-2,'H02Y','H02Y')
+call SaveInteger(SG_DB,-2,'H02Z','H02Y')
+call SaveInteger(SG_DB,-2,'H031','H031')
+call SaveInteger(SG_DB,-2,'H032','H032')
+call SaveInteger(SG_DB,-2,'HMUS','H033')
+call SaveInteger(SG_DB,-2,'H033','H033')
+call SaveInteger(SG_DB,-2,'H034','H034')
+call SaveInteger(SG_DB,-2,'H036','H02K')
+call SaveInteger(SG_DB,-2,'H039','H006')
+call SaveInteger(SG_DB,-2,'H03A','H00D')
+call SaveInteger(SG_DB,-2,'H03B','H03B')
+call SaveInteger(SG_DB,-2,'H03I','H02X')
+call SaveInteger(SG_DB,-2,'H03K','H03K')
+call SaveInteger(SG_DB,-2,'H03L','H03L')
+call SaveInteger(SG_DB,-2,'H03M','H03L')
+call SaveInteger(SG_DB,-2,'H03N','H03N')
+call SaveInteger(SG_DB,-2,'H03P','H03P')
+call SaveInteger(SG_DB,-2,'H03R','H03R')
+call SaveInteger(SG_DB,-2,'H03S','H03S')
+call SaveInteger(SG_DB,-2,'H042','H042')
+call SaveInteger(SG_DB,-2,'H043','H043')
+call SaveInteger(SG_DB,-2,'H044','H044')
+call SaveInteger(SG_DB,-2,'H045','H045')
+call SaveInteger(SG_DB,-2,'H047','H047')
+call SaveInteger(SG_DB,-2,'H048','H048')
+call SaveInteger(SG_DB,-2,'H049','HYuj')
+call SaveInteger(SG_DB,-2,'H04A','H04A')
+call SaveInteger(SG_DB,-2,'H04B','H04A')
+call SaveInteger(SG_DB,-2,'H04C','H04C')
+call SaveInteger(SG_DB,-2,'H04D','H04C')
+call SaveInteger(SG_DB,-2,'H04E','H04E')
+call SaveInteger(SG_DB,-2,'H04F','H04F')
+call SaveInteger(SG_DB,-2,'H14F','H04F')
+call SaveInteger(SG_DB,-2,'H04G','H04F')
+call SaveInteger(SG_DB,-2,'H04H','H04H')
+call SaveInteger(SG_DB,-2,'H04J','H045')
+call SaveInteger(SG_DB,-2,'H04L','H04L')
+call SaveInteger(SG_DB,-2,'H04N','H02P')
+call SaveInteger(SG_DB,-2,'H04O','H04O')
+call SaveInteger(SG_DB,-2,'H04T','H04T')
+call SaveInteger(SG_DB,-2,'H051','H051')
+call SaveInteger(SG_DB,-2,'H052','H052')
+call SaveInteger(SG_DB,-2,'H053','H053')
+call SaveInteger(SG_DB,-2,'H054','H054')
+call SaveInteger(SG_DB,-2,'H055','H055')
+call SaveInteger(SG_DB,-2,'H057','H057')
+call SaveInteger(SG_DB,-2,'H059','H059')
+call SaveInteger(SG_DB,-2,'H05A','H05A')
+call SaveInteger(SG_DB,-2,'H05B','H05A')
+call SaveInteger(SG_DB,-2,'H05C','H05C')
+call SaveInteger(SG_DB,-2,'H05D','H05D')
+endfunction
+
+function SG_Data6 takes nothing returns nothing
+call SaveInteger(SG_DB,-2,'H05N','H05N')
+call SaveInteger(SG_DB,-2,'H05Q','H05Q')
+call SaveInteger(SG_DB,-2,'H05R','H05R')
+call SaveInteger(SG_DB,-2,'H05X','H02U')
+call SaveInteger(SG_DB,-2,'H05Y','H02F')
+call SaveInteger(SG_DB,-2,'H060','H060')
+call SaveInteger(SG_DB,-2,'H061','H061')
+call SaveInteger(SG_DB,-2,'H063','H063')
+call SaveInteger(SG_DB,-2,'H066','H066')
+call SaveInteger(SG_DB,-2,'H067','H067')
+call SaveInteger(SG_DB,-2,'H069','H069')
+call SaveInteger(SG_DB,-2,'H06B','H06B')
+call SaveInteger(SG_DB,-2,'H06C','H06C')
+call SaveInteger(SG_DB,-2,'H06F','H06F')
+call SaveInteger(SG_DB,-2,'H06G','H06G')
+call SaveInteger(SG_DB,-2,'H06M','H06M')
+call SaveInteger(SG_DB,-2,'H06R','H044')
+call SaveInteger(SG_DB,-2,'H06S','H059')
+call SaveInteger(SG_DB,-2,'H06T','H06T')
+call SaveInteger(SG_DB,-2,'H06U','H06T')
+call SaveInteger(SG_DB,-2,'H06V','H04L')
+call SaveInteger(SG_DB,-2,'H06W','H017')
+call SaveInteger(SG_DB,-2,'H06Y','H06Y')
+call SaveInteger(SG_DB,-2,'H06Z','H06Y')
+call SaveInteger(SG_DB,-2,'H16Z','H06Y')
+call SaveInteger(SG_DB,-2,'H070','H059')
+call SaveInteger(SG_DB,-2,'H072','H072')
+call SaveInteger(SG_DB,-2,'H073','H073')
+call SaveInteger(SG_DB,-2,'H074','H074')
+call SaveInteger(SG_DB,-2,'H075','H075')
+call SaveInteger(SG_DB,-2,'H076','H076')
+call SaveInteger(SG_DB,-2,'H077','H077')
+call SaveInteger(SG_DB,-2,'H078','H078')
+call SaveInteger(SG_DB,-2,'H10L','H10L')
+call SaveInteger(SG_DB,-2,'H112','H112')
+call SaveInteger(SG_DB,-2,'H116','H116')
+call SaveInteger(SG_DB,-2,'H131','H031')
+call SaveInteger(SG_DB,-2,'H16C','H06C')
+call SaveInteger(SG_DB,-2,'H21M','H01M')
+call SaveInteger(SG_DB,-2,'H21N','H01M')
+call SaveInteger(SG_DB,-2,'H244','H044')
+call SaveInteger(SG_DB,-2,'H248','H048')
+call SaveInteger(SG_DB,-2,'H34Z','H34Z')
+call SaveInteger(SG_DB,-2,'H34X','H34Z')
+call SaveInteger(SG_DB,-2,'H35Z','H35Z')
+call SaveInteger(SG_DB,-2,'H35X','H35Z')
+call SaveInteger(SG_DB,-2,'HHSN','HHSN')
+call SaveInteger(SG_DB,-2,'HHSG','HHSN')
+call SaveInteger(SG_DB,-2,'HDSN','HDSN')
+call SaveInteger(SG_DB,-2,'HBGN','HBGN')
+call SaveInteger(SG_DB,-2,'HAlb','HAlb')
+call SaveInteger(SG_DB,-2,'HHT2','H10L')
+call SaveInteger(SG_DB,-2,'HIc1','HIc1')
+call SaveInteger(SG_DB,-2,'HIc2','HIc1')
+call SaveInteger(SG_DB,-2,'HIc3','HIc1')
+call SaveInteger(SG_DB,-2,'HMaG','HMad')
+call SaveInteger(SG_DB,-2,'HMad','HMad')
+call SaveInteger(SG_DB,-2,'HMin','HMin')
+call SaveInteger(SG_DB,-2,'HRen','HRen')
+call SaveInteger(SG_DB,-2,'HYuj','HYuj')
+call SaveInteger(SG_DB,-2,'Hbel','Hbel')
+call SaveInteger(SG_DB,-2,'Ho0O','Ho0O')
+call SaveInteger(SG_DB,-2,'Ho0P','H078')
+call SaveInteger(SG_DB,-2,'Ho0Z','Ho0Z')
+call SaveInteger(SG_DB,-2,'Ho11','Ho11')
+call SaveInteger(SG_DB,-2,'Ho13','H112')
+call SaveInteger(SG_DB,-2,'Ho14','Ho14')
+call SaveInteger(SG_DB,-2,'ORH1','ORH1')
+call SaveInteger(SG_DB,-2,'WEND','WEND')
+call SaveInteger(SG_DB,-2,'e069','H01F')
+call SaveInteger(SG_DB,-2,'e07T','H01M')
+call SaveInteger(SG_DB,-2,'e09K','H02B')
+call SaveInteger(SG_DB,-2,'e0AD','H02F')
+call SaveInteger(SG_DB,-2,'e0LZ','H034')
+call SaveInteger(SG_DB,-2,'e0MH','H031')
+call SaveInteger(SG_DB,-2,'e0NG','H03K')
+call SaveInteger(SG_DB,-2,'e0O1','H03N')
+call SaveInteger(SG_DB,-2,'e0PQ','H042')
+call SaveInteger(SG_DB,-2,'e0UV','H04O')
+call SaveInteger(SG_DB,-2,'e0WT','H059')
+call SaveInteger(SG_DB,-2,'e0Z5','HSab')
+call SaveInteger(SG_DB,-2,'e31F','H03K')
+call SaveInteger(SG_DB,-2,'e32F','H03K')
+call SaveInteger(SG_DB,-2,'n00Q','H017')
+call SaveInteger(SG_DB,-2,'or00','ORH1')
+call SaveInteger(SG_DB,-2,'HSab','HSab')
+call SaveInteger(SG_DB,-2,'HSaC','HSab')
+call SaveInteger(SG_DB,-2,'HASC','H02M')
+call SaveInteger(SG_DB,-2,'HAST','H02M')
+call SaveInteger(SG_DB,-2,'HKar','HKar')
+endfunction
+
+function SG_Data7 takes nothing returns nothing
+call SaveInteger(SG_DB,-2,'HGrp','HGrp')
+call SaveInteger(SG_DB,-2,'HSig','HSig')
+call SaveInteger(SG_DB,-2,'Rosh','Rosh')
+call SaveInteger(SG_DB,-2,'HBrg','HBrg')
+call SaveInteger(SG_DB,-2,'HEsc','HEsc')
+call SaveInteger(SG_DB,-2,'HFla','HFla')
+call SaveInteger(SG_DB,-2,'HRem','HRem')
+call SaveInteger(SG_DB,-2,'HSui','HSui')
+call SaveInteger(SG_DB,-2,'HShn','HShn')
+call SaveInteger(SG_DB,-2,'HDMa','HDMa')
+call SaveInteger(SG_DB,-2,'HHit','HHit')
+call SaveBoolean(SG_DB,-1,'I01W',true)
+call SaveBoolean(SG_DB,-1,'I01H',true)
+call SaveBoolean(SG_DB,-1,'I008',true)
+call SaveBoolean(SG_DB,-1,'I01F',true)
+call SaveBoolean(SG_DB,-1,'I00E',true)
+call SaveBoolean(SG_DB,-1,'I01M',true)
+call SaveBoolean(SG_DB,-1,'I04H',true)
+call SaveBoolean(SG_DB,-1,'I12R',true)
+call SaveBoolean(SG_DB,-1,'ISPB',true)
+call SaveBoolean(SG_DB,-1,'I02S',true)
+call SaveBoolean(SG_DB,-1,'I02R',true)
+call SaveBoolean(SG_DB,-1,'I02T',true)
+call SaveBoolean(SG_DB,-1,'IGlA',true)
+call SaveBoolean(SG_DB,-1,'ISlA',true)
+call SaveBoolean(SG_DB,-1,'ISt0',true)
+call SaveBoolean(SG_DB,-1,'IMT0',true)
+call SaveBoolean(SG_DB,-1,'INY0',true)
+call SaveBoolean(SG_DB,-1,'IMS0',true)
+call SaveBoolean(SG_DB,-1,'I01O',true)
+call SaveBoolean(SG_DB,-1,'I01Q',true)
+call SaveBoolean(SG_DB,-1,'I01S',true)
+call SaveBoolean(SG_DB,-1,'I01U',true)
+call SaveBoolean(SG_DB,-1,'I02V',true)
+call SaveBoolean(SG_DB,-1,'I020',true)
+call SaveBoolean(SG_DB,-1,'I04F',true)
+call SaveBoolean(SG_DB,-1,'I03O',true)
+call SaveBoolean(SG_DB,-1,'I031',true)
+call SaveBoolean(SG_DB,-1,'ISDi',true)
+call SaveBoolean(SG_DB,-1,'I050',true)
+call SaveBoolean(SG_DB,-1,'IBSI',true)
+call SaveBoolean(SG_DB,-1,'IPRB',true)
+call SaveBoolean(SG_DB,-1,'I02Y',true)
+call SaveBoolean(SG_DB,-1,'I040',true)
+call SaveBoolean(SG_DB,-1,'I042',true)
+call SaveBoolean(SG_DB,-1,'I03L',true)
+call SaveBoolean(SG_DB,-1,'I03F',true)
+call SaveBoolean(SG_DB,-1,'I03A',true)
+call SaveBoolean(SG_DB,-1,'I037',true)
+call SaveBoolean(SG_DB,-1,'I048',true)
+call SaveBoolean(SG_DB,-1,'I04G',true)
+call SaveBoolean(SG_DB,-1,'ISHk',true)
+call SaveBoolean(SG_DB,-1,'IHnK',true)
+call SaveBoolean(SG_DB,-1,'I046',true)
+call SaveBoolean(SG_DB,-1,'I054',true)
+call SaveBoolean(SG_DB,-1,'I02W',true)
+call SaveBoolean(SG_DB,-1,'I044',true)
+call SaveBoolean(SG_DB,-1,'I03P',true)
+call SaveBoolean(SG_DB,-1,'I03Q',true)
+call SaveBoolean(SG_DB,-1,'I03R',true)
+call SaveBoolean(SG_DB,-1,'I043',true)
+call SaveBoolean(SG_DB,-1,'I04L',true)
+call SaveBoolean(SG_DB,-1,'I04T',true)
+call SaveBoolean(SG_DB,-1,'I04V',true)
+call SaveBoolean(SG_DB,-1,'I06W',true)
+call SaveBoolean(SG_DB,-1,'IGDi',true)
+call SaveBoolean(SG_DB,-1,'I036',true)
+call SaveBoolean(SG_DB,-1,'I13R',true)
+call SaveBoolean(SG_DB,-1,'I06E',true)
+call SaveBoolean(SG_DB,-1,'I04I',true)
+call SaveBoolean(SG_DB,-1,'I066',true)
+call SaveBoolean(SG_DB,-1,'IMDi',true)
+call SaveBoolean(SG_DB,-1,'IAoF',true)
+call SaveBoolean(SG_DB,-1,'IAS0',true)
+call SaveBoolean(SG_DB,-1,'I068',true)
+call SaveBoolean(SG_DB,-1,'I06O',true)
+call SaveBoolean(SG_DB,-1,'IHYi',true)
+call SaveBoolean(SG_DB,-1,'I06Q',true)
+call SaveBoolean(SG_DB,-1,'I06R',true)
+call SaveBoolean(SG_DB,-1,'I06J',true)
+call SaveBoolean(SG_DB,-1,'ISTi',true)
+call SaveBoolean(SG_DB,-1,'I1S4',true)
+call SaveBoolean(SG_DB,-1,'IPlA',true)
+call SaveBoolean(SG_DB,-1,'IBBi',true)
+call SaveBoolean(SG_DB,-1,'I02L',true)
+call SaveBoolean(SG_DB,-1,'I02E',true)
+call SaveBoolean(SG_DB,-1,'I019',true)
+call SaveBoolean(SG_DB,-1,'I013',true)
+call SaveBoolean(SG_DB,-1,'I00X',true)
+call SaveBoolean(SG_DB,-1,'I00R',true)
+endfunction
+
+function SG_Data8 takes nothing returns nothing
+call SaveBoolean(SG_DB,-1,'I00L',true)
+call SaveBoolean(SG_DB,-1,'I00F',true)
+call SaveBoolean(SG_DB,-1,'I007',true)
+call SaveBoolean(SG_DB,-1,'I049',true)
+call SaveBoolean(SG_DB,-1,'I04M',true)
+call SaveBoolean(SG_DB,-1,'I056',true)
+call SaveBoolean(SG_DB,-1,'I05C',true)
+call SaveBoolean(SG_DB,-1,'I05I',true)
+call SaveBoolean(SG_DB,-1,'I05O',true)
+call SaveBoolean(SG_DB,-1,'I05U',true)
+call SaveBoolean(SG_DB,-1,'I060',true)
+call SaveBoolean(SG_DB,-1,'I018',true)
+call SaveBoolean(SG_DB,-1,'I012',true)
+call SaveBoolean(SG_DB,-1,'I01E',true)
+call SaveBoolean(SG_DB,-1,'I00Q',true)
+call SaveBoolean(SG_DB,-1,'I00D',true)
+call SaveBoolean(SG_DB,-1,'I00K',true)
+call SaveBoolean(SG_DB,-1,'I00W',true)
+call SaveBoolean(SG_DB,-1,'I04E',true)
+call SaveBoolean(SG_DB,-1,'I02Q',true)
+call SaveBoolean(SG_DB,-1,'I02J',true)
+call SaveBoolean(SG_DB,-1,'I04R',true)
+call SaveBoolean(SG_DB,-1,'I05B',true)
+call SaveBoolean(SG_DB,-1,'I05H',true)
+call SaveBoolean(SG_DB,-1,'I05N',true)
+call SaveBoolean(SG_DB,-1,'I05T',true)
+call SaveBoolean(SG_DB,-1,'I05Z',true)
+call SaveBoolean(SG_DB,-1,'I065',true)
+call SaveBoolean(SG_DB,-1,'I02X',true)
+call SaveBoolean(SG_DB,-1,'I047',true)
+call SaveBoolean(SG_DB,-1,'I055',true)
+call SaveBoolean(SG_DB,-1,'I01P',true)
+call SaveBoolean(SG_DB,-1,'I01R',true)
+call SaveBoolean(SG_DB,-1,'I01T',true)
+call SaveBoolean(SG_DB,-1,'I01V',true)
+call SaveBoolean(SG_DB,-1,'I045',true)
+call SaveBoolean(SG_DB,-1,'I02Z',true)
+call SaveBoolean(SG_DB,-1,'I02U',true)
+call SaveBoolean(SG_DB,-1,'IBSR',true)
+call SaveBoolean(SG_DB,-1,'IPar',true)
+call SaveBoolean(SG_DB,-1,'I04U',true)
+call SaveBoolean(SG_DB,-1,'I04X',true)
+call SaveBoolean(SG_DB,-1,'I04Y',true)
+call SaveBoolean(SG_DB,-1,'I04Z',true)
+call SaveBoolean(SG_DB,-1,'I052',true)
+call SaveBoolean(SG_DB,-1,'I051',true)
+call SaveBoolean(SG_DB,-1,'I053',true)
+call SaveBoolean(SG_DB,-1,'IGDr',true)
+call SaveBoolean(SG_DB,-1,'I06P',true)
+call SaveBoolean(SG_DB,-1,'IHYr',true)
+call SaveBoolean(SG_DB,-1,'I06S',true)
+call SaveBoolean(SG_DB,-1,'I06T',true)
+call SaveBoolean(SG_DB,-1,'I14R',true)
+call SaveBoolean(SG_DB,-1,'ISTr',true)
+call SaveBoolean(SG_DB,-1,'IPRR',true)
+call SaveBoolean(SG_DB,-1,'IPlR',true)
+call SaveBoolean(SG_DB,-1,'IBN0',true)
+call SaveBoolean(SG_DB,-1,'IGn0',true)
+call SaveBoolean(SG_DB,-1,'IGP0',true)
+call SaveBoolean(SG_DB,-1,'IYM0',true)
+call SaveBoolean(SG_DB,-1,'IBS1',true)
+call SaveBoolean(SG_DB,-1,'ISS0',true)
+call SaveBoolean(SG_DB,-1,'IVS0',true)
+call SaveBoolean(SG_DB,-1,'ITS0',true)
+call SaveBoolean(SG_DB,-1,'IBBr',true)
+call SaveBoolean(SG_DB,-1,'I06G',true)
+call SaveBoolean(SG_DB,-1,'I06F',true)
+call SaveBoolean(SG_DB,-1,'I06H',true)
+call SaveBoolean(SG_DB,-1,'I06I',true)
+call SaveBoolean(SG_DB,-1,'I03C',true)
+call SaveBoolean(SG_DB,-1,'I03E',true)
+call SaveBoolean(SG_DB,-1,'I03B',true)
+call SaveBoolean(SG_DB,-1,'I03D',true)
+call SaveBoolean(SG_DB,-1,'I03W',true)
+call SaveBoolean(SG_DB,-1,'I03X',true)
+call SaveBoolean(SG_DB,-1,'I03Z',true)
+call SaveBoolean(SG_DB,-1,'I03Y',true)
+call SaveBoolean(SG_DB,-1,'I032',true)
+call SaveBoolean(SG_DB,-1,'I033',true)
+call SaveBoolean(SG_DB,-1,'I035',true)
+call SaveBoolean(SG_DB,-1,'I034',true)
+call SaveBoolean(SG_DB,-1,'I06K',true)
+call SaveBoolean(SG_DB,-1,'I06L',true)
+call SaveBoolean(SG_DB,-1,'I06M',true)
+call SaveBoolean(SG_DB,-1,'I06N',true)
+call SaveBoolean(SG_DB,-1,'IOS1',true)
+call SaveBoolean(SG_DB,-1,'IOS2',true)
+call SaveBoolean(SG_DB,-1,'IOS3',true)
+call SaveBoolean(SG_DB,-1,'IOS4',true)
+endfunction
+
+function SG_DataInit takes nothing returns nothing
+call SG_Data0()
+call SG_Data1()
+call SG_Data2()
+call SG_Data3()
+call SG_Data4()
+call SG_Data5()
+call SG_Data6()
+call SG_Data7()
+call SG_Data8()
+endfunction
+
+function SG_Canonical takes integer sgType returns integer
+local integer sgId=LoadInteger(SG_DB,-2,sgType)
+if sgId==0 then
+return sgType
+endif
+return sgId
+endfunction
+// Shared, immutable default data only: bots never read player custom guide state.
+function SG_DefaultItem takes integer sgdHero,integer sgdStep returns integer
+local string sgdList=LoadStr(SG_DB,SG_Canonical(sgdHero),0)
+if sgdStep<0 or sgdStep>=StringLength(sgdList)/4 then
+return 0
+endif
+return String2Id(SubString(sgdList,sgdStep*4,sgdStep*4+4))
+endfunction
+function SG_Validate takes string sgInput returns string
+local string sgOut=""
+local integer sgI=0
+local string sgCode
+loop
+exitwhen sgI>=StringLength(sgInput)/4 or sgI>=16
+set sgCode=SubString(sgInput,sgI*4,sgI*4+4)
+if LoadBoolean(SG_DB,-1,String2Id(sgCode)) then
+set sgOut=sgOut+sgCode
+endif
+set sgI=sgI+1
+endloop
+return sgOut
+endfunction
+// Custom guides are local UI state, stored separately from shared built-in guides.
+function SG_NameSafe takes string sn returns string
+local integer si=0
+local string sc
+local string so=""
+local string base
+loop
+exitwhen si>=StringLength(sn)
+set sc=SubString(sn,si,si+1)
+if sc!="\"" and sc!="\\" and sc!=";" and sc!="\n" and sc!="\r" and sc!="|" and sc!="<" and sc!=">" and sc!=":" and sc!="/" and sc!="?" and sc!="*" then
+set so=so+sc
+endif
+set si=si+1
+endloop
+loop
+exitwhen StringLength(so)==0 or (SubString(so,StringLength(so)-1,StringLength(so))!="." and SubString(so,StringLength(so)-1,StringLength(so))!=" ")
+set so=SubString(so,0,StringLength(so)-1)
+endloop
+set si=0
+loop
+exitwhen si>=StringLength(so) or SubString(so,si,si+1)=="."
+set si=si+1
+endloop
+set base=StringCase(SubString(so,0,si),false)
+if base=="con" or base=="prn" or base=="aux" or base=="nul" or base=="com1" or base=="com2" or base=="com3" or base=="com4" or base=="com5" or base=="com6" or base=="com7" or base=="com8" or base=="com9" or base=="lpt1" or base=="lpt2" or base=="lpt3" or base=="lpt4" or base=="lpt5" or base=="lpt6" or base=="lpt7" or base=="lpt8" or base=="lpt9" then
+return ""
+endif
+return so
+endfunction
+function SG_FileRead takes string sf returns string
+local string old=GetPlayerName(Player(14))
+local string data
+call SetPlayerName(Player(14),"")
+call Preloader(sf)
+set data=GetPlayerName(Player(14))
+call SetPlayerName(Player(14),old)
+return data
+endfunction
+function SG_FileWrite takes string sf,string data returns nothing
+call PreloadGenClear()
+call PreloadGenStart()
+call Preload("\")\ncall SetPlayerName(Player(14),\""+data+"\")\n//")
+call PreloadGenEnd(sf)
+endfunction
+function SG_List takes nothing returns string
+if SG_Mode>=0 then
+return LoadStr(SG_DB,SG_Hero,SG_Mode)
+endif
+return LoadStr(SG_Custom,-SG_Mode,2)
+endfunction
+function SG_ReadBatch takes nothing returns nothing
+local integer si=0
+local integer sh
+local string sd
+local string sn
+loop
+exitwhen SG_Read>=SG_Total or si>=8
+set SG_Read=SG_Read+1
+// Index entries contain metadata only; each actual guide is named by the player.
+set sd=SG_FileRead("ChoiceBattle\\Guides\\Index_"+I2S(SG_Read)+".txt")
+set sh=String2Id(CBS_Tok(sd,2))
+set sn=SG_NameSafe(CBS_Tok(sd,3))
+if CBS_Tok(sd,0)=="SGX" and S2I(CBS_Tok(sd,1))==SG_Read and sn!="" and LoadStr(SG_DB,sh,0)!="" and LoadStr(SG_DB,sh,0)!=null then
+set sd=SG_FileRead("ChoiceBattle\\Guides\\"+Id2String(sh)+"\\"+sn+".txt")
+if CBS_Tok(sd,0)=="SG2" and S2I(CBS_Tok(sd,1))==SG_Read and CBS_Tok(sd,2)==Id2String(sh) then
+call SaveInteger(SG_Custom,SG_Read,0,sh)
+call SaveStr(SG_Custom,SG_Read,1,sn)
+call SaveStr(SG_Custom,SG_Read,2,SG_Validate(CBS_Tok(sd,4)))
+call SaveInteger(SG_Custom,SG_Read,3,LoadInteger(SG_Custom,-1,sh))
+call SaveInteger(SG_Custom,-1,sh,SG_Read)
+endif
+endif
+set si=si+1
+endloop
+endfunction
+function SG_NameEnter takes nothing returns nothing
+local string sn
+if TrigP()!=GetLocalPlayer() or SG_Mode>=0 then
+return
+endif
+set sn=SG_NameSafe(BlzGetTriggerFrameText())
+if sn!="" then
+call SaveStr(SG_Custom,-SG_Mode,1,sn)
+endif
+call ExecuteFunc("SG_Refresh")
+endfunction
+
+function SG_Load takes nothing returns nothing
+local string sd
+if not SG_Loaded then
+set SG_Loaded=true
+set sd=SG_FileRead("ChoiceBattle\\Guides\\Index.txt")
+if CBS_Tok(sd,0)=="SG2" then
+set SG_Total=IMaxBJ(0,S2I(CBS_Tok(sd,1)))
+endif
+endif
+call SG_ReadBatch()
+endfunction
+function SG_Save takes nothing returns nothing
+local integer si=-SG_Mode
+local integer sh
+local string sn
+local string file
+local string existing
+if si<=0 then
+return
+endif
+set sn=SG_NameSafe(BlzFrameGetText(SG_NameBox))
+if sn=="" then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,4,Lng("Укажите допустимое имя гайда и файла.","Enter a valid guide and file name."))
+return
+endif
+set sh=LoadInteger(SG_Custom,si,0)
+set file="ChoiceBattle\\Guides\\"+Id2String(sh)+"\\"+sn+".txt"
+set existing=SG_FileRead(file)
+if existing!="" and (CBS_Tok(existing,0)!="SG2" or S2I(CBS_Tok(existing,1))!=si) then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,4,Lng("У этого героя уже есть файл с таким именем. Выберите другое имя.","A file with this name already exists for this hero. Choose another name."))
+return
+endif
+call SaveStr(SG_Custom,si,1,sn)
+call SG_FileWrite(file,"SG2;"+I2S(si)+";"+Id2String(sh)+";"+sn+";"+SG_Validate(LoadStr(SG_Custom,si,2)))
+call SG_FileWrite("ChoiceBattle\\Guides\\Index_"+I2S(si)+".txt","SGX;"+I2S(si)+";"+Id2String(sh)+";"+sn)
+call SG_FileWrite("ChoiceBattle\\Guides\\Index.txt","SG2;"+I2S(SG_Total))
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,3,Lng("Гайд сохранён: ","Guide saved: ")+sn+".txt")
+endfunction
+function SG_Role takes nothing returns string
+local integer sgr=LoadInteger(SG_DB,SG_Hero,20)
+if sgr==0 then
+return Lng("Магический урон","Magic damage")
+elseif sgr==1 then
+return Lng("Мана и способности","Mana and spells")
+elseif sgr==2 then
+return Lng("Способности от AGI","AGI spell damage")
+elseif sgr==3 then
+return Lng("Физический урон","Physical damage")
+elseif sgr==4 then
+return Lng("Дальний бой","Ranged damage")
+elseif sgr==5 then
+return Lng("Ближний бой","Melee fighter")
+elseif sgr==6 then
+return Lng("Живучесть","Survivability")
+elseif sgr==7 then
+return Lng("Поддержка","Support")
+endif
+return Lng("Мобильный урон","Mobile damage")
+endfunction
+function SG_ModeName takes integer sm returns string
+if sm==0 then
+return Lng("Основной","Main")
+elseif sm==1 then
+return Lng("Защитный","Defensive")
+endif
+return LoadStr(SG_Custom,-sm,1)
+endfunction
+function SG_NextMode takes integer sm returns integer
+local integer next
+if sm==0 then
+return 1
+elseif sm==1 then
+set next=LoadInteger(SG_Custom,-1,SG_Hero)
+else
+set next=LoadInteger(SG_Custom,-sm,3)
+endif
+if next==0 then
+return 2
+endif
+return -next
+endfunction
+function SG_DrawPicker takes nothing returns nothing
+local integer si=0
+local integer mode=SG_PageStart
+local string name
+call BlzFrameSetEnable(SG_NameBox,false)
+call BlzFrameSetText(SG_Hint,Lng("Выберите гайд. Страницы снизу; стрелки сверху меняют героя.","Select a guide. Pages below; arrows above change the hero."))
+loop
+exitwhen si>=6
+call BlzFrameSetVisible(SG_Row[si],mode!=2)
+if mode!=2 then
+call SaveInteger(SG_Custom,-4,si,mode)
+set name=SG_ModeName(mode)
+if mode==SG_Mode then
+set name="|cffffff00> "+name+"|r"
+endif
+call BlzFrameSetText(SG_Text[si],name)
+call BlzFrameSetTexture(SG_Icon[si],GetUnitBaseStringFieldById(SG_Hero,UNIT_SF_ICON_NORMAL),0,true)
+set mode=SG_NextMode(mode)
+endif
+set si=si+1
+endloop
+call SaveInteger(SG_Custom,-4,6,mode)
+call BlzFrameSetEnable(SG_PagePrev,SG_Page>0)
+call BlzFrameSetEnable(SG_PageNext,mode!=2)
+endfunction
+
+function SG_DrawHeroes takes nothing returns nothing
+local integer si=0
+local integer sh
+call BlzFrameSetEnable(SG_NameBox,false)
+call BlzFrameSetText(SG_Hint,Lng("Выберите героя для просмотра или создания гайда.","Choose a hero to view or create a guide."))
+loop
+exitwhen si>=6
+set sh=0
+if SG_HeroPage*6+si<SG_RosterN then
+set sh=SG_Roster[SG_HeroPage*6+si]
+endif
+call BlzFrameSetVisible(SG_Row[si],sh!=0)
+if sh!=0 then
+call BlzFrameSetText(SG_Text[si],GetObjectName(sh))
+call BlzFrameSetTexture(SG_Icon[si],GetUnitBaseStringFieldById(sh,UNIT_SF_ICON_NORMAL),0,true)
+endif
+set si=si+1
+endloop
+call BlzFrameSetEnable(SG_PagePrev,SG_HeroPage>0)
+call BlzFrameSetEnable(SG_PageNext,(SG_HeroPage+1)*6<SG_RosterN)
+endfunction
+
+function SG_Refresh takes nothing returns nothing
+local integer sgrP=JudgeHid(PId(GetLocalPlayer()))
+local unit sgrU=Hero[sgrP]
+local integer sgrHero=SG_Canonical(GetUnitTypeId(sgrU))
+local integer sgrI=0
+local integer sgrStart=0
+local integer sgrN=4
+local integer sgrItem
+local integer sgrCost=0
+local integer sgrBudget=0
+local string sgrList
+local string sgrName
+if SG_Panel==null then
+set sgrU=null
+return
+endif
+if sgrHero!=SG_OwnerHero then
+set SG_HeroPicker=false
+set SG_Picker=false
+set SG_Page=0
+set SG_PageStart=0
+set SG_OwnerHero=sgrHero
+set SG_Hero=sgrHero
+set SG_Mode=0
+set SG_Select=-1
+call SG_Load()
+endif
+call BlzFrameSetVisible(SG_Panel,SG_Open and ShOpened)
+if not SG_Open then
+set sgrU=null
+return
+endif
+call SG_Load()
+set sgrList=SG_List()
+if SG_Mode==0 then
+set sgrName=Lng("Основной","Main")
+elseif SG_Mode==1 then
+set sgrName=Lng("Защитный","Defensive")
+else
+set sgrName=LoadStr(SG_Custom,-SG_Mode,1)
+endif
+call BlzFrameSetText(SG_Title,Lng("Гайд: ","Guide: ")+GetObjectName(SG_Hero)+" — "+SG_Role())
+call BlzFrameSetText(SG_Choose,sgrName+" v")
+call BlzFrameSetText(SG_NameBox,sgrName)
+call BlzFrameSetEnable(SG_NameBox,SG_Mode<0)
+call BlzFrameSetVisible(SG_PagePrev,SG_Picker or SG_HeroPicker)
+call BlzFrameSetVisible(SG_PageNext,SG_Picker or SG_HeroPicker)
+if SG_HeroPicker then
+call SG_DrawHeroes()
+set sgrU=null
+return
+endif
+if SG_Picker then
+call SG_DrawPicker()
+set sgrU=null
+return
+endif
+if SG_Stage==1 then
+set sgrStart=4
+set sgrN=6
+elseif SG_Stage==2 then
+set sgrStart=10
+set sgrN=6
+endif
+loop
+exitwhen sgrI>=4 or sgrI>=StringLength(sgrList)/4
+set sgrBudget=sgrBudget+Sh_Cost(String2Id(SubString(sgrList,sgrI*4,sgrI*4+4)))
+set sgrI=sgrI+1
+endloop
+if SG_Stage==0 then
+call BlzFrameSetText(SG_Hint,Lng("Старт: ","Start: ")+I2S(sgrBudget)+Lng(" / 3200 золота. Сначала скорость и базовые характеристики."," / 3200 gold. Start with speed and base stats."))
+elseif SG_Stage==1 then
+call BlzFrameSetText(SG_Hint,Lng("Основа: развивайте свой источник урона; защита при раннем давлении.","Core: improve your damage source; take defense against early pressure."))
+else
+call BlzFrameSetText(SG_Hint,Lng("Лейт: варианты по матчу. Не нужно покупать всё из списка.","Late: situational options. You do not need every listed item."))
+endif
+set sgrI=0
+loop
+exitwhen sgrI>=6
+set sgrItem=0
+if sgrI<sgrN and (sgrStart+sgrI)*4<StringLength(sgrList) then
+set sgrItem=String2Id(SubString(sgrList,(sgrStart+sgrI)*4,(sgrStart+sgrI)*4+4))
+endif
+call BlzFrameSetVisible(SG_Row[sgrI],sgrItem!=0)
+if sgrItem!=0 then
+set sgrCost=Sh_Cost(sgrItem)
+call BlzFrameSetTexture(SG_Icon[sgrI],Sh_Icon(sgrItem),0,true)
+if SG_Select==sgrStart+sgrI then
+set sgrName="|cffffff00> "+Sh_Name(sgrItem)+"|r"
+else
+set sgrName=Sh_Name(sgrItem)
+endif
+call BlzFrameSetText(SG_Text[sgrI],I2S(sgrStart+sgrI+1)+". "+sgrName+" |cffffcc00"+I2S(sgrCost)+"|r")
+endif
+set sgrI=sgrI+1
+endloop
+set sgrU=null
+endfunction
+function SG_Click takes nothing returns nothing
+local integer sgc=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
+local integer sgp=PId(TrigP())
+local integer sgi
+local integer sgj
+local integer sgstart=0
+local integer sgcount
+local string sgl
+local string sgpart
+if TrigP()!=GetLocalPlayer() then
+return
+endif
+if sgc==1 then
+set SG_Open=not SG_Open
+elseif sgc==2 then
+set SG_HeroPicker=false
+set SG_Picker=not SG_Picker
+set SG_Page=0
+set SG_PageStart=0
+set SG_Select=-1
+elseif sgc==17 then
+set SG_HeroPicker=not SG_HeroPicker
+set SG_Picker=false
+set SG_HeroPage=0
+elseif sgc>=10 and sgc<=12 then
+set SG_HeroPicker=false
+set SG_Picker=false
+set SG_Stage=sgc-10
+set SG_Select=-1
+elseif sgc==3 then
+if SG_Read<SG_Total then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,3,Lng("Дождитесь загрузки списка гайдов.","Wait for the guide list to finish loading."))
+else
+set sgl=SG_List()
+set SG_Total=SG_Total+1
+set SG_Read=SG_Total
+call SaveInteger(SG_Custom,SG_Total,0,SG_Hero)
+call SaveStr(SG_Custom,SG_Total,1,Lng("Мой гайд ","My guide ")+I2S(SG_Total))
+call SaveStr(SG_Custom,SG_Total,2,sgl)
+call SaveInteger(SG_Custom,SG_Total,3,LoadInteger(SG_Custom,-1,SG_Hero))
+call SaveInteger(SG_Custom,-1,SG_Hero,SG_Total)
+set SG_HeroPicker=false
+set SG_Picker=false
+set SG_Mode=-SG_Total
+call BlzFrameSetText(SG_NameBox,LoadStr(SG_Custom,SG_Total,1))
+call BlzFrameSetFocus(SG_NameBox,true)
+endif
+elseif sgc==4 then
+call SG_Save()
+elseif sgc>=5 and sgc<=9 then
+if SG_Mode>=0 then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,4,Lng("Сначала создайте копию встроенного гайда.","Create a copy of the built-in guide first."))
+else
+set sgl=SG_List()
+set sgcount=StringLength(sgl)/4
+if sgc==5 and sgcount<16 and LoadBoolean(SG_DB,-1,ShSel[sgp]) then
+set sgl=sgl+Id2String(ShSel[sgp])
+elseif sgc==6 and SG_Select>=0 and SG_Select<sgcount then
+set sgl=SubString(sgl,0,SG_Select*4)+SubString(sgl,SG_Select*4+4,StringLength(sgl))
+set SG_Select=-1
+elseif (sgc==7 or sgc==8) and SG_Select>=0 and SG_Select<sgcount then
+set sgi=SG_Select
+set sgj=sgi-1
+if sgc==8 then
+set sgj=sgi+1
+endif
+if sgj>=0 and sgj<sgcount then
+if sgj<sgi then
+set sgl=SubString(sgl,0,sgj*4)+SubString(sgl,sgi*4,sgi*4+4)+SubString(sgl,sgj*4,sgj*4+4)+SubString(sgl,sgi*4+4,StringLength(sgl))
+else
+set sgl=SubString(sgl,0,sgi*4)+SubString(sgl,sgj*4,sgj*4+4)+SubString(sgl,sgi*4,sgi*4+4)+SubString(sgl,sgj*4+4,StringLength(sgl))
+endif
+set SG_Select=sgj
+endif
+elseif sgc==9 then
+set sgl=""
+set SG_Select=-1
+endif
+call SaveStr(SG_Custom,-SG_Mode,2,SG_Validate(sgl))
+endif
+elseif sgc==13 or sgc==14 then
+set sgi=0
+loop
+exitwhen sgi>=SG_RosterN or SG_Roster[sgi]==SG_Hero
+set sgi=sgi+1
+endloop
+if sgc==13 then
+set sgi=ModuloInteger(sgi+SG_RosterN-1,SG_RosterN)
+else
+set sgi=ModuloInteger(sgi+1,SG_RosterN)
+endif
+set SG_Page=0
+set SG_PageStart=0
+set SG_Hero=SG_Roster[sgi]
+set SG_Mode=0
+set SG_Select=-1
+elseif (sgc==15 or sgc==16) and SG_HeroPicker then
+if sgc==15 and SG_HeroPage>0 then
+set SG_HeroPage=SG_HeroPage-1
+elseif sgc==16 and (SG_HeroPage+1)*6<SG_RosterN then
+set SG_HeroPage=SG_HeroPage+1
+endif
+elseif sgc==15 and SG_Page>0 then
+set SG_Page=SG_Page-1
+set SG_PageStart=LoadInteger(SG_Custom,-5,SG_Page)
+elseif sgc==16 and LoadInteger(SG_Custom,-4,6)!=2 then
+call SaveInteger(SG_Custom,-5,SG_Page,SG_PageStart)
+set SG_Page=SG_Page+1
+set SG_PageStart=LoadInteger(SG_Custom,-4,6)
+elseif sgc>=100 and sgc<106 then
+if SG_HeroPicker then
+set sgi=SG_HeroPage*6+sgc-100
+if sgi<SG_RosterN then
+set SG_Hero=SG_Roster[sgi]
+set SG_Mode=0
+set SG_Select=-1
+set SG_HeroPicker=false
+set SG_Picker=true
+set SG_Page=0
+set SG_PageStart=0
+endif
+elseif SG_Picker then
+set SG_Mode=LoadInteger(SG_Custom,-4,sgc-100)
+set SG_Select=-1
+set SG_Picker=false
+else
+if SG_Stage==1 then
+set sgstart=4
+elseif SG_Stage==2 then
+set sgstart=10
+endif
+set SG_Select=sgstart+sgc-100
+set sgl=SG_List()
+set ShSel[sgp]=String2Id(SubString(sgl,SG_Select*4,SG_Select*4+4))
+call Sh_DrawDesc()
+call Sh_DrawCraft()
+call Sh_DrawUses()
+call Sh_DrawPrices()
+endif
+endif
+call SG_Refresh()
+endfunction
+function SG_Button takes framehandle sgbParent,integer sgbTag,string sgbText,real sgbX,real sgbY,real sgbW returns framehandle
+local framehandle sgb=BlzCreateFrameByType("GLUETEXTBUTTON","SGButton",sgbParent,"ScriptDialogButton",0)
+call BlzFrameSetAbsPoint(sgb,FRAMEPOINT_CENTER,sgbX,sgbY)
+call BlzFrameSetSize(sgb,sgbW,0.021)
+call BlzFrameSetScale(sgb,0.95)
+call BlzFrameSetText(sgb,sgbText)
+call SaveInteger(SG_DB,-3,GetHandleId(sgb),sgbTag)
+call BlzTriggerRegisterFrameEvent(SG_Trg,sgb,FRAMEEVENT_CONTROL_CLICK)
+return sgb
+endfunction
+function SG_Build takes nothing returns nothing
+local integer sgbI=0
+local framehandle sgb
+local trigger sgt=CreateTrigger()
+call SG_DataInit()
+set SG_Roster[0]='H00I'
+set SG_Roster[1]='H00E'
+set SG_Roster[2]='H00A'
+set SG_Roster[3]='H00J'
+set SG_Roster[4]='H016'
+set SG_Roster[5]='H018'
+set SG_Roster[6]='H01A'
+set SG_Roster[7]='H00M'
+set SG_Roster[8]='H00H'
+set SG_Roster[9]='H00C'
+set SG_Roster[10]='H006'
+set SG_Roster[11]='H017'
+set SG_Roster[12]='H00P'
+set SG_Roster[13]='H00D'
+set SG_Roster[14]='H00K'
+set SG_Roster[15]='H00X'
+set SG_Roster[16]='H032'
+set SG_Roster[17]='H00Z'
+set SG_Roster[18]='H012'
+set SG_Roster[19]='H014'
+set SG_Roster[20]='H00N'
+set SG_Roster[21]='H01C'
+set SG_Roster[22]='H01D'
+set SG_Roster[23]='H01F'
+set SG_Roster[24]='H01H'
+set SG_Roster[25]='H01J'
+set SG_Roster[26]='H01L'
+set SG_Roster[27]='H01M'
+set SG_Roster[28]='H027'
+set SG_Roster[29]='H02B'
+set SG_Roster[30]='H02D'
+set SG_Roster[31]='H01B'
+set SG_Roster[32]='H02F'
+set SG_Roster[33]='H02G'
+set SG_Roster[34]='H02H'
+set SG_Roster[35]='H02I'
+set SG_Roster[36]='H02J'
+set SG_Roster[37]='H02K'
+set SG_Roster[38]='H02L'
+set SG_Roster[39]='H02M'
+set SG_Roster[40]='H02O'
+set SG_Roster[41]='H02P'
+set SG_Roster[42]='H02R'
+set SG_Roster[43]='H02S'
+set SG_Roster[44]='H02U'
+set SG_Roster[45]='H02V'
+set SG_Roster[46]='H02X'
+set SG_Roster[47]='H02Y'
+set SG_Roster[48]='H033'
+set SG_Roster[49]='H034'
+set SG_Roster[50]='H03B'
+set SG_Roster[51]='H00Y'
+set SG_Roster[52]='H03K'
+set SG_Roster[53]='H03L'
+set SG_Roster[54]='H03N'
+set SG_Roster[55]='H03P'
+set SG_Roster[56]='H03R'
+set SG_Roster[57]='H03S'
+set SG_Roster[58]='H031'
+set SG_Roster[59]='H042'
+set SG_Roster[60]='H043'
+set SG_Roster[61]='H044'
+set SG_Roster[62]='H045'
+set SG_Roster[63]='H047'
+set SG_Roster[64]='H048'
+set SG_Roster[65]='HYuj'
+set SG_Roster[66]='H04A'
+set SG_Roster[67]='H04C'
+set SG_Roster[68]='H04E'
+set SG_Roster[69]='H04F'
+set SG_Roster[70]='H04H'
+set SG_Roster[71]='H04L'
+set SG_Roster[72]='H04O'
+set SG_Roster[73]='H04T'
+set SG_Roster[74]='H052'
+set SG_Roster[75]='H053'
+set SG_Roster[76]='H054'
+set SG_Roster[77]='H057'
+set SG_Roster[78]='H055'
+set SG_Roster[79]='H059'
+set SG_Roster[80]='H05A'
+set SG_Roster[81]='H05D'
+set SG_Roster[82]='H05N'
+set SG_Roster[83]='H05Q'
+set SG_Roster[84]='H05R'
+set SG_Roster[85]='H060'
+set SG_Roster[86]='H061'
+set SG_Roster[87]='H063'
+set SG_Roster[88]='H066'
+set SG_Roster[89]='H067'
+set SG_Roster[90]='H069'
+set SG_Roster[91]='H06B'
+set SG_Roster[92]='H06F'
+set SG_Roster[93]='H051'
+set SG_Roster[94]='H06G'
+set SG_Roster[95]='H06M'
+set SG_Roster[96]='H06C'
+set SG_Roster[97]='H06Y'
+set SG_Roster[98]='H072'
+set SG_Roster[99]='H075'
+set SG_Roster[100]='H076'
+set SG_Roster[101]='H077'
+set SG_Roster[102]='H112'
+set SG_Roster[103]='H074'
+set SG_Roster[104]='H05C'
+set SG_Roster[105]='Ho0Z'
+set SG_Roster[106]='H078'
+set SG_Roster[107]='H073'
+set SG_Roster[108]='ORH1'
+set SG_Roster[109]='H06T'
+set SG_Roster[110]='WEND'
+set SG_Roster[111]='Hbel'
+set SG_Roster[112]='Ho11'
+set SG_Roster[113]='H116'
+set SG_Roster[114]='Ho0O'
+set SG_Roster[115]='HAlb'
+set SG_Roster[116]='HRen'
+set SG_Roster[117]='HMin'
+set SG_Roster[118]='HMad'
+set SG_Roster[119]='H10L'
+set SG_Roster[120]='HIc1'
+set SG_Roster[121]='Ho14'
+set SG_Roster[122]='H35Z'
+set SG_Roster[123]='HHSN'
+set SG_Roster[124]='H34Z'
+set SG_Roster[125]='HDSN'
+set SG_Roster[126]='HKar'
+set SG_Roster[127]='HBGN'
+set SG_Roster[128]='HSab'
+set SG_Roster[129]='HJi1'
+set SG_Roster[130]='HGoj'
+set SG_Roster[131]='HGrp'
+set SG_Roster[132]='HSig'
+set SG_Roster[133]='Rosh'
+set SG_Roster[134]='HBrg'
+set SG_Roster[135]='HSui'
+set SG_Roster[136]='HRem'
+set SG_Roster[137]='HFla'
+set SG_Roster[138]='HEsc'
+set SG_Roster[139]='HShn'
+set SG_Roster[140]='HDMa'
+set SG_Roster[141]='HHit'
+set SG_RosterN=142
+set SG_Trg=CreateTrigger()
+call TriggerAddAction(SG_Trg,function SG_Click)
+set sgb=SG_Button(ShMain,1,Lng("Гайды закупки","Item guides"),0.31,0.548,0.15)
+set SG_Panel=BlzCreateFrameByType("BACKDROP","SGPanel",ShMain,"",0)
+call BlzFrameSetVisible(SG_Panel,false)
+call BlzFrameSetAbsPoint(SG_Panel,FRAMEPOINT_CENTER,0.308,0.338)
+call BlzFrameSetSize(SG_Panel,0.32,0.362)
+call BlzFrameSetTexture(SG_Panel,"war3mapImported\\shop_none.tga",0,true)
+call BlzFrameSetLevel(SG_Panel,10)
+set SG_Title=SG_Button(SG_Panel,17,"",0.308,0.510,0.258)
+call BlzFrameSetAbsPoint(SG_Title,FRAMEPOINT_CENTER,0.308,0.510)
+call BlzFrameSetSize(SG_Title,0.258,0.016)
+call BlzFrameSetFont(SG_Title,"Fonts\\FRIZQT__.TTF",0.0085,0)
+set sgb=SG_Button(SG_Panel,13,"<",0.171,0.510,0.025)
+set sgb=SG_Button(SG_Panel,14,">",0.445,0.510,0.025)
+set SG_Choose=SG_Button(SG_Panel,2,"",0.244,0.483,0.17)
+set sgb=SG_Button(SG_Panel,3,Lng("Копия","Copy"),0.369,0.483,0.065)
+set sgb=SG_Button(SG_Panel,4,Lng("Сохр.","Save"),0.434,0.483,0.058)
+set sgb=SG_Button(SG_Panel,10,Lng("Старт","Start"),0.207,0.458,0.092)
+set sgb=SG_Button(SG_Panel,11,Lng("Середина","Mid"),0.308,0.458,0.092)
+set sgb=SG_Button(SG_Panel,12,Lng("Лейт","Late"),0.409,0.458,0.092)
+loop
+exitwhen sgbI>=6
+set SG_Row[sgbI]=SG_Button(SG_Panel,100+sgbI,"",0.308,0.428-0.027*sgbI,0.298)
+call BlzFrameSetSize(SG_Row[sgbI],0.298,0.025)
+set SG_Icon[sgbI]=BlzCreateFrameByType("BACKDROP","SGIcon",SG_Row[sgbI],"",0)
+call BlzFrameSetPoint(SG_Icon[sgbI],FRAMEPOINT_LEFT,SG_Row[sgbI],FRAMEPOINT_LEFT,0.003,0.)
+call BlzFrameSetSize(SG_Icon[sgbI],0.021,0.021)
+call BlzFrameSetEnable(SG_Icon[sgbI],false)
+set SG_Text[sgbI]=BlzCreateFrameByType("TEXT","SGItemText",SG_Row[sgbI],"",0)
+call BlzFrameSetPoint(SG_Text[sgbI],FRAMEPOINT_LEFT,SG_Row[sgbI],FRAMEPOINT_LEFT,0.028,0.)
+call BlzFrameSetSize(SG_Text[sgbI],0.265,0.024)
+call BlzFrameSetFont(SG_Text[sgbI],"Fonts\\FRIZQT__.TTF",0.0085,0)
+call BlzFrameSetEnable(SG_Text[sgbI],false)
+set sgbI=sgbI+1
+endloop
+set SG_Hint=BlzCreateFrameByType("TEXT","SGHint",SG_Panel,"",0)
+call BlzFrameSetAbsPoint(SG_Hint,FRAMEPOINT_CENTER,0.308,0.268)
+call BlzFrameSetSize(SG_Hint,0.298,0.028)
+call BlzFrameSetFont(SG_Hint,"Fonts\\FRIZQT__.TTF",0.0075,0)
+set sgb=SG_Button(SG_Panel,5,Lng("+ выбр.","+ selected"),0.196,0.236,0.07)
+set sgb=SG_Button(SG_Panel,6,Lng("Убрать","Remove"),0.265,0.236,0.065)
+set sgb=SG_Button(SG_Panel,7,"<",0.317,0.236,0.028)
+set sgb=SG_Button(SG_Panel,8,">",0.350,0.236,0.028)
+set sgb=SG_Button(SG_Panel,9,Lng("Очистить","Clear"),0.414,0.236,0.082)
+set SG_PagePrev=SG_Button(SG_Panel,15,Lng("< Назад","< Previous"),0.233,0.183,0.14)
+set SG_PageNext=SG_Button(SG_Panel,16,Lng("Далее >","Next >"),0.383,0.183,0.14)
+call BlzFrameSetVisible(SG_PagePrev,false)
+call BlzFrameSetVisible(SG_PageNext,false)
+set SG_NameBox=BlzCreateFrameByType("EDITBOX","SGName",SG_Panel,"EscMenuEditBoxTemplate",0)
+call BlzFrameSetAbsPoint(SG_NameBox,FRAMEPOINT_CENTER,0.308,0.207)
+call BlzFrameSetSize(SG_NameBox,0.296,0.025)
+call BlzFrameSetTextSizeLimit(SG_NameBox,80)
+call BlzTriggerRegisterFrameEvent(sgt,SG_NameBox,FRAMEEVENT_EDITBOX_ENTER)
+call TriggerAddAction(sgt,function SG_NameEnter)
+set sgt=null
+set sgb=null
+endfunction
+
 function Sh_Build takes nothing returns nothing
 local framehandle gameUI=BlzGetOriginFrame(ORIGIN_FRAME_GAME_UI,0)
 local framehandle bg
@@ -267581,6 +269542,7 @@ call TriggerAddAction(ShTrgSync,function Sh_Sync)
 
 call BlzFrameSetVisible(ShMain,false)
 call TSE_TimerStart(CreateTimer(),0.4,true,function Sh_Tick)
+call SG_Build()
 set gameUI=null
 endfunction
 
@@ -267591,7 +269553,7 @@ endif
 // Клавиша приходит на ВСЕ машины: показываем только тому, кто нажал.
 if ShHotLocal or TrigP()==GetLocalPlayer() then
 // пока курсор в поиске, B — это буква, а не клавиша магазина
-if ShSearch!=null and IsFrameFocused(ShSearch) then
+if (ShSearch!=null and IsFrameFocused(ShSearch)) or (SG_NameBox!=null and IsFrameFocused(SG_NameBox)) then
 return
 endif
 // открыть нельзя, пока на экране крупное окно или выбор режима; закрыть — всегда
@@ -267637,6 +269599,15 @@ endif
 endif
 endfunction
 
+function Sh_HotSync takes nothing returns nothing
+call Sh_Snapshot()
+if GetTriggerSyncPlayer()==GetLocalPlayer() then
+set ShHotLocal=true
+call Sh_Toggle()
+set ShHotLocal=false
+endif
+endfunction
+
 function Sh_InitBuild takes nothing returns nothing
 call Sh_Build()
 endfunction
@@ -267645,6 +269616,15 @@ function Sh_Init takes nothing returns nothing
 local integer i=0
 // один триггер на всех: Sh_Toggle всё равно смотрит на GetTriggerPlayer
 local trigger tk=CreateTrigger()
+local trigger shk=CreateTrigger()
+loop
+exitwhen i>=12
+call BlzTriggerRegisterPlayerSyncEvent(shk,Player(i),"SHHK",false)
+set i=i+1
+endloop
+call TriggerAddAction(shk,function Sh_HotSync)
+set shk=null
+set i=0
 loop
 exitwhen i==12
 // Shop hotkey is polled locally by CBS_KeyTick.
@@ -284943,6 +286923,18 @@ call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIF
 call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
 set i=i+1
 endif
+if GetUnitAbilityLevel(u,'TSrs')>0 then
+call ShowFrame(GetFrameByName( "ClassBarIcon", i ),true)
+call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",0,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",1,false)
+call SetFrameTexture(GetFrameByName( "ClassBarIcon", i ), "war3mapImported\\BTNTimeSphere.blp",2,false)
+call SetFrameText( GetFrameByName("ClassBarTooltipText",i), GetAbilityBaseStringFieldById( String2Id( "TSrs" ), ABILITY_SF_NAME )+", \n\n"+GetAbilityBaseStringFieldById( String2Id( "TSrs" ), ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED ))
+call SetFrameSize( GetFrameByName("ClassBarTooltip",i), .16, GetFrameHeight( GetFrameByName("ClassBarTooltipText",i))+0.03)
+call SetFrameTextAlignment( GetFrameByName("ClassBarTooltipText",i), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+call SetFrameRelativePoint( GetFrameByName("ClassBarTooltip",i), FRAMEPOINT_CENTER, GetFrameByName("ClassBarIcon",i), FRAMEPOINT_CENTER,  -.08, (0.5*GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",i)))+.04  )
+set i=i+1
+endif
 loop
 call ShowFrame(GetFrameByName( "ClassBarIcon", i ),false)
 call ShowFrame( GetFrameByName( "ClassBarTooltip", i ), false)
@@ -285745,6 +287737,7 @@ call SetUnitTimeScale(e,1.)
 endif
 endif
 endif
+call TSE_HoldCooldowns()
 call FlushChildHashtable(h,GetHandleId(t))
 call TSE_DestroyTimer(t)
 set e=null
@@ -285759,6 +287752,10 @@ endif
 if HitIsTS(e) and not frc then
 return false
 endif
+if TSE_PlayerResistant(OwnerOf(e)) and not frc then
+call TSE_SoftTimed(e,dur)
+return true
+endif
 call SetControlToUnit(c,e,dur,"stun")
 if LoadInteger(HH,eid,HitK("Fz"))<=0 then
 if IsUnitInGroup(e,TSE_G) then
@@ -285770,6 +287767,8 @@ call SaveReal(HH,eid,HitK("FzTs"),1.)
 endif
 endif
 call SaveInteger(HH,eid,HitK("Fz"),LoadInteger(HH,eid,HitK("Fz"))+1)
+call TSE_WatchCooldowns(e)
+call TSE_HoldCooldowns()
 call SetUnitTimeScale(e,0.001)
 set t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,e)
@@ -285878,8 +287877,12 @@ call SetUnitInvulnerable(hrvu,false)
 return true
 endfunction
 
+function HitEnemyTarget takes unit hetU,unit hetE returns boolean
+return hetE!=null and hetE!=hetU and UnitIsAlive(hetE) and IsUnitEnemy(hetE,OwnerOf(hetU)) and not IsUnitType(hetE,UNIT_TYPE_MECHANICAL) and not IsUnitType(hetE,UNIT_TYPE_STRUCTURE) and not IsUnitInvulnerable(hetE)
+endfunction
+
 function HitQCond takes nothing returns boolean
-return GetSpellAbilityId()=='HtQ1' and udg_B==true
+return GetSpellAbilityId()=='HtQ1' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
 function HitQEnd takes nothing returns nothing
 local timer hqt=GetExpiredTimer()
@@ -286572,7 +288575,7 @@ set u=null
 set t=null
 endfunction
 function HitRCond takes nothing returns boolean
-return GetSpellAbilityId()=='HtR1' and udg_B==true
+return GetSpellAbilityId()=='HtR1' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
 function HitRApply takes unit u,unit e returns nothing
 local integer l=GetUnitAbilityLevel(u,'HtR1')
@@ -287174,7 +289177,7 @@ set e=null
 set t=null
 endfunction
 function HitF3Cond takes nothing returns boolean
-return GetSpellAbilityId()=='HtF3' and udg_B==true
+return GetSpellAbilityId()=='HtF3' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
 function HitF3Cast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -287917,7 +289920,7 @@ endfunction
 
 
 function HitTCond takes nothing returns boolean
-return GetSpellAbilityId()=='HtT1' and udg_B==true
+return GetSpellAbilityId()=='HtT1' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
 function HitTBegin takes unit htu,unit hte returns nothing
 local real htd=4.2+HitStopAdd(htu)
@@ -287946,6 +289949,8 @@ call SaveBoolean(HH,GetHandleId(hte),StringHash("HitTPauseWanted"),IsUnitPaused(
 endif
 endif
 call SaveInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"),LoadInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"))+1)
+call TSE_WatchCooldowns(hte)
+call TSE_HoldCooldowns()
 call SaveBoolean(h,GetHandleId(htt),32,true)
 call PauseUnit(hte,true)
 call SaveInteger(HH,GetHandleId(htu),HitK("AnN"),LoadInteger(HH,GetHandleId(htu),HitK("AnN"))+1)
@@ -301709,9 +303714,9 @@ call LANG_A('KIJ8',1,0,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Atta
 call LANG_A('KIJ8',2,0,"Samehada (Bleeding)")
 call LANG_A('KIJ8',3,0,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 50, and AS by 50%. Each attack deals 150+20% of your auto attack as true damage.")
 call LANG_A('KIK0',0,0,"Time Sphere")
-call LANG_A('KIK0',1,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class.")
+call LANG_A('KIK0',1,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class.")
 call LANG_A('KIK0',2,0,"Time Sphere")
-call LANG_A('KIK0',3,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class.")
+call LANG_A('KIK0',3,0,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class.")
 call LANG_A('KIK2',0,0,"Space Sphere")
 call LANG_A('KIK2',1,0,"Increases |c00FFFF66AllStat|r by 30 and mana regeneration by 25%.")
 call LANG_A('KIK2',2,0,"Space Sphere")
@@ -303110,7 +305115,6 @@ call LANG_A('MeiT',0,0,"Yoton: Yokai no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00
 call LANG_A('MeiT',1,0,"Mei creates a ring of hardened magma that does not let anyone enter or leave it.|n|cFF00A5FF|nDamage (DPS): 2*|r|c0077FFFFINT|r|cFF00A5FF per sec |nDamage (instant): 0.2*|r|c0077FFFFINT|r|cFF00A5FF. every 0.2 sec|nSilence: up to 6 sec|nDuration: 6 sec.|nRange: 1700|nArea (damage/hold): 600|nArea (en"+"try border): 950|nPreparation: from 0.4 sec|nCooldown: 40 sec.|r")
 call LANG_A('MeiT',2,0,"Yoton: Yokai no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('MeiT',3,0,"Mei creates a ring of hardened magma that does not let anyone enter or leave it.|n|cFF00A5FF|nDamage (DPS): 2*|r|c0077FFFFINT|r|cFF00A5FF per sec |nDamage (instant): 0.2*|r|c0077FFFFINT|r|cFF00A5FF. every 0.2 sec|nSilence: up to 6 sec|nDuration: 6 sec.|nRange: 1700|nArea (damage/hold): 600|nArea (en"+"try border): 950|nPreparation: from 0.4 sec|nCooldown: 40 sec.|r")
-call LANG_A('MeiG',0,0,"Suiton: Suiryudan, (|cffffcc00G|r)")
 call LANG_A('MeiG',1,0,"Mei jumps and creates a water dragon that flies to the target area, damaging and stunning enemies.|n• Range over 600: jump forward|n• Range under 600: jump back|n|cFF00A5FF |nDamage: 50+5*|r|c0077FFFFINT|r|cFF00A5FF |nRange: 1800|nArea: 400|nPreparation: 0.5 sec|nStun: 1.5 sec|nCooldown: 25 sec."+"|r")
 call LANG_A('SnQ1',0,0,"Sakanade: Slash, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('SnQ1',0,1,"Sakanade: Slash, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
@@ -303188,9 +305192,9 @@ call LANG_A('ToFE',2,0,"Flight, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',3,0,"The fly dashes to the point: damage to enemies on the way. Always the full range towards the click.|n|n|cFF00A5FF|nDamage: 4\\5\\6\\7\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 300|nRange: 1200|nCooldown: 12 sec.|r")
 call LANG_A('ToFG',1,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
 call LANG_A('ToFG',3,0,"The fly darts through the target 7 times, striking on every pass, then dives onto it from above.|n|n|cFF00A5FFDamage: 8 strikes of 1*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec.|nRange: 1000|nCooldown: 28 sec.|r")
+call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data51 takes nothing returns nothing
-call LANG_A('ToFW',0,0,"Wing Chirr, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,1,"Wing Chirr, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,2,"Wing Chirr, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('ToFW',0,3,"Wing Chirr, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
@@ -303406,6 +305410,9 @@ call LANG_A('A0VS',0,0,"Health Rewind")
 call LANG_A('A0VS',1,0,"Restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_A('A0VS',2,0,"Health Rewind")
 call LANG_A('A0VS',3,0,"Restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_A('KIBK',0,0,"Key of Bab-ilu")
+call LANG_A('KIBK',1,0,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\" - damage over 30 deals an additional 30 (chaos, blockable). Does not work with the Onizuka Set. CDR: 1 sec.|n|nPassive Ability: \"Treasury\" - gold for kills +20%, for the end of the round +10%.|n|nPassive A"+"bility: \"Execution\" - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
+call LANG_A('TSrs',1,0,"During time stop, this hero can move, attack, cast abilities and use items, but movement and attack speed are reduced by 50%. Ability and item cooldowns remain frozen. Does not stack with Time Manipulator.")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -303438,10 +305445,10 @@ call LANG_It('I009',0,"Vongola Sun Ring, Rank C")
 call LANG_It('I009',1,"Vongola Sun Ring, Rank C")
 call LANG_It('I009',2,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
 call LANG_It('I009',3,"Increase |c00FF5555STR|r by 15 and HP Regen by 15.")
-call LANG_It('I00A',0,"Vongola Sun Ring, Rank B")
-call LANG_It('I00A',1,"Vongola Sun Ring, Rank B")
 endfunction
 function LANG_Data52 takes nothing returns nothing
+call LANG_It('I00A',0,"Vongola Sun Ring, Rank B")
+call LANG_It('I00A',1,"Vongola Sun Ring, Rank B")
 call LANG_It('I00A',2,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
 call LANG_It('I00A',3,"Increase |c00FF5555STR|r by 20 and HP Regen by 20.")
 call LANG_It('I00B',0,"Vongola Sun Ring, Rank A")
@@ -303690,10 +305697,10 @@ call LANG_It('I020',0,"True Staff of Darkness")
 call LANG_It('I020',1,"True Staff of Darkness")
 call LANG_It('I020',2,"Increasing attack power by 100, AS +100%, increasing |c00FFFF66AllStat|r by 30|n|nAura of Darkness: Reduces outgoing physical damage from an enemy by 20% within a 1000 radius.|nActive: The target cannot move further than 400 from its current position for 6 seconds. If the target is an enemy, it also"+" cannot attack for 6 sec.|n|cFFFF0000Cannot be used on enemies affected by Imagine Breaker.|r|n|nRange: 1100|nCD: 30 sec.")
 call LANG_It('I020',3,"Increasing attack power by 100, AS +100%, increasing |c00FFFF66AllStat|r by 30|n|nAura of Darkness: Reduces outgoing physical damage from an enemy by 20% within a 1000 radius.|nActive: The target cannot move further than 400 from its current position for 6 seconds. If the target is an enemy, it also"+" cannot attack for 6 sec.|n|cFFFF0000Cannot be used on enemies affected by Imagine Breaker.|r|n|nRange: 1100|nCD: 30 sec.")
-call LANG_It('I021',0,"Gift :)")
-call LANG_It('I021',1,"Gift :)")
 endfunction
 function LANG_Data53 takes nothing returns nothing
+call LANG_It('I021',0,"Gift :)")
+call LANG_It('I021',1,"Gift :)")
 call LANG_It('I021',2,"A gift, a secret inside... :)")
 call LANG_It('I021',3,"A gift, a secret inside... :)")
 call LANG_It('I022',0,"Gift :)")
@@ -303938,14 +305945,14 @@ call LANG_It('I03O',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attac
 call LANG_It('I03O',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, Attack by 50, and AS by 50%. Switch between modes: 1) Each attack burns 8% of the current MP, restoring 1.5x the amount of burned MP in the form of HP. 2) Each attack deals 150+20% of your auto attack as pure damage.")
 call LANG_It('I03P',0,"Time Sphere")
 call LANG_It('I03P',1,"Time Sphere")
-call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
-call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_It('I03P',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
+call LANG_It('I03P',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.")
 call LANG_It('ITS0',0,"Time Sphere (Recipe)")
 call LANG_It('ITS0',1,"Time Sphere (Recipe)")
-call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
-call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Manipulator class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Cou"+"rage, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
+call LANG_It('ITS0',2,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Coura"+"ge, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
+call LANG_It('ITS0',3,"Increases |c00FFFF66AllStat|r by 30 and grants the Time Resistant class while held. The hero keeps any innate class after dropping the sphere.|n|nActive: \"Health Rewind\" restores 25% of the health lost over the last 4 sec. Self-cast only.|n|nMana: 100|nCooldown: 25 sec.|n|nRequires: Medal of Coura"+"ge, Master's Tank Top, Sky Mare Ring, Rank D, Recipe.")
 call LANG_It('I03Q',0,"Space Sphere")
 call LANG_It('I03Q',1,"Space Sphere")
 call LANG_It('I03Q',2,"+30 |c00FFFF66AllStat|r, +25% mana regen.|n|nPortal returns a hero to their position 4 sec. ago. -spheresc: self / any hero.|nEnemies at both ends: AS/MS -50% for 3 sec., AoE 600.|nRange: 2500. Mana: 50. CD: 10 sec.|nBlocked by teleport locks, Shirou T and Hibari arena.")
@@ -304194,10 +306201,10 @@ call LANG_It('I058',2,"Increase |c00FFFF66AllStat|r by 16.")
 call LANG_It('I058',3,"Increase |c00FFFF66AllStat|r by 16.")
 call LANG_It('I059',0,"Thunder Mare Ring, Rank A")
 call LANG_It('I059',1,"Thunder Mare Ring, Rank A")
-call LANG_It('I059',2,"Increase |c00FFFF66AllStat|r by 19.")
-call LANG_It('I059',3,"Increase |c00FFFF66AllStat|r by 19.")
 endfunction
 function LANG_Data55 takes nothing returns nothing
+call LANG_It('I059',2,"Increase |c00FFFF66AllStat|r by 19.")
+call LANG_It('I059',3,"Increase |c00FFFF66AllStat|r by 19.")
 call LANG_It('I05A',0,"Fake Thunder Mare Ring")
 call LANG_It('I05A',1,"Fake Thunder Mare Ring")
 call LANG_It('I05A',2,"Increase |c00FFFF66AllStat|r by 22.")
@@ -304446,10 +306453,10 @@ call LANG_It('IGDi',2,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c007
 call LANG_It('IGDi',3,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|nActive: [|c00FF5555Crimson Rose of Exorcism|r] - Fires a spear at an enemy a"+"nd deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.")
 call LANG_It('IGDr',0,"Gae Dearg (Recipe)")
 call LANG_It('IGDr',1,"Gae Dearg (Recipe)")
-call LANG_It('IGDr',2,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|n• [|c00FF5555Crimson Rose of Exorcism|r] - Shoots a spear at an enemy and "+"deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.|nBuild: True Vongola Storm Ring + Recipe")
-call LANG_It('IGDr',3,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|nActive: [|c00FF5555Crimson Rose of Exorcism|r] - Fires a spear at an enemy a"+"nd deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.")
 endfunction
 function LANG_Data56 takes nothing returns nothing
+call LANG_It('IGDr',2,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|n• [|c00FF5555Crimson Rose of Exorcism|r] - Shoots a spear at an enemy and "+"deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.|nBuild: True Vongola Storm Ring + Recipe")
+call LANG_It('IGDr',3,"Increase |c00FF5555STR|r by 15, |c003CFF3CAGI|r and |c0077FFFFINT|r by 40 and MP Regen by 125%.|n|nPassive: [|c0077FFFFMana Destruction|r] - Damage greater than 7% of the target's HP destroys 7% of their Max MP. CD 10 sec.|nActive: [|c00FF5555Crimson Rose of Exorcism|r] - Fires a spear at an enemy a"+"nd deals 3*|c0077FFFFINT|r + 3*|c003CFF3CAGI|r. Also, the effects of magical protection are reduced by 40% for 5 seconds. Range: 1200|nCooldown: 20 sec.")
 call LANG_It('IHYi',0,"Yukirin's Hourglass")
 call LANG_It('IHYi',1,"Yukirin's Hourglass")
 call LANG_It('IHYi',2,"Raise |c00FF5555STR|r and |c003CFF3CAGI|r by 35, |c0077FFFFINT|r by 20.|n|n• [|c0000FFFFTrial of Time|r] - Dealing damage reduces the efficiency of the target's HP regeneration for 5 seconds. Dealing damage refreshes the duration and increases the heal rez: -25/50/75%. CD: 0.5 sec. At 3 charges, h"+"alf of the enemy's unrecovered HP is transferred to the wearer.|nRemoved by cleansing. (see Recipe)")
@@ -304698,10 +306705,10 @@ call LANG_U('H02U',3,"Kuzan, a former Marine Admiral, ate the \"Hie Hie no Mi\" 
 call LANG_U('H02V',3,"Stile Magnus is one of the warriors of the Anglican-Protistant Church.|n|nRole: Caster, Carry, Disabler, Durable|n|n")
 call LANG_U('H02X',3,"Killer Bee, the jinchuriki of the Eight-Tails, has mastered the eight-sword style.|n|nRole: Assassin, Durable, Disabler, Swordsman|n|n")
 call LANG_U('H02Y',3,"Genkishi - one of the pseudo-funeral wreaths, master of illusions and 4 swords.|n|nRole: Carry, Caster, Exhauster, Swordsman|n|n")
-call LANG_U('H02Z',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.|n|nRole: Caster, Carry|n|n")
-call LANG_U('H030',2,"Final Form")
 endfunction
 function LANG_Data57 takes nothing returns nothing
+call LANG_U('H02Z',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.|n|nRole: Caster, Carry|n|n")
+call LANG_U('H030',2,"Final Form")
 call LANG_U('H030',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.")
 call LANG_U('H031',3,"Sanji is the cook on the Straw Hats' ship.|n|nRole: Caster, Assassin|n|n")
 call LANG_U('H032',3,"The fifth mizukage of the village \"Kirigakure\", owns the elements: water, fire and earth, is also able to use yōton techniques.|n|nRole: Caster, Disabler|n|n")
@@ -304950,10 +306957,10 @@ call LANG_B('B00W',0,"|c0000FF00Vongola Independence|r")
 call LANG_B('B00W',1,"Vongola Independence")
 call LANG_B('B00X',0,"Pouring Rain")
 call LANG_B('B00X',1,"Pouring Rain")
-call LANG_B('B00Y',0,"Thunder Shield")
-call LANG_B('B00Y',1,"Thunder Shield")
 endfunction
 function LANG_Data58 takes nothing returns nothing
+call LANG_B('B00Y',0,"Thunder Shield")
+call LANG_B('B00Y',1,"Thunder Shield")
 call LANG_B('B00Z',0,"Clear Sky")
 call LANG_B('B00Z',1,"Clear Sky")
 call LANG_B('B010',1,"This warrior is slow.")
@@ -305189,6 +307196,8 @@ call LANG_B('BbB3',1,"Aging: slows movement and attack speed.")
 call LANG_B('BbB4',1,"Aging: slows movement and attack speed.")
 call LANG_B('BMe2',1,"This unit is slowed (AS/MS -70%)")
 call LANG_B('BMe4',1,"This unit is slowed (AS/MS -70%) and gradually loses health")
+call LANG_B('BTRs',0,"Time Resistance")
+call LANG_B('BTRs',1,"Movement and attack speed reduced by 50%; cooldowns are frozen.")
 call LANG_F("BONUS_ATTACK_SPEED"," - Each point increases attack speed|n - Each point increases movement speed by 0.7")
 call LANG_F("BONUS_MANAREGEN"," - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%")
 call LANG_F("COLON_LUMBER","Victory points.")
@@ -305200,10 +307209,12 @@ call LANG_F("IDLE_PEON","Chest (|Cfffed312F8|R)")
 call LANG_F("IDLE_PEON_DESC","You can put things here.")
 call LANG_F("LUMBER","Victory points")
 call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by defeating heroes.")
+endfunction
+function LANG_Data59 takes nothing returns nothing
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
-call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
-call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
-call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.3 EN|r")
+call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
+call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
+call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
 call ExecuteFunc("LANG_Data0")
@@ -305265,6 +307276,7 @@ call ExecuteFunc("LANG_Data55")
 call ExecuteFunc("LANG_Data56")
 call ExecuteFunc("LANG_Data57")
 call ExecuteFunc("LANG_Data58")
+call ExecuteFunc("LANG_Data59")
 endfunction
 //LANG_DATA_END
 function InitCustomTriggers takes nothing returns nothing
@@ -306125,7 +308137,876 @@ call ASO_Init() // 29 окт: AS сверх потолка -> урон атак�
 // call InitTrig_Text_PreDamage()
 //call InitTrig_BelfegorShield()
  //call ExecuteFunc("InitCC")
+call ExecuteFunc("BOT_Init")
 endfunction
+function BOT_Data takes nothing returns nothing
+set BOT_Pool[0]='H00J'
+call SaveInteger(BOT_DB,'H00J',0,'A0ZK')
+call SaveInteger(BOT_DB,'A0ZK',0,0)
+call SaveReal(BOT_DB,'A0ZK',1,650.)
+call SaveInteger(BOT_DB,'H00J',1,'A01H')
+call SaveInteger(BOT_DB,'A01H',0,1)
+call SaveReal(BOT_DB,'A01H',1,400.)
+call SaveInteger(BOT_DB,'H00J',2,'A0ZJ')
+call SaveInteger(BOT_DB,'A0ZJ',0,2)
+call SaveReal(BOT_DB,'A0ZJ',1,1200.)
+call SaveInteger(BOT_DB,'H00J',3,'A0RW')
+call SaveInteger(BOT_DB,'A0RW',0,0)
+call SaveReal(BOT_DB,'A0RW',1,400.)
+call SaveInteger(BOT_DB,'H00J',4,'A0RX')
+call SaveInteger(BOT_DB,'A0RX',0,2)
+call SaveReal(BOT_DB,'A0RX',1,1200.)
+set BOT_Pool[1]='H00M'
+call SaveInteger(BOT_DB,'H00M',0,'A033')
+call SaveInteger(BOT_DB,'A033',0,1)
+call SaveReal(BOT_DB,'A033',1,800.)
+call SaveInteger(BOT_DB,'H00M',1,'A02Y')
+call SaveInteger(BOT_DB,'A02Y',0,2)
+call SaveReal(BOT_DB,'A02Y',1,1200.)
+call SaveInteger(BOT_DB,'H00M',2,'A02Z')
+call SaveInteger(BOT_DB,'A02Z',0,2)
+call SaveReal(BOT_DB,'A02Z',1,1200.)
+call SaveInteger(BOT_DB,'H00M',3,'A030')
+call SaveInteger(BOT_DB,'A030',0,1)
+call SaveReal(BOT_DB,'A030',1,1000.)
+call SaveInteger(BOT_DB,'H00M',4,'A0LQ')
+call SaveInteger(BOT_DB,'A0LQ',0,2)
+call SaveReal(BOT_DB,'A0LQ',1,1200.)
+set BOT_Pool[2]='H00H'
+call SaveInteger(BOT_DB,'H00H',0,'A0HC')
+call SaveInteger(BOT_DB,'A0HC',0,0)
+call SaveReal(BOT_DB,'A0HC',1,650.)
+call SaveInteger(BOT_DB,'H00H',1,'A02P')
+call SaveInteger(BOT_DB,'A02P',0,2)
+call SaveReal(BOT_DB,'A02P',1,1200.)
+call SaveInteger(BOT_DB,'H00H',2,'A02Q')
+call SaveInteger(BOT_DB,'A02Q',0,3)
+call SaveReal(BOT_DB,'A02Q',1,700.)
+call SaveInteger(BOT_DB,'H00H',3,'A02W')
+call SaveInteger(BOT_DB,'A02W',0,1)
+call SaveReal(BOT_DB,'A02W',1,700.)
+call SaveInteger(BOT_DB,'H00H',4,'A02X')
+call SaveInteger(BOT_DB,'A02X',0,1)
+call SaveReal(BOT_DB,'A02X',1,700.)
+set BOT_Pool[3]='H00A'
+call SaveInteger(BOT_DB,'H00A',0,'A00S')
+call SaveInteger(BOT_DB,'A00S',0,0)
+call SaveReal(BOT_DB,'A00S',1,650.)
+call SaveInteger(BOT_DB,'H00A',1,'LamQ')
+call SaveInteger(BOT_DB,'LamQ',0,0)
+call SaveReal(BOT_DB,'LamQ',1,400.)
+call SaveInteger(BOT_DB,'H00A',2,'LamW')
+call SaveInteger(BOT_DB,'LamW',0,1)
+call SaveReal(BOT_DB,'LamW',1,800.)
+call SaveInteger(BOT_DB,'H00A',3,'LamE')
+call SaveInteger(BOT_DB,'LamE',0,2)
+call SaveReal(BOT_DB,'LamE',1,1200.)
+call SaveInteger(BOT_DB,'H00A',4,'LamR')
+call SaveInteger(BOT_DB,'LamR',0,1)
+call SaveReal(BOT_DB,'LamR',1,1200.)
+set BOT_Pool[4]='H00E'
+call SaveInteger(BOT_DB,'H00E',0,'AKT1')
+call SaveInteger(BOT_DB,'AKT1',0,0)
+call SaveReal(BOT_DB,'AKT1',1,650.)
+call SaveInteger(BOT_DB,'H00E',1,'AKQ1')
+call SaveInteger(BOT_DB,'AKQ1',0,2)
+call SaveReal(BOT_DB,'AKQ1',1,1200.)
+call SaveInteger(BOT_DB,'H00E',2,'AKW1')
+call SaveInteger(BOT_DB,'AKW1',0,0)
+call SaveReal(BOT_DB,'AKW1',1,400.)
+call SaveInteger(BOT_DB,'H00E',3,'AKE1')
+call SaveInteger(BOT_DB,'AKE1',0,2)
+call SaveReal(BOT_DB,'AKE1',1,1200.)
+call SaveInteger(BOT_DB,'H00E',4,'AKR1')
+call SaveInteger(BOT_DB,'AKR1',0,1)
+call SaveReal(BOT_DB,'AKR1',1,1000.)
+set BOT_Pool[5]='H02L'
+call SaveInteger(BOT_DB,'H02L',0,'A0JK')
+call SaveInteger(BOT_DB,'A0JK',0,2)
+call SaveReal(BOT_DB,'A0JK',1,1800.)
+call SaveInteger(BOT_DB,'H02L',1,'A0JD')
+call SaveInteger(BOT_DB,'A0JD',0,2)
+call SaveReal(BOT_DB,'A0JD',1,1100.)
+call SaveInteger(BOT_DB,'H02L',2,'A0JF')
+call SaveInteger(BOT_DB,'A0JF',0,2)
+call SaveReal(BOT_DB,'A0JF',1,1200.)
+call SaveInteger(BOT_DB,'H02L',3,'A2DJ')
+call SaveInteger(BOT_DB,'A2DJ',0,4)
+call SaveReal(BOT_DB,'A2DJ',1,400.)
+call SaveInteger(BOT_DB,'H02L',4,'A1A4')
+call SaveInteger(BOT_DB,'A1A4',0,1)
+call SaveReal(BOT_DB,'A1A4',1,800.)
+set BOT_Pool[6]='H00Y'
+call SaveInteger(BOT_DB,'H00Y',0,'A06Z')
+call SaveInteger(BOT_DB,'A06Z',0,2)
+call SaveReal(BOT_DB,'A06Z',1,1800.)
+call SaveInteger(BOT_DB,'H00Y',1,'A06V')
+call SaveInteger(BOT_DB,'A06V',0,2)
+call SaveReal(BOT_DB,'A06V',1,1200.)
+call SaveInteger(BOT_DB,'H00Y',2,'A06W')
+call SaveInteger(BOT_DB,'A06W',0,1)
+call SaveReal(BOT_DB,'A06W',1,1200.)
+call SaveInteger(BOT_DB,'H00Y',3,'A06X')
+call SaveInteger(BOT_DB,'A06X',0,2)
+call SaveReal(BOT_DB,'A06X',1,1200.)
+call SaveInteger(BOT_DB,'H00Y',4,'A06Y')
+call SaveInteger(BOT_DB,'A06Y',0,2)
+call SaveReal(BOT_DB,'A06Y',1,1200.)
+set BOT_Pool[7]='H02U'
+call SaveInteger(BOT_DB,'H02U',0,'A0KY')
+call SaveInteger(BOT_DB,'A0KY',0,0)
+call SaveReal(BOT_DB,'A0KY',1,650.)
+call SaveInteger(BOT_DB,'H02U',1,'A0KT')
+call SaveInteger(BOT_DB,'A0KT',0,2)
+call SaveReal(BOT_DB,'A0KT',1,1200.)
+call SaveInteger(BOT_DB,'H02U',2,'A0KU')
+call SaveInteger(BOT_DB,'A0KU',0,2)
+call SaveReal(BOT_DB,'A0KU',1,1200.)
+call SaveInteger(BOT_DB,'H02U',3,'AokE')
+call SaveInteger(BOT_DB,'AokE',0,1)
+call SaveReal(BOT_DB,'AokE',1,1000.)
+call SaveInteger(BOT_DB,'H02U',4,'A0KX')
+call SaveInteger(BOT_DB,'A0KX',0,1)
+call SaveReal(BOT_DB,'A0KX',1,1000.)
+set BOT_Pool[8]='H060'
+call SaveInteger(BOT_DB,'H060',0,'A18Y')
+call SaveInteger(BOT_DB,'A18Y',0,0)
+call SaveReal(BOT_DB,'A18Y',1,650.)
+call SaveInteger(BOT_DB,'H060',1,'A18S')
+call SaveInteger(BOT_DB,'A18S',0,2)
+call SaveReal(BOT_DB,'A18S',1,1200.)
+call SaveInteger(BOT_DB,'H060',2,'A18T')
+call SaveInteger(BOT_DB,'A18T',0,0)
+call SaveReal(BOT_DB,'A18T',1,400.)
+call SaveInteger(BOT_DB,'H060',3,'A18V')
+call SaveInteger(BOT_DB,'A18V',0,1)
+call SaveReal(BOT_DB,'A18V',1,1000.)
+call SaveInteger(BOT_DB,'H060',4,'A18X')
+call SaveInteger(BOT_DB,'A18X',0,1)
+call SaveReal(BOT_DB,'A18X',1,1000.)
+set BOT_Pool[9]='HGrp'
+call SaveInteger(BOT_DB,'HGrp',0,'GrT1')
+call SaveInteger(BOT_DB,'GrT1',0,2)
+call SaveReal(BOT_DB,'GrT1',1,1800.)
+call SaveInteger(BOT_DB,'HGrp',1,'GrQ1')
+call SaveInteger(BOT_DB,'GrQ1',0,2)
+call SaveReal(BOT_DB,'GrQ1',1,1000.)
+call SaveInteger(BOT_DB,'HGrp',2,'GrW1')
+call SaveInteger(BOT_DB,'GrW1',0,1)
+call SaveReal(BOT_DB,'GrW1',1,700.)
+call SaveInteger(BOT_DB,'HGrp',3,'GrE1')
+call SaveInteger(BOT_DB,'GrE1',0,2)
+call SaveReal(BOT_DB,'GrE1',1,1200.)
+call SaveInteger(BOT_DB,'HGrp',4,'GrR1')
+call SaveInteger(BOT_DB,'GrR1',0,2)
+call SaveReal(BOT_DB,'GrR1',1,1200.)
+set BOT_Pool[10]='H10L'
+call SaveInteger(BOT_DB,'H10L',0,'LCT1')
+call SaveInteger(BOT_DB,'LCT1',0,1)
+call SaveReal(BOT_DB,'LCT1',1,800.)
+call SaveInteger(BOT_DB,'H10L',1,'LCQ1')
+call SaveInteger(BOT_DB,'LCQ1',0,2)
+call SaveReal(BOT_DB,'LCQ1',1,1200.)
+call SaveInteger(BOT_DB,'H10L',2,'LCW1')
+call SaveInteger(BOT_DB,'LCW1',0,4)
+call SaveReal(BOT_DB,'LCW1',1,400.)
+call SaveInteger(BOT_DB,'H10L',3,'LCE1')
+call SaveInteger(BOT_DB,'LCE1',0,0)
+call SaveReal(BOT_DB,'LCE1',1,900.)
+call SaveInteger(BOT_DB,'H10L',4,'LCR1')
+call SaveInteger(BOT_DB,'LCR1',0,1)
+call SaveReal(BOT_DB,'LCR1',1,1200.)
+set BOT_Pool[11]='H054'
+call SaveInteger(BOT_DB,'H054',0,'A10W')
+call SaveInteger(BOT_DB,'A10W',0,2)
+call SaveReal(BOT_DB,'A10W',1,1800.)
+call SaveInteger(BOT_DB,'H054',1,'A10R')
+call SaveInteger(BOT_DB,'A10R',0,2)
+call SaveReal(BOT_DB,'A10R',1,1200.)
+call SaveInteger(BOT_DB,'H054',2,'A10S')
+call SaveInteger(BOT_DB,'A10S',0,2)
+call SaveReal(BOT_DB,'A10S',1,1200.)
+call SaveInteger(BOT_DB,'H054',3,'A10U')
+call SaveInteger(BOT_DB,'A10U',0,1)
+call SaveReal(BOT_DB,'A10U',1,800.)
+call SaveInteger(BOT_DB,'H054',4,'A10X')
+call SaveInteger(BOT_DB,'A10X',0,1)
+call SaveReal(BOT_DB,'A10X',1,900.)
+set BOT_Pool[12]='HRen'
+call SaveInteger(BOT_DB,'HRen',0,'RenT')
+call SaveInteger(BOT_DB,'RenT',0,1)
+call SaveReal(BOT_DB,'RenT',1,1200.)
+call SaveInteger(BOT_DB,'HRen',1,'RenQ')
+call SaveInteger(BOT_DB,'RenQ',0,0)
+call SaveReal(BOT_DB,'RenQ',1,400.)
+call SaveInteger(BOT_DB,'HRen',2,'RenW')
+call SaveInteger(BOT_DB,'RenW',0,2)
+call SaveReal(BOT_DB,'RenW',1,1200.)
+call SaveInteger(BOT_DB,'HRen',3,'RenE')
+call SaveInteger(BOT_DB,'RenE',0,1)
+call SaveReal(BOT_DB,'RenE',1,900.)
+call SaveInteger(BOT_DB,'HRen',4,'RenR')
+call SaveInteger(BOT_DB,'RenR',0,2)
+call SaveReal(BOT_DB,'RenR',1,1200.)
+set BOT_Pool[13]='H05N'
+call SaveInteger(BOT_DB,'H05N',0,'A154')
+call SaveInteger(BOT_DB,'A154',0,2)
+call SaveReal(BOT_DB,'A154',1,600.)
+call SaveInteger(BOT_DB,'H05N',1,'A14V')
+call SaveInteger(BOT_DB,'A14V',0,2)
+call SaveReal(BOT_DB,'A14V',1,1200.)
+call SaveInteger(BOT_DB,'H05N',2,'A14X')
+call SaveInteger(BOT_DB,'A14X',0,2)
+call SaveReal(BOT_DB,'A14X',1,1200.)
+call SaveInteger(BOT_DB,'H05N',3,'A150')
+call SaveInteger(BOT_DB,'A150',0,2)
+call SaveReal(BOT_DB,'A150',1,1200.)
+call SaveInteger(BOT_DB,'H05N',4,'A152')
+call SaveInteger(BOT_DB,'A152',0,2)
+call SaveReal(BOT_DB,'A152',1,1200.)
+set BOT_Pool[14]='H05C'
+call SaveInteger(BOT_DB,'H05C',0,'A14H')
+call SaveInteger(BOT_DB,'A14H',0,2)
+call SaveReal(BOT_DB,'A14H',1,1800.)
+call SaveInteger(BOT_DB,'H05C',1,'A14E')
+call SaveInteger(BOT_DB,'A14E',0,2)
+call SaveReal(BOT_DB,'A14E',1,1200.)
+call SaveInteger(BOT_DB,'H05C',2,'A14A')
+call SaveInteger(BOT_DB,'A14A',0,1)
+call SaveReal(BOT_DB,'A14A',1,900.)
+call SaveInteger(BOT_DB,'H05C',3,'A14D')
+call SaveInteger(BOT_DB,'A14D',0,2)
+call SaveReal(BOT_DB,'A14D',1,1200.)
+call SaveInteger(BOT_DB,'H05C',4,'A14G')
+call SaveInteger(BOT_DB,'A14G',0,4)
+call SaveReal(BOT_DB,'A14G',1,400.)
+call SaveInteger(BOT_DB,'IMT0',10,'A03R')
+call SaveInteger(BOT_DB,'IMT0',11,0)
+call SaveReal(BOT_DB,'IMT0',12,0.)
+call SaveInteger(BOT_DB,'I02W',10,'A0HR')
+call SaveInteger(BOT_DB,'I02W',11,5)
+call SaveReal(BOT_DB,'I02W',12,700.)
+call SaveInteger(BOT_DB,'I1S4',10,'OniS')
+call SaveInteger(BOT_DB,'I1S4',11,5)
+call SaveReal(BOT_DB,'I1S4',12,700.)
+call SaveInteger(BOT_DB,'I00D',10,'A048')
+call SaveInteger(BOT_DB,'I00D',11,4)
+call SaveReal(BOT_DB,'I00D',12,0.)
+call SaveInteger(BOT_DB,'I13R',10,'BorA')
+call SaveInteger(BOT_DB,'I13R',11,0)
+call SaveReal(BOT_DB,'I13R',12,0.)
+call SaveInteger(BOT_DB,'I04T',10,'YatA')
+call SaveInteger(BOT_DB,'I04T',11,1)
+call SaveReal(BOT_DB,'I04T',12,0.)
+call SaveInteger(BOT_DB,'I03P',10,'A0VS')
+call SaveInteger(BOT_DB,'I03P',11,0)
+call SaveReal(BOT_DB,'I03P',12,0.)
+call SaveInteger(BOT_DB,'I04V',10,'A12B')
+call SaveInteger(BOT_DB,'I04V',11,5)
+call SaveReal(BOT_DB,'I04V',12,700.)
+call SaveInteger(BOT_DB,'I068',10,'A19Z')
+call SaveInteger(BOT_DB,'I068',11,0)
+call SaveReal(BOT_DB,'I068',12,0.)
+call SaveInteger(BOT_DB,'I054',10,'A15E')
+call SaveInteger(BOT_DB,'I054',11,4)
+call SaveReal(BOT_DB,'I054',12,0.)
+call SaveInteger(BOT_DB,'I02Y',10,'A0YI')
+call SaveInteger(BOT_DB,'I02Y',11,0)
+call SaveReal(BOT_DB,'I02Y',12,0.)
+call SaveInteger(BOT_DB,'I03F',10,'A0TQ')
+call SaveInteger(BOT_DB,'I03F',11,5)
+call SaveReal(BOT_DB,'I03F',12,700.)
+call SaveInteger(BOT_DB,'I01U',10,'A06J')
+call SaveInteger(BOT_DB,'I01U',11,2)
+call SaveReal(BOT_DB,'I01U',12,600.)
+call SaveInteger(BOT_DB,'I00W',10,'A04Y')
+call SaveInteger(BOT_DB,'I00W',11,2)
+call SaveReal(BOT_DB,'I00W',12,900.)
+call SaveInteger(BOT_DB,'I03L',10,'A0TZ')
+call SaveInteger(BOT_DB,'I03L',11,3)
+call SaveReal(BOT_DB,'I03L',12,950.)
+call SaveInteger(BOT_DB,'IBSI',10,'A26J')
+call SaveInteger(BOT_DB,'IBSI',11,2)
+call SaveReal(BOT_DB,'IBSI',12,600.)
+call SaveInteger(BOT_DB,'I06E',10,'A0YZ')
+call SaveInteger(BOT_DB,'I06E',11,5)
+call SaveReal(BOT_DB,'I06E',12,700.)
+call SaveInteger(BOT_DB,'I04L',10,'A118')
+call SaveInteger(BOT_DB,'I04L',11,2)
+call SaveReal(BOT_DB,'I04L',12,800.)
+call SaveInteger(BOT_DB,'I020',10,'A09A')
+call SaveInteger(BOT_DB,'I020',11,2)
+call SaveReal(BOT_DB,'I020',12,1100.)
+call SaveInteger(BOT_DB,'I03A',10,'A0X2')
+call SaveInteger(BOT_DB,'I03A',11,5)
+call SaveReal(BOT_DB,'I03A',12,700.)
+call SaveInteger(BOT_DB,'I044',10,'A0WN')
+call SaveInteger(BOT_DB,'I044',11,3)
+call SaveReal(BOT_DB,'I044',12,1200.)
+call SaveInteger(BOT_DB,'I06Q',10,'A1GE')
+call SaveInteger(BOT_DB,'I06Q',11,3)
+call SaveReal(BOT_DB,'I06Q',12,1100.)
+call SaveInteger(BOT_DB,'IMDi',10,'IMDs')
+call SaveInteger(BOT_DB,'IMDi',11,5)
+call SaveReal(BOT_DB,'IMDi',12,700.)
+endfunction
+// Shared bot runtime. No local UI/file state is read by decision functions.
+function BOT_Distance takes unit a,unit b returns real
+local real x=GetUnitX(a)-GetUnitX(b)
+local real y=GetUnitY(a)-GetUnitY(b)
+return SquareRoot(x*x+y*y)
+endfunction
+function BOT_Enemy takes unit u,unit e returns boolean
+return e!=null and e!=u and UnitIsAlive(e) and IsUnitEnemy(e,OwnerOf(u)) and IsUnitVisible(e,OwnerOf(u)) and not IsUnitInvulnerable(e) and not Sh_InZone(e)
+endfunction
+function BOT_Target takes integer bi returns unit
+local integer j=0
+local unit best=null
+local unit u=Hero[bi]
+local unit e
+local real score
+local real value=999999.
+local real dx
+local real dy
+loop
+exitwhen j>=10
+set e=Hero[j]
+if BOT_Enemy(u,e) then
+set score=BOT_Distance(u,e)
+if BOT_Mode[bi]==2 and BOT_Until[bi]>BOT_Clock then
+set dx=GetUnitX(e)-BOT_X[bi]
+set dy=GetUnitY(e)-BOT_Y[bi]
+set score=score+SquareRoot(dx*dx+dy*dy)*2.
+endif
+if score<value then
+set value=score
+set best=e
+endif
+endif
+set j=j+1
+endloop
+set u=null
+set e=null
+return best
+endfunction
+function BOT_Learn takes integer bi returns nothing
+local integer j=0
+local integer ab
+local unit u=Hero[bi]
+// Native learning enforces each level requirement and spends real skill points.
+loop
+exitwhen j>=20 or GetHeroSkillPoints(u)<=0
+set ab=LoadInteger(BOT_DB,BOT_Type[bi],ModuloInteger(j,5))
+if ab!=0 then
+call SelectHeroSkill(u,CBS_LearnId(u,ab))
+endif
+set j=j+1
+endloop
+set u=null
+endfunction
+function BOT_SpellEvent takes nothing returns nothing
+local integer bi=PId(GetOwningPlayer(GetTriggerUnit()))
+if bi<0 or bi>=10 or not BOT_Active[bi] or Hero[bi]!=GetTriggerUnit() then
+return
+endif
+set BOT_Casting[bi]=GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_CHANNEL
+if BOT_Casting[bi] then
+set BOT_Wait[bi]=BOT_Clock+4
+endif
+endfunction
+function BOT_Cast takes integer bi,unit e returns boolean
+local unit u=Hero[bi]
+local integer j=0
+local integer ab
+local integer mode
+local integer lv
+local integer order
+local ability a
+local real r
+local real hp=GetWidgetLife(u)/GetUnitMaxLife(u)
+local real distance=BOT_Distance(u,e)
+local boolean ok=false
+loop
+exitwhen j>=5 or ok
+set ab=LoadInteger(BOT_DB,BOT_Type[bi],ModuloInteger(BOT_Spell[bi]+j,5))
+set lv=GetUnitAbilityLevel(u,ab)
+if lv>0 and IsUnitAbilityVisible(u,ab) then
+set a=GetUnitAbility(u,ab)
+if a!=null and IsAbilityEnabled(a) and GetAbilityRemainingCooldown(a)<=0. and GetUnitState(u,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(ab,ABILITY_ILF_MANA_COST,lv-1) then
+set mode=LoadInteger(BOT_DB,ab,0)
+set r=LoadReal(BOT_DB,ab,1)
+set order=CBS_QcOrd(u,ab)
+if order!=0 and distance<=r then
+if mode==0 then
+set ok=IssueImmediateOrderById(u,order)
+elseif mode==1 then
+set ok=IssueTargetOrderById(u,order,e)
+elseif mode==2 then
+set ok=IssuePointOrderById(u,order,GetUnitX(e),GetUnitY(e))
+elseif mode==3 and hp<.80 then
+set ok=IssueTargetOrderById(u,order,u)
+elseif mode==4 and hp<.65 then
+set ok=IssueImmediateOrderById(u,order)
+endif
+endif
+endif
+endif
+set j=j+1
+endloop
+if ok then
+set BOT_Spell[bi]=ModuloInteger(BOT_Spell[bi]+j,5)
+set BOT_Wait[bi]=BOT_Clock+5
+endif
+set u=null
+set a=null
+return ok
+endfunction
+function BOT_Items takes integer bi,unit e returns boolean
+local integer j=0
+local integer id
+local integer ab
+local integer mode
+local item it
+local ability a
+local unit u=Hero[bi]
+local real hp=GetWidgetLife(u)/GetUnitMaxLife(u)
+local real mp=GetUnitState(u,UNIT_STATE_MANA)/RMaxBJ(1.,GetUnitState(u,UNIT_STATE_MAX_MANA))
+local real dist=99999.
+local boolean ok=false
+if e!=null then
+set dist=BOT_Distance(u,e)
+endif
+loop
+exitwhen j>=9 or ok
+set it=UnitItemInSlot(u,j)
+set id=GetItemTypeId(it)
+set ab=LoadInteger(BOT_DB,id,10)
+if ab!=0 then
+set a=GetUnitAbility(u,ab)
+set mode=LoadInteger(BOT_DB,id,11)
+if a!=null and IsAbilityEnabled(a) and GetAbilityRemainingCooldown(a)<=0. then
+if mode==0 and hp<.50 then
+set ok=UnitUseItem(u,it)
+elseif mode==1 and mp<.40 then
+set ok=UnitUseItem(u,it)
+elseif mode==2 and e!=null and dist<=LoadReal(BOT_DB,id,12) then
+set ok=UnitUseItemTarget(u,it,e)
+elseif mode==3 and e!=null and dist<=LoadReal(BOT_DB,id,12) then
+set ok=UnitUseItemPoint(u,it,GetUnitX(e),GetUnitY(e))
+elseif mode==4 and hp<.50 then
+set ok=UnitUseItemTarget(u,it,u)
+elseif mode==5 and e!=null and dist<700. then
+set ok=UnitUseItem(u,it)
+endif
+endif
+endif
+set j=j+1
+endloop
+if ok then
+set BOT_Wait[bi]=BOT_Clock+4
+endif
+set u=null
+set a=null
+set it=null
+return ok
+endfunction
+function BOT_Shop takes integer bi returns nothing
+local unit u=Hero[bi]
+local player p=PlayerV(bi)
+local integer id=SG_DefaultItem(BOT_Type[bi],BOT_Buy[bi])
+local integer cost=Sh_Cost(id)
+local integer i=0
+local integer free=0
+local integer cheap=2147483647
+local integer sell=0
+local item it
+local item replace=null
+if id==0 or not Sh_InZone(u) or not Sh_ItemAllowed(id) then
+set u=null
+set p=null
+return
+endif
+if UnitHasItemOfTypeBJCustom(u,id) then
+set BOT_Buy[bi]=BOT_Buy[bi]+1
+set u=null
+set p=null
+return
+endif
+loop
+exitwhen i>=10
+set it=UnitItemInSlot(u,i)
+if it==null then
+set free=free+1
+elseif Sh_Cost(GetItemTypeId(it))<cheap then
+set cheap=Sh_Cost(GetItemTypeId(it))
+set replace=it
+endif
+set i=i+1
+endloop
+// Replace starter boots when buying the role's upgraded boots; avoid redundant pairs.
+if BOT_Buy[bi]==4 then
+set replace=GetItemOfTypeFromUnitBJCustom(u,'I01F')
+endif
+if replace!=null and (free==0 or BOT_Buy[bi]==4) and Sh_Cost(GetItemTypeId(replace))<cost then
+set sell=Sh_Sell(GetItemTypeId(replace))
+endif
+if GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+sell>=cost and (free>0 or sell>0) then
+if sell>0 then
+call RemoveItem(replace)
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+sell)
+endif
+if Sh_Purchase(p,bi,id) then
+set BOT_Buy[bi]=BOT_Buy[bi]+1
+endif
+endif
+set it=null
+set replace=null
+set u=null
+set p=null
+endfunction
+function BOT_Move takes unit u,real x,real y returns nothing
+set x=RMaxBJ(GetRectMinX(gg_rct_Weiw)+64.,RMinBJ(GetRectMaxX(gg_rct_Weiw)-64.,x))
+set y=RMaxBJ(GetRectMinY(gg_rct_Weiw)+64.,RMinBJ(GetRectMaxY(gg_rct_Weiw)-64.,y))
+call IssuePointOrder(u,"move",x,y)
+endfunction
+function BOT_Think takes integer bi returns nothing
+local unit u=Hero[bi]
+local unit e
+local unit leader
+local real dx
+local real dy
+local real d
+local real hp
+if u==null or not UnitIsAlive(u) then
+set BOT_Casting[bi]=false
+set u=null
+return
+endif
+call BOT_Learn(bi)
+if not udg_B then
+if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
+call BOT_Shop(bi)
+endif
+set BOT_Casting[bi]=false
+set u=null
+return
+endif
+if Sh_InZone(u) or (TSE_On and TSE_PlayerStopped(PlayerV(bi))) or IsUnitPaused(u) or BOT_Casting[bi] or BOT_Wait[bi]>BOT_Clock then
+set u=null
+return
+endif
+set e=BOT_Target(bi)
+if BOT_Items(bi,e) then
+set e=null
+set u=null
+return
+endif
+set hp=GetWidgetLife(u)/GetUnitMaxLife(u)
+if BOT_Until[bi]>BOT_Clock then
+set leader=Hero[BOT_Leader[bi]]
+if BOT_Mode[bi]==3 then
+if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
+call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
+endif
+set leader=null
+set e=null
+set u=null
+return
+elseif BOT_Mode[bi]==1 and leader!=null and UnitIsAlive(leader) and BOT_Distance(u,leader)>550. then
+if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
+call BOT_Move(u,GetUnitX(leader),GetUnitY(leader))
+endif
+set leader=null
+set e=null
+set u=null
+return
+elseif BOT_Mode[bi]==4 then
+set dx=GetUnitX(u)-BOT_X[bi]
+set dy=GetUnitY(u)-BOT_Y[bi]
+if dx*dx+dy*dy>360000. then
+if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
+call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
+endif
+set leader=null
+set e=null
+set u=null
+return
+endif
+endif
+set leader=null
+endif
+if e!=null then
+set d=BOT_Distance(u,e)
+if hp<.20 and d<650. then
+if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
+set dx=GetUnitX(u)-GetUnitX(e)
+set dy=GetUnitY(u)-GetUnitY(e)
+set d=RMaxBJ(1.,d)
+call BOT_Move(u,GetUnitX(u)+dx/d*700.,GetUnitY(u)+dy/d*700.)
+endif
+elseif not BOT_Cast(bi,e) then
+if BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
+call IssueTargetOrder(u,"attack",e)
+set BOT_Attack[bi]=e
+endif
+endif
+elseif ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8) then
+if BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]>0 then
+call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
+else
+call BOT_Move(u,GetRectCenterX(gg_rct_Weiw),GetRectCenterY(gg_rct_Weiw))
+endif
+endif
+set u=null
+set e=null
+endfunction
+function BOT_Create takes integer bi returns boolean
+local integer k=0
+local integer start=GetRandomInt(0,14)
+local integer ty
+local integer ri
+local integer chosen=0
+local integer j=0
+local player p=PlayerV(bi)
+local unit u
+// Wait out hero bans/captain selection. Never create a banned/duplicate hero.
+loop
+exitwhen k>=15 or chosen!=0
+set ty=BOT_Pool[ModuloInteger(start+k,15)]
+set ri=0
+loop
+exitwhen ri>=150 or chosen!=0
+if udg_RH[ri]==ty then
+set chosen=ty
+endif
+set ri=ri+1
+endloop
+set k=k+1
+endloop
+if chosen==0 then
+set p=null
+return false
+endif
+set BOT_Type[bi]=chosen
+call SetPlayerController(p,MAP_CONTROL_COMPUTER)
+call SetPlayerName(p,"[Bot] "+GetObjectName(chosen))
+set nick[bi]=udg_Color[bi+1]+GetPlayerName(p)+"["+I2S(bi+1)+"]"
+set ingame[bi]=true
+set udg_lvl[bi]=1
+set pickon[bi]=true
+set TavernPlayerPickAllow[bi]=false
+if FFAMode then
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,4200)
+else
+call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,3200)
+endif
+loop
+exitwhen j>=10
+if j!=bi then
+call SetPlayerAlliance(p,PlayerV(j),ALLIANCE_PASSIVE,not FFAMode and TeamOfP(bi)==TeamOfP(j))
+call SetPlayerAlliance(PlayerV(j),p,ALLIANCE_PASSIVE,not FFAMode and TeamOfP(bi)==TeamOfP(j))
+call SetPlayerAlliance(p,PlayerV(j),ALLIANCE_SHARED_VISION,not FFAMode and TeamOfP(bi)==TeamOfP(j))
+call SetPlayerAlliance(PlayerV(j),p,ALLIANCE_SHARED_VISION,not FFAMode and TeamOfP(bi)==TeamOfP(j))
+endif
+set j=j+1
+endloop
+// Enter the existing selection region so IH, hero registration and setup triggers run normally.
+set u=CreateUnit(p,chosen,GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0.)
+call UnitInventorySetSize(u,10)
+set Hero[bi]=u
+set udg_Hero[bi+1]=u
+if FFAMode then
+call GroupAddUnit(udg_CG[4],u)
+else
+call GroupAddUnit(udg_CG[TeamOfP(bi)+1],u)
+endif
+call BOT_Learn(bi)
+set u=null
+set p=null
+return true
+endfunction
+function BOT_Fill takes nothing returns nothing
+local integer bi=0
+local integer made=0
+local player p
+if not BOT_Enabled or BOT_Locked or pick!=0 or cmb or (DraftOn and not DraftDone) then
+return
+endif
+loop
+exitwhen bi>=10
+set p=PlayerV(bi)
+if not BOT_Active[bi] and SlotJudge[bi]==0 and JudgeSlot[bi]==0 and not (GetPlayerController(p)==MAP_CONTROL_USER and GetPlayerSlotState(p)==PLAYER_SLOT_STATE_PLAYING) then
+// Do not reuse a departed human's hero or a judge-controlled slot.
+if Hero[bi]==null then
+set BOT_Active[bi]=true
+if BOT_Create(bi) then
+set made=made+1
+else
+set BOT_Active[bi]=false
+endif
+endif
+endif
+set bi=bi+1
+endloop
+if made>0 then
+if mbg!=null then
+call DestroyMultiboard(mbg)
+call Trig_mult_Actions()
+endif
+call UpdateMultiboard()
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Добавлены боты: ","Bots added: ")+I2S(made)+Lng(". Эмодзи: атака — цель, сбор — следовать, защита — удерживать, отступление — отойти, стоп — автономно.",". Emojis: Attack = focus, Group Up = follow, Defend = hold, Retreat = fall back, Stop = autonomous."))
+endif
+set p=null
+endfunction
+function BOT_Command takes nothing returns nothing
+local player p=GetTriggerPlayer()
+local integer bi=0
+// The first live human slot is the host for this command, including games without red.
+loop
+exitwhen bi>=10 or (GetPlayerController(PlayerV(bi))==MAP_CONTROL_USER and GetPlayerSlotState(PlayerV(bi))==PLAYER_SLOT_STATE_PLAYING)
+set bi=bi+1
+endloop
+if bi>=10 or p!=PlayerV(bi) then
+call DisplayTimedTextToPlayer(p,0,0,4,Lng("Команда ботов доступна первому активному игроку.","The first active player can enable bots."))
+elseif BOT_Locked or round>1 or udg_B then
+call DisplayTimedTextToPlayer(p,0,0,4,Lng("Ботов можно включить только до первого раунда.","Bots can only be enabled before the first round."))
+else
+set BOT_Enabled=true
+call BOT_Fill()
+if pick!=0 or cmb or (DraftOn and not DraftDone) then
+call DisplayTimedTextToPlayer(p,0,0,5,Lng("Боты включены. Свободные слоты заполнятся после выбора героев.","Bots enabled. Empty slots will be filled after hero selection."))
+endif
+endif
+set p=null
+endfunction
+function BOT_EmojiSync takes nothing returns nothing
+local player p=GetTriggerSyncPlayer()
+local integer owner=PId(p)
+local string data=GetTriggerSyncData()
+local integer mode=S2I(CBS_Tok(data,0))
+local real x=S2R(CBS_Tok(data,1))
+local real y=S2R(CBS_Tok(data,2))
+local integer bi=0
+if not BOT_Enabled or owner<0 or owner>=10 or Hero[owner]==null or GetPlayerController(p)!=MAP_CONTROL_USER or not UnitIsAlive(Hero[owner]) or not udg_B or mode<0 or mode>4 or BOT_EmoteWait[owner]>BOT_Clock then
+set p=null
+return
+endif
+if x<GetRectMinX(gg_rct_Weiw) or x>GetRectMaxX(gg_rct_Weiw) or y<GetRectMinY(gg_rct_Weiw) or y>GetRectMaxY(gg_rct_Weiw) then
+set p=null
+return
+endif
+set BOT_EmoteWait[owner]=BOT_Clock+8
+loop
+exitwhen bi>=10
+if BOT_Active[bi] and IsPlayerAlly(PlayerV(bi),p) and PlayerV(bi)!=p then
+set BOT_Mode[bi]=mode
+set BOT_X[bi]=x
+set BOT_Y[bi]=y
+set BOT_Leader[bi]=owner
+set BOT_Until[bi]=BOT_Clock+60
+set BOT_Attack[bi]=null
+endif
+set bi=bi+1
+endloop
+set p=null
+endfunction
+function BOT_Alliances takes nothing returns nothing
+local integer bi=0
+local integer j
+local integer mode=0
+local boolean changed=false
+local boolean ally
+if FFAMode then
+set mode=1
+endif
+if mode!=BOT_AllianceMode then
+set changed=true
+set BOT_AllianceMode=mode
+endif
+loop
+exitwhen bi>=10
+if BOT_TeamCache[bi]!=TeamOfP(bi) then
+set changed=true
+set BOT_TeamCache[bi]=TeamOfP(bi)
+endif
+set bi=bi+1
+endloop
+if not changed then
+return
+endif
+set bi=0
+loop
+exitwhen bi>=10
+if BOT_Active[bi] then
+set j=0
+loop
+exitwhen j>=10
+if bi!=j then
+set ally=not FFAMode and TeamOfP(bi)==TeamOfP(j)
+call SetPlayerAlliance(PlayerV(bi),PlayerV(j),ALLIANCE_PASSIVE,ally)
+call SetPlayerAlliance(PlayerV(j),PlayerV(bi),ALLIANCE_PASSIVE,ally)
+call SetPlayerAlliance(PlayerV(bi),PlayerV(j),ALLIANCE_SHARED_VISION,ally)
+call SetPlayerAlliance(PlayerV(j),PlayerV(bi),ALLIANCE_SHARED_VISION,ally)
+endif
+set j=j+1
+endloop
+call GroupRemoveUnit(udg_CG[1],Hero[bi])
+call GroupRemoveUnit(udg_CG[2],Hero[bi])
+call GroupRemoveUnit(udg_CG[4],Hero[bi])
+if FFAMode then
+call GroupAddUnit(udg_CG[4],Hero[bi])
+else
+call GroupAddUnit(udg_CG[TeamOfP(bi)+1],Hero[bi])
+endif
+endif
+set bi=bi+1
+endloop
+endfunction
+
+function BOT_Tick takes nothing returns nothing
+local integer bi=0
+set BOT_Clock=BOT_Clock+1
+if not BOT_Enabled then
+return
+endif
+if ModuloInteger(BOT_Clock,4)==0 then
+call BOT_Alliances()
+endif
+if not BOT_Locked and ModuloInteger(BOT_Clock,4)==0 then
+call BOT_Fill()
+endif
+loop
+exitwhen bi>=10
+if BOT_Active[bi] then
+call BOT_Think(bi)
+endif
+set bi=bi+1
+endloop
+endfunction
+function BOT_Init takes nothing returns nothing
+local trigger chat=CreateTrigger()
+local trigger sync=CreateTrigger()
+local trigger spell=CreateTrigger()
+local integer bi=0
+call SG_DataInit()
+call BOT_Data()
+loop
+exitwhen bi>=12
+call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-bots",true)
+call TriggerRegisterPlayerSyncEvent(sync,Player(bi),"BEMT",false)
+call TriggerRegisterPlayerUnitEvent(spell,Player(bi),EVENT_PLAYER_UNIT_SPELL_CHANNEL,null)
+call TriggerRegisterPlayerUnitEvent(spell,Player(bi),EVENT_PLAYER_UNIT_SPELL_ENDCAST,null)
+set bi=bi+1
+endloop
+call TriggerAddAction(chat,function BOT_Command)
+call TriggerAddAction(sync,function BOT_EmojiSync)
+call TriggerAddAction(spell,function BOT_SpellEvent)
+call TimerStart(CreateTimer(),0.25,true,function BOT_Tick)
+set chat=null
+set sync=null
+set spell=null
+endfunction
+
 function main takes nothing returns nothing
 call SetCameraBounds( -5376.0 + GetCameraMargin(CAMERA_MARGIN_LEFT), -7808.0 + GetCameraMargin(CAMERA_MARGIN_BOTTOM), 18304.0 - GetCameraMargin(CAMERA_MARGIN_RIGHT), 7552.0 - GetCameraMargin(CAMERA_MARGIN_TOP), -5376.0 + GetCameraMargin(CAMERA_MARGIN_LEFT), 7552.0 - GetCameraMargin(CAMERA_MARGIN_TOP), 18304.0 - GetCameraMargin(CAMERA_MARGIN_RIGHT), -7808.0 + GetCameraMargin(CAMERA_MARGIN_BOTTOM) )
 call SetDayNightModels("Environment\\DNC\\DNCLordaeron\\DNCLordaeronTerrain\\DNCLordaeronTerrain.mdl","Environment\\DNC\\DNCLordaeron\\DNCLordaeronUnit\\DNCLordaeronUnit.mdl")
