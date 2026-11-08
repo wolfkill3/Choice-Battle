@@ -4,3 +4,20 @@ Frame "BACKDROP" "ChoiceGuidePurchaseBackdrop" {
     BackdropBlendAll,
     BackdropBackgroundInsets 0.0 0.0 0.0 0.0,
 }
+
+// Small border and explicit font: the stock editbox's border consumes this short field.
+Frame "EDITBOX" "ChoiceGuideSearch" {
+    Height 0.026,
+    EditBorderSize 0.003,
+    EditCursorColor 1.0 1.0 1.0,
+    FrameFont "Fonts\FRIZQT__.TTF", 0.008, "",
+    ControlBackdrop "ChoiceGuideSearchBackdrop",
+    Frame "BACKDROP" "ChoiceGuideSearchBackdrop" {
+        BackdropBackground "TooltipLessVisible.blp",
+        BackdropBlendAll,
+        BackdropBackgroundInsets 0.003 0.003 0.003 0.003,
+        BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+        BackdropCornerSize 0.004,
+        BackdropEdgeFile "Choice-tooltip-border.blp",
+    }
+}

@@ -1,5 +1,6 @@
 ﻿//W3x2lni Data: 2021-11-04 17:40:09.089
 globals
+string SG_ItemQuery=""
 string SG_Notice=""
 framehandle SG_SavePath=null
 boolean SG_ItemPicker=false
@@ -269204,8 +269205,15 @@ local integer epIndex=0
 local integer epMatch=0
 local integer epRow=0
 local integer epId
-local string epQuery=StringCase(BlzFrameGetText(SG_ItemSearch),false)
+local string epQuery=SG_ItemQuery
 local string epName
+if SG_ItemPoolN<=0 then
+call ExecuteFunc("SG_ItemPoolInit")
+endif
+if epQuery==null then
+set epQuery=""
+endif
+set epQuery=StringCase(epQuery,false)
 loop
 exitwhen epRow>=6
 set SG_ItemShown[epRow]=0
@@ -269242,10 +269250,17 @@ endif
 set epIndex=epIndex+1
 endloop
 call BlzFrameSetText(SG_Hint,Lng("Выберите предмет. Этап: ","Choose an item. Stage: ")+SG_PhaseName(SG_EditPhase)+Lng(". Страница ",". Page ")+I2S(SG_ItemPage+1))
+if epMatch==0 then
+call BlzFrameSetText(SG_Hint,Lng("Ничего не найдено. Измените или очистите поиск.","No items found. Change or clear the search."))
+endif
 endfunction
 function SG_SearchChanged takes nothing returns nothing
 if TrigP()!=GetLocalPlayer() then
 return
+endif
+set SG_ItemQuery=BlzGetTriggerFrameText()
+if SG_ItemQuery==null then
+set SG_ItemQuery=""
 endif
 set SG_ItemPage=0
 set SG_Notice=""
@@ -269305,7 +269320,7 @@ local integer edId
 local integer edTotal=StringLength(SG_List())/4
 local integer edLeft=SG_PhaseCount(0)+SG_PhaseCount(1)
 local integer edRight=SG_PhaseCount(2)+SG_PhaseCount(3)
-local real edPitch=RMinBJ(.0165,.1485/I2R(IMaxBJ(9,IMaxBJ(edLeft,edRight))))
+local real edPitch=RMinBJ(.016,.144/I2R(IMaxBJ(9,IMaxBJ(edLeft,edRight))))
 local real edIcon=RMinBJ(.015,edPitch-.001)
 local real edX
 local real edY
@@ -269403,6 +269418,11 @@ call BlzFrameSetText(SG_NameBox,SG_ModeName(SG_Mode))
 call BlzFrameSetEnable(SG_NameBox,SG_Mode<0)
 call BlzFrameSetVisible(SG_NameBox,SG_Mode<0 and not erPicker)
 call BlzFrameSetVisible(SG_ItemSearch,SG_ItemPicker)
+if SG_ItemPicker then
+call BlzFrameSetLevel(SG_ItemSearch,8)
+else
+call BlzFrameSetFocus(SG_ItemSearch,false)
+endif
 call BlzFrameSetVisible(SG_ItemSearchLabel,SG_ItemPicker)
 call BlzFrameSetVisible(SG_PagePrev,erPicker)
 call BlzFrameSetVisible(SG_PageNext,erPicker)
@@ -269521,6 +269541,7 @@ set SG_ItemPicker=true
 set SG_HeroPicker=false
 set SG_Picker=false
 set SG_ItemPage=0
+set SG_ItemQuery=""
 call BlzFrameSetText(SG_ItemSearch,"")
 endif
 elseif ecTag==6 then
@@ -269617,7 +269638,11 @@ local framehandle sgbBg
 local framehandle sgb=BlzCreateFrameByType("BUTTON","SGButton",sgbParent,"",0)
 call BlzFrameSetAbsPoint(sgb,FRAMEPOINT_CENTER,sgbX,sgbY)
 call BlzFrameSetSize(sgb,sgbW,0.026)
-if sgbTag==13 or sgbTag==14 then
+if sgbTag==5 or sgbTag==18 or sgbTag==6 or sgbTag==9 or sgbTag==15 or sgbTag==16 then
+call BlzFrameSetSize(sgb,sgbW,0.020)
+elseif sgbTag==1 then
+call BlzFrameSetSize(sgb,sgbW,0.020)
+elseif sgbTag==13 or sgbTag==14 then
 call BlzFrameSetSize(sgb,0.020,0.020)
 elseif sgbTag==17 or sgbTag==2 or sgbTag==7 or sgbTag==8 or sgbTag==15 or sgbTag==16 then
 call BlzFrameSetSize(sgb,sgbW,0.022)
@@ -269640,6 +269665,139 @@ set sgbBg=null
 set sgbLabel=null
 return sgb
 endfunction
+function SG_ItemPoolInit takes nothing returns nothing
+set SG_ItemPool[0]='I01W'
+set SG_ItemPool[1]='I01H'
+set SG_ItemPool[2]='I008'
+set SG_ItemPool[3]='I01F'
+set SG_ItemPool[4]='I01M'
+set SG_ItemPool[5]='I04H'
+set SG_ItemPool[6]='I12R'
+set SG_ItemPool[7]='ISPB'
+set SG_ItemPool[8]='I02S'
+set SG_ItemPool[9]='I02R'
+set SG_ItemPool[10]='I02T'
+set SG_ItemPool[11]='IGlA'
+set SG_ItemPool[12]='ISlA'
+set SG_ItemPool[13]='ISt0'
+set SG_ItemPool[14]='IMT0'
+set SG_ItemPool[15]='INY0'
+set SG_ItemPool[16]='IMS0'
+set SG_ItemPool[17]='I01O'
+set SG_ItemPool[18]='I01Q'
+set SG_ItemPool[19]='I01S'
+set SG_ItemPool[20]='I01U'
+set SG_ItemPool[21]='I02V'
+set SG_ItemPool[22]='I020'
+set SG_ItemPool[23]='I04F'
+set SG_ItemPool[24]='I03O'
+set SG_ItemPool[25]='I031'
+set SG_ItemPool[26]='ISDi'
+set SG_ItemPool[27]='I050'
+set SG_ItemPool[28]='IBSI'
+set SG_ItemPool[29]='IPRB'
+set SG_ItemPool[30]='I02Y'
+set SG_ItemPool[31]='I040'
+set SG_ItemPool[32]='I042'
+set SG_ItemPool[33]='I03L'
+set SG_ItemPool[34]='I03F'
+set SG_ItemPool[35]='I03A'
+set SG_ItemPool[36]='I037'
+set SG_ItemPool[37]='I048'
+set SG_ItemPool[38]='I04G'
+set SG_ItemPool[39]='ISHk'
+set SG_ItemPool[40]='IHnK'
+set SG_ItemPool[41]='I046'
+set SG_ItemPool[42]='I054'
+set SG_ItemPool[43]='I02W'
+set SG_ItemPool[44]='I044'
+set SG_ItemPool[45]='I03P'
+set SG_ItemPool[46]='I03Q'
+set SG_ItemPool[47]='I03R'
+set SG_ItemPool[48]='I043'
+set SG_ItemPool[49]='I04L'
+set SG_ItemPool[50]='I04T'
+set SG_ItemPool[51]='I04V'
+set SG_ItemPool[52]='I06W'
+set SG_ItemPool[53]='IGDi'
+set SG_ItemPool[54]='I036'
+set SG_ItemPool[55]='I13R'
+set SG_ItemPool[56]='I06E'
+set SG_ItemPool[57]='I04I'
+set SG_ItemPool[58]='I066'
+set SG_ItemPool[59]='IMDi'
+set SG_ItemPool[60]='IAoF'
+set SG_ItemPool[61]='IAS0'
+set SG_ItemPool[62]='I068'
+set SG_ItemPool[63]='I06O'
+set SG_ItemPool[64]='IHYi'
+set SG_ItemPool[65]='I06Q'
+set SG_ItemPool[66]='I06R'
+set SG_ItemPool[67]='I06J'
+set SG_ItemPool[68]='ISTi'
+set SG_ItemPool[69]='I1S4'
+set SG_ItemPool[70]='IPlA'
+set SG_ItemPool[71]='IBBi'
+set SG_ItemPool[72]='I02L'
+set SG_ItemPool[73]='I02E'
+set SG_ItemPool[74]='I019'
+set SG_ItemPool[75]='I013'
+set SG_ItemPool[76]='I00X'
+set SG_ItemPool[77]='I00R'
+set SG_ItemPool[78]='I00L'
+set SG_ItemPool[79]='I00F'
+set SG_ItemPool[80]='I007'
+set SG_ItemPool[81]='I049'
+set SG_ItemPool[82]='I04M'
+set SG_ItemPool[83]='I056'
+set SG_ItemPool[84]='I05C'
+set SG_ItemPool[85]='I05I'
+set SG_ItemPool[86]='I05O'
+set SG_ItemPool[87]='I05U'
+set SG_ItemPool[88]='I060'
+set SG_ItemPool[89]='I018'
+set SG_ItemPool[90]='I012'
+set SG_ItemPool[91]='I01E'
+set SG_ItemPool[92]='I00Q'
+set SG_ItemPool[93]='I00D'
+set SG_ItemPool[94]='I00K'
+set SG_ItemPool[95]='I00W'
+set SG_ItemPool[96]='I04E'
+set SG_ItemPool[97]='I02Q'
+set SG_ItemPool[98]='I02J'
+set SG_ItemPool[99]='I04R'
+set SG_ItemPool[100]='I05B'
+set SG_ItemPool[101]='I05H'
+set SG_ItemPool[102]='I05N'
+set SG_ItemPool[103]='I05T'
+set SG_ItemPool[104]='I05Z'
+set SG_ItemPool[105]='I065'
+set SG_ItemPool[106]='I06G'
+set SG_ItemPool[107]='I06F'
+set SG_ItemPool[108]='I06H'
+set SG_ItemPool[109]='I06I'
+set SG_ItemPool[110]='I03C'
+set SG_ItemPool[111]='I03E'
+set SG_ItemPool[112]='I03B'
+set SG_ItemPool[113]='I03D'
+set SG_ItemPool[114]='I03W'
+set SG_ItemPool[115]='I03X'
+set SG_ItemPool[116]='I03Z'
+set SG_ItemPool[117]='I03Y'
+set SG_ItemPool[118]='I032'
+set SG_ItemPool[119]='I033'
+set SG_ItemPool[120]='I035'
+set SG_ItemPool[121]='I034'
+set SG_ItemPool[122]='I06K'
+set SG_ItemPool[123]='I06L'
+set SG_ItemPool[124]='I06M'
+set SG_ItemPool[125]='I06N'
+set SG_ItemPool[126]='IOS1'
+set SG_ItemPool[127]='IOS2'
+set SG_ItemPool[128]='IOS3'
+set SG_ItemPool[129]='IOS4'
+set SG_ItemPoolN=130
+endfunction
 function SG_Build takes nothing returns nothing
 local integer sgbI=0
 local framehandle sgb
@@ -269650,6 +269808,7 @@ local trigger seRelease=CreateTrigger()
 local integer sePlayer=0
 call BlzLoadTOCFile("UI\\ChoiceGuides\\Buttons.toc")
 call SG_DataInit()
+call ExecuteFunc("SG_ItemPoolInit")
 set SG_Roster[0]='H00I'
 set SG_Roster[1]='H00E'
 set SG_Roster[2]='H00A'
@@ -269805,10 +269964,10 @@ endloop
 call TriggerAddAction(seRelease,function SG_DragDrop)
 set SG_Trg=CreateTrigger()
 call TriggerAddAction(SG_Trg,function SG_Click)
-set SG_OpenButton=SG_Button(ShMain,1,Lng("Гайды закупки","Item guides"),0.31,0.548,0.15)
+set SG_OpenButton=SG_Button(ShMain,1,Lng("Гайды закупки","Item guides"),0.31,0.536,0.15)
 set SG_Panel=BlzCreateFrameByType("BACKDROP","SGPanel",ShMain,"",0)
-call BlzFrameSetAbsPoint(SG_Panel,FRAMEPOINT_CENTER,0.308,0.348)
-call BlzFrameSetSize(SG_Panel,0.32,0.360)
+call BlzFrameSetAbsPoint(SG_Panel,FRAMEPOINT_CENTER,0.308,0.355)
+call BlzFrameSetSize(SG_Panel,0.32,0.346)
 call BlzFrameSetTexture(SG_Panel,"TooltipLessVisible.blp",0,true)
 call SetFrameBackdropTexture(SG_Panel,0,"TooltipLessVisible.blp",true,true,"Choice-tooltip-border.blp",BORDER_FLAG_ALL,false)
 call SetFrameBorderEnabled(SG_Panel,0,true)
@@ -269844,22 +270003,23 @@ call BlzFrameSetEnable(SG_Text[sgbI],false)
 set sgbI=sgbI+1
 endloop
 set SG_Hint=BlzCreateFrameByType("TEXT","SGHint",SG_Panel,"",0)
-call BlzFrameSetAbsPoint(SG_Hint,FRAMEPOINT_CENTER,0.308,0.252)
-call BlzFrameSetSize(SG_Hint,0.298,0.016)
+call BlzFrameSetAbsPoint(SG_Hint,FRAMEPOINT_CENTER,0.308,0.255)
+call BlzFrameSetSize(SG_Hint,0.298,0.014)
 call BlzFrameSetFont(SG_Hint,"Fonts\\FRIZQT__.TTF",0.0075,0)
-set SG_EditButton[0]=SG_Button(SG_Panel,5,Lng("Добавить предмет","Add item"),0.208,0.229,0.1)
-set SG_EditButton[1]=SG_Button(SG_Panel,18,Lng("Заменить","Replace"),0.304,0.229,0.08)
-set SG_EditButton[2]=SG_Button(SG_Panel,6,Lng("Удалить","Remove"),0.381,0.229,0.066)
-set SG_EditButton[3]=SG_Button(SG_Panel,9,Lng("Очистить","Clear"),0.444,0.229,0.056)
-set SG_EditButton[4]=SG_Button(SG_Panel,99,"",0.308,0.229,0.01)
+set SG_EditButton[0]=SG_Button(SG_Panel,5,Lng("Добавить предмет","Add item"),0.208,0.235,0.1)
+set SG_EditButton[1]=SG_Button(SG_Panel,18,Lng("Заменить","Replace"),0.304,0.235,0.08)
+set SG_EditButton[2]=SG_Button(SG_Panel,6,Lng("Удалить","Remove"),0.381,0.235,0.066)
+set SG_EditButton[3]=SG_Button(SG_Panel,9,Lng("Очистить","Clear"),0.444,0.235,0.056)
+set SG_EditButton[4]=SG_Button(SG_Panel,99,"",0.308,0.235,0.01)
 call BlzFrameSetVisible(SG_EditButton[4],false)
 set SG_PagePrev=SG_Button(SG_Panel,15,Lng("< Назад","< Previous"),0.233,0.246,0.14)
 set SG_PageNext=SG_Button(SG_Panel,16,Lng("Далее >","Next >"),0.383,0.246,0.14)
 call BlzFrameSetVisible(SG_PagePrev,false)
 call BlzFrameSetVisible(SG_PageNext,false)
-set SG_NameBox=BlzCreateFrameByType("EDITBOX","SGName",SG_Panel,"EscMenuEditBoxTemplate",0)
-call BlzFrameSetAbsPoint(SG_NameBox,FRAMEPOINT_CENTER,0.308,0.204)
-call BlzFrameSetSize(SG_NameBox,0.296,0.018)
+set SG_NameBox=BlzCreateFrame("ChoiceGuideSearch",SG_Panel,0,0)
+call BlzFrameSetAbsPoint(SG_NameBox,FRAMEPOINT_CENTER,0.308,0.210)
+call BlzFrameSetSize(SG_NameBox,0.296,0.022)
+call BlzFrameSetLevel(SG_NameBox,8)
 call BlzFrameSetFont(SG_NameBox,"Fonts\\FRIZQT__.TTF",0.0075,0)
 call BlzFrameSetTextSizeLimit(SG_NameBox,80)
 call BlzTriggerRegisterFrameEvent(sgt,SG_NameBox,FRAMEEVENT_EDITBOX_ENTER)
@@ -269867,14 +270027,17 @@ call TriggerAddAction(sgt,function SG_NameEnter)
 call BlzTriggerRegisterFrameEvent(seName,SG_NameBox,FRAMEEVENT_EDITBOX_TEXT_CHANGED)
 call TriggerAddAction(seName,function SG_NameChanged)
 set SG_SavePath=BlzCreateFrameByType("TEXT","SGSavePath",SG_Panel,"",0)
-call BlzFrameSetAbsPoint(SG_SavePath,FRAMEPOINT_CENTER,.308,.184)
-call BlzFrameSetSize(SG_SavePath,.298,.018)
+call BlzFrameSetAbsPoint(SG_SavePath,FRAMEPOINT_CENTER,.308,.190)
+call BlzFrameSetSize(SG_SavePath,.298,.014)
 call BlzFrameSetFont(SG_SavePath,"Fonts\\FRIZQT__.TTF",.0065,0)
 call SetFrameTextAlignment(SG_SavePath,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_LEFT)
 call BlzFrameSetEnable(SG_SavePath,false)
-set SG_ItemSearch=BlzCreateFrameByType("EDITBOX","SGItemSearch",SG_Panel,"EscMenuEditBoxTemplate",0)
+set SG_ItemSearch=BlzCreateFrame("ChoiceGuideSearch",SG_Panel,0,0)
 call BlzFrameSetAbsPoint(SG_ItemSearch,FRAMEPOINT_CENTER,.334,.412)
-call BlzFrameSetSize(SG_ItemSearch,.232,.022)
+call BlzFrameSetSize(SG_ItemSearch,.232,.026)
+call BlzFrameSetLevel(SG_ItemSearch,8)
+call BlzFrameSetEnable(SG_ItemSearch,true)
+call BlzFrameSetText(SG_ItemSearch,"")
 call BlzFrameSetFont(SG_ItemSearch,"Fonts\\FRIZQT__.TTF",.0075,0)
 call BlzFrameSetTextSizeLimit(SG_ItemSearch,60)
 call BlzTriggerRegisterFrameEvent(seSearch,SG_ItemSearch,FRAMEEVENT_EDITBOX_TEXT_CHANGED)
@@ -269935,137 +270098,7 @@ call SetFrameTextAlignment(SG_AllText[sgbI],TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_LEF
 call BlzFrameSetEnable(SG_AllText[sgbI],false)
 set sgbI=sgbI+1
 endloop
-set SG_ItemPool[0]='I01W'
-set SG_ItemPool[1]='I01H'
-set SG_ItemPool[2]='I008'
-set SG_ItemPool[3]='I01F'
-set SG_ItemPool[4]='I01M'
-set SG_ItemPool[5]='I04H'
-set SG_ItemPool[6]='I12R'
-set SG_ItemPool[7]='ISPB'
-set SG_ItemPool[8]='I02S'
-set SG_ItemPool[9]='I02R'
-set SG_ItemPool[10]='I02T'
-set SG_ItemPool[11]='IGlA'
-set SG_ItemPool[12]='ISlA'
-set SG_ItemPool[13]='ISt0'
-set SG_ItemPool[14]='IMT0'
-set SG_ItemPool[15]='INY0'
-set SG_ItemPool[16]='IMS0'
-set SG_ItemPool[17]='I01O'
-set SG_ItemPool[18]='I01Q'
-set SG_ItemPool[19]='I01S'
-set SG_ItemPool[20]='I01U'
-set SG_ItemPool[21]='I02V'
-set SG_ItemPool[22]='I020'
-set SG_ItemPool[23]='I04F'
-set SG_ItemPool[24]='I03O'
-set SG_ItemPool[25]='I031'
-set SG_ItemPool[26]='ISDi'
-set SG_ItemPool[27]='I050'
-set SG_ItemPool[28]='IBSI'
-set SG_ItemPool[29]='IPRB'
-set SG_ItemPool[30]='I02Y'
-set SG_ItemPool[31]='I040'
-set SG_ItemPool[32]='I042'
-set SG_ItemPool[33]='I03L'
-set SG_ItemPool[34]='I03F'
-set SG_ItemPool[35]='I03A'
-set SG_ItemPool[36]='I037'
-set SG_ItemPool[37]='I048'
-set SG_ItemPool[38]='I04G'
-set SG_ItemPool[39]='ISHk'
-set SG_ItemPool[40]='IHnK'
-set SG_ItemPool[41]='I046'
-set SG_ItemPool[42]='I054'
-set SG_ItemPool[43]='I02W'
-set SG_ItemPool[44]='I044'
-set SG_ItemPool[45]='I03P'
-set SG_ItemPool[46]='I03Q'
-set SG_ItemPool[47]='I03R'
-set SG_ItemPool[48]='I043'
-set SG_ItemPool[49]='I04L'
-set SG_ItemPool[50]='I04T'
-set SG_ItemPool[51]='I04V'
-set SG_ItemPool[52]='I06W'
-set SG_ItemPool[53]='IGDi'
-set SG_ItemPool[54]='I036'
-set SG_ItemPool[55]='I13R'
-set SG_ItemPool[56]='I06E'
-set SG_ItemPool[57]='I04I'
-set SG_ItemPool[58]='I066'
-set SG_ItemPool[59]='IMDi'
-set SG_ItemPool[60]='IAoF'
-set SG_ItemPool[61]='IAS0'
-set SG_ItemPool[62]='I068'
-set SG_ItemPool[63]='I06O'
-set SG_ItemPool[64]='IHYi'
-set SG_ItemPool[65]='I06Q'
-set SG_ItemPool[66]='I06R'
-set SG_ItemPool[67]='I06J'
-set SG_ItemPool[68]='ISTi'
-set SG_ItemPool[69]='I1S4'
-set SG_ItemPool[70]='IPlA'
-set SG_ItemPool[71]='IBBi'
-set SG_ItemPool[72]='I02L'
-set SG_ItemPool[73]='I02E'
-set SG_ItemPool[74]='I019'
-set SG_ItemPool[75]='I013'
-set SG_ItemPool[76]='I00X'
-set SG_ItemPool[77]='I00R'
-set SG_ItemPool[78]='I00L'
-set SG_ItemPool[79]='I00F'
-set SG_ItemPool[80]='I007'
-set SG_ItemPool[81]='I049'
-set SG_ItemPool[82]='I04M'
-set SG_ItemPool[83]='I056'
-set SG_ItemPool[84]='I05C'
-set SG_ItemPool[85]='I05I'
-set SG_ItemPool[86]='I05O'
-set SG_ItemPool[87]='I05U'
-set SG_ItemPool[88]='I060'
-set SG_ItemPool[89]='I018'
-set SG_ItemPool[90]='I012'
-set SG_ItemPool[91]='I01E'
-set SG_ItemPool[92]='I00Q'
-set SG_ItemPool[93]='I00D'
-set SG_ItemPool[94]='I00K'
-set SG_ItemPool[95]='I00W'
-set SG_ItemPool[96]='I04E'
-set SG_ItemPool[97]='I02Q'
-set SG_ItemPool[98]='I02J'
-set SG_ItemPool[99]='I04R'
-set SG_ItemPool[100]='I05B'
-set SG_ItemPool[101]='I05H'
-set SG_ItemPool[102]='I05N'
-set SG_ItemPool[103]='I05T'
-set SG_ItemPool[104]='I05Z'
-set SG_ItemPool[105]='I065'
-set SG_ItemPool[106]='I06G'
-set SG_ItemPool[107]='I06F'
-set SG_ItemPool[108]='I06H'
-set SG_ItemPool[109]='I06I'
-set SG_ItemPool[110]='I03C'
-set SG_ItemPool[111]='I03E'
-set SG_ItemPool[112]='I03B'
-set SG_ItemPool[113]='I03D'
-set SG_ItemPool[114]='I03W'
-set SG_ItemPool[115]='I03X'
-set SG_ItemPool[116]='I03Z'
-set SG_ItemPool[117]='I03Y'
-set SG_ItemPool[118]='I032'
-set SG_ItemPool[119]='I033'
-set SG_ItemPool[120]='I035'
-set SG_ItemPool[121]='I034'
-set SG_ItemPool[122]='I06K'
-set SG_ItemPool[123]='I06L'
-set SG_ItemPool[124]='I06M'
-set SG_ItemPool[125]='I06N'
-set SG_ItemPool[126]='IOS1'
-set SG_ItemPool[127]='IOS2'
-set SG_ItemPool[128]='IOS3'
-set SG_ItemPool[129]='IOS4'
-set SG_ItemPoolN=130
+
 // Hide after all children exist: late-created children otherwise leak over the tavern.
 call BlzFrameSetVisible(SG_Panel,false)
 call BlzFrameSetVisible(SG_OpenButton,false)
@@ -270447,7 +270480,7 @@ call TriggerAddAction(ShTrgSync,function Sh_Sync)
 
 call BlzFrameSetVisible(ShMain,false)
 call TSE_TimerStart(CreateTimer(),0.4,true,function Sh_Tick)
-call SG_Build()
+call ExecuteFunc("SG_Build")
 set gameUI=null
 endfunction
 
@@ -309570,6 +309603,11 @@ endif
 endif
 set j=j+1
 endloop
+if best!=null then
+call SaveReal(BOT_DB,bi,100,GetUnitX(best))
+call SaveReal(BOT_DB,bi,101,GetUnitY(best))
+call SaveInteger(BOT_DB,bi,102,BOT_Clock+32)
+endif
 set u=null
 set e=null
 return best
@@ -310356,11 +310394,63 @@ set bfUnit=null
 set bfAbility=null
 return bfOK
 endfunction
+function BOT_Patrol takes integer bpPlayer returns nothing
+local unit bpUnit=Hero[bpPlayer]
+local rect bpZone=Bof_Zone(GetUnitX(bpUnit),GetUnitY(bpUnit))
+local integer bpStep=LoadInteger(BOT_DB,bpPlayer,104)
+local integer bpPoint
+local real bpX=LoadReal(BOT_DB,bpPlayer,100)
+local real bpY=LoadReal(BOT_DB,bpPlayer,101)
+local real bpDX=GetUnitX(bpUnit)-bpX
+local real bpDY=GetUnitY(bpUnit)-bpY
+local real bpWidth=GetRectMaxX(bpZone)-GetRectMinX(bpZone)
+local real bpHeight=GetRectMaxY(bpZone)-GetRectMinY(bpZone)
+set BOT_Attack[bpPlayer]=null
+if LoadInteger(BOT_DB,bpPlayer,102)>BOT_Clock and Bof_InZone(bpZone,bpX,bpY,0.) and bpDX*bpDX+bpDY*bpDY>62500. then
+call BOT_Move(bpUnit,bpX,bpY)
+else
+call SaveInteger(BOT_DB,bpPlayer,102,0)
+set bpDX=GetUnitX(bpUnit)-LoadReal(BOT_DB,bpPlayer,106)
+set bpDY=GetUnitY(bpUnit)-LoadReal(BOT_DB,bpPlayer,107)
+if not HaveSavedInteger(BOT_DB,bpPlayer,105) or bpDX*bpDX+bpDY*bpDY>4096. then
+call SaveInteger(BOT_DB,bpPlayer,105,BOT_Clock)
+call SaveReal(BOT_DB,bpPlayer,106,GetUnitX(bpUnit))
+call SaveReal(BOT_DB,bpPlayer,107,GetUnitY(bpUnit))
+elseif BOT_Clock-LoadInteger(BOT_DB,bpPlayer,105)>=24 then
+set bpStep=bpStep+1
+call SaveInteger(BOT_DB,bpPlayer,105,BOT_Clock)
+endif
+set bpPoint=ModuloInteger(bpStep+bpPlayer*3,8)
+if bpPoint==0 or bpPoint==6 or bpPoint==7 then
+set bpX=GetRectMinX(bpZone)+bpWidth*.20
+elseif bpPoint==1 or bpPoint==5 then
+set bpX=GetRectCenterX(bpZone)
+else
+set bpX=GetRectMinX(bpZone)+bpWidth*.80
+endif
+if bpPoint<=2 then
+set bpY=GetRectMinY(bpZone)+bpHeight*.20
+elseif bpPoint==3 or bpPoint==7 then
+set bpY=GetRectCenterY(bpZone)
+else
+set bpY=GetRectMinY(bpZone)+bpHeight*.80
+endif
+set bpDX=GetUnitX(bpUnit)-bpX
+set bpDY=GetUnitY(bpUnit)-bpY
+if bpDX*bpDX+bpDY*bpDY<=90000. then
+set bpStep=bpStep+1
+else
+call BOT_Move(bpUnit,bpX,bpY)
+endif
+call SaveInteger(BOT_DB,bpPlayer,104,bpStep)
+endif
+set bpZone=null
+set bpUnit=null
+endfunction
 function BOT_Think takes integer bi returns nothing
 local unit u=Hero[bi]
 local unit e
 local unit leader
-local rect btZone
 local real dx
 local real dy
 local real botTargetDistance
@@ -310466,11 +310556,16 @@ endif
 endif
 elseif ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8) then
 if BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]>0 then
-call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
+set dx=GetUnitX(u)-BOT_X[bi]
+set dy=GetUnitY(u)-BOT_Y[bi]
+if BOT_Mode[bi]==2 and dx*dx+dy*dy<=122500. then
+set BOT_Until[bi]=0
+call BOT_Patrol(bi)
 else
-set btZone=Bof_Zone(GetUnitX(u),GetUnitY(u))
-call BOT_Move(u,GetRectCenterX(btZone),GetRectCenterY(btZone))
-set btZone=null
+call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
+endif
+else
+call BOT_Patrol(bi)
 endif
 endif
 set u=null
@@ -310698,6 +310793,7 @@ set BOT_EmoteWait[owner]=BOT_Clock+8
 loop
 exitwhen bi>=10
 if BOT_Active[bi] and IsPlayerAlly(PlayerV(bi),p) and PlayerV(bi)!=p then
+call SaveBoolean(BOT_DB,bi,131,false)
 set BOT_Mode[bi]=mode
 set BOT_X[bi]=x
 set BOT_Y[bi]=y
@@ -310782,8 +310878,48 @@ endif
 set bi=bi+1
 endloop
 endfunction
+function BOT_PingSend takes nothing returns nothing
+local player psPlayer=GetMinimapPingSource()
+if psPlayer!=null and psPlayer==GetLocalPlayer() and BOT_Enabled and udg_B then
+call SendSyncData("BPNG",R2S(GetMinimapPingTargetX())+";"+R2S(GetMinimapPingTargetY()))
+endif
+set psPlayer=null
+endfunction
+function BOT_PingSync takes nothing returns nothing
+local player psPlayer=GetTriggerSyncPlayer()
+local integer psOwner=PId(psPlayer)
+local integer psBot=0
+local string psData=GetTriggerSyncData()
+local real psX=S2R(CBS_Tok(psData,0))
+local real psY=S2R(CBS_Tok(psData,1))
+if not BOT_Enabled or not udg_B or psOwner<0 or psOwner>=10 or GetPlayerController(psPlayer)!=MAP_CONTROL_USER or not UnitIsAlive(Hero[psOwner]) or LoadInteger(BOT_DB,psOwner,130)>BOT_Clock then
+set psPlayer=null
+return
+endif
+if not Bof_InZone(Bof_Zone(GetUnitX(Hero[psOwner]),GetUnitY(Hero[psOwner])),psX,psY,0.) then
+set psPlayer=null
+return
+endif
+call SaveInteger(BOT_DB,psOwner,130,BOT_Clock+8)
+loop
+exitwhen psBot>=10
+if BOT_Active[psBot] and IsPlayerAlly(PlayerV(psBot),psPlayer) and psBot!=psOwner and not (BOT_Until[psBot]>BOT_Clock and BOT_Mode[psBot]>0 and not LoadBoolean(BOT_DB,psBot,131)) then
+call SaveBoolean(BOT_DB,psBot,131,true)
+set BOT_Mode[psBot]=2
+set BOT_X[psBot]=psX
+set BOT_Y[psBot]=psY
+set BOT_Leader[psBot]=psOwner
+set BOT_Until[psBot]=BOT_Clock+40
+set BOT_Attack[psBot]=null
+endif
+set psBot=psBot+1
+endloop
+set psPlayer=null
+endfunction
 function BOT_Init takes nothing returns nothing
 local trigger chat=CreateTrigger()
+local trigger ping=CreateTrigger()
+local trigger pingSync=CreateTrigger()
 local trigger sync=CreateTrigger()
 local trigger spell=CreateTrigger()
 local trigger threat=CreateTrigger()
@@ -310793,6 +310929,8 @@ call SG_DataInit()
 call BOT_Data()
 loop
 exitwhen bi>=12
+call TriggerRegisterPlayerEvent(ping,Player(bi),EVENT_PLAYER_MINIMAP_PING)
+call TriggerRegisterPlayerSyncEvent(pingSync,Player(bi),"BPNG",false)
 call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-bots",true)
 call TriggerRegisterPlayerSyncEvent(sync,Player(bi),"BEMT",false)
 call TriggerRegisterPlayerUnitEvent(armor,Player(bi),EVENT_PLAYER_UNIT_DAMAGED,null)
@@ -310802,12 +310940,16 @@ call TriggerRegisterPlayerUnitEvent(spell,Player(bi),EVENT_PLAYER_UNIT_SPELL_CHA
 call TriggerRegisterPlayerUnitEvent(spell,Player(bi),EVENT_PLAYER_UNIT_SPELL_ENDCAST,null)
 set bi=bi+1
 endloop
+call TriggerAddAction(ping,function BOT_PingSend)
+call TriggerAddAction(pingSync,function BOT_PingSync)
 call TriggerAddAction(chat,function BOT_Command)
 call TriggerAddAction(sync,function BOT_EmojiSync)
 call TriggerAddAction(spell,function BOT_SpellEvent)
 call TriggerAddAction(threat,function BOT_Threat)
 call TriggerAddAction(armor,function BOT_AlbedoDamage)
 call TimerStart(CreateTimer(),0.25,true,function BOT_Tick)
+set ping=null
+set pingSync=null
 set chat=null
 set sync=null
 set spell=null
