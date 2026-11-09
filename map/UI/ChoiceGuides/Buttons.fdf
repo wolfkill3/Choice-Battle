@@ -24,3 +24,13 @@ Frame "EDITBOX" "ChoiceGuideSearch" {
         BackdropEdgeFile "Choice-tooltip-border.blp",
     }
 }
+
+// A compact input field, separate from the blue/gold purchase-button skin.
+Frame "BACKDROP" "ChoiceGuideInputBackdrop" {
+    BackdropBackground "TooltipLessVisible.blp",
+    BackdropBlendAll,
+    BackdropBackgroundInsets 0.001 0.001 0.001 0.001,
+    BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+    BackdropCornerSize 0.003,
+    BackdropEdgeFile "Choice-tooltip-border.blp",
+}

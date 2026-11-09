@@ -1,5 +1,31 @@
 ﻿//W3x2lni Data: 2021-11-04 17:40:09.089
 globals
+integer SG_PackageStage=0
+integer SG_PackageTotal=0
+integer SG_PackageRead=0
+integer SG_PackageAdded=0
+integer SG_PackageFailed=0
+string SG_PackageInfo=""
+boolean SG_ExportAllReady=false
+boolean SG_ExportAllRunning=false
+integer SG_ExportAllCursor=0
+integer SG_ExportAllLimit=0
+integer SG_ExportAllWritten=0
+integer SG_ExportAllFailed=0
+integer SG_ExportAllSkipped=0
+string SG_ExportAllRoot=""
+string SG_ExportAllInfo=""
+string SG_ExportPath="ChoiceBattle\\Guides\\Share\\Import"
+framehandle SG_ExportAllButton=null
+boolean SG_ExportShown=false
+framehandle SG_ExportButton=null
+integer SG_ImportStage=0
+integer SG_ImportTotal=0
+integer SG_ImportRead=0
+integer SG_ImportAdded=0
+integer SG_ImportFailed=0
+string SG_ImportGeneration=""
+string SG_ImportInfo=""
 boolean SG_SearchBorrowed=false
 string SG_ItemQuery=""
 string SG_Notice=""
@@ -14,6 +40,8 @@ integer SG_ItemPoolN=0
 integer array SG_ItemPool
 integer array SG_ItemShown
 framehandle SG_ItemSearchLabel=null
+framehandle SG_SearchBox=null
+framehandle SG_SearchPrompt=null
 framehandle SG_ItemSearch=null
 framehandle SG_SaveButton=null
 framehandle array SG_ItemStage
@@ -63,6 +91,8 @@ integer SG_OwnerHero=0
 integer SG_RosterN=0
 integer array SG_Roster
 boolean SG_Loaded=false
+framehandle SG_NameArea=null
+framehandle SG_NameLabel=null
 framehandle SG_NameBox=null
 framehandle SG_Panel=null
 framehandle SG_Title=null
@@ -864,6 +894,7 @@ constant integer TIMER_ITERATOR_HASH  = StringHash( "TimerIterator" )
 constant integer TIMER_MAX_COUNT_HASH = StringHash( "TimerMaximumCount" )
 constant integer TIMER_STARTED_HASH   = StringHash( "TimerStarted" )
 constant integer TARGET_ABILITY       = StringHash( "TARGET_ABILITY" )
+constant integer SH_ReverseUnit = StringHash("ReverseUnit")
 constant integer ANTITARGET_ABILITY   = StringHash( "ANTITARGET_ABILITY" )
 constant integer ROYAL_GUARD_STACKS   = StringHash( "ROYAL_GUARD_STACKS" )
 constant integer DASH_USER            = StringHash( "DASH_USER" )
@@ -4674,9 +4705,6 @@ function myCustomDamage takes unit whichUnit, unit target, real amount, boolean 
         if GetUnitAbilityLevel(target,'B072') > 0 then
             set currentDmg = currentDmg * 1.15
         endif
-        if GetUnitAbilityLevel(whichUnit,'DMT2') > 0 then // Дезмастер T
-            set currentDmg = currentDmg * 1.3
-        endif
                 
         // if GetUnitAbilityLevel(whichUnit,'A0U5') > 0 then
             // set currentDmg = currentDmg * (1.1+0.05*GetUnitAbilityLevel(whichUnit,'A0U5'))
@@ -6553,7 +6581,8 @@ function MUIHandle takes nothing returns integer
     endfunction
     
     function CalculateControlResist takes unit target, real newTime returns real
-        local real time=newTime 
+        local real time=newTime
+        set time=time*(1.+0.25*LoadInteger(HH,GetHandleId(target),StringHash("DMTControlStacks")))
         if GetUnitAbilityLevel(target,'A1GA')>0 then //Quincy set
             set time=time*1.5
         endif
@@ -7857,8 +7886,50 @@ function TSE_TargetFrozen takes unit tsru returns boolean
 return (TSE_On and IsUnitInGroup(tsru,TSE_G)) or LoadInteger(HH,GetHandleId(tsru),StringHash("HitFz"))>0 or LoadUnitHandle(HH,GetHandleId(tsru),StringHash("HitCage"))!=null
 endfunction
 
+// A real time-resistance class protects counter stances, including during short Hit stops.
+function TSE_ReverseProtected takes unit tsbu returns boolean
+local unit tsbh
+local boolean tsbp
+if tsbu==null then
+return false
+endif
+set tsbh=Hero[PId(OwnerOf(tsbu))]
+set tsbp=GetUnitAbilityLevel(tsbu,'TSrs')>0 or GetUnitAbilityLevel(tsbu,'TSkr')>0 or GetUnitAbilityLevel(tsbh,'TSrs')>0 or GetUnitAbilityLevel(tsbh,'TSkr')>0 or LoadBoolean(TSE_HT,-1,GetUnitTypeId(tsbh))
+set tsbh=null
+return tsbp
+endfunction
 function TSE_ReverseBlocked takes unit tsbu returns boolean
+if tsbu==null or TSE_ReverseProtected(tsbu) then
+return false
+endif
 return TSE_TargetFrozen(tsbu) or LoadInteger(HH,GetHandleId(tsbu),StringHash("HitTPauseCount"))>0 or LoadInteger(HH,GetHandleId(tsbu),StringHash("TSEReverseIgnore"))>0
+endfunction
+function ReverseBegin takes unit rvUnit returns nothing
+local integer rvId=GetHandleId(rvUnit)
+call SaveUnitHandle(HH,rvId,SH_ReverseUnit,rvUnit)
+call SaveBoolean(HH,rvId,ANTITARGET_ABILITY,true)
+endfunction
+function ReverseEnd takes integer rvId returns nothing
+call SaveBoolean(HH,rvId,ANTITARGET_ABILITY,false)
+call RemoveSavedHandle(HH,rvId,SH_ReverseUnit)
+endfunction
+// Both item actives apply Bwul. Regi T is the explicit exception to mark penetration.
+function ReverseBlocked takes unit rvUnit returns boolean
+if rvUnit==null then
+return false
+endif
+return TSE_ReverseBlocked(rvUnit) or (GetUnitAbilityLevel(rvUnit,'Bwul')>0 and GetUnitAbilityLevel(rvUnit,'A19B')==0)
+endfunction
+function ReverseActiveId takes integer rvId returns boolean
+local unit rvUnit
+local boolean rvActive
+if not LoadBoolean(HH,rvId,ANTITARGET_ABILITY) then
+return false
+endif
+set rvUnit=LoadUnitHandle(HH,rvId,SH_ReverseUnit)
+set rvActive=rvUnit!=null and GetUnitTypeId(rvUnit)!=0 and not ReverseBlocked(rvUnit)
+set rvUnit=null
+return rvActive
 endfunction
 
 function TSE_HoldDmg takes unit u,unit c,real tsd returns nothing
@@ -8949,6 +9020,7 @@ function ShieldHPTotal takes unit hsu returns real
     if LoadReal(HH,hsi,SH_SuiShield)>0 then
         set hsr=hsr+LoadReal(HH,hsi,SH_SuiShield)
     endif
+    set hsr=hsr+LoadReal(HH,hsi,StringHash("DMShield"))
     return hsr
 endfunction
 // есть ли на юните любой щит (с запасом прочности или без); пассивные блоки с шансом не считаются
@@ -15419,7 +15491,7 @@ endfunction
 // Источник не герой (дамми, клон) — отдаём героя его игрока, как обработчик урона 3.2.
 function Bof_Rev takes unit src,unit tgt returns boolean
 local unit rvS=src
-if tgt==null or src==null or TSE_ReverseBlocked(tgt) or not LoadBoolean(HH,GetHandleId(tgt),ANTITARGET_ABILITY) then
+if tgt==null or src==null or ReverseBlocked(tgt) or not ReverseActiveId(GetHandleId(tgt)) then
 set rvS=null
 return false
 endif
@@ -16367,7 +16439,7 @@ function Rem_E_FreeEnum takes nothing returns nothing
 call MapPauseUnit(GetEnumUnit(),false)
 endfunction
 function Rem_E_Grab takes group remEg,unit e returns nothing
-if not LoadBoolean(HH,GetHandleId(e),ANTITARGET_ABILITY) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) then
+if not ReverseActiveId(GetHandleId(e)) and not IsUnitType(e,UNIT_TYPE_STRUCTURE) then
 call GroupAddUnit(remEg,e)
 call MapPauseUnit(e,true)
 endif
@@ -22185,7 +22257,7 @@ function Esc_RDashTick takes nothing returns nothing
     call RemoveLocation(LoadLocationHandle(Esc_State,escTimerId,ESC_SEARCH_LOCATION))
     if IsUnitGroupEmptyBJ(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))==false then
         call SaveUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET,FirstOfGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS)))
-        if LoadBoolean(HH,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)),ANTITARGET_ABILITY) then
+        if ReverseActiveId(GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET))) then
             call SaveUnitHandle(HH,GetHandleId(LoadUnitHandle(Esc_State,escTimerId,ESC_GRABBED_TARGET)),REVERSE_TARGET,LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER))
             call DestroyGroup(LoadGroupHandle(Esc_State,escTimerId,ESC_TARGETS))
             call MapPauseUnit(LoadUnitHandle(Esc_State,escTimerId,ESC_CASTER),false)
@@ -31165,6 +31237,9 @@ function OnButtonCustomAbility takes nothing returns nothing
     set but = null
 endfunction
 
+function DM_CanToggleSouls takes unit dmU returns boolean
+return GetUnitTypeId(dmU)=='HDMa' and GetHeroLevel(dmU)>=20
+endfunction
 function OnButtonChangeAbilityMode takes nothing returns nothing
     local player p = TrigP()
     local integer pHid = PH( p )
@@ -31189,6 +31264,20 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
                 else
                     call SaveInteger(HH,butHid,StringHash("HitVE"),1-LoadInteger(HH,butHid,StringHash("HitVE")))
                 endif
+                set freeSlotId=12
+            endif
+            set freeSlotId=freeSlotId+1
+        endloop
+        set freeSlotId=0
+        set butHid=0
+    endif
+    if but==GetFrameByName("AbilityVarBarIcon",10) then
+        set freeSlotId=0
+        loop
+            exitwhen freeSlotId>11
+            if DM_CanToggleSouls(Hero[freeSlotId]) and (p==OwnerOf(Hero[freeSlotId]) or GetPlayerAlliance(OwnerOf(Hero[freeSlotId]),p,ALLIANCE_SHARED_CONTROL)) then
+                set butHid=GetHandleId(Hero[freeSlotId])
+                call SaveBoolean(HH,butHid,StringHash("DMNoSpend"),not LoadBoolean(HH,butHid,StringHash("DMNoSpend")))
                 set freeSlotId=12
             endif
             set freeSlotId=freeSlotId+1
@@ -49829,6 +49918,24 @@ if (GetUnitTypeId(krsel)=='H02F' or GetUnitTypeId(krsel)=='H05Y') and (GetLocalP
     endif
 endif
 set krsel=null
+set krsel=GetUnitSelected(GetLocalPlayer())
+if DM_CanToggleSouls(krsel) and (GetLocalPlayer()==OwnerOf(krsel) or GetPlayerAlliance(OwnerOf(krsel),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
+call ShowFrame(GetFrameByName("AbilityVarBarIcon",10),true)
+if LoadBoolean(HH,GetHandleId(krsel),StringHash("DMNoSpend")) then
+set krs="ReplaceableTextures\\CommandButtons\\BTNCancel.blp"
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",10),Lng("Ctrl+E: не тратить души на усиления способностей. ","Ctrl+E: save souls; ability enhancements disabled."))
+else
+set krs=GetAbilityBaseStringFieldById('DME1',ABILITY_SF_ICON_NORMAL)
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",10),Lng("Ctrl+E: тратить по 1 душе на усиления Q/W/F/R/G под E. ","Ctrl+E: spend 1 soul per enhanced Q/W/F/R/G during E."))
+endif
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",10),krs,0,true)
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",10),krs,1,true)
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",10),krs,2,true)
+call ShowFrame(GetFrameByName("AbilityVarBarTooltip",10),LoadBoolean(HH,GetHandleId(GetFrameByName("AbilityVarBarIcon",10)),BUTTONHOVER))
+call SetFrameSize(GetFrameByName("AbilityVarBarTooltip",10),.24,GetFrameHeight(GetFrameByName("AbilityVarBarTooltipText",10))+.03)
+call SetFrameRelativePoint(GetFrameByName("AbilityVarBarTooltip",10),FRAMEPOINT_CENTER,GetFrameByName("AbilityVarBarIcon",10),FRAMEPOINT_CENTER,-.06,GetFrameHeight(GetFrameByName("AbilityVarBarTooltipText",10))*.5+.02)
+endif
+set krsel=null
 // Хит: вариации W (Ctrl+W, HtWa/HtWb/HtWc) и E (Ctrl+E, HtEa/HtEb) — только кадры у локального игрока
 set krsel=GetUnitSelected(GetLocalPlayer())
 if GetUnitTypeId(krsel)=='HHit' and (GetLocalPlayer()==OwnerOf(krsel) or GetPlayerAlliance(OwnerOf(krsel),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
@@ -51456,39 +51563,39 @@ if LoadBoolean(HH, GetHandleId(target), SH_LucciTekkai)==true  then
 set haveShield=true
 endif
 //Danzo W
-if LoadBoolean(HH, GetHandleId(target), SH_DanzoWBool)==true  then
+if not ReverseBlocked(target) and (LoadBoolean(HH, GetHandleId(target), SH_DanzoWBool)==true) then
 set haveShield=true
 endif
 //Aizen G
-if damage>100 and GetUnitAbilityLevel( target ,'BASF')>0 then
+if not ReverseBlocked(target) and (damage>100 and GetUnitAbilityLevel( target ,'BASF')>0) then
 set haveShield=true
 endif
 //Реги Т
-if GetUnitAbilityLevel(target,'A19B')>0  then
+if not ReverseBlocked(target) and (GetUnitAbilityLevel(target,'A19B')>0) then
 set haveShield=true
 endif
 //Сейбер Р
-if GetUnitAbilityLevel(target,'A14J')>0  then
+if not ReverseBlocked(target) and (GetUnitAbilityLevel(target,'A14J')>0) then
 set haveShield=true
 endif
 //Garp G
-if GetUnitAbilityLevel(target,'GrGs')>0  then
+if not ReverseBlocked(target) and (GetUnitAbilityLevel(target,'GrGs')>0) then
 set haveShield=true
 endif
 //Гоку G
-if GetUnitAbilityLevel(target,'A24J')>0 or GetUnitAbilityLevel(target,'A34J')>0 then
+if not ReverseBlocked(target) and (GetUnitAbilityLevel(target,'A24J')>0 or GetUnitAbilityLevel(target,'A34J')>0) then
 set haveShield=true
 endif
 //Madara G
-if damage>100 and LoadBoolean(HH,GetHandleId(target),SH_MadaraG)==true  then
+if not ReverseBlocked(target) and (damage>100 and LoadBoolean(HH,GetHandleId(target),SH_MadaraG)==true) then
 set haveShield=true
 endif
 //Сабрак WE
-if damage>500 and GetUnitAbilityLevel(target,'BSaR')>0  then
+if not ReverseBlocked(target) and (damage>500 and GetUnitAbilityLevel(target,'BSaR')>0) then
 set haveShield=true
 endif
 //Курапика E
-if damage>(GetHeroAgi(target,true)+GetHeroStr(target,true)+GetHeroStr(target,true))*0.5 and GetUnitAbilityLevel(target,'B054')>0  then
+if not ReverseBlocked(target) and (damage>(GetHeroAgi(target,true)+GetHeroStr(target,true)+GetHeroStr(target,true))*0.5 and GetUnitAbilityLevel(target,'B054')>0) then
 set haveShield=true
 endif
 if GetUnitAbilityLevel(caster,'A1WT')==0 and GetUnitAbilityLevel(caster,'A3WR')==0 and GetUnitAbilityLevel(caster,'CB01')==0 and GetUnitAbilityLevel(caster,'B059')==0 and GetUnitAbilityLevel(target,'Bwul')==0 and LoadInteger(HH,GetHandleId(caster),BlockPenetrate)==0 then
@@ -65785,7 +65892,7 @@ call SaveBoolean(HH,GetHandleId(Hero[idc]),TARGET_ABILITY,true)
 call UnitAddAbility(u,'A295')
 call UnitRemoveAbility(u,'A19B')
 call SetUnitInvulnerable(u,true)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+call ReverseEnd(idu)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
 set dn=CreateUnit(p,'e0ZL',x,y,a*bj_RADTODEG)
 call UnitAddAbility(dn,'A195')
@@ -67566,7 +67673,7 @@ function IchigoBankaiW_CounterPeriodic takes nothing returns nothing
 			endif
 		endif
 		if time==0.8 then
-            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(target))==false then
                 set soundplay=SndN(773) // Sound\war3mapImported\IchigoTW2.mp3
                 call StartSound(soundplay)
                 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -67745,7 +67852,7 @@ function IchigoBankaiW_Counter takes unit newCaster, unit newTarget returns noth
         local real angle     =  AU(newCaster, newTarget)
         local real damage    = GetHeroStr(newCaster, true)*6
 local unit dn=null // свой временный юнит вместо общего n (функция вызывается из обработчика урона)
-        call SaveBoolean(HH,GetHandleId(newCaster),ANTITARGET_ABILITY,false)               
+        call ReverseEnd(GetHandleId(newCaster))
         set dn=CreateUnit(OwnerOf(newCaster), 'd001', caster_x, caster_y, GetRandomInt(0, 360))
         call MyRemoveUnit(dn, 1.5)
         set dn=CreateUnit(OwnerOf(newCaster), 'd047', caster_x+200*Cos(angle), caster_y+200*Sin(angle), GetRandomInt(0, 360))
@@ -69179,7 +69286,7 @@ exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if gr!=null and Condition_Base(OwnerOf(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
 call GroupAddUnit(gr,n0)
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call Brg_Burn(caster,n0)
 if Brg_HasT(caster) then
@@ -69477,7 +69584,7 @@ set ang=ang+360
 endif
 if ang<40 and ang>-40 and SR(x0,y0,GetUnitX(n0),GetUnitY(n0))<=dist+100 then
 call GroupAddUnit(gr,n0)
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SlowUnit(caster,n0,0.3,0.3,2,2,false)
 call Brg_Burn(caster,n0)
@@ -69834,7 +69941,7 @@ exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if gr!=null and Condition_Base(OwnerOf(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 and IsUnitInGroup(n0,gr)==false then
 call GroupAddUnit(gr,n0)
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call myCustomDamage(caster,n0,dmg,false,false,null,null,null)
 call SetControlToUnit(caster,n0,2.0,"stun")
 call Brg_Burn(caster,n0)
@@ -70025,7 +70132,7 @@ if ModuloReal(dist,300)<70 then
 call Brg_Cloud(caster,"war3mapImported\\wos_saberalterqcpurple.mdx",px,py,11,1.28,0.75,1.4)
 endif
 if SR(px,py,GetUnitX(target),GetUnitY(target))<130 then
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call myCustomDamage(caster,target,dmg,false,false,null,null,null)
 call Brg_Burn(caster,target)
 set EFF=AddSpecialEffectTarget("war3mapImported\\wos_LDeff (262).mdx",target,"chest")
@@ -70623,7 +70730,7 @@ if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) 
 //call SetEventDamage(0.05)
 set nb=0
 endif
-if not TSE_ReverseBlocked(u) and ((GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack))) then
+if not ReverseBlocked(u) and ((GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A24J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'A34J')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'JNQ2')>0 and CurrentEventAttack and SquareRootUnit(c,u)<350) or (GetUnitAbilityLevel(u,'JNE2')>0 and (nb>200 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'ADG2')>0 and (nb>100 or CurrentEventAttack)) or (GetUnitAbilityLevel(u,'GrGs')>0 and (nb>200 or CurrentEventAttack))) then
     if GetUnitAbilityLevel(u,'A34J')>0 then
         if GetHeroLevel(u)>=35 and LoadBoolean(HH,PH(damagedPlayer),MUIAvailableHash)==false then
             call SaveInteger(HH,PH(damagedPlayer),MUIDodgeCountHash,LoadInteger(HH,PH(damagedPlayer),MUIDodgeCountHash)+1)
@@ -70641,7 +70748,7 @@ if not TSE_ReverseBlocked(u) and ((GetUnitAbilityLevel(u,'A14J')>0  and (nb>200 
     //call SetEventDamage(0.05)
     set nb=0
 endif
-if not TSE_ReverseBlocked(u) and (nb>100 and LoadBoolean(HH,GetHandleId(u),SH_MadaraG)==true) then
+if not ReverseBlocked(u) and (nb>100 and LoadBoolean(HH,GetHandleId(u),SH_MadaraG)==true) then
     call SaveBoolean(HH,GetHandleId(u),SH_MadaraG,false)
     call SaveReal(HH,GetHandleId(u),SH_MadaraGfacing,a2*bj_RADTODEG)
     call SetUnitFacingInstant(u,a2*bj_RADTODEG)
@@ -70650,20 +70757,20 @@ if not TSE_ReverseBlocked(u) and (nb>100 and LoadBoolean(HH,GetHandleId(u),SH_Ma
 endif
 // реверс абилка как у курапики 
 
-if not TSE_ReverseBlocked(u) and (nb>100 and  LoadBoolean(HH,uid,SH_DanzoWBool)==true) then
+if not ReverseBlocked(u) and (nb>100 and  LoadBoolean(HH,uid,SH_DanzoWBool)==true) then
     call SaveBoolean(HH,uid,SH_DanzoWBool,false)
     call SaveUnitHandle(HH,uid,SH_DanzoW,Hero[idc])
     //call SetEventDamage(0.05)
     set nb=0
 endif
-if not TSE_ReverseBlocked(u) and (GetUnitAbilityLevel( u ,'BASF')>0 and nb>100) then
+if not ReverseBlocked(u) and (GetUnitAbilityLevel( u ,'BASF')>0 and nb>100) then
     //call SetEventDamage(0.05)
     set nb=0
     call SaveBoolean(HH,GetHandleId( u ),SH_AizenFB,true)
     call SaveReal(HH,GetHandleId( u ),SH_AizenFR,Angle2(GetUnitX( u ),GetUnitY( u ),GetUnitX( c ),GetUnitY( c )))
 endif
         ///KurapikaE
-if not TSE_ReverseBlocked(u) and (GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 and nb>0) then
+if not ReverseBlocked(u) and (GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 and b>(GetHeroAgi(u,true)+GetHeroStr(u,true)+GetHeroStr(u,true))*0.5 and nb>0) then
     if c!=UltimateDamage then
         call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     else
@@ -70673,7 +70780,7 @@ if not TSE_ReverseBlocked(u) and (GetUnitAbilityLevel(u,'B054')>0 and m>mm*0.06 
     set nb=0
 endif
 
-if not TSE_ReverseBlocked(u) and (nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0) then
+if not ReverseBlocked(u) and (nb>500 and GetUnitAbilityLevel( u ,'BSaR')>0) then
     //call SetEventDamage(0.05)
     set nb=0
     call SaveBoolean(HH,GetHandleId(u),SH_SabracEReverse,true)
@@ -70684,18 +70791,18 @@ endif
 if (CurrentEventAttack and nb>0) or nb>50 then
     call UnitRemoveAbility(u,'cbc7')
 endif
-if not TSE_ReverseBlocked(u) and (nb>50 and GetUnitAbilityLevel(u,'A19B')>0) then
+if not ReverseBlocked(u) and (nb>50 and GetUnitAbilityLevel(u,'A19B')>0) then
     //call SetEventDamage(0.05)
     call SetUnitInvulnerable(u,true)
     call SaveUnitHandle(HH,uid,REVERSE_TARGET,c)
     call SakuraSlashDamage(u,c)
     set nb=0
 endif
-if not TSE_ReverseBlocked(u) and (CurrentEventAttack and nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and suid!='H15O' and suid!='H05O') then
+if not ReverseBlocked(u) and (CurrentEventAttack and nb>0 and GetUnitAbilityLevel(u, 'IcQ2')>0 and suid!='H15O' and suid!='H05O') then
     call IchigoShikaiQ_Counter(u, c, b)
     set nb=0
 endif
-if not TSE_ReverseBlocked(u) and (nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and suid!='H15O' and suid!='H05O') then           // Ichigo Bankai W Counter
+if not ReverseBlocked(u) and (nb>100 and GetUnitAbilityLevel(u, 'IcB1')>0 and suid!='H15O' and suid!='H05O') then           // Ichigo Bankai W Counter
     call IchigoBankaiW_Counter(u, c)
     set nb=0
 endif
@@ -71211,6 +71318,12 @@ if cond==0 then
             call SaveReal(HH,idu,TIME_HASH,0) // RyoheiT?
         endif
 //Suigintou1start
+if nb>0. and LoadReal(HH,uid,StringHash("DMShield"))>0. then
+set r=RMinBJ(nb,LoadReal(HH,uid,StringHash("DMShield")))
+call SaveReal(HH,uid,StringHash("DMShield"),LoadReal(HH,uid,StringHash("DMShield"))-r)
+call ShieldIndicatorFunction(c,u,r)
+set nb=nb-r
+endif
 if nb>0 and duid=='HSui' and Sui_ShieldTake(u,c,nb) then
 set nb=0
 endif
@@ -71444,6 +71557,18 @@ endif
 
 
             endif
+if nb>0. and GetUnitTypeId(u)=='HDMa' and LoadBoolean(HH,uid,StringHash("DM_Skull_3")) then
+if GetUnitAbilityLevel(u,'DMQ3')>0 and GetUnitAbilityLevel(u,'DMQ4')>0 then
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.125)
+set nb=nb*0.875
+elseif GetUnitAbilityLevel(u,'DMQ3')>0 or GetUnitAbilityLevel(u,'DMQ4')>0 then
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb/9.)
+set nb=nb*8./9.
+else
+call SetUnitState(u,UNIT_STATE_LIFE,GetWidgetLife(u)+nb*0.1)
+set nb=nb*0.9
+endif
+endif
      //DeadMaster6End
         if nb>GetWidgetLife(u)and (LoadBoolean(DMG_IHT,uid,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,'B01O')==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
 			if LoadInteger(h, uid, SH_AnbuSet_CD)==0 and GetWidgetMana(u)>=GetWidgetMaxMana(u)*0.25 and GetUnitAbilityLevel(u,'A1CE')==0 then
@@ -75535,7 +75660,7 @@ endif
 set spli=GetHandleId(splt)
 set splx=GetUnitX(splt)
 set sply=GetUnitY(splt)
-if IsUnitEnemy(splt,OwnerOf(splc)) and not TSE_ReverseBlocked(splt) and LoadBoolean(HH,spli,ANTITARGET_ABILITY) then
+if IsUnitEnemy(splt,OwnerOf(splc)) and not ReverseBlocked(splt) and ReverseActiveId(spli) then
 call SaveUnitHandle(HH,spli,REVERSE_TARGET,splc)
 call SetUnitInvulnerable(splc,false)
 set splc=null
@@ -78702,7 +78827,7 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
-if LoadBoolean(HH,l__ide,ANTITARGET_ABILITY)==false then
+if ReverseActiveId(l__ide)==false then
 if GetUnitAbilityLevel(u,'LamS')>0 then
 call myCustomDamage(u,E,1.45*GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.05*GetUnitAbilityLevel(u,'A00P')+dmg,false,false,null,null,null)
 else
@@ -79367,7 +79492,7 @@ if SR(x,y,x1,y1)>300 and GetWidgetLife(c)>0 and GetUnitAbilityLevel(u,'A2IH')!=0
     call SetUnitFacing(u,a*bj_RADTODEG)
     call UnitApplyTimedLife(CreateUnit(p,'e00N',x,y,a*bj_RADTODEG),'BTLF',1)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         if LoadEffectHandle(h,id,10)==null then
             call SaveEffectHandle(h,id,10,AddSpecialEffectTarget("war3mapImported\\FireTornado.mdx",c,"origin"))
         endif
@@ -79489,7 +79614,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SaveUnitHandle(h,id,0,u)
@@ -79548,7 +79673,7 @@ call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack walk stand spin")
 call SetUnitAnimation(u,"attack walk stand spin")
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call UnitApplyTimedLife(CreateUnit(p,'e03V',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e08M',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 set n=CreateUnit(p,'e08N',x1,y1,GetRandomReal(0,359))
@@ -80246,7 +80371,7 @@ set soundplay=SndN(856) // Sound\Music\mp3Music\ByakurankE.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call UnitRemoveAbility(c,'A14U')
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SetControlToUnit(u,c,2.05,"heavystun")
 call UnitAddAbility(c,'Pet1')
 call UnitAddAbility(c,'A0XH')
@@ -80568,7 +80693,7 @@ if SR(x,y,x1,y1)>30 and dist<1 then
         call UnitAddAbility(l__n,'Arav')
         call SetUnitTimeScale(l__n,0)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         if dist<1000 and IsTerrainPathable(GetUnitX(c),GetUnitY(c),PATHING_TYPE_FLYABILITY)==false then
             call SaveInteger(h,id,SH_dist,dist+24)
             set r=Atan2(GetUnitY(c)-GetUnitY(u),GetUnitX(c)-GetUnitX(u))
@@ -81275,7 +81400,7 @@ if hit then
     call UnitRemoveAbility(u,'BHds')
     call UnitRemoveAbility(u,'B02T')
     call UnitRemoveAbility(u,'B039')
-    if LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(u))==false then
         call myCustomDamage(nj,u,dmg,false,false,null,null,null)
         call SetControlToUnit(nj,u, 0.5+GetUnitAbilityLevel(nj,'A34E')*0.5, "silenceTE")
         call Push3(u,40,a,400,"")
@@ -81733,7 +81858,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=OwnerOf(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 if GetUnitAbilityLevel(u,'LuG3')>0 then
 set soundplay=SndN(882) // Sound\Music\mp3Music\GrizzlyMagnum.mp3
 call StartSound(soundplay)
@@ -81956,7 +82081,7 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if(IsUnitEnemy(E,p)and E!=LoadUnitHandle(h,l__idg,l__ide)and IsUnitType(E,UNIT_TYPE_STRUCTURE)==false and GetWidgetLife(E)>0) then
-if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+if ReverseActiveId(ide)==false then
 call myCustomDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*0.10+dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Flameshock.mdx",E,"chest"))
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Abyssal_Impact_Base.mdx",GetUnitX(E),GetUnitY(E)))
@@ -83807,7 +83932,7 @@ local group g=CreateGroup()
 local player p=OwnerOf(u)
 local integer i=0
 local integer HibG=0
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,2,c)
 call SaveEffectHandle(h,id,1,AddSpecialEffectTarget("war3mapImported\\PurpleChakra.mdx",u,"origin"))
@@ -84491,7 +84616,7 @@ set E=FirstOfGroup(g)
 exitwhen E==null
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\IceSparks.mdx",E,"origin"))
@@ -85010,7 +85135,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
 call SaveUnitHandle(h,l__idg,l__ide,E)
@@ -85391,7 +85516,7 @@ call SetUnitX(u,x1+100*Cos(f))
 call SetUnitY(u,y1+100*Sin(f))
 call SetUnitFacing(u,Atan2(y1-y,x1-x))
 call IssueTargetOrder(u,"attack",c)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call myCustomDamage(u,c,GetHeroAgi(u,true)*0.75,false,false,null,null,null)
 call SaveInteger(h,id,2,i+1)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\Slam.mdl",x,y))
@@ -87970,7 +88095,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SaveUnitHandle(h,id,0,u)
@@ -88022,7 +88147,7 @@ local unit u=GetTriggerUnit()
 local unit c=GetSpellTargetUnit()
 local player p=OwnerOf(u)
 call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0A6'))*GetHeroInt(u,true)*CambioXDmg(u),false,false,null,null,null)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call CC_UnitEx(u, c, 0., 4, "ensnare", false, "Abilities\\Spells\\NightElf\\EntanglingRoots\\EntanglingRootsTarget.mdx", "chest", 0,0 )
 endif
 set soundplay=SndN(1021) // Sound\Music\mp3Music\Mukuro1Form1.mp3
@@ -88348,7 +88473,7 @@ exitwhen E==null
 if Condition_Base(p,E)then
     set i=0
     call myCustomDamage(u,E,dmg*CambioXDmg(u),false,false,null,null,null)
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call CC_UnitEx( E, E, 0., 4, "root", false, "war3mapImported\\amw10000.mdx", "origin", 0,0 )
     endif
 endif
@@ -89278,7 +89403,7 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
@@ -89661,7 +89786,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
@@ -90031,7 +90156,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=OwnerOf(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call MapPauseUnit(u,true)
@@ -91194,14 +91319,14 @@ if SR(x,y,x1,y1)>32 and b==false then
         call SaveInteger(h,id,9,count+1)
         call GroupAddUnit(g,n)
     endif
-elseif SR(x,y,x1,y1)<32 and b==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+elseif SR(x,y,x1,y1)<32 and b==false and ReverseActiveId(GetHandleId(c))==false then
     call SaveReal(h,id,13,0)
     set time=0
     call SaveBoolean(h,id,7,true)
     call SaveBoolean(h,id,14,true)
-elseif SR(x,y,x1,y1)<32 and b==false and (LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true or IsUnitHidden(c)==true ) then
+elseif SR(x,y,x1,y1)<32 and b==false and (ReverseActiveId(GetHandleId(c))==true or IsUnitHidden(c)==true ) then
     call SaveBoolean(h,id,7,true)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+    if ReverseActiveId(GetHandleId(c))==true then
         call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
     endif
 endif
@@ -91936,7 +92061,7 @@ function RoyalGuardCast2 takes nothing returns nothing
     if time<0.15 and c==null then
         call MapPauseUnit(u,true)
     else
-        call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+        call ReverseEnd(idu)
         if c!=null then
             call StartSound(soundStr[152])
             set EFF=AddSpecialEffect("war3mapImported\\wind3.mdl",x,y)
@@ -92011,7 +92136,7 @@ function RoyalGuardCast takes nothing returns nothing
     call SetSpecialEffectTimeScale(EFF,0.6)
     call SetSpecialEffectFacing(EFF,GetRandomReal(0,359))
     call DestroyEffect(EFF)
-    call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+    call ReverseBegin(u)
     call TSE_TimerStart(t,0.05,true,function RoyalGuardCast2)
     set u=null
     set p=null
@@ -92140,7 +92265,7 @@ function DanceMCast2 takes nothing returns nothing //dante R
         if GetUnitAbilityLevel(u,'A28U')>0 then
                 set dmg=dmg+dmg*.1
         endif
-        if GetUnitCurrentOrder(u)==OrderId("root") or GetUnitCurrentOrder(u)==OrderId("acolyteharvest") then
+        if GetUnitCurrentOrder(u)==OrderId("root") or GetUnitCurrentOrder(u)==OrderId("rainoffire") then
             set n=CreateUnit(p,'e0GJ',x,y,0)
             call UnitApplyTimedLife(n,'BTLF',0.2)
             call SetUnitTimeScale(n,0)
@@ -92580,7 +92705,7 @@ call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x+120*Cos(a+145*bj_DEGTORAD),y+120*Sin(a+145*bj_DEGTORAD)))
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl",x+120*Cos(a+215*bj_DEGTORAD),y+120*Sin(a+215*bj_DEGTORAD)))
 elseif SR(x,y,x1,y1)<100 and b==false then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SetUnitTimeScale(u,0.68)
 call SaveBoolean(h,id,7,true)
 call SetUnitInvulnerable(u,true)
@@ -92714,7 +92839,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
@@ -94486,7 +94611,7 @@ set n=CreateUnit(p,'e08N',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',1.5)
 call SetUnitVertexColor(n,100,100,100,140)
 call UnitRemoveAbility(u,'A0BX')
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call UnitAddAbility(c,'Arav')
 call UnitRemoveAbility(c,'Arav')
 call SetUnitPathing(c,false)
@@ -94562,7 +94687,7 @@ local real l=GetWidgetLife(c)
 local real lm=GetUnitState(c,UNIT_STATE_MAX_LIFE)
 local real perc=(100-(l/lm*100))*(0.08+0.02*GetUnitAbilityLevel(u,'A0QT'))
 local real chance=GetRandomReal(0,100)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 if perc>chance and GetUnitTypeId(c)!='H075' then
 call myCustomDamage(u,c,(3+GetUnitAbilityLevel(u,'A0QT'))*GetHeroAgi(u,true),false,false,null,null,null)
 call myCustomDamage(u,c,0.2*GetWidgetMaxLife(c),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
@@ -94899,7 +95024,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call SaveUnitHandle(h,l__idg,l__ide,E)
 call Push(E,90,Atan2(y3-GetUnitY(E),x3-GetUnitX(E)),SR(x3,y3,GetUnitX(E),GetUnitY(E)))
 call SetControlToUnit(E,E, 2, "stun")
@@ -96041,7 +96166,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call SetControlToUnit(u,E,1,"stun")
 call Push(E,40,Atan2(GetUnitY(E)-y,GetUnitX(E)-x),pd)
@@ -96312,7 +96437,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 if dmg>0 then
 // цель держится на паузе — обработчик резал бы урон по ней вдвое; Bof_DmgFull отдаёт 100%
 call Bof_DmgFull(u,E,dmg)
@@ -96417,7 +96542,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call MapPauseUnit(u,true)
@@ -96770,7 +96895,7 @@ call KrSB_Ghost(p,m,x,y,a)
 endif
 call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitXY_1(u,x+40*Cos(a),y+40*Sin(a),false)
-elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
+elseif ReverseActiveId(GetHandleId(c)) then
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call StopSound(LoadSoundHandle(HH,id,15),false,false) // реверс — озвучка каста обрывается
 call KrSB_End(t,u,null)
@@ -96943,7 +97068,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) and IsUnitInGroup(E,gr)==false then
 call GroupAddUnit(gr,E)
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call DestroyEffect(AddSpecialEffectTarget("az_hit-red-blade.mdx",E,"chest"))
 set EFF=AddSpecialEffect("WindVectorPush.mdx",GetUnitX(E),GetUnitY(E))
 call SetSpecialEffectFacing(EFF,a*bj_RADTODEG)
@@ -97075,7 +97200,7 @@ call SetUnitAnimation(n,"walk")
 call SetUnitAnimation(u,"walk")
 else
 call SetUnitAnimation(u,"Attack Five")
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call myCustomDamage(u,c,11*GetHeroStr(u,true),false,false,null,null,null)
 call MissleMoveSunshineUppercut(c,30,0,x1+900*Cos(a),y1+900*Sin(a),450,u)
 else
@@ -97314,7 +97439,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call MapPauseUnit(u,true)
@@ -97657,7 +97782,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call MapPauseUnit(u,true)
@@ -100462,7 +100587,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and (time<4 or time2>0) and udg_B a
             call UnitApplyTimedLife(n,'BTLF',0.4)
             call SetUnitTimeScale(n,3)
         else
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call SaveReal(HH,id,13,time2+0.03)
                 if time2<2.82 then
                     call SetUnitInvulnerable(c,true)
@@ -100664,7 +100789,7 @@ else
             set l__ide=GetHandleId(E)
             if Condition_Base(p,E)then
                 if LoadUnitHandle(HH,l__idg,l__ide)!=E then
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call myCustomDamage(u,E,dmg,false,false,null,null,null)
                         call SaveUnitHandle(HH,l__idg,l__ide,E)
                     else
@@ -101142,7 +101267,7 @@ else
             call UnitApplyTimedLife(n,'BTLF',0.6)
             call SetUnitTimeScale(n,2)
         else
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call StartSound(soundStr[36])
                 call SetControlToUnit(u,c, 1.2, "heavystun")
                 call SaveReal(h,id,3,Atan2(y1-y2,x1-x2))
@@ -101644,7 +101769,7 @@ endif
 call UnitMakeAbilityPermanent(u,false,'A24J')
 call UnitRemoveAbility(u,'A24J')
 call UnitRemoveBuffs(u,false,true)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+call ReverseEnd(idu)
 if c!=null then
 call SetUnitTimeScale(u,1.4)
 call SaveUnitHandle(HH,id,1,c)
@@ -101729,7 +101854,7 @@ call StartSound(soundStr[25])
 else
 call StartSound(soundStr[26])
 endif
-call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+call ReverseBegin(u)
 call TSE_TimerStart(t,0.04,true,function BreakerEnergyWaveCast2)
 set u=null
 set p=null
@@ -101852,7 +101977,7 @@ else
     call SetUnitTimeScale(u,1)
     call StopSound(soundStr[20],false,true)
     call StopSound(soundStr[21],false,true)
-    call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+    call ReverseEnd(idu)
     if c!=null then
         if time<0.2 and LoadInteger(HH,GetHandleId(u),GokuUIDingHash)<3 then
             if LoadInteger(HH,GetHandleId(u),GokuUIDingHash)<2 then
@@ -101958,7 +102083,7 @@ if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
 else
     call StartSound(soundStr[21])
 endif
-call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+call ReverseBegin(u)
 call TSE_TimerStart(t,0.04,true,function AutonomousUICast2)
 set u=null
 set p=null
@@ -103060,7 +103185,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<4 then
             call UnitApplyTimedLife(n,'BTLF',0.4)
             call SetUnitTimeScale(n,3)
         else
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
                 call PauseTimer(t)
                 call SaveReal(HH,id,2,0)
@@ -103315,7 +103440,7 @@ if GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and time<5 then
             call SetUnitTimeScale(n,3)
         else
             call SetUnitTimeScale(u,1)
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call RemoveEffect(LoadEffectHandle(HH,id,3),0.1,false,CreateTimer())
                 call PauseTimer(t)
                 call SaveReal(HH,id,2,0)
@@ -103514,7 +103639,7 @@ local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=OwnerOf(u)
 local integer idp=PH(p)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call SetUnitInvulnerable(u,true)
     call MapPauseUnit(u,true)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
@@ -104318,7 +104443,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)-26,0)
         endif
         if time==0.51 or (time>0.36 and time<0.51 and GetUnitFlyHeight(u)+30<GetUnitFlyHeight(c)) then
-            if IsUnitInvulnerable(c)==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if IsUnitInvulnerable(c)==false and ReverseActiveId(GetHandleId(c))==false then
                 call SetUnitXY_1(u,GetUnitX(c)-65*Cos(a),GetUnitY(c)-65*Sin(a), false)
                 call SaveReal(h,id,5,0.52)
                 call SetUnitInvulnerable(u,true)
@@ -104355,7 +104480,7 @@ if time<0.630 and GetAbilityIntegerLevelField(GetUnitAbility(u,'GKR1'), ABILITY_
                     call MapPauseUnit(u,false)
                     call Push9(u,10,a,30)
                     call SetUnitAnimationByIndex(u,26)
-                elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                elseif ReverseActiveId(GetHandleId(c))==true then
                     call SaveReal(h,id,5,20)
                     call SetUnitInvulnerable(u,false)
                     call MapPauseUnit(u,false)
@@ -105875,7 +106000,7 @@ function GinW_Periodic takes nothing returns nothing
             exitwhen bjLCU==null
                 if Condition_Base(OwnerOf(LoadUnitHandle(h, id, CasterHash)), bjLCU) and IsUnitInvulnerable(bjLCU)==false then
                     call SaveReal(h, id, SH_Distance, 99999)
-                    if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(bjLCU))==false then
                         call SaveUnitHandle(h, id, TargetHash, bjLCU)
                     else
                         call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h, id, CasterHash)),DASH_USER,false)
@@ -107640,7 +107765,7 @@ if SR(x,y,x1,y1)>150 and GetWidgetLife(l__d)>0 then
         call SetUnitAnimationByIndex(u,15)
     endif
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set soundplay=SndN(1374) // Sound\Music\mp3Music\BrolyR2.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -108708,7 +108833,7 @@ loop
         call SetUnitXY_1(E,x2-58*Cos(a2),y2-58*Sin(a2),true)
         if IsUnitInGroup(E,g)==false then
             call GroupAddUnit(g,E)
-            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(E))==false then
                 call MapPauseUnit(E,true)
                 call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
                 call SetUnitPathing(E,false)
@@ -108852,7 +108977,7 @@ if time<time2 then
                 call SaveUnitHandle(h,id,11,E)
                 call SaveReal(h,id,12,0.7)
                 call SetUnitTimeScale(u,0.55)
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(E))==false then
                     call MapPauseUnit(E,true)
                     call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
                     call SetUnitXY_1(E,x1+20*Cos(a),y1+20*Sin(a), false)
@@ -108908,7 +109033,7 @@ elseif c==null and Range<2000 and UnitIsAlive(l__d) and IsTerrainPathable(x1,y1,
                 call SetControlToUnit(E,E, 1, "stun")
                 call SaveUnitHandle(h,idg,ide,E)
                 // первого задетого снаряд хватает и несёт с собой, остальных толкает
-                if k==null and UnitIsAlive(E) and LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+                if k==null and UnitIsAlive(E) and ReverseActiveId(ide)==false then
                     set k=E
                     call SaveUnitHandle(h,id,13,k)
                     call MapPauseUnit(k,true)
@@ -109198,7 +109323,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E) then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call Push3(E,25,Atan2(y3-GetUnitY(E),x3-GetUnitX(E)),50,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         if LoadUnitHandle(HH,l__idg,l__ide)!=E then
             call SaveUnitHandle(HH,l__idg,l__ide,E)
@@ -110595,7 +110720,7 @@ function MesCast2 takes nothing returns nothing
             call SetUnitAnimation(n,"attack")
             call SetUnitAnimation(u,"attack")
         else
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 if time>=2.96 then
                     call SetUnitXY_1(u,x1,y1,false)
                 endif
@@ -110886,7 +111011,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E and IsUnitInvulnerable(E)==false then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call SaveUnitHandle(h,l__idg,l__ide,E)
         call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
         call DestroyEffect(AddSpecialEffectTarget("Objects\\Spawnmodels\\Human\\HumanBlood\\BloodElfSpellThiefBlood.mdl",E,"chest"))
@@ -111864,7 +111989,7 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call SetUnitVertexColor(u,255,255,255,100)
     call SaveUnitHandle(h,id,0,u)
     call SaveUnitHandle(h,id,1,c)
@@ -111954,7 +112079,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SaveUnitHandle(h,l__idg,l__ide,E)
     else
@@ -112535,7 +112660,7 @@ if IsUnitAlly(c,p)then
     call UnitScale(n,1,8,0.25)
     call SetUnitVertexColor(n,255,255,255,150)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call UnitAddAbility(c,'Pet1')
         call SetControlToUnit(c,c,1.55,"heavystun")
         call SetUnitTimeScale(c,0)
@@ -112761,7 +112886,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SaveUnitHandle(h,l__idg,l__ide,E)
     else
@@ -113472,7 +113597,7 @@ else
             call UnitApplyTimedLife(n,'BTLF',0.01)
             call SetUnitVertexColor(n,255,230,100,50)
             call SaveReal(h,id,2,dist+60)
-            if SR(x,y,x1,y1)<200 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+            if SR(x,y,x1,y1)<200 and ReverseActiveId(GetHandleId(c))==true then
                 call MapPauseUnit(u,false)
                 call SetUnitInvulnerable(u,false)
                 call MapPauseUnit(c,false)
@@ -113712,7 +113837,7 @@ if NumberOfEnemiesInEachGroupHeroes(g,p)<1 and time>0.05 and count<128 then
     set time=LoadReal(h,id,7)
 endif
 if count<=127 and time>2 and UnitIsAlive(u)==true then
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitTimeScale(c,0.05)
@@ -113968,7 +114093,7 @@ call SetUnitAnimation(u,"walk")
 call SetUnitXY_1(u,x+45*Cos(a),y+45*Sin(a), false)
 call SetUnitFacingInstant(u,a*bj_RADTODEG)
 if SR(x,y,x1,y1)<100 or time==1.5 then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SaveReal(h,id,7,2.02)
 call Push5(c,5,a,10,"")
 set soundplay=SndN(1497) // Sound\Music\mp3Music\NejiR2_1.mp3
@@ -114025,7 +114150,7 @@ call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call MapPauseUnit(u,false)
 if njstop then
 // обрыв: без удара
-elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+elseif ReverseActiveId(GetHandleId(c))==false then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call FrozenMinusManaCast(c,5)
 call SetControlToUnit(u,c,2, "stun")
@@ -114155,7 +114280,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call MapPauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     call MapPauseUnit(u,true)
@@ -114342,7 +114467,7 @@ local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
 local player p=OwnerOf(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call UnitAddAbility(u,'A0GJ')
     call SetUnitVertexColor(u,255,255,255,100)
     call SaveUnitHandle(h,id,0,u)
@@ -115220,7 +115345,7 @@ if time>2 then
                 call SetUnitVertexColor(n,255,255,255,125)
                 call SetUnitAnimation(n,"attack")
                 call SaveReal(h,id,7,dist+60)
-                if SR(x,y,x1,y1)<200 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                if SR(x,y,x1,y1)<200 and ReverseActiveId(GetHandleId(c))==true then
                     call ShowUnit(u,true)
                     call MapPauseUnit(u,false)
                     if GetLocalPlayer()==p then
@@ -115346,7 +115471,7 @@ set soundplay=SndN(1530) // Sound\Music\mp3Music\NigoriZake.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call ShakeCamera(0.5,20)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call Push3(c,35,a,800,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",c,"chest"))
 call UnitRemoveAbility(u,'A0LR')
@@ -115580,7 +115705,7 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
-if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+if ReverseActiveId(ide)==false then
 call myCustomDamage(u,E,dmg+GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.03*GetUnitAbilityLevel(u,'A02Z')),false,false,null,null,null)
 call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
 else
@@ -115846,7 +115971,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
 call Push(E,30,Atan2(GetUnitY(E)-y2,GetUnitX(E)-x2),300)
 else
@@ -116052,7 +116177,7 @@ set i=i+1
 exitwhen i>=GetUnitAbilityLevel(u,'A0LS')
 endloop
 if IsUnitEnemy(c,p)then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call myCustomDamage(u,c,GetHeroInt(u,true)*(GetUnitAbilityLevel(u,'A0LS')+1),false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
 else
@@ -120101,7 +120226,7 @@ set n=CreateUnit(p,'e0M3',x,y,a*bj_RADTODEG)
 call SetUnitFacingInstant(n,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.15)
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false and IsUnitHidden(c)==false then
+if ReverseActiveId(GetHandleId(c))==false and IsUnitHidden(c)==false then
 set soundplay=SndN(1637) // Sound\Music\mp3Music\SuperBuuvVolleyball2.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -120131,7 +120256,7 @@ call RemoveUnit(l__d)
 call SetUnitTimeScale(u,1)
 call SetUnitInvulnerable(u,false)
 call MapPauseUnit(u,false)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+if ReverseActiveId(GetHandleId(c))==true then
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call SetUnitFlyHeight(u,0,0)
@@ -120400,7 +120525,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0B3',x2,y2,GetRandomReal(0,359)),'BTLF',1
 call SetUnitFlyHeight(u,0,0)
 call SetUnitTimeScale(u,1)
 call RemoveUnit(l__d)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call RemoveUnit(LoadUnitHandle(h,id,10))
@@ -121081,7 +121206,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real f=GetUnitFacing(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SaveUnitHandle(h,id,0,u)
@@ -121243,7 +121368,7 @@ else
 call UnitApplyTimedLife(CreateUnit(p,'e0MI',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e03W',x1,y1,GetRandomReal(0,359)),'BTLF',5)
 call UnitApplyTimedLife(CreateUnit(p,'e03Y',x1,y1,GetRandomReal(0,359)),'BTLF',5)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 set soundplay=SndN(1671) // Sound\Music\mp3Music\CoulerStrikePart2.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -121618,7 +121743,7 @@ local real x1=GetUnitX(c)
 local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=OwnerOf(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,c)
 call MapPauseUnit(u,true)
@@ -123161,7 +123286,7 @@ else
 call SaveReal(h,id,7,35)
 endif
 elseif i==0 then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SetUnitTimeScale(u,0.35)
 call SaveReal(h,id,7,-25)
 call SaveInteger(h,id,2,1)
@@ -123277,7 +123402,7 @@ call MapPauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitInvulnerable(c,false)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call myCustomDamage(u,c,dmg,false,false,null,null,null)
 call SetControlToUnit(u,c, 2, "stun")
 if GetUnitAbilityLevel(u,'A16X')==0 and UnitIsAlive(c)==true then
@@ -123524,7 +123649,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=OwnerOf(u)
 local real a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SaveUnitHandle(h,id,0,u)
 call SetUnitPathing(u,false)
 call SetUnitAnimation(u,"walk")
@@ -126317,7 +126442,7 @@ function RapidStrikeCast2 takes nothing returns nothing
     local real dmg=2*GetHeroStr(u,true)
     local player p=OwnerOf(u)
     local real dist=LoadReal(h,id,7)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then 
+    if ReverseActiveId(GetHandleId(c))==false then
         if dist<LoadReal(h,id,9)then
             call MapPauseUnit(u,true)
             call MapPauseUnit(c,true)
@@ -126460,7 +126585,7 @@ if GetUnitTypeId(u)!='H03R' then
 call SetUnitAnimation(u,"Spell channel one")
 endif
 call SetUnitXY_1(u,x1,y1, false)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 if GetUnitTypeId(u)!='H03R' then
 set soundplay=SndN(1804) // Sound\Music\mp3Music\SaberSakura3.mp3
 call StartSound(soundplay)
@@ -126479,7 +126604,7 @@ endif
 call SetUnitFacing(u,a*bj_RADTODEG)
 endif
 else
-if time<=3 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if time<=3 and ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),'BTLF',1)
@@ -126495,7 +126620,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call SetControlToUnit(E,E, 1, "stun")
 else
 call SaveReal(h,id,5,time+6)
@@ -126504,7 +126629,7 @@ endif
 call GroupRemoveUnit(G,E)
 endloop
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call UnitApplyTimedLife(CreateUnit(p,'e0FA',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HL',x1,y1,a*bj_RADTODEG),'BTLF',1)
 call UnitApplyTimedLife(CreateUnit(p,'e0HM',x1,y1,a*bj_RADTODEG),'BTLF',1)
@@ -126523,7 +126648,7 @@ set E=FirstOfGroup(G)
 set ml=GetUnitState(E,UNIT_STATE_MAX_LIFE)
 exitwhen E==null
 if Condition_Base(p,E)then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 if GetUnitAbilityLevel(E,'A13O')==3 then
 call myCustomDamage(u,E,dmg+ml*(0.065+0.001*GetHeroLevel(u)),false,false,null,null,null)
 call SlowUnit(u,E,0.5,0.5,5,2,false)
@@ -126674,7 +126799,7 @@ set E=FirstOfGroup(G)
 set ml=GetUnitState(E,UNIT_STATE_MAX_LIFE)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 if GetUnitAbilityLevel(E,'A13O')==3 then
 call myCustomDamage(u,E,dmg+ml*(0.065+0.001*GetHeroLevel(u)),false,false,null,null,null)
 call SlowUnit(u,E,0.5,0.5,5,2,false)
@@ -129692,7 +129817,7 @@ function HeatDomeAttackCast takes nothing returns nothing
     local real x1=GetUnitX(c)
     local real y1=GetUnitY(c)
     local real a=GetUnitFacing(u)*bj_DEGTORAD
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call SaveUnitHandle(h,id,0,u)
         call SaveReal(h,id,10,0.05)
         call SaveReal(h,id,13,0.4)
@@ -129830,7 +129955,7 @@ local real a2
 if time<0.61 then
     call SaveReal(h,id,8,time+0.01)
     if time==0.6 then
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call SetUnitTimeScale(u,1)
             if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
                 set soundplay=SndN(1859) // Sound\Music\mp3Music\Trunks R.mp3
@@ -130388,7 +130513,7 @@ local real y=GetUnitY(u)
 local real a=AU(u,c)
 local real x1=GetSpellTargetX()-200*Cos(a)
 local real y1=GetSpellTargetY()-200*Sin(a)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call MapPauseUnit(u,true)
     call SaveUnitHandle(h,id,0,u)
     call SaveUnitHandle(h,id,1,c)
@@ -130832,7 +130957,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
             call SetUnitFlyHeight(u,GetUnitFlyHeight(u)+(36-R2I(time*94)),0)
         endif
         if time==0.81 or (time>0.56 and time<0.81 and GetUnitFlyHeight(u)+20<GetUnitFlyHeight(c)) then
-            if IsUnitInvulnerable(c)==false and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then    
+            if IsUnitInvulnerable(c)==false and ReverseActiveId(GetHandleId(c))==false then
                 if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
                     call StartSound(soundStr[97])
                 else
@@ -130880,7 +131005,7 @@ if time<2.21 and GetAbilityIntegerLevelField(GetUnitAbility(u,'A0RI'), ABILITY_I
                     call MapPauseUnit(u,false)
                     call Push9(u,10,a,30)
                     call SetUnitAnimationByIndex(u,26)
-                elseif LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                elseif ReverseActiveId(GetHandleId(c))==true then
                     call SaveReal(h,id,5,20)
                     call SetUnitInvulnerable(u,false)
                     call MapPauseUnit(u,false)
@@ -131490,7 +131615,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call MapPauseUnit(c,true)
     call SetUnitInvulnerable(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -132812,7 +132937,7 @@ local real a=LoadReal(h,id,4)
 local player p=OwnerOf(u)
 local real dist=LoadReal(h,id,100)
 local boolean mod = GetUnitTypeId(u)=='H04J'
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     set n=CreateUnit(p, 'dH18', x, y, a*bj_RADTODEG)
     call MyRemoveUnit(n, 1.5)
     set n=CreateUnit(p, 'dM04', x, y, a*bj_RADTODEG)
@@ -134083,7 +134208,7 @@ call ShinjiFaceHold(qe,qef*bj_RADTODEG,0.6)
 endif
 // реверс (стойки Гарпа, UI Гоку, E Курапики и др., 17 окт): удара нет, цели отдаём Хирако (REVERSE_TARGET),
 // пауза и неуязвимость снимаются сразу, иначе ответный удар не пройдёт
-if LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+if ReverseActiveId(GetHandleId(qe)) then
 call SaveUnitHandle(HH,GetHandleId(qe),REVERSE_TARGET,u)
 call ShinjiAlpha(u,255)
 call MapPauseUnit(u,false)
@@ -134199,7 +134324,7 @@ call TSE_TimerStart(t,0.1,false,function ShinjiQFinish)
 else
 set qd=SR(GetUnitX(u),GetUnitY(u),GetUnitX(qe),GetUnitY(qe))
 set a=Atan2(GetUnitY(qe)-GetUnitY(u),GetUnitX(qe)-GetUnitX(u))
-if ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+if ShinjiInvOn(qe) and not ReverseActiveId(GetHandleId(qe)) then
 // враг под W (18 окт): без рывка вперёд — сразу лёгкий рывок назад на 150, исчезновение и удар со спины
 // (было: исчезал сразу в 130, затем минирывок вбок с 330)
 if not IsUnitType(qe,UNIT_TYPE_STRUCTURE) then
@@ -134218,7 +134343,7 @@ call ShinjiFade(u,0,10)
 call PauseTimer(t)
 call TSE_TimerStart(t,0.02,true,function ShinjiQSide)
 elseif qd<=130 then
-if ShinjiInvOn(qe) and not LoadBoolean(HH,GetHandleId(qe),ANTITARGET_ABILITY) then
+if ShinjiInvOn(qe) and not ReverseActiveId(GetHandleId(qe)) then
 // враг под W (17 окт): как контрудар Джирена (E) — Хирако исчезает со вспышкой, через 0.35 с появляется за спиной и бьёт
 // call ShinjiBlink(GetUnitX(u),GetUnitY(u))
 call SetUnitVertexColor(u,255,255,255,0)
@@ -138557,9 +138682,9 @@ call SaveInteger(HH,SH_ShnChanT,'A00Z',1)
 call SaveStr(HH,SH_ShnChanO,'A012',"absorb")
 call SaveStr(HH,SH_ShnChanO,'A014',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A014',2)
-call SaveStr(HH,SH_ShnChanO,'A016',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A016',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A016',2)
-call SaveStr(HH,SH_ShnChanO,'A017',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A017',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A017',2)
 call SaveStr(HH,SH_ShnChanO,'A018',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A018',2)
@@ -138585,7 +138710,7 @@ call SaveStr(HH,SH_ShnChanO,'A01T',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A01T',2)
 call SaveStr(HH,SH_ShnChanO,'A01U',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A01U',1)
-call SaveStr(HH,SH_ShnChanO,'A01V',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A01V',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A01V',2)
 call SaveStr(HH,SH_ShnChanO,'A01X',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A01X',2)
@@ -138597,7 +138722,7 @@ call SaveStr(HH,SH_ShnChanO,'A026',"controlmagic")
 call SaveStr(HH,SH_ShnChanO,'A027',"controlmagic")
 call SaveStr(HH,SH_ShnChanO,'A028',"controlmagic")
 call SaveStr(HH,SH_ShnChanO,'A029',"controlmagic")
-call SaveStr(HH,SH_ShnChanO,'A02A',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A02A',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A02A',2)
 call SaveStr(HH,SH_ShnChanO,'A02D',"absorb")
 call SaveStr(HH,SH_ShnChanO,'A02G',"ancestralspirit")
@@ -138623,12 +138748,12 @@ call SaveInteger(HH,SH_ShnChanT,'A02Z',2)
 call SaveStr(HH,SH_ShnChanO,'A030',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A030',1)
 call SaveStr(HH,SH_ShnChanO,'A032',"ambush")
-call SaveStr(HH,SH_ShnChanO,'A033',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A033',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A033',1)
 call SaveStr(HH,SH_ShnChanO,'A035',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A035',2)
 call SaveStr(HH,SH_ShnChanO,'A037',"ambush")
-call SaveStr(HH,SH_ShnChanO,'A03B',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A03B',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A03B',2)
 call SaveStr(HH,SH_ShnChanO,'A03N',"root")
 call SaveStr(HH,SH_ShnChanO,'A048',"resumeharvesting")
@@ -138646,7 +138771,7 @@ call SaveStr(HH,SH_ShnChanO,'A06W',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A06W',1)
 call SaveStr(HH,SH_ShnChanO,'A06X',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A06X',2)
-call SaveStr(HH,SH_ShnChanO,'A06Y',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A06Y',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A06Y',2)
 call SaveStr(HH,SH_ShnChanO,'A06Z',"charm")
 call SaveInteger(HH,SH_ShnChanT,'A06Z',2)
@@ -138682,13 +138807,13 @@ call SaveStr(HH,SH_ShnChanO,'A084',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A084',1)
 call SaveStr(HH,SH_ShnChanO,'A087',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A087',2)
-call SaveStr(HH,SH_ShnChanO,'A089',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A089',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A089',2)
 call SaveStr(HH,SH_ShnChanO,'A08A',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A08A',2)
-call SaveStr(HH,SH_ShnChanO,'A08C',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A08C',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A08C',2)
-call SaveStr(HH,SH_ShnChanO,'A08D',"autodispeloff")
+call SaveStr(HH,SH_ShnChanO,'A08D',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A08D',1)
 call SaveStr(HH,SH_ShnChanO,'A08E',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A08E',1)
@@ -138701,7 +138826,7 @@ call SaveStr(HH,SH_ShnChanO,'A08O',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A08O',1)
 call SaveStr(HH,SH_ShnChanO,'A08R',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A08R',2)
-call SaveStr(HH,SH_ShnChanO,'A08S',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A08S',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A08S',2)
 call SaveStr(HH,SH_ShnChanO,'A08U',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A08U',1)
@@ -138710,7 +138835,7 @@ call SaveStr(HH,SH_ShnChanO,'A08W',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A08W',1)
 call SaveStr(HH,SH_ShnChanO,'A08Y',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A08Y',1)
-call SaveStr(HH,SH_ShnChanO,'A08Z',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A08Z',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A08Z',2)
 call SaveStr(HH,SH_ShnChanO,'A090',"ambush")
 call SaveInteger(HH,SH_ShnChanT,'A090',2)
@@ -138718,12 +138843,12 @@ call SaveStr(HH,SH_ShnChanO,'A091',"autoharvestlumber")
 call SaveInteger(HH,SH_ShnChanT,'A091',2)
 call SaveStr(HH,SH_ShnChanO,'A09C',"autoentangleinstant")
 call SaveInteger(HH,SH_ShnChanT,'A09C',2)
-call SaveStr(HH,SH_ShnChanO,'A09D',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A09D',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A09D',1)
 call SaveStr(HH,SH_ShnChanO,'A09G',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A09G',2)
 call SaveStr(HH,SH_ShnChanO,'A09H',"AImove")
-call SaveStr(HH,SH_ShnChanO,'A09K',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A09K',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A09K',1)
 call SaveStr(HH,SH_ShnChanO,'A09L',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A09L',1)
@@ -138739,7 +138864,7 @@ call SaveInteger(HH,SH_ShnChanT,'A09R',2)
 call SaveStr(HH,SH_ShnChanO,'A09V',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A09V',1)
 call SaveStr(HH,SH_ShnChanO,'A09W',"ambush")
-call SaveStr(HH,SH_ShnChanO,'A09X',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A09X',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A09X',2)
 call SaveStr(HH,SH_ShnChanO,'A0A0',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0A3',"carrionswarm")
@@ -138785,14 +138910,14 @@ call SaveInteger(HH,SH_ShnChanT,'A0BH',2)
 call SaveStr(HH,SH_ShnChanO,'A0BJ',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0BJ',2)
 call SaveStr(HH,SH_ShnChanO,'A0BM',"autodispel")
-call SaveStr(HH,SH_ShnChanO,'A0BR',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0BR',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A0BS',"ambush")
 call SaveInteger(HH,SH_ShnChanT,'A0BS',2)
 call SaveStr(HH,SH_ShnChanO,'A0BT',"root")
 call SaveStr(HH,SH_ShnChanO,'A0BW',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0BW',1)
 call SaveStr(HH,SH_ShnChanO,'A0BZ',"root")
-call SaveStr(HH,SH_ShnChanO,'A0C1',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A0C1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0C1',2)
 call SaveStr(HH,SH_ShnChanO,'A0C2',"coldarrows")
 call SaveInteger(HH,SH_ShnChanT,'A0C2',1)
@@ -138804,25 +138929,25 @@ call SaveInteger(HH,SH_ShnChanT,'A0C6',2)
 call SaveStr(HH,SH_ShnChanO,'A0C7',"curse")
 call SaveInteger(HH,SH_ShnChanT,'A0C7',2)
 call SaveStr(HH,SH_ShnChanO,'A0C8',"root")
-call SaveStr(HH,SH_ShnChanO,'A0CA',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0CA',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0CA',2)
 call SaveStr(HH,SH_ShnChanO,'A0CB',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0CB',2)
-call SaveStr(HH,SH_ShnChanO,'A0CE',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0CE',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0CE',2)
 call SaveStr(HH,SH_ShnChanO,'A0CG',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0CG',2)
 call SaveStr(HH,SH_ShnChanO,'A0CI',"root")
-call SaveStr(HH,SH_ShnChanO,'A0CL',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A0CL',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0CL',2)
 call SaveStr(HH,SH_ShnChanO,'A0CO',"darkportal")
 call SaveStr(HH,SH_ShnChanO,'A0CR',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0CR',1)
 call SaveStr(HH,SH_ShnChanO,'A0CS',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A0CS',1)
-call SaveStr(HH,SH_ShnChanO,'A0CV',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A0CV',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0CV',2)
-call SaveStr(HH,SH_ShnChanO,'A0CX',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0CX',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0CX',2)
 call SaveStr(HH,SH_ShnChanO,'A0D0',"blink")
 call SaveStr(HH,SH_ShnChanO,'A0D1',"burrow")
@@ -138841,7 +138966,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0DI',1)
 call SaveStr(HH,SH_ShnChanO,'A0DJ',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0DJ',2)
 call SaveStr(HH,SH_ShnChanO,'A0DK',"root")
-call SaveStr(HH,SH_ShnChanO,'A0DL',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0DL',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0DL',2)
 call SaveStr(HH,SH_ShnChanO,'A0DM',"faeriefire")
 call SaveStr(HH,SH_ShnChanO,'A0DN',"ancestralspirit")
@@ -138901,17 +139026,17 @@ call SaveStr(HH,SH_ShnChanO,'A0GQ',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0GQ',2)
 call SaveStr(HH,SH_ShnChanO,'A0GS',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0GS',2)
-call SaveStr(HH,SH_ShnChanO,'A0GU',"carrionscarabson")
+call SaveStr(HH,SH_ShnChanO,'A0GU',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0GU',1)
 call SaveStr(HH,SH_ShnChanO,'A0GX',"coldarrows")
 call SaveInteger(HH,SH_ShnChanT,'A0GX',1)
-call SaveStr(HH,SH_ShnChanO,'A0GY',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0GY',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0GY',2)
 call SaveStr(HH,SH_ShnChanO,'A0H3',"darkconversion")
 call SaveInteger(HH,SH_ShnChanT,'A0H3',2)
 call SaveStr(HH,SH_ShnChanO,'A0H4',"drain")
 call SaveInteger(HH,SH_ShnChanT,'A0H4',2)
-call SaveStr(HH,SH_ShnChanO,'A0H7',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A0H7',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0H7',1)
 call SaveStr(HH,SH_ShnChanO,'A0H8',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A0H8',1)
@@ -138920,9 +139045,9 @@ call SaveInteger(HH,SH_ShnChanT,'A0H9',2)
 call SaveStr(HH,SH_ShnChanO,'A0HA',"auravampiric")
 call SaveInteger(HH,SH_ShnChanT,'A0HA',2)
 call SaveStr(HH,SH_ShnChanO,'A0HC',"channel")
-call SaveStr(HH,SH_ShnChanO,'A0HE',"creephealoff")
+call SaveStr(HH,SH_ShnChanO,'A0HE',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0HE',2)
-call SaveStr(HH,SH_ShnChanO,'A0HF',"bloodlustoff")
+call SaveStr(HH,SH_ShnChanO,'A0HF',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0HF',1)
 call SaveStr(HH,SH_ShnChanO,'A0HG',"massteleport")
 call SaveInteger(HH,SH_ShnChanT,'A0HG',2)
@@ -138933,11 +139058,11 @@ call SaveInteger(HH,SH_ShnChanT,'A0HL',1)
 call SaveStr(HH,SH_ShnChanO,'A0HO',"resumeharvesting")
 call SaveStr(HH,SH_ShnChanO,'A0HY',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0HY',1)
-call SaveStr(HH,SH_ShnChanO,'A0HZ',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0HZ',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0HZ',2)
 call SaveStr(HH,SH_ShnChanO,'A0I0',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0I0',2)
-call SaveStr(HH,SH_ShnChanO,'A0I2',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0I2',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0I2',2)
 call SaveStr(HH,SH_ShnChanO,'A0II',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A0II',1)
@@ -138963,7 +139088,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0J5',2)
 call SaveStr(HH,SH_ShnChanO,'A0J6',"spiritlink")
 call SaveStr(HH,SH_ShnChanO,'A0J8',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0J8',2)
-call SaveStr(HH,SH_ShnChanO,'A0J9',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A0J9',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0J9',1)
 call SaveStr(HH,SH_ShnChanO,'A0JB',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0JD',"curse")
@@ -138972,7 +139097,7 @@ call SaveStr(HH,SH_ShnChanO,'A0JF',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0JF',2)
 call SaveStr(HH,SH_ShnChanO,'A0JH',"awaken")
 call SaveInteger(HH,SH_ShnChanT,'A0JH',2)
-call SaveStr(HH,SH_ShnChanO,'A0JK',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0JK',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0JK',2)
 call SaveStr(HH,SH_ShnChanO,'A0JL',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'A0JL',2)
@@ -138992,7 +139117,7 @@ call SaveStr(HH,SH_ShnChanO,'A0K3',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0K4',"autoentangle")
 call SaveStr(HH,SH_ShnChanO,'A0K5',"burrow")
 call SaveStr(HH,SH_ShnChanO,'A0K8',"acidbomb")
-call SaveStr(HH,SH_ShnChanO,'A0K9',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0K9',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0K9',2)
 call SaveStr(HH,SH_ShnChanO,'A0KA',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0KB',"cyclone")
@@ -139003,7 +139128,7 @@ call SaveStr(HH,SH_ShnChanO,'A0KF',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0KF',2)
 call SaveStr(HH,SH_ShnChanO,'A0KH',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0KH',2)
-call SaveStr(HH,SH_ShnChanO,'A0KI',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0KI',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0KI',2)
 call SaveStr(HH,SH_ShnChanO,'A0KL',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0KL',2)
@@ -139025,23 +139150,23 @@ call SaveInteger(HH,SH_ShnChanT,'A0KX',1)
 call SaveStr(HH,SH_ShnChanO,'A0KY',"clusterrockets")
 call SaveStr(HH,SH_ShnChanO,'A0L0',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0L0',2)
-call SaveStr(HH,SH_ShnChanO,'A0L2',"bloodluston")
+call SaveStr(HH,SH_ShnChanO,'A0L2',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0L2',2)
-call SaveStr(HH,SH_ShnChanO,'A0L6',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0L6',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0L6',2)
-call SaveStr(HH,SH_ShnChanO,'A0L8',"barkskinoff")
+call SaveStr(HH,SH_ShnChanO,'A0L8',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0L8',2)
 call SaveStr(HH,SH_ShnChanO,'A0LA',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0LA',2)
 call SaveStr(HH,SH_ShnChanO,'A0LB',"heal")
 call SaveStr(HH,SH_ShnChanO,'A0LC',"charm")
 call SaveInteger(HH,SH_ShnChanT,'A0LC',1)
-call SaveStr(HH,SH_ShnChanO,'A0LL',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A0LL',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0LL',1)
-call SaveStr(HH,SH_ShnChanO,'A0LM',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0LM',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0LM',1)
 call SaveStr(HH,SH_ShnChanO,'A0LP',"resumeharvesting")
-call SaveStr(HH,SH_ShnChanO,'A0LQ',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0LQ',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0LQ',2)
 call SaveStr(HH,SH_ShnChanO,'A0LS',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0LS',1)
@@ -139066,7 +139191,7 @@ call SaveStr(HH,SH_ShnChanO,'A0MK',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A0MK',2)
 call SaveStr(HH,SH_ShnChanO,'A0ML',"ambush")
 call SaveInteger(HH,SH_ShnChanT,'A0ML',2)
-call SaveStr(HH,SH_ShnChanO,'A0MO',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0MO',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0MO',2)
 call SaveStr(HH,SH_ShnChanO,'A0MR',"deathcoil")
 call SaveInteger(HH,SH_ShnChanT,'A0MR',2)
@@ -139074,9 +139199,9 @@ call SaveStr(HH,SH_ShnChanO,'A0MU',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0MU',2)
 call SaveStr(HH,SH_ShnChanO,'A0MV',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0MV',2)
-call SaveStr(HH,SH_ShnChanO,'A0MY',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0MY',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0MY',2)
-call SaveStr(HH,SH_ShnChanO,'A0MZ',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A0MZ',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'A0MZ',2)
 call SaveStr(HH,SH_ShnChanO,'A0N5',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0N5',2)
@@ -139088,7 +139213,7 @@ call SaveStr(HH,SH_ShnChanO,'A0NF',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0NF',1)
 call SaveStr(HH,SH_ShnChanO,'A0NR',"cyclone")
 call SaveInteger(HH,SH_ShnChanT,'A0NR',1)
-call SaveStr(HH,SH_ShnChanO,'A0NV',"autodispeloff")
+call SaveStr(HH,SH_ShnChanO,'A0NV',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0NV',1)
 call SaveStr(HH,SH_ShnChanO,'A0NX',"root")
 call SaveInteger(HH,SH_ShnChanT,'A0NX',1)
@@ -139102,14 +139227,14 @@ call SaveStr(HH,SH_ShnChanO,'A0OJ',"drain")
 call SaveInteger(HH,SH_ShnChanT,'A0OJ',2)
 call SaveStr(HH,SH_ShnChanO,'A0OM',"eattree")
 call SaveInteger(HH,SH_ShnChanT,'A0OM',2)
-call SaveStr(HH,SH_ShnChanO,'A0OR',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0OR',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0OR',2)
 call SaveStr(HH,SH_ShnChanO,'A0OS',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0OS',1)
 call SaveStr(HH,SH_ShnChanO,'A0OV',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0OX',"root")
 call SaveStr(HH,SH_ShnChanO,'A0P2',"dispel")
-call SaveStr(HH,SH_ShnChanO,'A0P3',"autodispeloff")
+call SaveStr(HH,SH_ShnChanO,'A0P3',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0P3',1)
 call SaveStr(HH,SH_ShnChanO,'A0P5',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0P5',2)
@@ -139123,7 +139248,7 @@ call SaveStr(HH,SH_ShnChanO,'A0PA',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0PA',2)
 call SaveStr(HH,SH_ShnChanO,'A0PB',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0PD',"root")
-call SaveStr(HH,SH_ShnChanO,'A0PF',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0PF',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0PF',2)
 call SaveStr(HH,SH_ShnChanO,'A0PG',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'A0PG',1)
@@ -139138,7 +139263,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0PP',2)
 call SaveStr(HH,SH_ShnChanO,'A0PQ',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0PQ',2)
 call SaveStr(HH,SH_ShnChanO,'A0PR',"root")
-call SaveStr(HH,SH_ShnChanO,'A0PS',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0PS',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0PS',2)
 call SaveStr(HH,SH_ShnChanO,'A0PT',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0PU',"absorb")
@@ -139173,13 +139298,13 @@ call SaveStr(HH,SH_ShnChanO,'A0QN',"gold2lumber")
 call SaveInteger(HH,SH_ShnChanT,'A0QN',1)
 call SaveStr(HH,SH_ShnChanO,'A0QO',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0QO',2)
-call SaveStr(HH,SH_ShnChanO,'A0QP',"bloodluston")
+call SaveStr(HH,SH_ShnChanO,'A0QP',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A0QR',"heal")
 call SaveStr(HH,SH_ShnChanO,'A0QT',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0QT',1)
-call SaveStr(HH,SH_ShnChanO,'A0QU',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0QU',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0QU',1)
-call SaveStr(HH,SH_ShnChanO,'A0QX',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0QX',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0QX',2)
 call SaveStr(HH,SH_ShnChanO,'A0QY',"berserk")
 call SaveStr(HH,SH_ShnChanO,'A0R0',"channel")
@@ -139194,7 +139319,7 @@ call SaveStr(HH,SH_ShnChanO,'A0R8',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0R8',2)
 call SaveStr(HH,SH_ShnChanO,'A0R9',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0R9',1)
-call SaveStr(HH,SH_ShnChanO,'A0RA',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A0RA',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0RA',2)
 call SaveStr(HH,SH_ShnChanO,'A0RB',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A0RB',1)
@@ -139214,18 +139339,18 @@ call SaveStr(HH,SH_ShnChanO,'A0RL',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0RL',2)
 call SaveStr(HH,SH_ShnChanO,'A0RM',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0RM',2)
-call SaveStr(HH,SH_ShnChanO,'A0RN',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A0RN',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0RN',2)
-call SaveStr(HH,SH_ShnChanO,'A0RP',"bloodluston")
-call SaveStr(HH,SH_ShnChanO,'A0RQ',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A0RP',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'A0RQ',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0RQ',2)
 call SaveStr(HH,SH_ShnChanO,'A0RR',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0RR',2)
-call SaveStr(HH,SH_ShnChanO,'A0RU',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A0RU',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0RU',2)
 call SaveStr(HH,SH_ShnChanO,'A0RV',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A0RV',1)
-call SaveStr(HH,SH_ShnChanO,'A0RW',"autodispeloff")
+call SaveStr(HH,SH_ShnChanO,'A0RW',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A0RX',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0RX',2)
 call SaveStr(HH,SH_ShnChanO,'A0RY',"ancestralspirit")
@@ -139234,7 +139359,7 @@ call SaveStr(HH,SH_ShnChanO,'A0S0',"web")
 call SaveInteger(HH,SH_ShnChanT,'A0S0',2)
 call SaveStr(HH,SH_ShnChanO,'A0SG',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A0SG',2)
-call SaveStr(HH,SH_ShnChanO,'A0SH',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A0SH',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0SH',1)
 call SaveStr(HH,SH_ShnChanO,'A0SL',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0SN',"doom")
@@ -139259,7 +139384,7 @@ call SaveStr(HH,SH_ShnChanO,'A0TZ',"eattree")
 call SaveInteger(HH,SH_ShnChanT,'A0TZ',2)
 call SaveStr(HH,SH_ShnChanO,'A0U0',"deathcoil")
 call SaveInteger(HH,SH_ShnChanT,'A0U0',2)
-call SaveStr(HH,SH_ShnChanO,'A0U1',"blackarrowoff")
+call SaveStr(HH,SH_ShnChanO,'A0U1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0U1',2)
 call SaveStr(HH,SH_ShnChanO,'A0U4',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0U4',2)
@@ -139275,7 +139400,7 @@ call SaveInteger(HH,SH_ShnChanT,'A0UO',1)
 call SaveStr(HH,SH_ShnChanO,'A0UQ',"doom")
 call SaveStr(HH,SH_ShnChanO,'A0UR',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0UR',1)
-call SaveStr(HH,SH_ShnChanO,'A0UU',"bloodluston")
+call SaveStr(HH,SH_ShnChanO,'A0UU',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A0UX',"root")
 call SaveStr(HH,SH_ShnChanO,'A0UY',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0UZ',"absorb")
@@ -139289,7 +139414,7 @@ call SaveStr(HH,SH_ShnChanO,'A0V8',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0V8',1)
 call SaveStr(HH,SH_ShnChanO,'A0V9',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0V9',2)
-call SaveStr(HH,SH_ShnChanO,'A0VE',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A0VE',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0VE',2)
 call SaveStr(HH,SH_ShnChanO,'A0VG',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A0VG',2)
@@ -139304,8 +139429,8 @@ call SaveStr(HH,SH_ShnChanO,'A0WA',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A0WA',2)
 call SaveStr(HH,SH_ShnChanO,'A0WD',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0WD',2)
-call SaveStr(HH,SH_ShnChanO,'A0WH',"bloodluston")
-call SaveStr(HH,SH_ShnChanO,'A0WI',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A0WH',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'A0WI',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0WI',2)
 call SaveStr(HH,SH_ShnChanO,'A0WJ',"avatar")
 call SaveInteger(HH,SH_ShnChanT,'A0WJ',1)
@@ -139338,11 +139463,11 @@ call SaveStr(HH,SH_ShnChanO,'A0XM',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0XM',2)
 call SaveStr(HH,SH_ShnChanO,'A0XN',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A0XN',2)
-call SaveStr(HH,SH_ShnChanO,'A0XO',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A0XO',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A0XO',1)
-call SaveStr(HH,SH_ShnChanO,'A0XQ',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A0XQ',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0XQ',2)
-call SaveStr(HH,SH_ShnChanO,'A0XR',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0XR',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0XR',2)
 call SaveStr(HH,SH_ShnChanO,'A0XU',"charm")
 call SaveInteger(HH,SH_ShnChanT,'A0XU',1)
@@ -139358,13 +139483,13 @@ call SaveStr(HH,SH_ShnChanO,'A0YS',"ambush")
 call SaveStr(HH,SH_ShnChanO,'A0YU',"heal")
 call SaveStr(HH,SH_ShnChanO,'A0YX',"channel")
 call SaveStr(HH,SH_ShnChanO,'A0YZ',"breathoffrost")
-call SaveStr(HH,SH_ShnChanO,'A0Z0',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A0Z0',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0Z0',2)
-call SaveStr(HH,SH_ShnChanO,'A0Z2',"frostarmoron")
+call SaveStr(HH,SH_ShnChanO,'A0Z2',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0Z2',2)
 call SaveStr(HH,SH_ShnChanO,'A0Z3',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A0Z3',2)
-call SaveStr(HH,SH_ShnChanO,'A0ZD',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A0ZD',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A0ZD',2)
 call SaveStr(HH,SH_ShnChanO,'A0ZG',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A0ZG',1)
@@ -139453,8 +139578,8 @@ call SaveStr(HH,SH_ShnChanO,'A12K',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A12K',1)
 call SaveStr(HH,SH_ShnChanO,'A12L',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A12L',1)
-call SaveStr(HH,SH_ShnChanO,'A12Q',"bloodluston")
-call SaveStr(HH,SH_ShnChanO,'A12T',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A12Q',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'A12T',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A12T',2)
 call SaveStr(HH,SH_ShnChanO,'A12W',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A12W',2)
@@ -139483,7 +139608,7 @@ call SaveStr(HH,SH_ShnChanO,'A13X',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A13X',2)
 call SaveStr(HH,SH_ShnChanO,'A13Y',"drain")
 call SaveInteger(HH,SH_ShnChanT,'A13Y',1)
-call SaveStr(HH,SH_ShnChanO,'A13Z',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A13Z',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A13Z',2)
 call SaveStr(HH,SH_ShnChanO,'A141',"charm")
 call SaveStr(HH,SH_ShnChanO,'A146',"flare")
@@ -139526,7 +139651,7 @@ call SaveStr(HH,SH_ShnChanO,'A15O',"AImove")
 call SaveStr(HH,SH_ShnChanO,'A15P',"curseon")
 call SaveStr(HH,SH_ShnChanO,'A15W',"earthquake")
 call SaveInteger(HH,SH_ShnChanT,'A15W',2)
-call SaveStr(HH,SH_ShnChanO,'A15X',"creephealon")
+call SaveStr(HH,SH_ShnChanO,'A15X',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A15X',2)
 call SaveStr(HH,SH_ShnChanO,'A15Y',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'A15Y',1)
@@ -139534,11 +139659,11 @@ call SaveStr(HH,SH_ShnChanO,'A161',"channel")
 call SaveStr(HH,SH_ShnChanO,'A166',"root")
 call SaveStr(HH,SH_ShnChanO,'A16A',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A16A',1)
-call SaveStr(HH,SH_ShnChanO,'A16B',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A16B',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A16B',2)
 call SaveStr(HH,SH_ShnChanO,'A16F',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'A16F',1)
-call SaveStr(HH,SH_ShnChanO,'A16L',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A16L',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A16L',2)
 call SaveStr(HH,SH_ShnChanO,'A17F',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A17F',2)
@@ -139547,7 +139672,7 @@ call SaveInteger(HH,SH_ShnChanT,'A17G',2)
 call SaveStr(HH,SH_ShnChanO,'A17L',"acolyteharvest")
 call SaveInteger(HH,SH_ShnChanT,'A17L',2)
 call SaveStr(HH,SH_ShnChanO,'A17M',"bearform")
-call SaveStr(HH,SH_ShnChanO,'A17O',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A17O',"healingspray")
 call SaveInteger(HH,SH_ShnChanT,'A17O',2)
 call SaveStr(HH,SH_ShnChanO,'A17P',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'A17P',2)
@@ -139582,7 +139707,7 @@ call SaveStr(HH,SH_ShnChanO,'A194',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A194',2)
 call SaveStr(HH,SH_ShnChanO,'A196',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A196',2)
-call SaveStr(HH,SH_ShnChanO,'A197',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A197',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A197',1)
 call SaveStr(HH,SH_ShnChanO,'A198',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A198',1)
@@ -139597,7 +139722,7 @@ call SaveStr(HH,SH_ShnChanO,'A19P',"entangle")
 call SaveInteger(HH,SH_ShnChanT,'A19P',2)
 call SaveStr(HH,SH_ShnChanO,'A19Q',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A19Q',2)
-call SaveStr(HH,SH_ShnChanO,'A19R',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A19R',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A19R',2)
 call SaveStr(HH,SH_ShnChanO,'A19S',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A19S',1)
@@ -139611,13 +139736,13 @@ call SaveInteger(HH,SH_ShnChanT,'A1A4',1)
 call SaveStr(HH,SH_ShnChanO,'A1AI',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1AI',2)
 call SaveStr(HH,SH_ShnChanO,'A1AJ',"heal")
-call SaveStr(HH,SH_ShnChanO,'A1AK',"undeadbuild")
+call SaveStr(HH,SH_ShnChanO,'A1AK',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A1AK',1)
 call SaveStr(HH,SH_ShnChanO,'A1AL',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1AL',2)
 call SaveStr(HH,SH_ShnChanO,'A1AN',"townbellon")
 call SaveInteger(HH,SH_ShnChanT,'A1AN',2)
-call SaveStr(HH,SH_ShnChanO,'A1AO',"parasiteon")
+call SaveStr(HH,SH_ShnChanO,'A1AO',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1AO',2)
 call SaveStr(HH,SH_ShnChanO,'A1AP',"roar")
 call SaveStr(HH,SH_ShnChanO,'A1AS',"darkportal")
@@ -139644,7 +139769,7 @@ call SaveStr(HH,SH_ShnChanO,'A1BU',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A1BU',2)
 call SaveStr(HH,SH_ShnChanO,'A1BV',"spellshieldaoe")
 call SaveInteger(HH,SH_ShnChanT,'A1BV',2)
-call SaveStr(HH,SH_ShnChanO,'A1BW',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'A1BW',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1BX',"transmute")
 call SaveStr(HH,SH_ShnChanO,'A1BY',"unavengerform")
 call SaveStr(HH,SH_ShnChanO,'A1BZ',"unflamingarrows")
@@ -139662,7 +139787,7 @@ call SaveStr(HH,SH_ShnChanO,'A1CT',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1CT',2)
 call SaveStr(HH,SH_ShnChanO,'A1CU',"hex")
 call SaveInteger(HH,SH_ShnChanT,'A1CU',2)
-call SaveStr(HH,SH_ShnChanO,'A1CV',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A1CV',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1CV',2)
 call SaveStr(HH,SH_ShnChanO,'A1CW',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1CW',1)
@@ -139678,14 +139803,14 @@ call SaveStr(HH,SH_ShnChanO,'A1D7',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1D7',1)
 call SaveStr(HH,SH_ShnChanO,'A1D9',"eattree")
 call SaveInteger(HH,SH_ShnChanT,'A1D9',2)
-call SaveStr(HH,SH_ShnChanO,'A1DA',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A1DA',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A1DA',1)
 call SaveStr(HH,SH_ShnChanO,'A1DJ',"nagabuild")
 call SaveStr(HH,SH_ShnChanO,'A1DK',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A1DK',2)
 call SaveStr(HH,SH_ShnChanO,'A1DL',"polymorph")
 call SaveInteger(HH,SH_ShnChanT,'A1DL',1)
-call SaveStr(HH,SH_ShnChanO,'A1DM',"bloodluston")
+call SaveStr(HH,SH_ShnChanO,'A1DM',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1DN',"channel")
 call SaveStr(HH,SH_ShnChanO,'A1DR',"curseon")
 call SaveStr(HH,SH_ShnChanO,'A1DS',"controlmagic")
@@ -139702,17 +139827,17 @@ call SaveStr(HH,SH_ShnChanO,'A1E0',"ensnare")
 call SaveInteger(HH,SH_ShnChanT,'A1E0',2)
 call SaveStr(HH,SH_ShnChanO,'A1E5',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1E5',2)
-call SaveStr(HH,SH_ShnChanO,'A1E6',"autodispelon")
+call SaveStr(HH,SH_ShnChanO,'A1E6',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1E6',1)
 call SaveStr(HH,SH_ShnChanO,'A1E8',"web")
 call SaveInteger(HH,SH_ShnChanT,'A1E8',2)
-call SaveStr(HH,SH_ShnChanO,'A1E9',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'A1E9',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A1E9',1)
 call SaveStr(HH,SH_ShnChanO,'A1EG',"root")
-call SaveStr(HH,SH_ShnChanO,'A1EJ',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A1EJ',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1EK',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1EK',2)
-call SaveStr(HH,SH_ShnChanO,'A1EL',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'A1EL',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1EL',2)
 call SaveStr(HH,SH_ShnChanO,'A1EM',"phaseshiftinstant")
 call SaveInteger(HH,SH_ShnChanT,'A1EM',2)
@@ -139723,16 +139848,16 @@ call SaveStr(HH,SH_ShnChanO,'A1ES',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'A1ES',2)
 call SaveStr(HH,SH_ShnChanO,'A1ET',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1ET',2)
-call SaveStr(HH,SH_ShnChanO,'A1EW',"carrionscarabsoff")
+call SaveStr(HH,SH_ShnChanO,'A1EW',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A1EW',2)
-call SaveStr(HH,SH_ShnChanO,'A1EX',"autodispeloff")
+call SaveStr(HH,SH_ShnChanO,'A1EX',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1EX',1)
 call SaveStr(HH,SH_ShnChanO,'A1EY',"deathpact")
 call SaveInteger(HH,SH_ShnChanT,'A1EY',2)
-call SaveStr(HH,SH_ShnChanO,'A1FC',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A1FC',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1FC',2)
 call SaveStr(HH,SH_ShnChanO,'A1FD',"channel")
-call SaveStr(HH,SH_ShnChanO,'A1FE',"neutralinteract")
+call SaveStr(HH,SH_ShnChanO,'A1FE',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'A1FE',2)
 call SaveStr(HH,SH_ShnChanO,'A1FF',"lightningshield")
 call SaveInteger(HH,SH_ShnChanT,'A1FF',2)
@@ -139742,7 +139867,7 @@ call SaveStr(HH,SH_ShnChanO,'A1FL',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A1FL',2)
 call SaveStr(HH,SH_ShnChanO,'A1FM',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1FM',2)
-call SaveStr(HH,SH_ShnChanO,'A1FN',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'A1FN',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1FN',2)
 call SaveStr(HH,SH_ShnChanO,'A1FO',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1FO',1)
@@ -139757,8 +139882,8 @@ call SaveInteger(HH,SH_ShnChanT,'A1G1',2)
 call SaveStr(HH,SH_ShnChanO,'A1G2',"sleep")
 call SaveStr(HH,SH_ShnChanO,'A1G3',"chainlightning")
 call SaveInteger(HH,SH_ShnChanT,'A1G3',1)
-call SaveStr(HH,SH_ShnChanO,'A1G4',"autoharvestlumber")
-call SaveStr(HH,SH_ShnChanO,'A1G5',"renewoff")
+call SaveStr(HH,SH_ShnChanO,'A1G4',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'A1G5',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1G5',2)
 call SaveStr(HH,SH_ShnChanO,'A1G6',"replenish")
 call SaveInteger(HH,SH_ShnChanT,'A1G6',2)
@@ -139776,13 +139901,13 @@ call SaveStr(HH,SH_ShnChanO,'A1GO',"deathanddecay")
 call SaveInteger(HH,SH_ShnChanT,'A1GO',2)
 call SaveStr(HH,SH_ShnChanO,'A1GQ',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'A1GQ',2)
-call SaveStr(HH,SH_ShnChanO,'A1GR',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'A1GR',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1GT',"unsubmerge")
 call SaveInteger(HH,SH_ShnChanT,'A1GT',1)
 call SaveStr(HH,SH_ShnChanO,'A1GU',"farsight")
 call SaveInteger(HH,SH_ShnChanT,'A1GU',1)
 call SaveStr(HH,SH_ShnChanO,'A1GV',"disenchant")
-call SaveStr(HH,SH_ShnChanO,'A1GW',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'A1GW',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1GW',2)
 call SaveStr(HH,SH_ShnChanO,'A1GZ',"tankpilot")
 call SaveStr(HH,SH_ShnChanO,'A1H0',"farsight")
@@ -139802,7 +139927,7 @@ call SaveStr(HH,SH_ShnChanO,'A1HA',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1HA',2)
 call SaveStr(HH,SH_ShnChanO,'A1HB',"frostarmor")
 call SaveInteger(HH,SH_ShnChanT,'A1HB',1)
-call SaveStr(HH,SH_ShnChanO,'A1HC',"blackarrowoff")
+call SaveStr(HH,SH_ShnChanO,'A1HC',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A1HC',2)
 call SaveStr(HH,SH_ShnChanO,'A1HD',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'A1HD',1)
@@ -139813,24 +139938,24 @@ call SaveStr(HH,SH_ShnChanO,'A1HQ',"voodoo")
 call SaveInteger(HH,SH_ShnChanT,'A1HQ',1)
 call SaveStr(HH,SH_ShnChanO,'A1HR',"volcano")
 call SaveInteger(HH,SH_ShnChanT,'A1HR',1)
-call SaveStr(HH,SH_ShnChanO,'A1HS',"vengeanceon")
+call SaveStr(HH,SH_ShnChanO,'A1HS',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1HS',1)
-call SaveStr(HH,SH_ShnChanO,'A1HW',"creephealoff")
+call SaveStr(HH,SH_ShnChanO,'A1HW',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1HX',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'A1HX',1)
-call SaveStr(HH,SH_ShnChanO,'A1HY',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A1HY',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1HY',1)
 call SaveStr(HH,SH_ShnChanO,'A1HZ',"impale")
 call SaveStr(HH,SH_ShnChanO,'A1I0',"farsight")
 call SaveInteger(HH,SH_ShnChanT,'A1I0',2)
-call SaveStr(HH,SH_ShnChanO,'A1I1',"renewon")
+call SaveStr(HH,SH_ShnChanO,'A1I1',"stomp")
 call SaveStr(HH,SH_ShnChanO,'A1I3',"frostnova")
 call SaveStr(HH,SH_ShnChanO,'A1IA',"coldarrowstarg")
 call SaveInteger(HH,SH_ShnChanT,'A1IA',2)
-call SaveStr(HH,SH_ShnChanO,'A1IF',"resumeharvesting")
+call SaveStr(HH,SH_ShnChanO,'A1IF',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'A1L8',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'A1L8',2)
-call SaveStr(HH,SH_ShnChanO,'A1LL',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A1LL',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A1LL',1)
 call SaveStr(HH,SH_ShnChanO,'A1M2',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A1M2',2)
@@ -139852,9 +139977,9 @@ call SaveInteger(HH,SH_ShnChanT,'A24E',2)
 call SaveStr(HH,SH_ShnChanO,'A24T',"resumeharvesting")
 call SaveStr(HH,SH_ShnChanO,'A26J',"roar")
 call SaveInteger(HH,SH_ShnChanT,'A26J',1)
-call SaveStr(HH,SH_ShnChanO,'A270',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'A270',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'A270',2)
-call SaveStr(HH,SH_ShnChanO,'A29T',"vengeanceon")
+call SaveStr(HH,SH_ShnChanO,'A29T',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A29T',1)
 call SaveStr(HH,SH_ShnChanO,'A2D0',"blink")
 call SaveInteger(HH,SH_ShnChanT,'A2D0',2)
@@ -139872,13 +139997,13 @@ call SaveInteger(HH,SH_ShnChanT,'A2FF',2)
 call SaveStr(HH,SH_ShnChanO,'A2G2',"sleep")
 call SaveStr(HH,SH_ShnChanO,'A2HY',"channel")
 call SaveInteger(HH,SH_ShnChanT,'A2HY',1)
-call SaveStr(HH,SH_ShnChanO,'A2LL',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'A2LL',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A2LL',1)
 call SaveStr(HH,SH_ShnChanO,'A2M2',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'A2M2',2)
 call SaveStr(HH,SH_ShnChanO,'A2U9',"parasite")
 call SaveInteger(HH,SH_ShnChanT,'A2U9',1)
-call SaveStr(HH,SH_ShnChanO,'A2ZD',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'A2ZD',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'A2ZD',2)
 call SaveStr(HH,SH_ShnChanO,'A30B',"evileye")
 call SaveInteger(HH,SH_ShnChanT,'A30B',2)
@@ -139901,17 +140026,17 @@ call SaveStr(HH,SH_ShnChanO,'A4D2',"blight")
 call SaveInteger(HH,SH_ShnChanT,'A4D2',2)
 call SaveStr(HH,SH_ShnChanO,'A4D3',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'A4D3',2)
-call SaveStr(HH,SH_ShnChanO,'A901',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'A901',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'A901',1)
-call SaveStr(HH,SH_ShnChanO,'ADG1',"renewon")
+call SaveStr(HH,SH_ShnChanO,'ADG1',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'AFUP',"root")
 call SaveStr(HH,SH_ShnChanO,'AI34',"resumeharvesting")
 call SaveStr(HH,SH_ShnChanO,'AJIT',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'AJIT',2)
 call SaveStr(HH,SH_ShnChanO,'AKE1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'AKE1',2)
-call SaveStr(HH,SH_ShnChanO,'AKF1',"acolyteharvest")
-call SaveStr(HH,SH_ShnChanO,'AKG1',"weboff")
+call SaveStr(HH,SH_ShnChanO,'AKF1',"stomp")
+call SaveStr(HH,SH_ShnChanO,'AKG1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'AKG1',2)
 call SaveStr(HH,SH_ShnChanO,'AKQ1',"charm")
 call SaveInteger(HH,SH_ShnChanT,'AKQ1',2)
@@ -139919,8 +140044,8 @@ call SaveStr(HH,SH_ShnChanO,'AKR1',"heal")
 call SaveInteger(HH,SH_ShnChanT,'AKR1',1)
 call SaveStr(HH,SH_ShnChanO,'AKT1',"tornado")
 call SaveStr(HH,SH_ShnChanO,'AKW1',"channel")
-call SaveStr(HH,SH_ShnChanO,'AMUG',"renewon")
-call SaveStr(HH,SH_ShnChanO,'AMUR',"bloodluston")
+call SaveStr(HH,SH_ShnChanO,'AMUG',"thunderclap")
+call SaveStr(HH,SH_ShnChanO,'AMUR',"stomp")
 call SaveStr(HH,SH_ShnChanO,'AP03',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'AP03',3)
 call SaveStr(HH,SH_ShnChanO,'AP09',"hex")
@@ -139959,16 +140084,16 @@ call SaveStr(HH,SH_ShnChanO,'AaS0',"grabtree")
 call SaveStr(HH,SH_ShnChanO,'AccD',"drain")
 call SaveInteger(HH,SH_ShnChanT,'AccD',2)
 call SaveStr(HH,SH_ShnChanO,'AccG',"heal")
-call SaveStr(HH,SH_ShnChanO,'Ad01',"renewon")
+call SaveStr(HH,SH_ShnChanO,'Ad01',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'Ad03',"farsight")
 call SaveInteger(HH,SH_ShnChanT,'Ad03',2)
-call SaveStr(HH,SH_ShnChanO,'Ad04',"weboff")
+call SaveStr(HH,SH_ShnChanO,'Ad04',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'Ad04',2)
-call SaveStr(HH,SH_ShnChanO,'Ad05',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'Ad05',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'Ad05',2)
 call SaveStr(HH,SH_ShnChanO,'Ad07',"bearform")
 call SaveStr(HH,SH_ShnChanO,'Ad12',"cripple")
-call SaveStr(HH,SH_ShnChanO,'Ad6Q',"resumeharvesting")
+call SaveStr(HH,SH_ShnChanO,'Ad6Q',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'Ad6Q',3)
 call SaveStr(HH,SH_ShnChanO,'Ad8M',"channel")
 call SaveInteger(HH,SH_ShnChanT,'Ad8M',2)
@@ -139981,7 +140106,7 @@ call SaveInteger(HH,SH_ShnChanT,'Ad9R',1)
 call SaveStr(HH,SH_ShnChanO,'AlDl',"blizzard")
 call SaveStr(HH,SH_ShnChanO,'AlF1',"chainlightning")
 call SaveStr(HH,SH_ShnChanO,'AlF2',"carrionswarm")
-call SaveStr(HH,SH_ShnChanO,'AlF3',"carrionscarabson")
+call SaveStr(HH,SH_ShnChanO,'AlF3',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'AlbQ',"channel")
 call SaveInteger(HH,SH_ShnChanT,'AlbQ',2)
 call SaveStr(HH,SH_ShnChanO,'AlbR',"creepheal")
@@ -139992,36 +140117,36 @@ call SaveStr(HH,SH_ShnChanO,'Ao51',"darkportal")
 call SaveInteger(HH,SH_ShnChanT,'Ao51',2)
 call SaveStr(HH,SH_ShnChanO,'Ao52',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'Ao52',2)
-call SaveStr(HH,SH_ShnChanO,'Ao55',"weboff")
+call SaveStr(HH,SH_ShnChanO,'Ao55',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'Ao55',2)
 call SaveStr(HH,SH_ShnChanO,'Ao60',"farsight")
-call SaveStr(HH,SH_ShnChanO,'Ao61',"renewon")
+call SaveStr(HH,SH_ShnChanO,'Ao61',"stomp")
 call SaveStr(HH,SH_ShnChanO,'Ao63',"channel")
 call SaveInteger(HH,SH_ShnChanT,'Ao63',2)
-call SaveStr(HH,SH_ShnChanO,'Ao66',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'Ao66',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'Ao66',2)
 call SaveStr(HH,SH_ShnChanO,'Ao67',"nagabuild")
-call SaveStr(HH,SH_ShnChanO,'Ao69',"vengeanceon")
+call SaveStr(HH,SH_ShnChanO,'Ao69',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'Ao69',1)
 call SaveStr(HH,SH_ShnChanO,'Ao6V',"deathanddecay")
 call SaveInteger(HH,SH_ShnChanT,'Ao6V',2)
-call SaveStr(HH,SH_ShnChanO,'Ao6W',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'Ao6W',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'Ao6W',2)
-call SaveStr(HH,SH_ShnChanO,'Ao6Y',"weboff")
+call SaveStr(HH,SH_ShnChanO,'Ao6Y',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'Ao6Y',1)
 call SaveStr(HH,SH_ShnChanO,'Ao7A',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'Ao7A',2)
-call SaveStr(HH,SH_ShnChanO,'Ao7B',"weboff")
+call SaveStr(HH,SH_ShnChanO,'Ao7B',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'Ao7B',2)
 call SaveStr(HH,SH_ShnChanO,'Ao7C',"farsight")
 call SaveInteger(HH,SH_ShnChanT,'Ao7C',1)
-call SaveStr(HH,SH_ShnChanO,'Ao7E',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'Ao7E',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'Ao7E',1)
-call SaveStr(HH,SH_ShnChanO,'Ao7N',"weboff")
+call SaveStr(HH,SH_ShnChanO,'Ao7N',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'Ao7N',1)
 call SaveStr(HH,SH_ShnChanO,'Ao7T',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'Ao7T',2)
-call SaveStr(HH,SH_ShnChanO,'Ao7V',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'Ao7V',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'Ao7V',1)
 call SaveStr(HH,SH_ShnChanO,'Ao7W',"farsight")
 call SaveInteger(HH,SH_ShnChanT,'Ao7W',1)
@@ -140072,7 +140197,7 @@ call SaveInteger(HH,SH_ShnChanT,'BbE1',2)
 call SaveStr(HH,SH_ShnChanO,'BbF1',"blink")
 call SaveInteger(HH,SH_ShnChanT,'BbF1',2)
 call SaveStr(HH,SH_ShnChanO,'BbGb',"berserk")
-call SaveStr(HH,SH_ShnChanO,'BbQ1',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'BbQ1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'BbQ1',2)
 call SaveStr(HH,SH_ShnChanO,'BbR1',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'BbT1',"stomp")
@@ -140117,7 +140242,7 @@ call SaveStr(HH,SH_ShnChanO,'DMQ1',"cloudoffog")
 call SaveInteger(HH,SH_ShnChanT,'DMQ1',2)
 call SaveStr(HH,SH_ShnChanO,'DMQ2',"charm")
 call SaveInteger(HH,SH_ShnChanT,'DMQ2',2)
-call SaveStr(HH,SH_ShnChanO,'DMR1',"harvest")
+call SaveStr(HH,SH_ShnChanO,'DMR1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'DMR1',2)
 call SaveStr(HH,SH_ShnChanO,'DMT1',"tornado")
 call SaveStr(HH,SH_ShnChanO,'DMW1',"channel")
@@ -140138,17 +140263,17 @@ call SaveStr(HH,SH_ShnChanO,'EsD1',"darkconversion")
 call SaveInteger(HH,SH_ShnChanT,'EsD1',2)
 call SaveStr(HH,SH_ShnChanO,'EsE1',"flamingarrowstarg")
 call SaveInteger(HH,SH_ShnChanT,'EsE1',2)
-call SaveStr(HH,SH_ShnChanO,'EsF1',"selfdestructon")
+call SaveStr(HH,SH_ShnChanO,'EsF1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'EsF1',2)
 call SaveStr(HH,SH_ShnChanO,'EsG1',"berserk")
 call SaveStr(HH,SH_ShnChanO,'EsQ1',"bearform")
 call SaveInteger(HH,SH_ShnChanT,'EsQ1',2)
-call SaveStr(HH,SH_ShnChanO,'EsR1',"flamingattack")
+call SaveStr(HH,SH_ShnChanO,'EsR1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'EsR1',2)
 call SaveStr(HH,SH_ShnChanO,'EsT1',"wateryminion")
 call SaveStr(HH,SH_ShnChanO,'EsW1',"flamingarrows")
 call SaveInteger(HH,SH_ShnChanT,'EsW1',2)
-call SaveStr(HH,SH_ShnChanO,'FSF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'FSF1',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'FSF1',2)
 call SaveStr(HH,SH_ShnChanO,'FSG1',"blackarrow")
 call SaveInteger(HH,SH_ShnChanT,'FSG1',2)
@@ -140180,19 +140305,19 @@ call SaveStr(HH,SH_ShnChanO,'GIE0',"AImove")
 call SaveStr(HH,SH_ShnChanO,'GIF0',"ambush")
 call SaveStr(HH,SH_ShnChanO,'GIQ0',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'GIQ0',2)
-call SaveStr(HH,SH_ShnChanO,'GIT0',"autoharvestlumber")
+call SaveStr(HH,SH_ShnChanO,'GIT0',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'GIT0',2)
 call SaveStr(HH,SH_ShnChanO,'GIW0',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'GKBB',"earthquake")
-call SaveStr(HH,SH_ShnChanO,'GKBI',"creephealon")
+call SaveStr(HH,SH_ShnChanO,'GKBI',"fanofknives")
 call SaveStr(HH,SH_ShnChanO,'GKBS',"hex")
 call SaveStr(HH,SH_ShnChanO,'GKE1',"curseon")
 call SaveStr(HH,SH_ShnChanO,'GKE2',"autoentangle")
-call SaveStr(HH,SH_ShnChanO,'GKE3',"autodispelon")
+call SaveStr(HH,SH_ShnChanO,'GKE3',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'GKE4',"farsight")
 call SaveStr(HH,SH_ShnChanO,'GKE5',"nagabuild")
 call SaveInteger(HH,SH_ShnChanT,'GKE5',2)
-call SaveStr(HH,SH_ShnChanO,'GKE6',"autoentangleinstant")
+call SaveStr(HH,SH_ShnChanO,'GKE6',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'GKE6',2)
 call SaveStr(HH,SH_ShnChanO,'GKG1',"channel")
 call SaveStr(HH,SH_ShnChanO,'GKG3',"acidbomb")
@@ -140201,7 +140326,7 @@ call SaveInteger(HH,SH_ShnChanT,'GKG4',1)
 call SaveStr(HH,SH_ShnChanO,'GKG5',"mechanicalcritter")
 call SaveInteger(HH,SH_ShnChanT,'GKG5',2)
 call SaveStr(HH,SH_ShnChanO,'GKG6',"cripple")
-call SaveStr(HH,SH_ShnChanO,'GKG7',"renewon")
+call SaveStr(HH,SH_ShnChanO,'GKG7',"stomp")
 call SaveStr(HH,SH_ShnChanO,'GKMI',"spellshieldaoe")
 call SaveStr(HH,SH_ShnChanO,'GKQ1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'GKQ1',2)
@@ -140217,7 +140342,7 @@ call SaveStr(HH,SH_ShnChanO,'GKSR',"creepanimatedead")
 call SaveStr(HH,SH_ShnChanO,'GKSS',"faeriefire")
 call SaveStr(HH,SH_ShnChanO,'GKT1',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'GKT1',2)
-call SaveStr(HH,SH_ShnChanO,'GKUI',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'GKUI',"howlofterror")
 call SaveStr(HH,SH_ShnChanO,'GKW1',"chemicalrage")
 call SaveInteger(HH,SH_ShnChanT,'GKW1',1)
 call SaveStr(HH,SH_ShnChanO,'GKW5',"drain")
@@ -140225,7 +140350,7 @@ call SaveInteger(HH,SH_ShnChanT,'GKW5',1)
 call SaveStr(HH,SH_ShnChanO,'GSE1',"blizzard")
 call SaveStr(HH,SH_ShnChanO,'GSE2',"bloodlust")
 call SaveInteger(HH,SH_ShnChanT,'GSE2',3)
-call SaveStr(HH,SH_ShnChanO,'GSF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'GSF1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'GSF1',3)
 call SaveStr(HH,SH_ShnChanO,'GSF2',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'GSF2',3)
@@ -140258,7 +140383,7 @@ call SaveStr(HH,SH_ShnChanO,'GrE1',"roar")
 call SaveInteger(HH,SH_ShnChanT,'GrE1',2)
 call SaveStr(HH,SH_ShnChanO,'GrF1',"berserk")
 call SaveStr(HH,SH_ShnChanO,'GrG2',"stomp")
-call SaveStr(HH,SH_ShnChanO,'GrQ1',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'GrQ1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'GrQ1',2)
 call SaveStr(HH,SH_ShnChanO,'GrR1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'GrR1',2)
@@ -140282,7 +140407,7 @@ call SaveStr(HH,SH_ShnChanO,'HSW1',"channel")
 call SaveInteger(HH,SH_ShnChanT,'HSW1',2)
 call SaveStr(HH,SH_ShnChanO,'HSW2',"channel")
 call SaveInteger(HH,SH_ShnChanT,'HSW2',2)
-call SaveStr(HH,SH_ShnChanO,'HerF',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'HerF',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'HerG',"charm")
 call SaveInteger(HH,SH_ShnChanT,'HerG',2)
 call SaveStr(HH,SH_ShnChanO,'HerT',"tornado")
@@ -140312,7 +140437,7 @@ call SaveStr(HH,SH_ShnChanO,'IGDs',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'IGDs',1)
 call SaveStr(HH,SH_ShnChanO,'ISTs',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'ISTs',1)
-call SaveStr(HH,SH_ShnChanO,'IcE1',"creephealon")
+call SaveStr(HH,SH_ShnChanO,'IcE1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'IcE1',1)
 call SaveStr(HH,SH_ShnChanO,'IcE2',"cripple")
 call SaveInteger(HH,SH_ShnChanT,'IcE2',1)
@@ -140350,10 +140475,10 @@ call SaveStr(HH,SH_ShnChanO,'JAE2',"cripple")
 call SaveStr(HH,SH_ShnChanO,'JAG1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'JAG1',2)
 call SaveStr(HH,SH_ShnChanO,'JND1',"blackarrow")
-call SaveStr(HH,SH_ShnChanO,'JNE1',"auravampiric")
+call SaveStr(HH,SH_ShnChanO,'JNE1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'JNE1',3)
 call SaveStr(HH,SH_ShnChanO,'JNF1',"charm")
-call SaveStr(HH,SH_ShnChanO,'JNF4',"attributemodskill")
+call SaveStr(HH,SH_ShnChanO,'JNF4',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'JNG1',"purge")
 call SaveInteger(HH,SH_ShnChanT,'JNG1',1)
 call SaveStr(HH,SH_ShnChanO,'JNQ1',"absorb")
@@ -140364,10 +140489,10 @@ call SaveStr(HH,SH_ShnChanO,'JNT1',"web")
 call SaveInteger(HH,SH_ShnChanT,'JNT1',2)
 call SaveStr(HH,SH_ShnChanO,'JNW1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'JNW1',2)
-call SaveStr(HH,SH_ShnChanO,'KHG1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'KHG1',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'KHG2',"antimagicshell")
 call SaveStr(HH,SH_ShnChanO,'KHG3',"acidbomb")
-call SaveStr(HH,SH_ShnChanO,'KZF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'KZF1',"soulburn")
 call SaveInteger(HH,SH_ShnChanT,'KZF1',1)
 call SaveStr(HH,SH_ShnChanO,'KaA1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'KaA1',2)
@@ -140391,11 +140516,11 @@ call SaveStr(HH,SH_ShnChanO,'KaAG',"inferno")
 call SaveInteger(HH,SH_ShnChanT,'KaAG',3)
 call SaveStr(HH,SH_ShnChanO,'KiyG',"purge")
 call SaveInteger(HH,SH_ShnChanT,'KiyG',1)
-call SaveStr(HH,SH_ShnChanO,'KkR1',"gold2lumber")
+call SaveStr(HH,SH_ShnChanO,'KkR1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'KkR1',1)
 call SaveStr(HH,SH_ShnChanO,'KkR2',"purge")
 call SaveInteger(HH,SH_ShnChanT,'KkR2',2)
-call SaveStr(HH,SH_ShnChanO,'KrF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'KrF1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'KrF1',1)
 call SaveStr(HH,SH_ShnChanO,'KrG1',"charm")
 call SaveInteger(HH,SH_ShnChanT,'KrG1',2)
@@ -140414,7 +140539,7 @@ call SaveInteger(HH,SH_ShnChanT,'LDQ1',2)
 call SaveStr(HH,SH_ShnChanO,'LaD2',"channel")
 call SaveStr(HH,SH_ShnChanO,'LamE',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'LamE',2)
-call SaveStr(HH,SH_ShnChanO,'LamF',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'LamF',"stomp")
 call SaveStr(HH,SH_ShnChanO,'LamG',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'LamQ',"charm")
 call SaveStr(HH,SH_ShnChanO,'LamR',"tornado")
@@ -140429,7 +140554,7 @@ call SaveStr(HH,SH_ShnChanO,'LawQ',"charm")
 call SaveInteger(HH,SH_ShnChanT,'LawQ',2)
 call SaveStr(HH,SH_ShnChanO,'LawW',"chemicalrage")
 call SaveInteger(HH,SH_ShnChanT,'LawW',2)
-call SaveStr(HH,SH_ShnChanO,'LaxD',"weboff")
+call SaveStr(HH,SH_ShnChanO,'LaxD',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'LaxD',2)
 call SaveStr(HH,SH_ShnChanO,'MUE1',"blight")
 call SaveInteger(HH,SH_ShnChanT,'MUE1',1)
@@ -140443,7 +140568,7 @@ call SaveStr(HH,SH_ShnChanO,'MUT1',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'MUT1',2)
 call SaveStr(HH,SH_ShnChanO,'MUT2',"breathoffrost")
 call SaveInteger(HH,SH_ShnChanT,'MUT2',2)
-call SaveStr(HH,SH_ShnChanO,'MUW1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'MUW1',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'MUW1',2)
 call SaveStr(HH,SH_ShnChanO,'MUW2',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'MUW2',2)
@@ -140455,7 +140580,7 @@ call SaveStr(HH,SH_ShnChanO,'MaQ1',"channel")
 call SaveInteger(HH,SH_ShnChanT,'MaQ1',2)
 call SaveStr(HH,SH_ShnChanO,'MaR2',"coupleinstant")
 call SaveInteger(HH,SH_ShnChanT,'MaR2',2)
-call SaveStr(HH,SH_ShnChanO,'MaT1',"freezingbreath")
+call SaveStr(HH,SH_ShnChanO,'MaT1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'MaT1',2)
 call SaveStr(HH,SH_ShnChanO,'MaT2',"cyclone")
 call SaveStr(HH,SH_ShnChanO,'MadD',"chainlightning")
@@ -140475,9 +140600,9 @@ call SaveStr(HH,SH_ShnChanO,'MeiT',"tornado")
 call SaveInteger(HH,SH_ShnChanT,'MeiT',2)
 call SaveStr(HH,SH_ShnChanO,'MeiW',"channel")
 call SaveInteger(HH,SH_ShnChanT,'MeiW',2)
-call SaveStr(HH,SH_ShnChanO,'MiD1',"carrionscarabson")
+call SaveStr(HH,SH_ShnChanO,'MiD1',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'MiD1',1)
-call SaveStr(HH,SH_ShnChanO,'MiD2',"corrosivebreath")
+call SaveStr(HH,SH_ShnChanO,'MiD2',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'MiD2',3)
 call SaveStr(HH,SH_ShnChanO,'MiE1',"charm")
 call SaveInteger(HH,SH_ShnChanT,'MiE1',1)
@@ -140502,18 +140627,18 @@ call SaveInteger(HH,SH_ShnChanT,'MrG1',1)
 call SaveStr(HH,SH_ShnChanO,'MrG2',"absorb")
 call SaveStr(HH,SH_ShnChanO,'MrQ1',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'MrQ1',3)
-call SaveStr(HH,SH_ShnChanO,'MrR1',"weboff")
+call SaveStr(HH,SH_ShnChanO,'MrR1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'MrR1',2)
 call SaveStr(HH,SH_ShnChanO,'MrT1',"root")
 call SaveStr(HH,SH_ShnChanO,'MrW1',"ambush")
 call SaveInteger(HH,SH_ShnChanT,'MrW1',3)
 call SaveStr(HH,SH_ShnChanO,'MrW2',"blackarrow")
 call SaveInteger(HH,SH_ShnChanT,'MrW2',2)
-call SaveStr(HH,SH_ShnChanO,'OM10',"weboff")
+call SaveStr(HH,SH_ShnChanO,'OM10',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'OM10',2)
 call SaveStr(HH,SH_ShnChanO,'OM11',"deathcoil")
 call SaveInteger(HH,SH_ShnChanT,'OM11',2)
-call SaveStr(HH,SH_ShnChanO,'OM13',"renewon")
+call SaveStr(HH,SH_ShnChanO,'OM13',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'OM13',1)
 call SaveStr(HH,SH_ShnChanO,'OM14',"root")
 call SaveInteger(HH,SH_ShnChanT,'OM14',1)
@@ -140604,9 +140729,9 @@ call SaveStr(HH,SH_ShnChanO,'SiE1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'SiE1',3)
 call SaveStr(HH,SH_ShnChanO,'SiE2',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'SiE2',1)
-call SaveStr(HH,SH_ShnChanO,'SiE3',"healon")
+call SaveStr(HH,SH_ShnChanO,'SiE3',"shadowstrike")
 call SaveInteger(HH,SH_ShnChanT,'SiE3',1)
-call SaveStr(HH,SH_ShnChanO,'SiF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'SiF1',"stomp")
 call SaveStr(HH,SH_ShnChanO,'SiF2',"antimagicshell")
 call SaveStr(HH,SH_ShnChanO,'SiG1',"acidbomb")
 call SaveStr(HH,SH_ShnChanO,'SiQ1',"charm")
@@ -140665,10 +140790,10 @@ call SaveStr(HH,SH_ShnChanO,'TMF0',"revive")
 call SaveInteger(HH,SH_ShnChanT,'TMF0',3)
 call SaveStr(HH,SH_ShnChanO,'TMF2',"revive")
 call SaveInteger(HH,SH_ShnChanT,'TMF2',3)
-call SaveStr(HH,SH_ShnChanO,'TMG0',"renewon")
+call SaveStr(HH,SH_ShnChanO,'TMG0',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'TMQ0',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'TMQ0',2)
-call SaveStr(HH,SH_ShnChanO,'TMR0',"weboff")
+call SaveStr(HH,SH_ShnChanO,'TMR0',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'TMR0',2)
 call SaveStr(HH,SH_ShnChanO,'TMT0',"deathcoil")
 call SaveInteger(HH,SH_ShnChanT,'TMT0',2)
@@ -140710,7 +140835,7 @@ call SaveStr(HH,SH_ShnChanO,'VerW',"charm")
 call SaveInteger(HH,SH_ShnChanT,'VerW',1)
 call SaveStr(HH,SH_ShnChanO,'WE01',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'WE01',2)
-call SaveStr(HH,SH_ShnChanO,'WE02',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'WE02',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'WE02',3)
 call SaveStr(HH,SH_ShnChanO,'WE03',"unsubmerge")
 call SaveInteger(HH,SH_ShnChanT,'WE03',1)
@@ -140721,20 +140846,20 @@ call SaveInteger(HH,SH_ShnChanT,'WE05',2)
 call SaveStr(HH,SH_ShnChanO,'WE06',"ancestralspirittarget")
 call SaveStr(HH,SH_ShnChanO,'WE07',"animatedead")
 call SaveInteger(HH,SH_ShnChanT,'WE07',2)
-call SaveStr(HH,SH_ShnChanO,'WE08',"weboff")
+call SaveStr(HH,SH_ShnChanO,'WE08',"shockwave")
 call SaveInteger(HH,SH_ShnChanT,'WE08',2)
 call SaveStr(HH,SH_ShnChanO,'XanE',"monsoon")
 call SaveInteger(HH,SH_ShnChanT,'XanE',2)
 call SaveStr(HH,SH_ShnChanO,'XanF',"charm")
 call SaveStr(HH,SH_ShnChanO,'YatA',"resumeharvesting")
-call SaveStr(HH,SH_ShnChanO,'YoD0',"blackarrowoff")
+call SaveStr(HH,SH_ShnChanO,'YoD0',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'YoD1',"phaseshift")
 call SaveStr(HH,SH_ShnChanO,'YoE0',"frenzy")
 call SaveStr(HH,SH_ShnChanO,'YoF0',"corporealform")
 call SaveInteger(HH,SH_ShnChanT,'YoF0',3)
-call SaveStr(HH,SH_ShnChanO,'YoF1',"phoenixfire")
+call SaveStr(HH,SH_ShnChanO,'YoF1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'YoF1',3)
-call SaveStr(HH,SH_ShnChanO,'YoG0',"renewon")
+call SaveStr(HH,SH_ShnChanO,'YoG0',"stomp")
 call SaveStr(HH,SH_ShnChanO,'YoQ0',"absorb")
 call SaveInteger(HH,SH_ShnChanT,'YoQ0',2)
 call SaveStr(HH,SH_ShnChanO,'YoR0',"avengerform")
@@ -140760,7 +140885,7 @@ call SaveStr(HH,SH_ShnChanO,'ore7',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'ore7',2)
 call SaveStr(HH,SH_ShnChanO,'ore8',"etherealform")
 call SaveInteger(HH,SH_ShnChanT,'ore8',2)
-call SaveStr(HH,SH_ShnChanO,'ore9',"townbellon")
+call SaveStr(HH,SH_ShnChanO,'ore9',"soulburn")
 call SaveInteger(HH,SH_ShnChanT,'ore9',1)
 endfunction
 //SHNCHAN_DATA_END
@@ -140794,8 +140919,8 @@ call SaveStr(HH,SH_AbOrd,'A010',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A012',"absorb")
 call SaveStr(HH,SH_AbOrd,'A014',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A015',"divineshield")
-call SaveStr(HH,SH_AbOrd,'A016',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A017',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A016',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'A017',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A018',"absorb")
 call SaveStr(HH,SH_AbOrd,'A019',"cripple")
 call SaveStr(HH,SH_AbOrd,'A01A',"ambush")
@@ -140814,7 +140939,7 @@ call SaveStr(HH,SH_AbOrd,'A01R',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A01S',"absorb")
 call SaveStr(HH,SH_AbOrd,'A01T',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A01U',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A01V',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A01V',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A01X',"channel")
 call SaveStr(HH,SH_AbOrd,'A01Z',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A020',"absorb")
@@ -140827,7 +140952,7 @@ call SaveStr(HH,SH_AbOrd,'A026',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'A027',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'A028',"controlmagic")
 call SaveStr(HH,SH_AbOrd,'A029',"controlmagic")
-call SaveStr(HH,SH_AbOrd,'A02A',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A02A',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A02C',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A02D',"absorb")
 call SaveStr(HH,SH_AbOrd,'A02E',"entanglingroots")
@@ -140847,11 +140972,11 @@ call SaveStr(HH,SH_AbOrd,'A02Y',"absorb")
 call SaveStr(HH,SH_AbOrd,'A02Z',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A030',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A032',"ambush")
-call SaveStr(HH,SH_AbOrd,'A033',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A033',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A035',"absorb")
 call SaveStr(HH,SH_AbOrd,'A037',"ambush")
 call SaveStr(HH,SH_AbOrd,'A038',"immolation")
-call SaveStr(HH,SH_AbOrd,'A03B',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A03B',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A03E',"immolation")
 call SaveStr(HH,SH_AbOrd,'A03N',"root")
 call SaveStr(HH,SH_AbOrd,'A048',"resumeharvesting")
@@ -140874,7 +140999,7 @@ call SaveStr(HH,SH_AbOrd,'A06J',"charm")
 call SaveStr(HH,SH_AbOrd,'A06V',"absorb")
 call SaveStr(HH,SH_AbOrd,'A06W',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A06X',"ancestralspirit")
-call SaveStr(HH,SH_AbOrd,'A06Y',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A06Y',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A06Z',"charm")
 call SaveStr(HH,SH_AbOrd,'A070',"berserk")
 call SaveStr(HH,SH_AbOrd,'A071',"acidbomb")
@@ -140906,11 +141031,11 @@ call SaveStr(HH,SH_AbOrd,'A084',"absorb")
 call SaveStr(HH,SH_AbOrd,'A086',"cripple")
 call SaveStr(HH,SH_AbOrd,'A087',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A088',"berserk")
-call SaveStr(HH,SH_AbOrd,'A089',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A089',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A08A',"absorb")
 call SaveStr(HH,SH_AbOrd,'A08B',"thunderbolt")
-call SaveStr(HH,SH_AbOrd,'A08C',"autoentangleinstant")
-call SaveStr(HH,SH_AbOrd,'A08D',"autodispeloff")
+call SaveStr(HH,SH_AbOrd,'A08C',"shockwave")
+call SaveStr(HH,SH_AbOrd,'A08D',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A08E',"absorb")
 call SaveStr(HH,SH_AbOrd,'A08F',"barkskinon")
 call SaveStr(HH,SH_AbOrd,'A08G',"battleroar")
@@ -140919,24 +141044,24 @@ call SaveStr(HH,SH_AbOrd,'A08K',"channel")
 call SaveStr(HH,SH_AbOrd,'A08M',"ambush")
 call SaveStr(HH,SH_AbOrd,'A08O',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A08R',"absorb")
-call SaveStr(HH,SH_AbOrd,'A08S',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A08S',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A08U',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A08V',"channel")
 call SaveStr(HH,SH_AbOrd,'A08W',"channel")
 call SaveStr(HH,SH_AbOrd,'A08X',"blink")
 call SaveStr(HH,SH_AbOrd,'A08Y',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A08Z',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A08Z',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A090',"ambush")
 call SaveStr(HH,SH_AbOrd,'A091',"autoharvestlumber")
 call SaveStr(HH,SH_AbOrd,'A09A',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'A09B',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A09C',"autoentangleinstant")
-call SaveStr(HH,SH_AbOrd,'A09D',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A09D',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A09E',"cripple")
 call SaveStr(HH,SH_AbOrd,'A09G',"channel")
 call SaveStr(HH,SH_AbOrd,'A09H',"AImove")
 call SaveStr(HH,SH_AbOrd,'A09J',"metamorphosis")
-call SaveStr(HH,SH_AbOrd,'A09K',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A09K',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A09L',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A09M',"blink")
 call SaveStr(HH,SH_AbOrd,'A09N',"channel")
@@ -140948,7 +141073,7 @@ call SaveStr(HH,SH_AbOrd,'A09S',"cripple")
 call SaveStr(HH,SH_AbOrd,'A09U',"invisibility")
 call SaveStr(HH,SH_AbOrd,'A09V',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A09W',"ambush")
-call SaveStr(HH,SH_AbOrd,'A09X',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A09X',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A09Y',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A09Z',"silence")
 call SaveStr(HH,SH_AbOrd,'A0A0',"channel")
@@ -140992,36 +141117,36 @@ call SaveStr(HH,SH_AbOrd,'A0BL',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'A0BM',"autodispel")
 call SaveStr(HH,SH_AbOrd,'A0BN',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A0BO',"battleroar")
-call SaveStr(HH,SH_AbOrd,'A0BR',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0BR',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A0BS',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0BT',"root")
 call SaveStr(HH,SH_AbOrd,'A0BV',"blink")
 call SaveStr(HH,SH_AbOrd,'A0BW',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0BY',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'A0BZ',"root")
-call SaveStr(HH,SH_AbOrd,'A0C1',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'A0C1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0C2',"coldarrows")
 call SaveStr(HH,SH_AbOrd,'A0C3',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0C4',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0C6',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0C7',"curse")
 call SaveStr(HH,SH_AbOrd,'A0C8',"root")
-call SaveStr(HH,SH_AbOrd,'A0CA',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0CA',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0CB',"channel")
-call SaveStr(HH,SH_AbOrd,'A0CE',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0CE',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0CG',"channel")
 call SaveStr(HH,SH_AbOrd,'A0CI',"root")
 call SaveStr(HH,SH_AbOrd,'A0CJ',"berserk")
-call SaveStr(HH,SH_AbOrd,'A0CL',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A0CL',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0CO',"darkportal")
 call SaveStr(HH,SH_AbOrd,'A0CP',"sleep")
 call SaveStr(HH,SH_AbOrd,'A0CQ',"cripple")
 call SaveStr(HH,SH_AbOrd,'A0CR',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0CS',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0CU',"windwalk")
-call SaveStr(HH,SH_AbOrd,'A0CV',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A0CV',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0CW',"cripple")
-call SaveStr(HH,SH_AbOrd,'A0CX',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0CX',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0CZ',"bearform")
 call SaveStr(HH,SH_AbOrd,'A0D0',"blink")
 call SaveStr(HH,SH_AbOrd,'A0D1',"burrow")
@@ -141038,7 +141163,7 @@ call SaveStr(HH,SH_AbOrd,'A0DF',"drain")
 call SaveStr(HH,SH_AbOrd,'A0DI',"slow")
 call SaveStr(HH,SH_AbOrd,'A0DJ',"channel")
 call SaveStr(HH,SH_AbOrd,'A0DK',"root")
-call SaveStr(HH,SH_AbOrd,'A0DL',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0DL',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0DM',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'A0DN',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0DP',"cripple")
@@ -141086,22 +141211,22 @@ call SaveStr(HH,SH_AbOrd,'A0GO',"silence")
 call SaveStr(HH,SH_AbOrd,'A0GP',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A0GQ',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0GS',"absorb")
-call SaveStr(HH,SH_AbOrd,'A0GU',"carrionscarabson")
+call SaveStr(HH,SH_AbOrd,'A0GU',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0GV',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A0GX',"coldarrows")
-call SaveStr(HH,SH_AbOrd,'A0GY',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0GY',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0H0',"doom")
 call SaveStr(HH,SH_AbOrd,'A0H1',"soulburn")
 call SaveStr(HH,SH_AbOrd,'A0H3',"darkconversion")
 call SaveStr(HH,SH_AbOrd,'A0H4',"drain")
-call SaveStr(HH,SH_AbOrd,'A0H7',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'A0H7',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0H8',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0H9',"root")
 call SaveStr(HH,SH_AbOrd,'A0HA',"auravampiric")
 call SaveStr(HH,SH_AbOrd,'A0HC',"channel")
 call SaveStr(HH,SH_AbOrd,'A0HD',"innerfire")
-call SaveStr(HH,SH_AbOrd,'A0HE',"creephealoff")
-call SaveStr(HH,SH_AbOrd,'A0HF',"bloodlustoff")
+call SaveStr(HH,SH_AbOrd,'A0HE',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'A0HF',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0HG',"massteleport")
 call SaveStr(HH,SH_AbOrd,'A0HJ',"dismount")
 call SaveStr(HH,SH_AbOrd,'A0HK',"parasite")
@@ -141113,9 +141238,9 @@ call SaveStr(HH,SH_AbOrd,'A0HU',"frostarmor")
 call SaveStr(HH,SH_AbOrd,'A0HV',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A0HX',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A0HY',"channel")
-call SaveStr(HH,SH_AbOrd,'A0HZ',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0HZ',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0I0',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A0I2',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0I2',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0I6',"blink")
 call SaveStr(HH,SH_AbOrd,'A0IB',"silence")
 call SaveStr(HH,SH_AbOrd,'A0IE',"windwalk")
@@ -141136,14 +141261,14 @@ call SaveStr(HH,SH_AbOrd,'A0J5',"blizzard")
 call SaveStr(HH,SH_AbOrd,'A0J6',"spiritlink")
 call SaveStr(HH,SH_AbOrd,'A0J7',"sleep")
 call SaveStr(HH,SH_AbOrd,'A0J8',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A0J9',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'A0J9',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A0JA',"frenzy")
 call SaveStr(HH,SH_AbOrd,'A0JB',"channel")
 call SaveStr(HH,SH_AbOrd,'A0JC',"silence")
 call SaveStr(HH,SH_AbOrd,'A0JD',"curse")
 call SaveStr(HH,SH_AbOrd,'A0JF',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0JH',"awaken")
-call SaveStr(HH,SH_AbOrd,'A0JK',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0JK',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0JL',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'A0JN',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0JP',"acidbomb")
@@ -141157,13 +141282,13 @@ call SaveStr(HH,SH_AbOrd,'A0K3',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0K4',"autoentangle")
 call SaveStr(HH,SH_AbOrd,'A0K5',"burrow")
 call SaveStr(HH,SH_AbOrd,'A0K8',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A0K9',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0K9',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0KA',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0KB',"cyclone")
 call SaveStr(HH,SH_AbOrd,'A0KD',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0KF',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A0KH',"channel")
-call SaveStr(HH,SH_AbOrd,'A0KI',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0KI',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0KL',"channel")
 call SaveStr(HH,SH_AbOrd,'A0KO',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0KP',"root")
@@ -141177,20 +141302,20 @@ call SaveStr(HH,SH_AbOrd,'A0KX',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0KY',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A0KZ',"entanglingroots")
 call SaveStr(HH,SH_AbOrd,'A0L0',"avengerform")
-call SaveStr(HH,SH_AbOrd,'A0L2',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'A0L2',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0L3',"silence")
 call SaveStr(HH,SH_AbOrd,'A0L4',"roar")
-call SaveStr(HH,SH_AbOrd,'A0L6',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0L8',"barkskinoff")
+call SaveStr(HH,SH_AbOrd,'A0L6',"shockwave")
+call SaveStr(HH,SH_AbOrd,'A0L8',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0LA',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0LB',"heal")
 call SaveStr(HH,SH_AbOrd,'A0LC',"charm")
-call SaveStr(HH,SH_AbOrd,'A0LL',"autoharvestlumber")
-call SaveStr(HH,SH_AbOrd,'A0LM',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0LL',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'A0LM',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A0LN',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A0LO',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A0LP',"resumeharvesting")
-call SaveStr(HH,SH_AbOrd,'A0LQ',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0LQ',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0LS',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0LU',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0LV',"chainlightning")
@@ -141211,15 +141336,15 @@ call SaveStr(HH,SH_AbOrd,'A0MI',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0MK',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0ML',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0MN',"flamestrike")
-call SaveStr(HH,SH_AbOrd,'A0MO',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0MO',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0MP',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0MR',"deathcoil")
 call SaveStr(HH,SH_AbOrd,'A0MT',"silence")
 call SaveStr(HH,SH_AbOrd,'A0MU',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0MV',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0MW',"entanglingroots")
-call SaveStr(HH,SH_AbOrd,'A0MY',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0MZ',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A0MY',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'A0MZ',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A0N0',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0N1',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A0N2',"divineshield")
@@ -141232,7 +141357,7 @@ call SaveStr(HH,SH_AbOrd,'A0NF',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0NM',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A0NR',"cyclone")
 call SaveStr(HH,SH_AbOrd,'A0NU',"entanglingroots")
-call SaveStr(HH,SH_AbOrd,'A0NV',"autodispeloff")
+call SaveStr(HH,SH_AbOrd,'A0NV',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A0NW',"polymorph")
 call SaveStr(HH,SH_AbOrd,'A0NX',"root")
 call SaveStr(HH,SH_AbOrd,'A0NY',"ensnare")
@@ -141246,7 +141371,7 @@ call SaveStr(HH,SH_AbOrd,'A0OJ',"drain")
 call SaveStr(HH,SH_AbOrd,'A0OM',"eattree")
 call SaveStr(HH,SH_AbOrd,'A0OO',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A0OQ',"berserk")
-call SaveStr(HH,SH_AbOrd,'A0OR',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0OR',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0OS',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0OT',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0OU',"frenzy")
@@ -141254,7 +141379,7 @@ call SaveStr(HH,SH_AbOrd,'A0OV',"channel")
 call SaveStr(HH,SH_AbOrd,'A0OW',"silence")
 call SaveStr(HH,SH_AbOrd,'A0OX',"root")
 call SaveStr(HH,SH_AbOrd,'A0P2',"dispel")
-call SaveStr(HH,SH_AbOrd,'A0P3',"autodispeloff")
+call SaveStr(HH,SH_AbOrd,'A0P3',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A0P5',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0P6',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0P7',"ambush")
@@ -141264,7 +141389,7 @@ call SaveStr(HH,SH_AbOrd,'A0PA',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0PB',"channel")
 call SaveStr(HH,SH_AbOrd,'A0PD',"root")
 call SaveStr(HH,SH_AbOrd,'A0PE',"blink")
-call SaveStr(HH,SH_AbOrd,'A0PF',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0PF',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0PG',"blizzard")
 call SaveStr(HH,SH_AbOrd,'A0PI',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0PJ',"berserk")
@@ -141275,7 +141400,7 @@ call SaveStr(HH,SH_AbOrd,'A0PO',"immolation")
 call SaveStr(HH,SH_AbOrd,'A0PP',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0PQ',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A0PR',"root")
-call SaveStr(HH,SH_AbOrd,'A0PS',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0PS',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0PT',"channel")
 call SaveStr(HH,SH_AbOrd,'A0PU',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0PV',"acidbomb")
@@ -141297,11 +141422,11 @@ call SaveStr(HH,SH_AbOrd,'A0QK',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0QM',"flare")
 call SaveStr(HH,SH_AbOrd,'A0QN',"gold2lumber")
 call SaveStr(HH,SH_AbOrd,'A0QO',"channel")
-call SaveStr(HH,SH_AbOrd,'A0QP',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'A0QP',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A0QR',"heal")
 call SaveStr(HH,SH_AbOrd,'A0QT',"absorb")
-call SaveStr(HH,SH_AbOrd,'A0QU',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'A0QX',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A0QU',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'A0QX',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0QY',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0R0',"channel")
 call SaveStr(HH,SH_AbOrd,'A0R4',"ancestralspirittarget")
@@ -141309,7 +141434,7 @@ call SaveStr(HH,SH_AbOrd,'A0R5',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0R6',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0R8',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0R9',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A0RA',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A0RA',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0RB',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0RC',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A0RD',"web")
@@ -141320,20 +141445,20 @@ call SaveStr(HH,SH_AbOrd,'A0RI',"flare")
 call SaveStr(HH,SH_AbOrd,'A0RJ',"curse")
 call SaveStr(HH,SH_AbOrd,'A0RL',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0RM',"avengerform")
-call SaveStr(HH,SH_AbOrd,'A0RN',"auravampiric")
-call SaveStr(HH,SH_AbOrd,'A0RP',"bloodluston")
-call SaveStr(HH,SH_AbOrd,'A0RQ',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A0RN',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'A0RP',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'A0RQ',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0RR',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0RT',"frenzy")
-call SaveStr(HH,SH_AbOrd,'A0RU',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A0RU',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0RV',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'A0RW',"autodispeloff")
+call SaveStr(HH,SH_AbOrd,'A0RW',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A0RX',"channel")
 call SaveStr(HH,SH_AbOrd,'A0RY',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'A0S0',"web")
 call SaveStr(HH,SH_AbOrd,'A0S1',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A0SG',"hex")
-call SaveStr(HH,SH_AbOrd,'A0SH',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'A0SH',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0SI',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0SK',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A0SL',"ambush")
@@ -141353,7 +141478,7 @@ call SaveStr(HH,SH_AbOrd,'A0TF',"berserk")
 call SaveStr(HH,SH_AbOrd,'A0TT',"invisibility")
 call SaveStr(HH,SH_AbOrd,'A0TZ',"eattree")
 call SaveStr(HH,SH_AbOrd,'A0U0',"deathcoil")
-call SaveStr(HH,SH_AbOrd,'A0U1',"blackarrowoff")
+call SaveStr(HH,SH_AbOrd,'A0U1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0U3',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A0U4',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0U6',"acidbomb")
@@ -141366,7 +141491,7 @@ call SaveStr(HH,SH_AbOrd,'A0UO',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A0UQ',"doom")
 call SaveStr(HH,SH_AbOrd,'A0UR',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0UT',"berserk")
-call SaveStr(HH,SH_AbOrd,'A0UU',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'A0UU',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A0UX',"root")
 call SaveStr(HH,SH_AbOrd,'A0UY',"channel")
 call SaveStr(HH,SH_AbOrd,'A0UZ',"absorb")
@@ -141378,7 +141503,7 @@ call SaveStr(HH,SH_AbOrd,'A0V5',"root")
 call SaveStr(HH,SH_AbOrd,'A0V6',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'A0V8',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0V9',"avengerform")
-call SaveStr(HH,SH_AbOrd,'A0VE',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A0VE',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0VF',"bearform")
 call SaveStr(HH,SH_AbOrd,'A0VG',"channel")
 call SaveStr(HH,SH_AbOrd,'A0VH',"engineeringupgrade")
@@ -141395,8 +141520,8 @@ call SaveStr(HH,SH_AbOrd,'A0WA',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0WB',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A0WC',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'A0WD',"avengerform")
-call SaveStr(HH,SH_AbOrd,'A0WH',"bloodluston")
-call SaveStr(HH,SH_AbOrd,'A0WI',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A0WH',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'A0WI',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0WJ',"avatar")
 call SaveStr(HH,SH_AbOrd,'A0WL',"revive")
 call SaveStr(HH,SH_AbOrd,'A0WN',"dismount")
@@ -141422,9 +141547,9 @@ call SaveStr(HH,SH_AbOrd,'A0XK',"bearform")
 call SaveStr(HH,SH_AbOrd,'A0XL',"absorb")
 call SaveStr(HH,SH_AbOrd,'A0XM',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0XN',"ancestralspirit")
-call SaveStr(HH,SH_AbOrd,'A0XO',"gold2lumber")
-call SaveStr(HH,SH_AbOrd,'A0XQ',"acolyteharvest")
-call SaveStr(HH,SH_AbOrd,'A0XR',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0XO',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'A0XQ',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'A0XR',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0XU',"charm")
 call SaveStr(HH,SH_AbOrd,'A0XX',"cyclone")
 call SaveStr(HH,SH_AbOrd,'A0Y6',"antimagicshell")
@@ -141438,16 +141563,16 @@ call SaveStr(HH,SH_AbOrd,'A0YS',"ambush")
 call SaveStr(HH,SH_AbOrd,'A0YU',"heal")
 call SaveStr(HH,SH_AbOrd,'A0YX',"channel")
 call SaveStr(HH,SH_AbOrd,'A0YZ',"breathoffrost")
-call SaveStr(HH,SH_AbOrd,'A0Z0',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A0Z0',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0Z1',"bearform")
-call SaveStr(HH,SH_AbOrd,'A0Z2',"frostarmoron")
+call SaveStr(HH,SH_AbOrd,'A0Z2',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0Z3',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A0Z4',"evileye")
 call SaveStr(HH,SH_AbOrd,'A0Z5',"Thornyshield")
 call SaveStr(HH,SH_AbOrd,'A0Z6',"evileye")
 call SaveStr(HH,SH_AbOrd,'A0ZB',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A0ZC',"divineshield")
-call SaveStr(HH,SH_AbOrd,'A0ZD',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A0ZD',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A0ZE',"frenzy")
 call SaveStr(HH,SH_AbOrd,'A0ZG',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A0ZJ',"hex")
@@ -141527,9 +141652,9 @@ call SaveStr(HH,SH_AbOrd,'A12H',"bearform")
 call SaveStr(HH,SH_AbOrd,'A12I',"hex")
 call SaveStr(HH,SH_AbOrd,'A12K',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A12L',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'A12Q',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'A12Q',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A12S',"battleroar")
-call SaveStr(HH,SH_AbOrd,'A12T',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A12T',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A12W',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'A12X',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'A12Y',"ancestralspirittarget")
@@ -141550,7 +141675,7 @@ call SaveStr(HH,SH_AbOrd,'A13M',"flare")
 call SaveStr(HH,SH_AbOrd,'A13V',"blink")
 call SaveStr(HH,SH_AbOrd,'A13X',"hex")
 call SaveStr(HH,SH_AbOrd,'A13Y',"drain")
-call SaveStr(HH,SH_AbOrd,'A13Z',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A13Z',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A141',"charm")
 call SaveStr(HH,SH_AbOrd,'A146',"flare")
 call SaveStr(HH,SH_AbOrd,'A148',"blight")
@@ -141578,16 +141703,16 @@ call SaveStr(HH,SH_AbOrd,'A15N',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A15O',"AImove")
 call SaveStr(HH,SH_AbOrd,'A15P',"curseon")
 call SaveStr(HH,SH_AbOrd,'A15W',"earthquake")
-call SaveStr(HH,SH_AbOrd,'A15X',"creephealon")
+call SaveStr(HH,SH_AbOrd,'A15X',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A15Y',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'A161',"channel")
 call SaveStr(HH,SH_AbOrd,'A166',"root")
 call SaveStr(HH,SH_AbOrd,'A168',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A16A',"ancestralspirit")
-call SaveStr(HH,SH_AbOrd,'A16B',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A16B',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A16E',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A16F',"breathoffrost")
-call SaveStr(HH,SH_AbOrd,'A16L',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A16L',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A16V',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A178',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A17F',"hex")
@@ -141597,7 +141722,7 @@ call SaveStr(HH,SH_AbOrd,'A17I',"bash")
 call SaveStr(HH,SH_AbOrd,'A17L',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'A17M',"bearform")
 call SaveStr(HH,SH_AbOrd,'A17N',"bash")
-call SaveStr(HH,SH_AbOrd,'A17O',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A17O',"healingspray")
 call SaveStr(HH,SH_AbOrd,'A17P',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'A17R',"curse")
 call SaveStr(HH,SH_AbOrd,'A17S',"flamingarrowstarg")
@@ -141623,7 +141748,7 @@ call SaveStr(HH,SH_AbOrd,'A192',"blight")
 call SaveStr(HH,SH_AbOrd,'A193',"thunderbolt")
 call SaveStr(HH,SH_AbOrd,'A194',"absorb")
 call SaveStr(HH,SH_AbOrd,'A196',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A197',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A197',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A198',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A199',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'A19C',"channel")
@@ -141636,7 +141761,7 @@ call SaveStr(HH,SH_AbOrd,'A19N',"drain")
 call SaveStr(HH,SH_AbOrd,'A19O',"ensnare")
 call SaveStr(HH,SH_AbOrd,'A19P',"entangle")
 call SaveStr(HH,SH_AbOrd,'A19Q',"avengerform")
-call SaveStr(HH,SH_AbOrd,'A19R',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A19R',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A19S',"channel")
 call SaveStr(HH,SH_AbOrd,'A19U',"charm")
 call SaveStr(HH,SH_AbOrd,'A19V',"breathoffrost")
@@ -141648,11 +141773,11 @@ call SaveStr(HH,SH_AbOrd,'A1AA',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A1AB',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A1AI',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1AJ',"heal")
-call SaveStr(HH,SH_AbOrd,'A1AK',"undeadbuild")
+call SaveStr(HH,SH_AbOrd,'A1AK',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A1AL',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1AM',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'A1AN',"townbellon")
-call SaveStr(HH,SH_AbOrd,'A1AO',"parasiteon")
+call SaveStr(HH,SH_AbOrd,'A1AO',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1AP',"roar")
 call SaveStr(HH,SH_AbOrd,'A1AS',"darkportal")
 call SaveStr(HH,SH_AbOrd,'A1AT',"AImove")
@@ -141675,7 +141800,7 @@ call SaveStr(HH,SH_AbOrd,'A1BS',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1BT',"voodoo")
 call SaveStr(HH,SH_AbOrd,'A1BU',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A1BV',"spellshieldaoe")
-call SaveStr(HH,SH_AbOrd,'A1BW',"townbellon")
+call SaveStr(HH,SH_AbOrd,'A1BW',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1BX',"transmute")
 call SaveStr(HH,SH_AbOrd,'A1BY',"unavengerform")
 call SaveStr(HH,SH_AbOrd,'A1BZ',"unflamingarrows")
@@ -141692,7 +141817,7 @@ call SaveStr(HH,SH_AbOrd,'A1CL',"bash")
 call SaveStr(HH,SH_AbOrd,'A1CM',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A1CT',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1CU',"hex")
-call SaveStr(HH,SH_AbOrd,'A1CV',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A1CV',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1CW',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1CX',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A1D0',"absorb")
@@ -141701,14 +141826,14 @@ call SaveStr(HH,SH_AbOrd,'A1D3',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1D4',"AImove")
 call SaveStr(HH,SH_AbOrd,'A1D7',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1D9',"eattree")
-call SaveStr(HH,SH_AbOrd,'A1DA',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A1DA',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A1DC',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1DE',"purge")
 call SaveStr(HH,SH_AbOrd,'A1DI',"innerfire")
 call SaveStr(HH,SH_AbOrd,'A1DJ',"nagabuild")
 call SaveStr(HH,SH_AbOrd,'A1DK',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A1DL',"polymorph")
-call SaveStr(HH,SH_AbOrd,'A1DM',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'A1DM',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1DN',"channel")
 call SaveStr(HH,SH_AbOrd,'A1DQ',"innerfire")
 call SaveStr(HH,SH_AbOrd,'A1DR',"curseon")
@@ -141720,39 +141845,39 @@ call SaveStr(HH,SH_AbOrd,'A1DY',"heal")
 call SaveStr(HH,SH_AbOrd,'A1DZ',"channel")
 call SaveStr(HH,SH_AbOrd,'A1E0',"ensnare")
 call SaveStr(HH,SH_AbOrd,'A1E5',"absorb")
-call SaveStr(HH,SH_AbOrd,'A1E6',"autodispelon")
+call SaveStr(HH,SH_AbOrd,'A1E6',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1E7',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1E8',"web")
-call SaveStr(HH,SH_AbOrd,'A1E9',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'A1E9',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A1EE',"purge")
 call SaveStr(HH,SH_AbOrd,'A1EF',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A1EG',"root")
-call SaveStr(HH,SH_AbOrd,'A1EJ',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A1EJ',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1EK',"absorb")
-call SaveStr(HH,SH_AbOrd,'A1EL',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'A1EL',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1EM',"phaseshiftinstant")
 call SaveStr(HH,SH_AbOrd,'A1EN',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'A1EO',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A1ER',"carrionscarabs")
 call SaveStr(HH,SH_AbOrd,'A1ES',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1ET',"breathoffire")
-call SaveStr(HH,SH_AbOrd,'A1EW',"carrionscarabsoff")
-call SaveStr(HH,SH_AbOrd,'A1EX',"autodispeloff")
+call SaveStr(HH,SH_AbOrd,'A1EW',"shockwave")
+call SaveStr(HH,SH_AbOrd,'A1EX',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1EY',"deathpact")
 call SaveStr(HH,SH_AbOrd,'A1F3',"demolish")
 call SaveStr(HH,SH_AbOrd,'A1F5',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1F9',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A1FA',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'A1FC',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A1FC',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1FD',"channel")
-call SaveStr(HH,SH_AbOrd,'A1FE',"neutralinteract")
+call SaveStr(HH,SH_AbOrd,'A1FE',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A1FF',"lightningshield")
 call SaveStr(HH,SH_AbOrd,'A1FG',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A1FH',"invisibility")
 call SaveStr(HH,SH_AbOrd,'A1FI',"berserk")
 call SaveStr(HH,SH_AbOrd,'A1FL',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A1FM',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A1FN',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'A1FN',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1FO',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'A1FP',"channel")
 call SaveStr(HH,SH_AbOrd,'A1FV',"curseon")
@@ -141762,8 +141887,8 @@ call SaveStr(HH,SH_AbOrd,'A1FZ',"deathanddecay")
 call SaveStr(HH,SH_AbOrd,'A1G1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'A1G2',"sleep")
 call SaveStr(HH,SH_AbOrd,'A1G3',"chainlightning")
-call SaveStr(HH,SH_AbOrd,'A1G4',"autoharvestlumber")
-call SaveStr(HH,SH_AbOrd,'A1G5',"renewoff")
+call SaveStr(HH,SH_AbOrd,'A1G4',"thunderclap")
+call SaveStr(HH,SH_AbOrd,'A1G5',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1G6',"replenish")
 call SaveStr(HH,SH_AbOrd,'A1G9',"cyclone")
 call SaveStr(HH,SH_AbOrd,'A1GE',"eattree")
@@ -141772,11 +141897,11 @@ call SaveStr(HH,SH_AbOrd,'A1GM',"coldarrowstarg")
 call SaveStr(HH,SH_AbOrd,'A1GN',"creepheal")
 call SaveStr(HH,SH_AbOrd,'A1GO',"deathanddecay")
 call SaveStr(HH,SH_AbOrd,'A1GQ',"etherealform")
-call SaveStr(HH,SH_AbOrd,'A1GR',"townbellon")
+call SaveStr(HH,SH_AbOrd,'A1GR',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1GT',"unsubmerge")
 call SaveStr(HH,SH_AbOrd,'A1GU',"farsight")
 call SaveStr(HH,SH_AbOrd,'A1GV',"disenchant")
-call SaveStr(HH,SH_AbOrd,'A1GW',"townbellon")
+call SaveStr(HH,SH_AbOrd,'A1GW',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1GY',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A1GZ',"tankpilot")
 call SaveStr(HH,SH_AbOrd,'A1H0',"farsight")
@@ -141788,26 +141913,26 @@ call SaveStr(HH,SH_AbOrd,'A1H8',"farsight")
 call SaveStr(HH,SH_AbOrd,'A1H9',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1HA',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1HB',"frostarmor")
-call SaveStr(HH,SH_AbOrd,'A1HC',"blackarrowoff")
+call SaveStr(HH,SH_AbOrd,'A1HC',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A1HD',"animatedead")
 call SaveStr(HH,SH_AbOrd,'A1HM',"absorb")
 call SaveStr(HH,SH_AbOrd,'A1HN',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A1HP',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A1HQ',"voodoo")
 call SaveStr(HH,SH_AbOrd,'A1HR',"volcano")
-call SaveStr(HH,SH_AbOrd,'A1HS',"vengeanceon")
-call SaveStr(HH,SH_AbOrd,'A1HW',"creephealoff")
+call SaveStr(HH,SH_AbOrd,'A1HS',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'A1HW',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1HX',"etherealform")
-call SaveStr(HH,SH_AbOrd,'A1HY',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A1HY',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1HZ',"impale")
 call SaveStr(HH,SH_AbOrd,'A1I0',"farsight")
-call SaveStr(HH,SH_AbOrd,'A1I1',"renewon")
+call SaveStr(HH,SH_AbOrd,'A1I1',"stomp")
 call SaveStr(HH,SH_AbOrd,'A1I3',"frostnova")
 call SaveStr(HH,SH_AbOrd,'A1IA',"coldarrowstarg")
 call SaveStr(HH,SH_AbOrd,'A1IE',"drunkenhaze")
-call SaveStr(HH,SH_AbOrd,'A1IF',"resumeharvesting")
+call SaveStr(HH,SH_AbOrd,'A1IF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'A1L8',"breathoffrost")
-call SaveStr(HH,SH_AbOrd,'A1LL',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A1LL',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A1M2',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'A1NM',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A1OX',"root")
@@ -141829,11 +141954,11 @@ call SaveStr(HH,SH_AbOrd,'A24E',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'A24T',"resumeharvesting")
 call SaveStr(HH,SH_AbOrd,'A269',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A26J',"roar")
-call SaveStr(HH,SH_AbOrd,'A270',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'A270',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'A278',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A27Q',"battleroar")
 call SaveStr(HH,SH_AbOrd,'A29E',"cripple")
-call SaveStr(HH,SH_AbOrd,'A29T',"vengeanceon")
+call SaveStr(HH,SH_AbOrd,'A29T',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A2A5',"soulburn")
 call SaveStr(HH,SH_AbOrd,'A2A6',"soulburn")
 call SaveStr(HH,SH_AbOrd,'A2BA',"silence")
@@ -141853,14 +141978,14 @@ call SaveStr(HH,SH_AbOrd,'A2FF',"lightningshield")
 call SaveStr(HH,SH_AbOrd,'A2G2',"sleep")
 call SaveStr(HH,SH_AbOrd,'A2HX',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A2HY',"channel")
-call SaveStr(HH,SH_AbOrd,'A2LL',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'A2LL',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'A2M2',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'A2N0',"immolation")
 call SaveStr(HH,SH_AbOrd,'A2NM',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A2SK',"immolation")
 call SaveStr(HH,SH_AbOrd,'A2U9',"parasite")
 call SaveStr(HH,SH_AbOrd,'A2X2',"mirrorimage")
-call SaveStr(HH,SH_AbOrd,'A2ZD',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'A2ZD',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'A30B',"evileye")
 call SaveStr(HH,SH_AbOrd,'A30C',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A315',"divineshield")
@@ -141883,7 +142008,7 @@ call SaveStr(HH,SH_AbOrd,'A4D0',"blink")
 call SaveStr(HH,SH_AbOrd,'A4D1',"acolyteharvest")
 call SaveStr(HH,SH_AbOrd,'A4D2',"blight")
 call SaveStr(HH,SH_AbOrd,'A4D3',"faeriefire")
-call SaveStr(HH,SH_AbOrd,'A901',"townbellon")
+call SaveStr(HH,SH_AbOrd,'A901',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'ACad',"animatedead")
 call SaveStr(HH,SH_AbOrd,'ACam',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'ACbb',"bloodlust")
@@ -141958,7 +142083,7 @@ call SaveStr(HH,SH_AbOrd,'ACtn',"Serpentward")
 call SaveStr(HH,SH_AbOrd,'ACuf',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'ACwb',"web")
 call SaveStr(HH,SH_AbOrd,'ACwe',"waterelemental")
-call SaveStr(HH,SH_AbOrd,'ADG1',"renewon")
+call SaveStr(HH,SH_AbOrd,'ADG1',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'AEIl',"metamorphosis")
 call SaveStr(HH,SH_AbOrd,'AEbl',"blink")
 call SaveStr(HH,SH_AbOrd,'AEbu',"nightelfbuild")
@@ -142026,18 +142151,18 @@ call SaveStr(HH,SH_AbOrd,'AJIT',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'AK1A',"divineshield")
 call SaveStr(HH,SH_AbOrd,'AK2A',"divineshield")
 call SaveStr(HH,SH_AbOrd,'AKE1',"blizzard")
-call SaveStr(HH,SH_AbOrd,'AKF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'AKF1',"stomp")
 call SaveStr(HH,SH_AbOrd,'AKF2',"bearform")
 call SaveStr(HH,SH_AbOrd,'AKF3',"bearform")
-call SaveStr(HH,SH_AbOrd,'AKG1',"weboff")
+call SaveStr(HH,SH_AbOrd,'AKG1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'AKQ1',"charm")
 call SaveStr(HH,SH_AbOrd,'AKR1',"heal")
 call SaveStr(HH,SH_AbOrd,'AKT1',"tornado")
 call SaveStr(HH,SH_AbOrd,'AKW1',"channel")
 call SaveStr(HH,SH_AbOrd,'AMUB',"bearform")
-call SaveStr(HH,SH_AbOrd,'AMUG',"renewon")
+call SaveStr(HH,SH_AbOrd,'AMUG',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'AMUN',"bearform")
-call SaveStr(HH,SH_AbOrd,'AMUR',"bloodluston")
+call SaveStr(HH,SH_AbOrd,'AMUR',"stomp")
 call SaveStr(HH,SH_AbOrd,'ANab',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'ANav',"avatar")
 call SaveStr(HH,SH_AbOrd,'ANb2',"bash")
@@ -142196,14 +142321,14 @@ call SaveStr(HH,SH_AbOrd,'Acpf',"corporealform")
 call SaveStr(HH,SH_AbOrd,'Acri',"cripple")
 call SaveStr(HH,SH_AbOrd,'Acrs',"curse")
 call SaveStr(HH,SH_AbOrd,'Acyc',"cyclone")
-call SaveStr(HH,SH_AbOrd,'Ad01',"renewon")
+call SaveStr(HH,SH_AbOrd,'Ad01',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'Ad02',"windwalk")
 call SaveStr(HH,SH_AbOrd,'Ad03',"farsight")
-call SaveStr(HH,SH_AbOrd,'Ad04',"weboff")
-call SaveStr(HH,SH_AbOrd,'Ad05',"townbellon")
+call SaveStr(HH,SH_AbOrd,'Ad04',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'Ad05',"shockwave")
 call SaveStr(HH,SH_AbOrd,'Ad07',"bearform")
 call SaveStr(HH,SH_AbOrd,'Ad12',"cripple")
-call SaveStr(HH,SH_AbOrd,'Ad6Q',"resumeharvesting")
+call SaveStr(HH,SH_AbOrd,'Ad6Q',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'Ad8M',"channel")
 call SaveStr(HH,SH_AbOrd,'Ad8R',"charm")
 call SaveStr(HH,SH_AbOrd,'Ad8T',"unflamingarrows")
@@ -142245,7 +142370,7 @@ call SaveStr(HH,SH_AbOrd,'Aivs',"invisibility")
 call SaveStr(HH,SH_AbOrd,'AlDl',"blizzard")
 call SaveStr(HH,SH_AbOrd,'AlF1',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'AlF2',"carrionswarm")
-call SaveStr(HH,SH_AbOrd,'AlF3',"carrionscarabson")
+call SaveStr(HH,SH_AbOrd,'AlF3',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'AlTp',"slow")
 call SaveStr(HH,SH_AbOrd,'Alam',"sacrifice")
 call SaveStr(HH,SH_AbOrd,'AlbD',"blink")
@@ -142276,25 +142401,25 @@ call SaveStr(HH,SH_AbOrd,'Anh2',"heal")
 call SaveStr(HH,SH_AbOrd,'Anhe',"heal")
 call SaveStr(HH,SH_AbOrd,'Ao51',"darkportal")
 call SaveStr(HH,SH_AbOrd,'Ao52',"etherealform")
-call SaveStr(HH,SH_AbOrd,'Ao55',"weboff")
+call SaveStr(HH,SH_AbOrd,'Ao55',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'Ao60',"farsight")
-call SaveStr(HH,SH_AbOrd,'Ao61',"renewon")
+call SaveStr(HH,SH_AbOrd,'Ao61',"stomp")
 call SaveStr(HH,SH_AbOrd,'Ao63',"channel")
-call SaveStr(HH,SH_AbOrd,'Ao66',"townbellon")
+call SaveStr(HH,SH_AbOrd,'Ao66',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'Ao67',"nagabuild")
-call SaveStr(HH,SH_AbOrd,'Ao69',"vengeanceon")
+call SaveStr(HH,SH_AbOrd,'Ao69',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'Ao6V',"deathanddecay")
-call SaveStr(HH,SH_AbOrd,'Ao6W',"autoharvestlumber")
-call SaveStr(HH,SH_AbOrd,'Ao6Y',"weboff")
+call SaveStr(HH,SH_AbOrd,'Ao6W',"shockwave")
+call SaveStr(HH,SH_AbOrd,'Ao6Y',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'Ao7A',"blizzard")
-call SaveStr(HH,SH_AbOrd,'Ao7B',"weboff")
+call SaveStr(HH,SH_AbOrd,'Ao7B',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'Ao7C',"farsight")
 call SaveStr(HH,SH_AbOrd,'Ao7D',"berserk")
-call SaveStr(HH,SH_AbOrd,'Ao7E',"townbellon")
-call SaveStr(HH,SH_AbOrd,'Ao7N',"weboff")
+call SaveStr(HH,SH_AbOrd,'Ao7E',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'Ao7N',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'Ao7R',"bash")
 call SaveStr(HH,SH_AbOrd,'Ao7T',"etherealform")
-call SaveStr(HH,SH_AbOrd,'Ao7V',"townbellon")
+call SaveStr(HH,SH_AbOrd,'Ao7V',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'Ao7W',"farsight")
 call SaveStr(HH,SH_AbOrd,'Ao8N',"root")
 call SaveStr(HH,SH_AbOrd,'Ao8V',"controlmagic")
@@ -142383,7 +142508,7 @@ call SaveStr(HH,SH_AbOrd,'BbD1',"forkedlightning")
 call SaveStr(HH,SH_AbOrd,'BbE1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'BbF1',"blink")
 call SaveStr(HH,SH_AbOrd,'BbGb',"berserk")
-call SaveStr(HH,SH_AbOrd,'BbQ1',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'BbQ1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'BbR1',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'BbT1',"stomp")
 call SaveStr(HH,SH_AbOrd,'BbT2',"howlofterror")
@@ -142419,7 +142544,7 @@ call SaveStr(HH,SH_AbOrd,'DMF1',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'DMG1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'DMQ1',"cloudoffog")
 call SaveStr(HH,SH_AbOrd,'DMQ2',"charm")
-call SaveStr(HH,SH_AbOrd,'DMR1',"harvest")
+call SaveStr(HH,SH_AbOrd,'DMR1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'DMT1',"tornado")
 call SaveStr(HH,SH_AbOrd,'DMW1',"channel")
 call SaveStr(HH,SH_AbOrd,'DSE1',"silence")
@@ -142432,13 +142557,13 @@ call SaveStr(HH,SH_AbOrd,'DSW2',"cripple")
 call SaveStr(HH,SH_AbOrd,'DanI',"invisibility")
 call SaveStr(HH,SH_AbOrd,'EsD1',"darkconversion")
 call SaveStr(HH,SH_AbOrd,'EsE1',"flamingarrowstarg")
-call SaveStr(HH,SH_AbOrd,'EsF1',"selfdestructon")
+call SaveStr(HH,SH_AbOrd,'EsF1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'EsG1',"berserk")
 call SaveStr(HH,SH_AbOrd,'EsQ1',"bearform")
-call SaveStr(HH,SH_AbOrd,'EsR1',"flamingattack")
+call SaveStr(HH,SH_AbOrd,'EsR1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'EsT1',"wateryminion")
 call SaveStr(HH,SH_AbOrd,'EsW1',"flamingarrows")
-call SaveStr(HH,SH_AbOrd,'FSF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'FSF1',"shockwave")
 call SaveStr(HH,SH_AbOrd,'FSG1',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'FlD1',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'FlE1',"carrionswarm")
@@ -142460,23 +142585,23 @@ call SaveStr(HH,SH_AbOrd,'GIE0',"AImove")
 call SaveStr(HH,SH_AbOrd,'GIE1',"divineshield")
 call SaveStr(HH,SH_AbOrd,'GIF0',"ambush")
 call SaveStr(HH,SH_AbOrd,'GIQ0',"rainoffire")
-call SaveStr(HH,SH_AbOrd,'GIT0',"autoharvestlumber")
+call SaveStr(HH,SH_AbOrd,'GIT0',"shockwave")
 call SaveStr(HH,SH_AbOrd,'GIW0',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'GKBB',"earthquake")
-call SaveStr(HH,SH_AbOrd,'GKBI',"creephealon")
+call SaveStr(HH,SH_AbOrd,'GKBI',"fanofknives")
 call SaveStr(HH,SH_AbOrd,'GKBS',"hex")
 call SaveStr(HH,SH_AbOrd,'GKE1',"curseon")
 call SaveStr(HH,SH_AbOrd,'GKE2',"autoentangle")
-call SaveStr(HH,SH_AbOrd,'GKE3',"autodispelon")
+call SaveStr(HH,SH_AbOrd,'GKE3',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'GKE4',"farsight")
 call SaveStr(HH,SH_AbOrd,'GKE5',"nagabuild")
-call SaveStr(HH,SH_AbOrd,'GKE6',"autoentangleinstant")
+call SaveStr(HH,SH_AbOrd,'GKE6',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'GKG1',"channel")
 call SaveStr(HH,SH_AbOrd,'GKG3',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'GKG4',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'GKG5',"mechanicalcritter")
 call SaveStr(HH,SH_AbOrd,'GKG6',"cripple")
-call SaveStr(HH,SH_AbOrd,'GKG7',"renewon")
+call SaveStr(HH,SH_AbOrd,'GKG7',"stomp")
 call SaveStr(HH,SH_AbOrd,'GKMI',"spellshieldaoe")
 call SaveStr(HH,SH_AbOrd,'GKQ1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'GKR1',"autodispel")
@@ -142489,12 +142614,12 @@ call SaveStr(HH,SH_AbOrd,'GKSF',"heal")
 call SaveStr(HH,SH_AbOrd,'GKSR',"creepanimatedead")
 call SaveStr(HH,SH_AbOrd,'GKSS',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'GKT1',"breathoffire")
-call SaveStr(HH,SH_AbOrd,'GKUI',"townbellon")
+call SaveStr(HH,SH_AbOrd,'GKUI',"howlofterror")
 call SaveStr(HH,SH_AbOrd,'GKW1',"chemicalrage")
 call SaveStr(HH,SH_AbOrd,'GKW5',"drain")
 call SaveStr(HH,SH_AbOrd,'GSE1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'GSE2',"bloodlust")
-call SaveStr(HH,SH_AbOrd,'GSF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'GSF1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'GSF2',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'GSQ1',"charm")
 call SaveStr(HH,SH_AbOrd,'GSQ2',"chemicalrage")
@@ -142519,7 +142644,7 @@ call SaveStr(HH,SH_AbOrd,'GinW',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'GrE1',"roar")
 call SaveStr(HH,SH_AbOrd,'GrF1',"berserk")
 call SaveStr(HH,SH_AbOrd,'GrG2',"stomp")
-call SaveStr(HH,SH_AbOrd,'GrQ1',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'GrQ1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'GrR1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'GrT1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'GrW1',"thunderbolt")
@@ -142535,7 +142660,7 @@ call SaveStr(HH,SH_AbOrd,'HST3',"tornado")
 call SaveStr(HH,SH_AbOrd,'HST4',"bearform")
 call SaveStr(HH,SH_AbOrd,'HSW1',"channel")
 call SaveStr(HH,SH_AbOrd,'HSW2',"channel")
-call SaveStr(HH,SH_AbOrd,'HerF',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'HerF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'HerG',"charm")
 call SaveStr(HH,SH_AbOrd,'HerT',"tornado")
 call SaveStr(HH,SH_AbOrd,'HiW1',"clusterrockets")
@@ -142558,7 +142683,7 @@ call SaveStr(HH,SH_AbOrd,'IcD1',"blink")
 call SaveStr(HH,SH_AbOrd,'IcD2',"blink")
 call SaveStr(HH,SH_AbOrd,'IcD3',"blink")
 call SaveStr(HH,SH_AbOrd,'IcD4',"blink")
-call SaveStr(HH,SH_AbOrd,'IcE1',"creephealon")
+call SaveStr(HH,SH_AbOrd,'IcE1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'IcE2',"cripple")
 call SaveStr(HH,SH_AbOrd,'IcE3',"curse")
 call SaveStr(HH,SH_AbOrd,'IcF1',"channel")
@@ -142588,19 +142713,19 @@ call SaveStr(HH,SH_AbOrd,'InE1',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'JAE2',"cripple")
 call SaveStr(HH,SH_AbOrd,'JAG1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'JND1',"blackarrow")
-call SaveStr(HH,SH_AbOrd,'JNE1',"auravampiric")
+call SaveStr(HH,SH_AbOrd,'JNE1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'JNF1',"charm")
-call SaveStr(HH,SH_AbOrd,'JNF4',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'JNF4',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'JNG1',"purge")
 call SaveStr(HH,SH_AbOrd,'JNQ1',"absorb")
 call SaveStr(HH,SH_AbOrd,'JNR1',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'JNT1',"web")
 call SaveStr(HH,SH_AbOrd,'JNW1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'JiE2',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'KHG1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'KHG1',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'KHG2',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'KHG3',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'KZF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'KZF1',"soulburn")
 call SaveStr(HH,SH_AbOrd,'KaA1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'KaA2',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'KaA3',"charm")
@@ -142614,9 +142739,9 @@ call SaveStr(HH,SH_AbOrd,'KaAB',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'KaAF',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'KaAG',"inferno")
 call SaveStr(HH,SH_AbOrd,'KiyG',"purge")
-call SaveStr(HH,SH_AbOrd,'KkR1',"gold2lumber")
+call SaveStr(HH,SH_AbOrd,'KkR1',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'KkR2',"purge")
-call SaveStr(HH,SH_AbOrd,'KrF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'KrF1',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'KrG1',"charm")
 call SaveStr(HH,SH_AbOrd,'LCE1',"root")
 call SaveStr(HH,SH_AbOrd,'LCE2',"bearform")
@@ -142629,7 +142754,7 @@ call SaveStr(HH,SH_AbOrd,'LCW1',"channel")
 call SaveStr(HH,SH_AbOrd,'LDQ1',"charm")
 call SaveStr(HH,SH_AbOrd,'LaD2',"channel")
 call SaveStr(HH,SH_AbOrd,'LamE',"blizzard")
-call SaveStr(HH,SH_AbOrd,'LamF',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'LamF',"stomp")
 call SaveStr(HH,SH_AbOrd,'LamG',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'LamQ',"charm")
 call SaveStr(HH,SH_AbOrd,'LamR',"tornado")
@@ -142638,7 +142763,7 @@ call SaveStr(HH,SH_AbOrd,'LawD',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'LawF',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'LawQ',"charm")
 call SaveStr(HH,SH_AbOrd,'LawW',"chemicalrage")
-call SaveStr(HH,SH_AbOrd,'LaxD',"weboff")
+call SaveStr(HH,SH_AbOrd,'LaxD',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'LcE4',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'MDs2',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'MUE1',"blight")
@@ -142647,7 +142772,7 @@ call SaveStr(HH,SH_AbOrd,'MUQ1',"blink")
 call SaveStr(HH,SH_AbOrd,'MUQ2',"shockwave")
 call SaveStr(HH,SH_AbOrd,'MUT1',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'MUT2',"breathoffrost")
-call SaveStr(HH,SH_AbOrd,'MUW1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'MUW1',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'MUW2',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'MaDs',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'MaE1',"creepheal")
@@ -142657,7 +142782,7 @@ call SaveStr(HH,SH_AbOrd,'MaF3',"bearform")
 call SaveStr(HH,SH_AbOrd,'MaF4',"bearform")
 call SaveStr(HH,SH_AbOrd,'MaQ1',"channel")
 call SaveStr(HH,SH_AbOrd,'MaR2',"coupleinstant")
-call SaveStr(HH,SH_AbOrd,'MaT1',"freezingbreath")
+call SaveStr(HH,SH_AbOrd,'MaT1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'MaT2',"cyclone")
 call SaveStr(HH,SH_AbOrd,'MadD',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'MadR',"clusterrockets")
@@ -142668,8 +142793,8 @@ call SaveStr(HH,SH_AbOrd,'MeiQ',"charm")
 call SaveStr(HH,SH_AbOrd,'MeiR',"heal")
 call SaveStr(HH,SH_AbOrd,'MeiT',"tornado")
 call SaveStr(HH,SH_AbOrd,'MeiW',"channel")
-call SaveStr(HH,SH_AbOrd,'MiD1',"carrionscarabson")
-call SaveStr(HH,SH_AbOrd,'MiD2',"corrosivebreath")
+call SaveStr(HH,SH_AbOrd,'MiD1',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'MiD2',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'MiE1',"charm")
 call SaveStr(HH,SH_AbOrd,'MiE2',"cyclone")
 call SaveStr(HH,SH_AbOrd,'MiMs',"slow")
@@ -142688,15 +142813,15 @@ call SaveStr(HH,SH_AbOrd,'MrF2',"divineshield")
 call SaveStr(HH,SH_AbOrd,'MrG1',"roar")
 call SaveStr(HH,SH_AbOrd,'MrG2',"absorb")
 call SaveStr(HH,SH_AbOrd,'MrQ1',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'MrR1',"weboff")
+call SaveStr(HH,SH_AbOrd,'MrR1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'MrT1',"root")
 call SaveStr(HH,SH_AbOrd,'MrW1',"ambush")
 call SaveStr(HH,SH_AbOrd,'MrW2',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'NeEE',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'OM10',"weboff")
+call SaveStr(HH,SH_AbOrd,'OM10',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'OM11',"deathcoil")
 call SaveStr(HH,SH_AbOrd,'OM12',"ensnare")
-call SaveStr(HH,SH_AbOrd,'OM13',"renewon")
+call SaveStr(HH,SH_AbOrd,'OM13',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'OM14',"root")
 call SaveStr(HH,SH_AbOrd,'OM15',"channel")
 call SaveStr(HH,SH_AbOrd,'OniS',"resumeharvesting")
@@ -142816,8 +142941,8 @@ call SaveStr(HH,SH_AbOrd,'SiC1',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'SiD1',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'SiE1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'SiE2',"blizzard")
-call SaveStr(HH,SH_AbOrd,'SiE3',"healon")
-call SaveStr(HH,SH_AbOrd,'SiF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'SiE3',"shadowstrike")
+call SaveStr(HH,SH_AbOrd,'SiF1',"stomp")
 call SaveStr(HH,SH_AbOrd,'SiF2',"antimagicshell")
 call SaveStr(HH,SH_AbOrd,'SiG1',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'SiQ1',"charm")
@@ -142858,11 +142983,11 @@ call SaveStr(HH,SH_AbOrd,'TMD0',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'TME0',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'TMF0',"revive")
 call SaveStr(HH,SH_AbOrd,'TMF2',"revive")
-call SaveStr(HH,SH_AbOrd,'TMG0',"renewon")
+call SaveStr(HH,SH_AbOrd,'TMG0',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'TMG1',"silence")
 call SaveStr(HH,SH_AbOrd,'TMG3',"silence")
 call SaveStr(HH,SH_AbOrd,'TMQ0',"absorb")
-call SaveStr(HH,SH_AbOrd,'TMR0',"weboff")
+call SaveStr(HH,SH_AbOrd,'TMR0',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'TMT0',"deathcoil")
 call SaveStr(HH,SH_AbOrd,'TMW0',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'TMW1',"carrionswarm")
@@ -142898,22 +143023,22 @@ call SaveStr(HH,SH_AbOrd,'VTSS',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'VerG',"curse")
 call SaveStr(HH,SH_AbOrd,'VerW',"charm")
 call SaveStr(HH,SH_AbOrd,'WE01',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'WE02',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'WE02',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'WE03',"unsubmerge")
 call SaveStr(HH,SH_AbOrd,'WE04',"ambush")
 call SaveStr(HH,SH_AbOrd,'WE05',"ancestralspirit")
 call SaveStr(HH,SH_AbOrd,'WE06',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'WE07',"animatedead")
-call SaveStr(HH,SH_AbOrd,'WE08',"weboff")
+call SaveStr(HH,SH_AbOrd,'WE08',"shockwave")
 call SaveStr(HH,SH_AbOrd,'XanE',"monsoon")
 call SaveStr(HH,SH_AbOrd,'XanF',"charm")
 call SaveStr(HH,SH_AbOrd,'YatA',"resumeharvesting")
-call SaveStr(HH,SH_AbOrd,'YoD0',"blackarrowoff")
+call SaveStr(HH,SH_AbOrd,'YoD0',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'YoD1',"phaseshift")
 call SaveStr(HH,SH_AbOrd,'YoE0',"frenzy")
 call SaveStr(HH,SH_AbOrd,'YoF0',"corporealform")
-call SaveStr(HH,SH_AbOrd,'YoF1',"phoenixfire")
-call SaveStr(HH,SH_AbOrd,'YoG0',"renewon")
+call SaveStr(HH,SH_AbOrd,'YoF1',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'YoG0',"stomp")
 call SaveStr(HH,SH_AbOrd,'YoQ0',"absorb")
 call SaveStr(HH,SH_AbOrd,'YoR0',"avengerform")
 call SaveStr(HH,SH_AbOrd,'YoT0',"deathcoil")
@@ -142931,7 +143056,7 @@ call SaveStr(HH,SH_AbOrd,'YujT',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'YujW',"blizzard")
 call SaveStr(HH,SH_AbOrd,'ore7',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'ore8',"etherealform")
-call SaveStr(HH,SH_AbOrd,'ore9',"townbellon")
+call SaveStr(HH,SH_AbOrd,'ore9',"soulburn")
 endfunction
 //ABORD_DATA_END
 function ShinjiFcAbOk takes unit e,integer id returns boolean
@@ -144160,7 +144285,7 @@ local unit u=LoadUnitHandle(h,id,0)
 local unit c=LoadUnitHandle(h,id,1)
 local real f=LoadReal(h,id,3)
 local effect fx
-if UnitIsAlive(u) and UnitIsAlive(c) and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY) then
+if UnitIsAlive(u) and UnitIsAlive(c) and ReverseActiveId(GetHandleId(c)) then
 // реверс: удара нет, цели отдаём Хирако, паузы снимаются сразу
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 call ShinjiAlpha(u,255)
@@ -144438,7 +144563,7 @@ function LaxusD_Periodic takes nothing returns nothing
 		exitwhen bjLCU==null
 			if Condition_Base(OwnerOf(caster), bjLCU) and IsUnitInvulnerable(bjLCU)==false then
 				call SaveReal(h, id, SH_Distance, 9999)
-                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(bjLCU))==false then
                     call SaveUnitHandle(h, id, TargetHash, bjLCU)
                 else
                     call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h, id, CasterHash)),DASH_USER,false)
@@ -144999,7 +145124,7 @@ function SecretRoaringThunderCast2 takes nothing returns nothing //Laxus T new
 				call SetUnitScale(n, 2, 2, 2)
 				call UnitApplyTimedLife(n,'BTLF', 1.5)
 				call MyRemoveUnit(n, 2)
-                if SR(x,y,x1,y1)<100 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+                if SR(x,y,x1,y1)<100 and ReverseActiveId(GetHandleId(c))==true then
                     call MapPauseUnit(u,false)
                     call SetUnitInvulnerable(u,false)
                     call MapPauseUnit(c,false)
@@ -145988,7 +146113,7 @@ local unit c=GetSpellTargetUnit()
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local player p=OwnerOf(u)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call SaveUnitHandle(h,id,0,u)
     call SaveUnitHandle(h,id,1,c)
     call SaveReal(h,id,2,0)
@@ -146313,7 +146438,7 @@ else
 call SetUnitAnimation(u,"walk")
 endif
 elseif UnitIsAlive(c) then
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set soundplay=SndN(1392) // Sound\Music\mp3Music\BrolyHit.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -147476,7 +147601,7 @@ if SR(x,y,x1,y1)>120 and GetWidgetLife(c)>0 and GetUnitAbilityLevel(u,'A3IH')==0
     endif
 else
     if GetUnitAbilityLevel(u,'A3IH')==0 and GetUnitAbilityLevel(c,'A3IH')==0 and ((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) or (GetUnitAbilityLevel(u,'A0IH')>0 and GetUnitAbilityLevel(c,'A0IH')>0)) then
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call MapPauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
             call SetUnitInvulnerable(c,true)
@@ -147936,7 +148061,7 @@ else
             call UnitApplyTimedLife(n,'BTLF',0.01)
             call SetUnitVertexColor(n,255,230,100,50)
             call SaveReal(h,id,2,dist+60)
-            if SR(x,y,x1,y1)<200 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+            if SR(x,y,x1,y1)<200 and ReverseActiveId(GetHandleId(c))==true then
                 call RemoveUnit(l__d)
                 call MapPauseUnit(u,false)
                 call SetUnitInvulnerable(u,false)
@@ -148441,7 +148566,7 @@ else
             call UnitApplyTimedLife(n,'BTLF',0.01)
             call SetUnitVertexColor(n,255,255,255,50)
             call SaveReal(h,id,2,dist+60)
-            if SR(x,y,x1,y1)<200 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+            if SR(x,y,x1,y1)<200 and ReverseActiveId(GetHandleId(c))==true then
                 call MapPauseUnit(u,false)
                 call SetUnitInvulnerable(u,false)
                 call MapPauseUnit(c,false)
@@ -148985,7 +149110,7 @@ set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,ide)!=E then
-    if LoadBoolean(HH,ide,ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(ide)==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SetUnitXY_1(u,GetUnitX(E)-50*Cos(a),GetUnitY(E)-50*Sin(a), false)
         set n=CreateUnit(p,'e01S',GetUnitX(E)-50*Cos(a),GetUnitY(E)-50*Sin(a),a*bj_RADTODEG)
@@ -151490,7 +151615,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call MapPauseUnit(u,true)
@@ -153567,7 +153692,7 @@ else
             if Condition_Base(OwnerOf(caster),n0)and GetUnitAbilityLevel(n0,'Avul')==0 then
                 call SaveUnitHandle(HH,id,2,n0)
                 call SaveReal(HH,id,5,5)
-                if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(n0))==false then
                     call UnitSpeed(caster,0)
                     call DamageU(false,caster,n0,damage*0.5)
                     call SetControlToUnit(n0,n0,0.5,"stun")
@@ -153589,7 +153714,7 @@ else
         call GroupClear(G)
     endif
     if time>5 then
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             if time==5.02 then
                 call SetUnitAnimationByIndex(caster,23)
                 call UnitSpeed(caster,1.5)
@@ -155015,7 +155140,7 @@ call SetUnitScale(n,2,2,2)
 call SetUnitVertexColor(n,255,255,255,25)
 endif
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call Push3(c,35,a,600,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
         call UnitApplyTimedLife(CreateUnit(p,'e0AX',x1,y1,GetRandomReal(0,359)),'BTLF',1)
         call UnitApplyTimedLife(CreateUnit(p,'e0AW',x1,y1,GetRandomReal(0,359)),'BTLF',0.01)
@@ -155302,7 +155427,7 @@ local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
 local real a=Atan2(y1-y,x1-x)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call MapPauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     call MapPauseUnit(u,true)
@@ -156282,7 +156407,7 @@ loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 if Condition_Base(p,E)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call SetUnitX(E,x)
         call SetUnitY(E,y)
         call MapPauseUnit(E,true)
@@ -158631,7 +158756,7 @@ local real a2=0
 local real a=0
 local player p=OwnerOf(u)
 local integer idn='e003'
-if GetUnitCurrentOrder(u)==OrderId("channel") and UnitIsAlive(c) and LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if GetUnitCurrentOrder(u)==OrderId("channel") and UnitIsAlive(c) and ReverseActiveId(GetHandleId(E))==false then
 if GetUnitAbilityLevel(u,'S004')>0 then
 set idn='e0N3'
 endif
@@ -158658,7 +158783,7 @@ call SetUnitAnimation(n,"attack")
 call UnitApplyTimedLife(CreateUnit(p,'e0FX',x1,y1,GetRandomReal(0,359)),'BTLF',1)
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",c,"chest"))
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+if ReverseActiveId(GetHandleId(c))==true then
 call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
 endif
 call PauseTimer(t)
@@ -161282,7 +161407,7 @@ call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
 endif
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call PauseTimer(t)
     call MapPauseUnit(u,true)
     call MapPauseUnit(c,true)
@@ -162348,7 +162473,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(OwnerOf(caster),n0)  then
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(n0))==false then
         call SaveUnitHandle(HH,id,2,n0)
         call SaveReal(HH,id,5,5-R2I(dist/28)*0.02)
         call UnitSpeed(caster,0)
@@ -162548,7 +162673,7 @@ call UnitMakeAbilityPermanent(u,false,'A14J')
 call UnitRemoveAbility(u,'A14J')
 call UnitRemoveBuffs(u,false,true)
 call SetUnitTimeScale(u,1)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+call ReverseEnd(idu)
 if c!=null then
 call SaveUnitHandle(HH,id,1,c)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -162596,7 +162721,7 @@ else
 endif
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+call ReverseBegin(u)
 call TSE_TimerStart(t,0.04,true,function AvalonSCast2)
 set u=null
 set p=null
@@ -162835,7 +162960,7 @@ loop
 set E=FirstOfGroup(G)
 set l__ide=GetHandleId(E)
 if Condition_Base(p,E)and LoadUnitHandle(h,l__idg,l__ide)!=E then
-    if LoadBoolean(HH,l__ide,ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(l__ide)==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SaveUnitHandle(h,l__idg,l__ide,E)
         call SetControlToUnit(E,E, 2, "stun")
@@ -163246,7 +163371,7 @@ call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"spell two")
 endif
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(u,false)
         call SetUnitAnimation(u,"Stand Channel")
         call SaveInteger(HH,GetHandleId(u),SH_SaberPassive,1)
@@ -163505,7 +163630,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call GroupAddUnit(g,E)
         call MapPauseUnit(E,true)
         call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
@@ -165225,7 +165350,7 @@ call SetUnitTimeScale(n,2)
 call SetUnitAnimation(n,"attack")
 call SetUnitAnimation(u,"attack")
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 call SetUnitAnimation(u,"Spell Six")
@@ -165279,7 +165404,7 @@ else
 set x=x1-650*Cos(a)
 set y=y1-650*Sin(a)
 call SetUnitXY_1(u,x,y, false)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",u,"right hand"))
 call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -166927,7 +167052,7 @@ call SetUnitFacing(u,a*bj_RADTODEG)
 call SetUnitAnimation(u,"Spell Channel One")
 else
 if GetUnitAbilityLevel(u,'A3IH')==0 and GetUnitAbilityLevel(c,'A3IH')==0 and ((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) or (GetUnitAbilityLevel(u,'A0IH')>0 and GetUnitAbilityLevel(c,'A0IH')>0)) then
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call MapPauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
             call SetUnitInvulnerable(c,true)
@@ -167328,7 +167453,7 @@ else
     if time>=2 then
         call SetUnitXY_1(u,x2,y2, false)
     endif
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call SetUnitTimeScale(u,0.1)
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -167694,7 +167819,7 @@ call SetUnitScale(n,3,3,3)
 call SetUnitTimeScale(n,0.9)
 call UnitApplyTimedLife(n,'BTLF',1.1)
 else
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+call ReverseEnd(idu)
 call MapPauseUnit(u,false)
 call UnitRemoveAbility(u,'A19B')
 call PauseTimer(t)
@@ -167736,7 +167861,7 @@ call SetUnitTimeScale(n,2)
 call SetUnitScale(n,1,1,1)
 call UnitApplyTimedLife(n,'BTLF',4)
 call MapPauseUnit(u,true)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,true)
+call ReverseBegin(u)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,1,0)
 set soundplay=SndN(2518) // Sound\Music\mp3Music\Shiki5Start.mp3
@@ -167885,7 +168010,7 @@ function RyougiF_Cast2 takes nothing returns nothing
                     if GetWidgetLife(E)>0 then
                         call SetSpecialEffectTimeScale(LoadEffectHandle(HH,id,5),1)
                         call RemoveEffect(LoadEffectHandle(HH,id,5),0.3,false,CreateTimer())
-                        if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                        if ReverseActiveId(GetHandleId(E))==false then
                             call SaveUnitHandle(HH,id,4,E)
                             call SetUnitFacingInstant(E,a*bj_RADTODEG-180)
                             call SaveReal(HH,id,2,0)
@@ -168023,7 +168148,7 @@ function GogetaQCast3 takes nothing returns nothing
                 loop
                     set E=FirstOfGroup(g2)
                     exitwhen E==null
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call SetUnitAnimation(E,"death")
                         set EFF=AddSpecialEffect("AZ_DD021.mdx", GetUnitX(E)+GetRandomReal(-35,35)*Cos(a+GetRandomReal(-40,40)*bj_DEGTORAD), GetUnitY(E)+GetRandomReal(-35,35)*Sin(a+GetRandomReal(-40,40)*bj_DEGTORAD))
                         call SetSpecialEffectScale(EFF , GetRandomReal(0.8,1.4))
@@ -168486,7 +168611,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         if GetWidgetLife(E)>dmg*0.25+5 then
             call SetUnitState(E,UNIT_STATE_LIFE,GetWidgetLife(E)-dmg*0.25)
         else
@@ -168772,7 +168897,7 @@ if SR(x,y,x1,y1)>400 and GetWidgetLife(l__d)>0 then
     //call SetUnitAnimation(n,"Spell Four")
     //call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-210)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -169254,7 +169379,7 @@ call UnitApplyTimedLife(n,'BTLF',0.1)
 call SetUnitAnimation(n,"Spell Four")
 call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-210)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -169525,7 +169650,7 @@ else
 call SetUnitAnimation(u,"walk")
 endif
 elseif UnitIsAlive(c) then
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SaveReal(h,id,3,0)
@@ -172791,7 +172916,7 @@ if SR(x,y,x1,y1)>100 and GetWidgetLife(l__d)>0 then
     call SetUnitAnimation(n,"Spell Four")
     call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-210)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -173345,7 +173470,7 @@ if dist<750 then
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E) and IsUnitInvulnerable(E)==false then
-            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(E))==false then
                 set x1=GetUnitX(E)
                 set y1=GetUnitY(E)
                 call UnitAddAbility(u,'A1BI')
@@ -173622,7 +173747,7 @@ loop
     set E=FirstOfGroup(g)
     exitwhen E==null
     if Condition_Base(p,E)then
-        if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(E))==false then
             call SaveUnitHandle(HH,id,1,E)
             set c=E
             if dmg>((GetHeroAgi(u,true)*(0.75+0.25*GetUnitAbilityLevel(u,'A1BQ')))+20)*0.1 then
@@ -173834,7 +173959,7 @@ function QShikiTwoAlterCast takes nothing returns nothing
         set E=FirstOfGroup(g)
         exitwhen E==null
         if Condition_Base(p,E)then
-            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(E))==false then
                 call SaveUnitHandle(HH,id,1,E)
                 set c=E
                 if dmg>((GetHeroAgi(u,true)*(0.75+0.25*GetUnitAbilityLevel(u,'A1BQ')))+20)*0.1 then
@@ -174279,7 +174404,7 @@ local real a=GetUnitFacing(u)*bj_DEGTORAD
 if c==null then
     set c=LoadUnitHandle(HH,GetHandleId(u),SH_SKR)
 endif
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call SaveUnitHandle(HH,idu,SH_Q3,c)
     if GetUnitAbilityLevel(u,'A2CM')>0 then
         call UnitRemoveAbility(u,'A2CM')
@@ -174537,7 +174662,7 @@ function SlashNanayaCast2 takes nothing returns nothing
             set E=FirstOfGroup(G)
             exitwhen E==null
             if Condition_Base(p,E)then
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(E))==false then
                     call GroupAddUnit(g3,E)
                     if IsUnitInvulnerable(E)==false then
                         call IssueImmediateOrder(E,"stop")
@@ -175092,7 +175217,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)and IsUnitInGroup(E,g)==false then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call GroupAddUnit(g,E)
         call MapPauseUnit(E,true)
         call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
@@ -176260,7 +176385,7 @@ call SetUnitTimeScale(u,0.4)
 call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*LoadInteger(HH,idu,ComboCounterHash)*0.005)
 if GetUnitAbilityLevel(u,'A34Z')>0 and LoadUnitHandle(HH,idp,SH_EW)!=null and IsUnitInvulnerable(LoadUnitHandle(HH,idp,SH_EW))==false then
     set c=LoadUnitHandle(HH,idp,SH_EW)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set x1=GetUnitX(c)
         set y1=GetUnitY(c)
         set a=Atan2(y1-y,x1-x)
@@ -176997,7 +177122,7 @@ if dist<1400 and GetWidgetLife(l__d)>0 then
         set E=FirstOfGroup(G)
         exitwhen E==null
         if Condition_Base(p,E) and IsUnitInvulnerable(E)==false then
-            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(E))==false then
                 call SaveUnitHandle(HH,id,1,E)
                 set n=CreateUnit(p,'e0ZH',x2,y2,a*bj_RADTODEG-30)
                 call SetUnitVertexColor(n,255,255,255,155)
@@ -177081,7 +177206,7 @@ set n=CreateUnit(p,'e0ZI',x,y,a*bj_RADTODEG)
 call SetUnitVertexColor(n,255,255,255,125)
 call UnitApplyTimedLife(n,'BTLF',0.2)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set n=CreateUnit(p,'e0ZH',x2,y2,a*bj_RADTODEG-30)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -177409,7 +177534,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E) and IsUnitInvulnerable(E)==false then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         if GetWidgetLife(E)>0 then
             call SaveUnitHandle(h,id,4,E)
             call SaveBoolean(h,id,1,true)
@@ -178237,7 +178362,7 @@ loop
     set E=FirstOfGroup(g1)
     exitwhen E==null
     if Condition_Base(p,E)and IsUnitInvulnerable(E)==false and IsUnitIllusion(E)==false and GetUnitTypeId(E)!='Ho13' and GetUnitTypeId(E)!='H34X' and GetUnitTypeId(E)!='H14F' and GetUnitTypeId(E)!='H007' and IsUnitType(E,UNIT_TYPE_HERO)then
-        if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(E))==false then
             set b=true
             call MapPauseUnit(E,true)
             call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
@@ -179054,7 +179179,7 @@ call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call PauseTimer(t)
 endif
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call TSE_TimerStart(t,0.015,true,function SaberNeroTCast7)
 else
 call TSE_TimerStart(t,0.015,true,function SaberNeroTCast77)
@@ -179555,7 +179680,7 @@ if SR(x,y,x1,y1)>100 and GetWidgetLife(l__d)>0 then
     call SetUnitAnimation(n,"Spell Four")
     call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-210)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -179704,7 +179829,7 @@ call ShakeCamera(0.25,15)
 loop
 set E=FirstOfGroup(g)
 exitwhen E==null
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Tidal.mdx",E,"head"))
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"head"))
 call SetUnitAnimation(E,"death")
@@ -180080,7 +180205,7 @@ set E=FirstOfGroup(g)
 set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SaveUnitHandle(h,l__idg,l__ide,E)
     else
@@ -182049,7 +182174,7 @@ endif
 endif
 else
     call KillUnit(l__d)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call UnitAddAbility(c,'Pet1')
         call SetControlToUnit(u,c,2.55,"heavystun")
         call SetUnitFlyHeight(c,450,500)
@@ -183217,7 +183342,7 @@ if i>75 and i<145 then
 if SR(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c))>120 then
 call MoveUnit(u,u,5+SR(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c))/30,d2)
 else
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call MapPauseUnit(c,true)
 call SetUnitInvulnerable(c,true)
 call SetUnitFacing(c,d2+180)
@@ -183370,7 +183495,7 @@ call UnitCreateAndMove(u,'e2WI',u,GetRandomReal(0,360),1,1.1,0.6,100,100,100,60,
 call SetUnitAnimationByIndex(u,8)
 endif
 if i==50 then
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 set soundplay=SndN(2721) // Sound\Music\mp3Music\BlackStarRPunch.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -183987,7 +184112,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         if GetWidgetLife(E)>0 then
             call SaveUnitHandle(h,id,4,E)
             call SaveBoolean(h,id,1,true)
@@ -185762,7 +185887,7 @@ if dist>100 then
     call SetUnitInvulnerable(u,true)
 else
     call RemoveUnit(l__d)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call SaveReal(h,id,1,a)
         call SaveReal(h,id,2,2.5)
         call SetUnitAnimation(u,"Spell Throw")
@@ -185975,7 +186100,7 @@ set l__ide=GetHandleId(E)
 exitwhen E==null
 if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,l__ide)then
     call SaveUnitHandle(h,l__idg,l__ide,E)
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         if LoadBoolean(h,id,16)==true then
             call myCustomDamage(u,E,( dmg+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EA')*GetHeroAgi(u,true)+0.15*(2+lvl)*GetUnitAbilityLevel(E,'A1EB')*GetHeroAgi(u,true) )*1.25,false,false,null,null,null)
         else
@@ -186410,7 +186535,7 @@ call SetUnitScale(n,0.5,0.5,0.5)
 call SetUnitFlyHeight(n,he,0)
 call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set n=CreateUnit(p,'e11S',x,y,a*bj_RADTODEG)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',2)
@@ -187173,7 +187298,7 @@ call SaveReal(HH,id,3,facing)
 call MoveUnit(caster,caster,50,facing)
 call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
 if dist<120 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call SaveReal(HH,id,8,dist)
         set soundplay=SndN(2794) // Sound\Music\mp3Music\HeroineXT3.mp3
         call StartSound(soundplay)
@@ -191452,7 +191577,7 @@ if SR(x,y,x1,y1)>200 then
     call SetUnitAnimation(n,"Spell One")
     call SetUnitTimeScale(n,1000)
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call SetUnitAnimation(l__d,"Spell Two")
         call SetUnitTimeScale(l__d,1.5)
         call MapPauseUnit(c,true)
@@ -192140,7 +192265,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
 call myCustomDamage(u,E,dmg,false,false,null,null,null)
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call SetControlToUnit(E,E, 2, "stun")
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\Tidal.mdx",E,"chest"))
 call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX-Special.mdx",E,"chest"))
@@ -192850,7 +192975,7 @@ local real y2=0
 local real a=Atan2(y1-y,x1-x)
 local real an=a*bj_RADTODEG+90
 local force f=CreateForce()
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
 call SetUnitZ(c,-3100)
 call SetUnitFacing(c,a*bj_RADTODEG+180)
 call SaveForceHandle(h,id,17,f)
@@ -193984,7 +194109,7 @@ if dist<=250 then
             call SetUnitXY_1(u,x,y, false)
         endif
     else
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call MapPauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
             call SetUnitInvulnerable(c,true)
@@ -195340,7 +195465,7 @@ if SR(x,y,x1,y1)>100 and GetWidgetLife(l__d)>0 then
     call SetUnitAnimation(n,"spell three")
     call SetUnitTimeScale(n,3)
 else
-    if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(l__d))==false then
         set n=CreateUnit(p,'e0ZH',x,y,a*bj_RADTODEG-210)
         call SetUnitVertexColor(n,255,255,255,155)
         call UnitApplyTimedLife(n,'BTLF',0.4)
@@ -196673,7 +196798,7 @@ set n=CreateUnit(p,'e161',x1,y1,a*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.9)
 call SetUnitTimeScale(n,1.5)
 call SetUnitAnimationByIndex(u,4)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call MapPauseUnit(c,true)
     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
     call SetUnitInvulnerable(c,true)
@@ -197148,7 +197273,7 @@ call MapPauseUnit(c,true)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
 endif
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitAnimation(u,"attack")
@@ -197385,7 +197510,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(E))==false then
 call GroupAddUnit(g,E)
 call MapPauseUnit(E,true)
 call SaveBoolean(HH,GetHandleId(E),TARGET_ABILITY,true)
@@ -198293,7 +198418,7 @@ set x=x1-150*Cos(a+a2)
 set y=y1-150*Sin(a+a2)
 call SetUnitXY_1(u,x,y, false)
 call SetUnitFacing(u,a*bj_RADTODEG)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     set n=CreateUnit(p,'e17J',x1,y1,a*bj_RADTODEG+180)
     call UnitApplyTimedLife(n,'BTLF',0.5)
     call UnitAddAbility(c,'Arav')
@@ -200047,7 +200172,7 @@ else
         if time>=6 then
             call SetUnitXY_1(u,x1,y1, false)
         endif
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call MapPauseUnit(c,true)
             call SetUnitInvulnerable(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -204125,7 +204250,7 @@ call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call FlushChildHashtable(h,id)
 else
-    if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,4)),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(LoadUnitHandle(h,id,4)))==false then
         call SetUnitInvulnerable(u,true)
         call MapPauseUnit(LoadUnitHandle(h,id,4),true)
         call SaveBoolean(HH,GetHandleId(LoadUnitHandle(h,id,4)),TARGET_ABILITY,true)
@@ -204451,7 +204576,7 @@ endloop
 set x=x1-150*Cos(a)
 set y=y1-150*Sin(a)
 call SetUnitXY_1(u,x,y, false)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call ShakeCamera(0.5,35)
     set n=CreateUnit(p,'eo8K',x,y,a*bj_RADTODEG)
     call UnitApplyTimedLife(n,'BTLF',2)
@@ -204558,7 +204683,7 @@ loop
 set E=FirstOfGroup(G)
 exitwhen E==null
 if Condition_Base(p,E)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
     else
         call MapPauseUnit(u,false)
@@ -205221,7 +205346,7 @@ call SetUnitVertexColor(n,255,255,255,75)
 call SetUnitTimeScale(n,0.05)
 call SetUnitAnimation(n,"Spell Four")
 else
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set soundplay=SndN(3061) // Sound\Music\mp3Music\KazumaQ.mp3
         call StartSound(soundplay)
         //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -207845,7 +207970,7 @@ function EKiyoCast2 takes nothing returns nothing
             call RemoveEffect(EFF,0.2,true,CreateTimer())
         endif
     else
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             if time>=2 then
                 set x=x1-90*Cos(a)
                 set y=y1-90*Sin(a)
@@ -208374,7 +208499,7 @@ else
     call SetUnitPathing(c,false)
     call SetUnitPathing(u,false)
     call SetUnitXY_1(u,x,y, false)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
         call SetUnitInvulnerable(c,true)
@@ -209500,7 +209625,7 @@ set E=FirstOfGroup(G)
 exitwhen E==null
 set idt = GetHandleId(G)
 if Condition_Base(OwnerOf(u),E)and E!=LoadUnitHandle(HH,ids,idt)then
-    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(E))==false then
         call SaveUnitHandle(HH,ids,idt,E)
         call myCustomDamage(u,E,dmg,false,false,null,null,null)
         call SaveBoolean(HH,id,SH_IsDamaged,false)
@@ -210713,7 +210838,7 @@ if act==0 then
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU==null or act!=0
         if Condition_Base(OwnerOf(LoadUnitHandle(h,id,CasterHash)),bjLCU)==true and IsUnitInGroup(bjLCU,LoadGroupHandle(h,id,SH_GroupDummy))==false and IsUnitInvulnerable(bjLCU)==false then
-            if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then    
+            if ReverseActiveId(GetHandleId(bjLCU))==false then
                 call IssueImmediateOrder(bjLCU,"stop")
                 call myCustomDamage(LoadUnitHandle(h,id,CasterHash),bjLCU,dmg/2,false,false,null,null,null)
                 set bjLCE = AddSpecialEffect("blood-4.mdl", GetUnitX(bjLCU), GetUnitY(bjLCU))
@@ -211825,7 +211950,7 @@ else
 call SaveInteger(h,id,EffectPeriodHash,eff_period-1)
 endif
 else
-if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(LoadUnitHandle(h,id,TargetHash)))==false then
 call SetUnitVertexColor(LoadUnitHandle(h,id,CasterHash),255,255,255,255)
 call AlbedoW_SecondAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),CreateTimer())
 call FlushChildHashtable(h,id)
@@ -212065,7 +212190,7 @@ if LoadReal(h,id,SH_PrepareTime)<=0 then
             call SetSpecialEffectY(LoadEffectHandle(h,id,Effect1Hash),caster_y)
             call SetSpecialEffectZ(LoadEffectHandle(h,id,Effect1Hash),GetUnitFlyHeight(LoadUnitHandle(h,id,CasterHash))+50)
         else
-            if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h,id,TargetHash)),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(LoadUnitHandle(h,id,TargetHash)))==false then
                 call GroupRemoveUnit(LoadGroupHandle(h,id,GroupHash),LoadUnitHandle(h,id,TargetHash))
                 call AlbedoR_SideAct(LoadUnitHandle(h,id,CasterHash),LoadUnitHandle(h,id,TargetHash),null,CreateTimer())
                 call RemoveSavedHandle(h,id,TargetHash)
@@ -212857,7 +212982,7 @@ function RengokuQ_Base_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(OwnerOf(caster) , bjLCU) and IsUnitInvulnerable(bjLCU)==false then
-                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then    
+                if ReverseActiveId(GetHandleId(bjLCU))==false then
                     call SetUnitX(caster, GetUnitX(bjLCU) + 250 * Cos(angle))
                     call SetUnitY(caster, GetUnitY(bjLCU) + 250 * Sin(angle))
                     call SetUnitFacingInstant(caster , angle * bj_RADTODEG + 180)
@@ -213014,7 +213139,7 @@ function RengokuQ_WQ_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(OwnerOf(caster) , bjLCU) and IsUnitInGroup(bjLCU, LoadGroupHandle(h, id, c_GROUP2)) == false and IsUnitInvulnerable(bjLCU)==false then
-                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then  
+                if ReverseActiveId(GetHandleId(bjLCU))==false then
                     call RengokuQ_Tossing(caster , bjLCU , LoadReal(h, id, c_DAMAGE) , angle , 0.75 + distance * 0.0001 , CreateTimer())
                     call SetControlToUnit(caster , bjLCU , 1 , "stun")
                     call GroupAddUnit(LoadGroupHandle(h, id, c_GROUP2), bjLCU)
@@ -213176,7 +213301,7 @@ function RengokuQ_EQ_Periodic takes nothing returns nothing
         set bjLCU=FirstOfGroup(bjLCG)
         exitwhen bjLCU == null
             if Condition_Base(OwnerOf(caster) , bjLCU) and IsUnitInvulnerable(bjLCU)==false then
-                if LoadBoolean(HH,GetHandleId(bjLCU),ANTITARGET_ABILITY)==false then      
+                if ReverseActiveId(GetHandleId(bjLCU))==false then
                     call SetUnitX(caster, GetUnitX(bjLCU) - 170 * Cos(angle))
                     call SetUnitY(caster, GetUnitY(bjLCU) - 170 * Sin(angle))
                     call SetUnitFacingInstant(caster , angle * bj_RADTODEG)
@@ -214249,7 +214374,7 @@ function RengokuE_Periodic takes nothing returns nothing
                     call SaveInteger(h, id, c_EFFPERIOD, eff_period - 1)
                 endif
             else
-                if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(target))==false then
                     call MapPauseUnit(target,true)
                     call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
                     call SetUnitInvulnerable(target, true)
@@ -215309,7 +215434,7 @@ function RengokuT_Act2 takes nothing returns nothing
                 call SaveInteger(h, id, c_EFFPERIOD, c_EFFPERIOD - 1)
             endif
         else
-            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(target))==false then
                 if time == 0 then
                     call RengokuE_Shifting(caster , target , angle , 500 , CreateTimer())
                     call MapPauseUnit(caster, true)
@@ -218301,7 +218426,7 @@ local real y1=GetUnitY(c)
 local real a=Atan2(y1-y,x1-x)
 local player p=OwnerOf(u)
 local integer idp=PH(p)
-if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(c))==false then
     call SetUnitInvulnerable(u,true)
     call MapPauseUnit(u,true)
     set EFF=AddSpecialEffect("war3mapImported\\BlackBlink.mdx", GetUnitX(u), GetUnitY(u))
@@ -218956,7 +219081,7 @@ else
         call DestroyEffect(EFF)
     else
         call StartSound(soundStr[120])
-        if LoadBoolean(HH,GetHandleId(l__d),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(l__d))==false then
             set soundplay=SndN(3336) // Sound\Music\mp3Music\JirenR2.mp3
             call StartSound(soundplay)
             //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -219370,7 +219495,7 @@ function JirenESelf_Cast2 takes nothing returns nothing
         call UnitRemoveAbility(u,'JNE2')
         call UnitRemoveBuffs(u,false,true)
         call SetUnitTimeScale(u,1)
-        call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+        call ReverseEnd(idu)
         if c!=null then
             call SaveUnitHandle(HH,id,1,c)
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -219406,7 +219531,7 @@ function JirenESelf_Cast takes unit u returns nothing
     else
         call StartSound(soundStr[114])
     endif
-    call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+    call ReverseBegin(u)
     call TSE_TimerStart(t,0.04,true,function JirenESelf_Cast2)
     set u=null
     set p=null
@@ -219740,7 +219865,7 @@ function JirenQ_Cast2 takes nothing returns nothing
                         call SetSpecialEffectTimeScale(LoadEffectHandle(HH,id,5),1)
                         call RemoveEffect(LoadEffectHandle(HH,id,5),0.3,false,CreateTimer())
                         call UnitEnableAutoOrientation(u,true)
-                        if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                        if ReverseActiveId(GetHandleId(E))==false then
                             call SaveUnitHandle(HH,id,4,E)
                             call SaveBoolean(HH,id,1,true)
                             call SaveReal(HH,id,2,0)
@@ -219958,7 +220083,7 @@ function JirenD_Cast2 takes nothing returns nothing
         call UnitRemoveAbility(u,'JNQ2')
         call UnitRemoveBuffs(u,false,true)
         call SetUnitTimeScale(u,1)
-        call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+        call ReverseEnd(idu)
         if c!=null and SquareRootUnit(u,c)<400 then
             call SaveUnitHandle(HH,id,1,c)
             call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -219993,7 +220118,7 @@ function JirenD_Cast takes unit u returns nothing
     call UnitAddAbility(u,'JNQ2')
     call UnitMakeAbilityPermanent(u,true,'JNQ2')
     call MapPauseUnit(u,true)
-    call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+    call ReverseBegin(u)
     if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
         call StartSound(soundStr[104])
     else
@@ -221727,7 +221852,7 @@ call GroupEnumUnitsInRange(G,x1,y1,350,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if Condition_Base(p,E) and LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+if Condition_Base(p,E) and ReverseActiveId(GetHandleId(E))==false then
 call SetControlToUnit(u,E,0.5,"stun")
 set n=CreateUnit(p,'e0AH',GetUnitX(E),GetUnitY(E),GetRandomReal(0,359))
 call SetUnitScale(n,1.2,1.2,1.2)
@@ -221778,7 +221903,7 @@ endloop
 call GroupClear(G)
 if hit!=null then
 call RemoveUnit(kd)
-if LoadBoolean(HH,GetHandleId(hit),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(hit))==false then
 call myCustomDamage(u,hit,2*GetHeroStr(u,true),false,false,null,null,null)
 call SetControlToUnit(u,hit,0.1,"stun")
 call IssueImmediateOrder(hit,"stop")
@@ -223772,7 +223897,7 @@ function MinatoD2_Periodic takes nothing returns nothing
         exitwhen E == null
             if IsUnitInGroup(E, LoadGroupHandle(h, id, SH_Group2)) == false and E != LoadUnitHandle(h, id, CasterHash) then
                 if GetUnitAbilityLevel(LoadUnitHandle(h, id, CasterHash), 'MiW1') >= 1 and Condition_Base(OwnerOf(LoadUnitHandle(h, id, CasterHash)) , E) and IsUnitInvulnerable(E)==false then
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call MinatoD2_AirCombination_Cast(LoadUnitHandle(h, id, CasterHash) , E , angle , CreateTimer())
                         call GroupClear(bjLCG)
                     else
@@ -223900,7 +224025,7 @@ function MinatoQ3_Cast takes unit newCaster,unit newTarget,timer newTimer return
     local integer id_caster= GetHandleId(newCaster)
     local real angle=0.0
     set newTarget=LoadUnitHandle(h, id_caster, SH_MinatoQ3_Target)
-    if LoadBoolean(HH,GetHandleId(newTarget),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(newTarget))==false then
         set angle=AU(newCaster , newTarget)
         
         set bjLCU=CreateUnit(OwnerOf(newCaster), 'dM08', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
@@ -223982,7 +224107,7 @@ function MinatoQWQ_Periodic takes nothing returns nothing
                     set E=FirstOfGroup(bjLCG)
                     exitwhen E == null
                         if Condition_Base(OwnerOf(caster) , E) then
-                            if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                            if ReverseActiveId(GetHandleId(E))==false then
                                 call SetUnitX(E, GetUnitX(LoadUnitHandle(h, id, Dummy1Hash)))
                                 call SetUnitY(E, GetUnitY(LoadUnitHandle(h, id, Dummy1Hash)))
                                 call SaveBoolean(h, id, SH_NextAct, true)
@@ -225166,7 +225291,7 @@ function MinatoE_Cast takes unit newCaster,unit newTarget,timer newTimer returns
             set angle=AU(newCaster , newTarget)
             call ShakeCamera(0.1 , 10)
             if GetUnitAbilityLevel(newCaster, 'MiW1') == 0 then
-                if LoadBoolean(HH,GetHandleId(newTarget),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(newTarget))==false then
                     if MinatoR_Mod then
                         set soundplay=SndN(3416) // Sound\war3mapImported\Minato_R_E.mp3
                         call StartSound(soundplay)
@@ -225280,7 +225405,7 @@ function MinatoE_Cast takes unit newCaster,unit newTarget,timer newTimer returns
             endif
         elseif LoadUnitHandle(h, id_caster, SH_MinatoQ_Kunai) != null then
             if SquareRootUnit(LoadUnitHandle(h, id_caster, SH_MinatoQ_Kunai) , newTarget) <= range then
-                if LoadBoolean(HH,GetHandleId(newTarget),ANTITARGET_ABILITY)==false then    
+                if ReverseActiveId(GetHandleId(newTarget))==false then
                     call ShakeCamera(0.1 , 10)
                     set bjLCU=CreateUnit(OwnerOf(newCaster), 'dM02', GetUnitX(newCaster), GetUnitY(newCaster), GetRandomInt(0, 360))
                     call UnitApplyTimedLife(bjLCU, 'BTLF', 15)
@@ -225763,7 +225888,7 @@ function MinatoT_Periodic takes nothing returns nothing
             set E=FirstOfGroup(bjLCG)
             exitwhen E == null
                 if Condition_Base(OwnerOf(LoadUnitHandle(h, id, CasterHash)) , E) and IsUnitInGroup(E, LoadGroupHandle(h, id, SH_Group2)) == false and E != LoadUnitHandle(h, id, CasterHash) and IsUnitInvulnerable(E)==false then
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call MinatoT_Combination_Cast(LoadUnitHandle(h, id, CasterHash) , E , angle , CreateTimer())
                     else
                         call SaveUnitHandle(HH,GetHandleId(E),REVERSE_TARGET,LoadUnitHandle(h, id, CasterHash))
@@ -228621,7 +228746,7 @@ function RobLucci_Act takes nothing returns nothing
         if GetSpellAbilityId()=='LCR1' then
             if LoadBoolean(HH,GetHandleId(u),SH_LucciShigan)==true and SquareRootUnit(u, c)<=800 then
                 call SaveBoolean(HH,GetHandleId(u),SH_LucciShigan,false)
-                if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(c))==false then
                     call MapPauseUnit(c,true)
                     call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
                     call TSE_TimerStart(t,0.02,true,function RobLucciRShiganMove)
@@ -228649,7 +228774,7 @@ function RobLucci_Act takes nothing returns nothing
             endif
         endif
         if GetSpellAbilityId()=='LCT1' then
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 if form==true then
                     call SaveGroupHandle(HH,id,4,CreateGroup())
                     call MapPauseUnit(c,true)
@@ -228775,7 +228900,7 @@ function LucciShiganAttackMove1 takes nothing returns nothing
         call MoveUnit(u,c,-120,LoadReal(HH,id,3))
         call SetUnitFacing(u,LoadReal(HH,id,3)+180)
         call SetUnitFacing(c,LoadReal(HH,id,3))
-        if LoadBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(u))==false then
             call MapPauseUnit(u,true)
             call MapPauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(u),TARGET_ABILITY,true)
@@ -229314,10 +229439,10 @@ if LoadUnitHandle(HH,id,20)!=null then
 call DestroyGroup(LoadGroupHandle(HH,id,4))
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 endif
-if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+if ReverseActiveId(GetHandleId(caster))==true then
     call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
 endif
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -229366,7 +229491,7 @@ set facing=AU(caster, LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET))*bj_
 call SaveReal(HH,id,3,facing)
 call SetUnitFacingInstant(caster,facing)
 endif
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 call EffectCreateAndMove1(false,"Madara\\wind3.mdl",facing,1,1.75,1,100,100,100,40,100,-90,caster,50,facing*bj_RADTODEG)
@@ -230756,7 +230881,7 @@ function MadaraChoice_Act takes nothing returns nothing
     if GetSpellAbilityId()=='AMUG' then
         call MapPauseUnit(caster,true)
         call SaveBoolean(HH,GetHandleId(caster),SH_MadaraG,true)
-        call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+        call ReverseBegin(caster)
         call TSE_TimerStart(t,0.02,true,function MadaraGAct)
     endif
         
@@ -233882,7 +234007,7 @@ endif
 if time<-0.02 then
 
 if LoadBoolean(HH,GetHandleId(caster),SH_DanzoWBool)==false then
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 set target=LoadUnitHandle(HH,GetHandleId(caster),SH_DanzoW)
 call SaveUnitHandle(HH,id,2,target)
 set time=0.02
@@ -233894,7 +234019,7 @@ call SaveBoolean(HH,id,19,true)
 endif
 
 if LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 set target=LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)
 call SaveUnitHandle(HH,id,2,target)
 set time=0.02
@@ -233910,10 +234035,10 @@ call MapPauseUnit(caster,true)
 endif
 
 if time==-0.02 then
-if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+if ReverseActiveId(GetHandleId(caster))==true then
     call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
 endif
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call SaveBoolean(HH,GetHandleId(caster),SH_DanzoWBool,false)
 call MapPauseUnit(caster,false)
 call PauseTimer(t)
@@ -233926,7 +234051,7 @@ endif
 if time>0 then
 
 if time==20.34 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call UnitCreateAndMove(caster,'ds13',caster,GetRandomReal(0,360),1,8,0.4,100,100,100,0,100,target,0,facing)
         call UnitCreateAndMove(caster,'ds28',caster,GetRandomReal(0,360),1,0.3,0.3,100,100,100,30,100,target,0,facing)
         call UnitCreateAndMove(caster,'ds22',caster,facing,1,0.5,0.6,100,100,100,0,100,target,-50,facing)
@@ -234518,7 +234643,7 @@ if GetSpellAbilityId()=='DSW1' then
 if self==true then
 call SaveReal(HH,id,5,-2.02)
 call SaveUnitHandle(HH,id,2,null)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call ReverseBegin(caster)
 endif
 call MapPauseUnit(caster,true)
 call SaveReal(HH,id,15,(1+GetUnitAbilityLevel(caster,'DSW1'))*GetHeroInt(caster,true))
@@ -235791,7 +235916,7 @@ else
             set n0=FirstOfGroup(G)
             exitwhen n0==null
             if Condition_Base(OwnerOf(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-                if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(n0))==false then
                     call SaveUnitHandle(HH,id,2,n0)
                     call RemoveUnit(LoadUnitHandle(HH,id,20))
                     set time=20
@@ -236669,7 +236794,7 @@ else
             call SaveReal(HH,id,5,time)
         endif
     endif
-    if time==20 and LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==true then
+    if time==20 and ReverseActiveId(GetHandleId(target))==true then
         call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
         call SetUnitPathing(caster,true)
         call MapPauseUnit(caster,false)
@@ -237576,7 +237701,7 @@ else
                 call SetUnitFlyHeight(caster,ParabolaZ(300,SR(x1,y1,x2,y2),SR(x,y,x2,y2)),0)
             endif
         else
-            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(target))==false then
                 call UnitSpeed(caster,2)
                 call MapPauseUnit(target,true)
                 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
@@ -238573,7 +238698,7 @@ if GetSpellAbilityId()=='BGW1' then
     if Wtarget==false then
         call SaveReal(HH,id,5,-0.04)
         call TSE_TimerStart(t,0.02,true,function BlackGokuW1Act)
-    elseif LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),ANTITARGET_ABILITY)==false then
+    elseif ReverseActiveId(GetHandleId(LoadUnitHandle(HH,id,2)))==false then
         call TSE_TimerStart(t,0.02,true,function BlackGokuW1Act)
     else
         call SetUnitAnimationByIndex(caster,64)
@@ -238626,7 +238751,7 @@ if GetSpellAbilityId()=='BGW3' then
     if Wtarget==false then
         call SaveReal(HH,id,5,-0.04)
         call TSE_TimerStart(t,0.02,true,function BlackGokuW3Act)
-    elseif LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),ANTITARGET_ABILITY)==false then
+    elseif ReverseActiveId(GetHandleId(LoadUnitHandle(HH,id,2)))==false then
         call TSE_TimerStart(t,0.02,true,function BlackGokuW3Act)
     else
         call SetUnitAnimationByIndex(caster,64)
@@ -240032,7 +240157,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if UnitIsAlive(n0)and IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call SaveReal(HH,id,5,20+time)
 call SaveUnitHandle(HH,id,2,n0)
 call UnitSpeed(caster,0.75+time*0.5)
@@ -240223,7 +240348,7 @@ if LoadBoolean(HH,GetHandleId(caster),SH_SabracEReverse)==true or LoadUnitHandle
 if LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),SH_SabracZoneU)!=null and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),SH_SabracZoneU)),GetUnitY(LoadUnitHandle(HH,GetHandleId(LoadUnitHandle(HH,id,30)),SH_SabracZoneU)))<1500 then
 set damage=damage*2
 endif
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call SabracStackOneTime(caster,GetUnitX(caster),GetUnitY(caster),500)
 call DamageAoeOneTime0(LoadUnitHandle(HH,id,30),GetUnitX(caster),GetUnitY(caster),500,damage)
 call EffectCreateAndMove(true,"Sabrac\\kurumi-15.mdl",GetRandomReal(0,360),1,2,0.6,100,100,100,0,-50,caster,0,facing)
@@ -240241,7 +240366,7 @@ if GetUnitAbilityLevel(caster,'BSaR')==0 or (time>0.02 and  udg_B==false) or Uni
 //if((GetLocalPlayer()==GetOwningPlayer(caster) or GetPlayerAlliance(GetOwningPlayer(caster),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) and GetUnitSelected(GetLocalPlayer())==caster )then
 //call DisplayTextToPlayer(GetLocalPlayer(),0,0,"Reverse end")
 //endif
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -241446,7 +241571,7 @@ else
 call StartAbilityCooldown(GetUnitAbility(casterOriginal,'SaE2'), 12)
 endif
 call SetUnitAnimationByIndex(caster,5)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call ReverseBegin(caster)
 call TSE_TimerStart(t,0.02,true,function SabracEWAct)
 endif
 
@@ -242271,7 +242396,7 @@ call SaveReal(HH,id,6,time1)
 endif
 call MapPauseUnit(caster,true)
 if dist<=85 and time<5 then
-if LoadBoolean(HH,GetHandleId(LoadUnitHandle(HH,id,2)),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(LoadUnitHandle(HH,id,2)))==false then
 set time=5
 call SaveReal(HH,id,5,time)
 call SaveReal(HH,id,3,facing)
@@ -242377,7 +242502,7 @@ if time==5 then
 //endif
 
 call StartAbilityCooldown(GetUnitAbility(caster, 'ASF1'), 25)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call SaveBoolean(HH,GetHandleId(caster),SH_AizenFB,false)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -242385,7 +242510,7 @@ call TSE_DestroyTimer(GetExpiredTimer())
 endif
 if time<5 and (LoadBoolean(HH,GetHandleId(caster),SH_AizenFB)==true or LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null) then
 call SaveBoolean(HH,GetHandleId(caster),SH_AizenFB,false)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+call ReverseEnd(GetHandleId(caster))
 call SaveReal(HH,id,5,10)
 if LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET)!=null then
 call SaveReal(HH,GetHandleId( caster ),SH_AizenFR,Angle2(GetUnitX( caster ),GetUnitY( caster ),GetUnitX( LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET) ),GetUnitY( LoadUnitHandle(HH,GetHandleId(caster),REVERSE_TARGET) )))
@@ -243175,7 +243300,7 @@ set n0=null
 endif
 if time>0.2 and time<0.5 then
 call MoveUnit(target,caster,-150,facing)
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call MapPauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
 call SetUnitInvulnerable(target,true)
@@ -243690,7 +243815,7 @@ if (GetLocalPlayer()==OwnerOf(caster) or GetPlayerAlliance(OwnerOf(caster),GetLo
 call ClearSelection()
 call SelectUnit(caster,true)
 endif
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 set facing=GetUnitFacing(target)
 call SaveReal(HH,id,3,facing)
 call SetUnitAnimationByIndex(caster,5)
@@ -244112,7 +244237,7 @@ call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(Clone,UNIT_STATE_MANA)*0.5
 call RemoveUnit(Clone)
 endif
 if time==1.8 then
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call EffectCreateAndMove(true,"Aizen\\red-smoke1.mdl",facing,1.5,1.25,1,100,100,100,0,100,caster,0,facing)
 else
 call UnitSpeed(caster,1)
@@ -244564,7 +244689,7 @@ if GetSpellAbilityId()=='ASF1' then
 if target==caster then
 call UnitAddAbility(caster,'ASF2')
 call UnitRemoveAbilityTimed(caster,'ASF2',1)
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call ReverseBegin(caster)
 call TSE_TimerStart(t,0.02,true,function AizenFBlockAct)
 else
 
@@ -245932,7 +246057,7 @@ call StopAoeOneTime(caster,x0,y0,300)
 endif
 
 if time==0.2 then
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call EffectCreateAndMove(true,"Others\\BlackBlink1.mdl",facing,1,1,1,100,100,100,0,0,caster,0,facing)
 call EffectCreateAndMove(true,"Others\\WindWeak(Thicker).mdl",facing,1,0.5,1,100,100,100,0,0,caster,0,facing)
 else
@@ -246532,7 +246657,7 @@ call UnitMakeAbilityPermanent(u,false,'B054')
 call UnitRemoveAbility(u,'B054')
 call UnitRemoveBuffs(u,false,true)
 call SetUnitTimeScale(u,1)
-call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+call ReverseEnd(idu)
 if c!=null then
 call SaveUnitHandle(HH,id,2,c)
 call RemoveSavedHandle(HH,idu,REVERSE_TARGET)
@@ -246571,7 +246696,7 @@ set soundplay=SndN(4023) // Sound\Music\mp3Music\KurapikaE.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 
-call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,true)
+call ReverseBegin(caster)
 call TSE_TimerStart(t,0.02,true,function KurapikaEAct)
 endif
 
@@ -250290,7 +250415,7 @@ function IchigoShikaiE_Periodic1 takes nothing returns nothing
                 call SaveInteger(h, id, 3, eff_period-1)
             endif
         else
-            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(target))==false then
                 set n=CreateUnit(OwnerOf(caster), 'dH18', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360))
                 call MyRemoveUnit(n, 1.5)
                 call SetUnitVertexColor(caster, 255, 255, 255, 255)
@@ -251130,7 +251255,7 @@ function IchigoBankaiQ2_Periodic takes nothing returns nothing
             set E=FirstOfGroup(bjLCG)
             exitwhen E==null
                 if Condition_Base(OwnerOf(dummy),E) and IsUnitInGroup(E, LoadGroupHandle(h, id, 5))==false then
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call myCustomDamage(LoadUnitHandle(h, id, 0), E, GetHeroStr(caster, true)*4.5, false,false,null,null,null)
                         call DestroyEffect(AddSpecialEffectTarget("AFB (2454).mdl",E,"chest"))
                         set n=CreateUnit(OwnerOf(dummy), 'd019', GetUnitX(E), GetUnitY(E), angle*bj_RADTODEG)
@@ -251400,12 +251525,12 @@ function IchigoBankaiW_Periodic takes nothing returns nothing
             call RemoveSavedHandle(HH,GetHandleId(caster),REVERSE_TARGET)
         endif
     else
-        if LoadBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY)==true then
+        if ReverseActiveId(GetHandleId(caster))==true then
             call SetControlToUnit(caster , caster , 0.5 , "doomdebug")
         endif
         call DestroyEffect(LoadEffectHandle(h, id, 3))
         call DestroyEffect(LoadEffectHandle(h, id, 4))
-        call SaveBoolean(HH,GetHandleId(caster),ANTITARGET_ABILITY,false)
+        call ReverseEnd(GetHandleId(caster))
         call MapPauseUnit(caster, false)
         call UnitRemoveAbility(caster, 'IcB1')
         call FlushChildHashtable(h, id)
@@ -251434,7 +251559,7 @@ function IchigoBankaiW_Cast takes unit newCaster returns nothing
     call UnitMakeAbilityPermanent(newCaster, true, 'IcB1')
     call MapPauseUnit(newCaster, true)
     call SetUnitAnimationByIndex(newCaster, 4)
-    call SaveBoolean(HH,GetHandleId(newCaster),ANTITARGET_ABILITY,true)
+    call ReverseBegin(newCaster)
     call SaveUnitHandle(h, id, 0, newCaster)
     call SaveReal(h, id, 1, 2.0)
     call TSE_TimerStart(newTimer, 0.05, true, function IchigoBankaiW_Periodic)
@@ -251609,7 +251734,7 @@ function IchigoBankaiE_Periodic takes nothing returns nothing
         if UnitIsAlive(target) then
             call SetUnitX(caster, target_x+150*Cos(angle))
             call SetUnitY(caster, target_y+150*Sin(angle))
-            if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(target))==false then
                 call MapPauseUnit(caster, true)
                 call SetUnitInvulnerable(caster, true)
                 call SetUnitFacing(caster, angle*bj_RADTODEG-180)
@@ -251904,7 +252029,7 @@ function IchigoBankaiR_Periodic1 takes nothing returns nothing
             endif
                 
             if time==1.5 then
-                if LoadBoolean(HH,GetHandleId(LoadUnitHandle(h, id, 1)),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(LoadUnitHandle(h, id, 1)))==false then
                     call ShowUnit(caster, false)
                     set n=CreateUnit(OwnerOf(caster), 'd020', GetUnitX(caster), GetUnitY(caster), GetRandomInt(0, 360)) 
                     call SetUnitScale(n, 1.5, 1.5, 1.5)
@@ -252108,7 +252233,7 @@ function IchigoVasterW_Cast takes unit newCaster, unit newTarget returns nothing
     //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
     call SetUnitXY(newCaster, target_x-150*Cos(angle), target_y-150*Sin(angle))
     
-    if LoadBoolean(HH,GetHandleId(newTarget),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(newTarget))==false then
         call myCustomDamage(newCaster, newTarget, damage, false,false,null,null,null)
         call SetControlToUnit(newTarget, newTarget, 2.0, "silenceTE")
         call SlowUnit(newCaster,newTarget,0.9,0,2,2,false)
@@ -253638,7 +253763,7 @@ function KarnaQ1_Periodic2 takes nothing returns nothing
             set E=FirstOfGroup(G)
             exitwhen E==null
             if Condition_Base(OwnerOf(caster), E) and GetUnitAbilityLevel(E, 'KaAW')==0 then
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(E))==false then
                     // if GetUnitAbilityLevel(caster, 'KaAC')>0 then
                     //     call UnitRemoveAbility(caster,'KaAC')
                     //     call UnitRemoveAbility(caster,'kaA1')
@@ -254841,7 +254966,7 @@ function KarnaE_Periodic1 takes nothing returns nothing
         set E=FirstOfGroup(bjLCG)
         exitwhen E==null
             if Condition_Base(OwnerOf(caster), E) and IsUnitInGroup(E, LoadGroupHandle(h, id,  GroupHash ))==false then
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(E))==false then
                     if IsUnitInvulnerable(E)==false then
                         call GroupAddUnit(LoadGroupHandle(h, id,  GroupHash ), E)
                         call SaveReal(HH, GetHandleId(E), KarnaE_Index, AU(caster, E))
@@ -257388,7 +257513,7 @@ endfunction
                 exitwhen SysUnit == null
                 if GetWidgetLife(SysUnit) > 0.405 and SysUnit!= LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                     if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) and LoadUnit("Target") == null and IsUnitInvulnerable(SysUnit) == false then
-                        if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then
+                        if ReverseActiveId(GetHandleId(SysUnit))==false then
                             call SaveAgentHandle(HH, id, TargetHash, SysUnit)
                             set soundplay=SndN(4221) // Sound\Music\mp3Music\WendyE3.mp3
                             call StartSound(soundplay)
@@ -258686,7 +258811,7 @@ endfunction
                 exitwhen SysUnit == null
                     if SysUnit!=LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                         if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) then
-                            if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then    
+                            if ReverseActiveId(GetHandleId(SysUnit))==false then
                                 call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash), SysUnit, dmg, false, false, null, null, null)
                                 call Push3(SysUnit,20,Atan2(GetUnitY(SysUnit)-y,GetUnitX(SysUnit)-x),60,"Abilities\\Weapons\\AncientProtectorMissile\\AncientProtectorMissile.mdl")
                             else
@@ -259008,7 +259133,7 @@ endfunction
                 exitwhen SysUnit == null
                     if SysUnit!=LoadUnitHandle(HH,MUIHandle(),CasterHash) then
                         if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),SysUnit) then
-                            if LoadBoolean(HH,GetHandleId(SysUnit),ANTITARGET_ABILITY)==false then        
+                            if ReverseActiveId(GetHandleId(SysUnit))==false then
                                 if SR(GetUnitX(SysUnit),GetUnitY(SysUnit),x1+110*Cos(ang),y1+110*Sin(ang))<240 then
                                     call Push3(SysUnit,30,ang,45,"")
                                 else
@@ -259307,7 +259432,7 @@ function YoruichiDCast3 takes nothing returns nothing
             call SaveReal(HH,id,4,0)
             endif
         else
-            if LoadBoolean(HH,GetHandleId(E2),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(E2))==false then
                 set n=CreateUnit(p,'e1GZ',x,y,a)
                 call SetUnitModel(n,"Yoruichi.mdl")
                 call SetUnitScale(n, 0.95, 0.95, 0.95)
@@ -259692,7 +259817,7 @@ function YoruichiQCast2 takes nothing returns nothing
             exitwhen E==null
             if Condition_Base(p,E)and IsUnitInvulnerable(E)==false then
                 if GetWidgetLife(E)>0 then
-                    if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                    if ReverseActiveId(GetHandleId(E))==false then
                         call SaveUnitHandle(HH,id,4,E)
                         call SaveBoolean(HH,id,1,true)
                         call SaveReal(HH,id,2,0)
@@ -259811,7 +259936,7 @@ function YoruichiWCast2 takes nothing returns nothing
     local real dmg=(1+GetUnitAbilityLevel(u,'YoW0'))*GetHeroAgi(u,true)+100
     if i<3 and GetWidgetLife(c)>0 and GetWidgetLife(u)>0 and udg_B and DU2 then
         if SR(x1,y1,x2,y2)<120 or time>0.6 then
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call SaveInteger(HH,id,2,i+1)
                 call SetUnitAnimationByIndex(u,12)
                 call SaveReal(HH,id,3,x1+600*Cos(a-(2+i)*120*bj_DEGTORAD))
@@ -259911,7 +260036,7 @@ function YoruichiWCast takes unit u, unit c returns nothing
     local real a=Atan2(y1-y,x1-x)
     local timer t=CreateTimer()
     local integer id=GetHandleId(t)
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call SetUnitVertexColor(u,255,255,255,190)
         call SaveUnitHandle(HH,id,0,u)
         call SaveUnitHandle(HH,id,1,c)
@@ -260005,7 +260130,7 @@ function YoruichiECast2 takes nothing returns nothing
             endif
         else
             call SetUnitFlyHeight(u,0,0)
-            if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+            if ReverseActiveId(GetHandleId(c))==false then
                 call SetUnitXY_1(c,x+70*Cos(a),y+70*Sin(a),false)
                 if act==0 then
                     call SaveInteger(HH,id,4,1)
@@ -260776,7 +260901,7 @@ function TobiramaW2Cast2 takes nothing returns nothing
             set ide=GetHandleId(E)
             exitwhen E==null
             if Condition_Base(p,E)and LoadUnitHandle(HH,l__idg,ide)!=E then
-                if LoadBoolean(HH,GetHandleId(E),ANTITARGET_ABILITY)==false then
+                if ReverseActiveId(GetHandleId(E))==false then
                     call myCustomDamage(u,E,LoadReal(HH, id, SH_Damage),false,false,null,null,null)
                     call SetControlToUnit(u , E , 1 , "stun")
                     call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
@@ -261125,7 +261250,7 @@ function TobiramaECast2 takes nothing returns nothing
             set y2=y1-90*Sin(a)
             call SetUnitXY_1(l__d,x2,y2, false)
         endif
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call MapPauseUnit(c,true)
             call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
             call SetUnitInvulnerable(c,true)
@@ -263024,7 +263149,7 @@ else
     endif
 endif
 if Have_balls==1 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call SaveBoolean(HH,GetHandleId(caster),SH_GojoQ2act,true)
         set n0=LoadUnitHandle(HH,GetHandleId(caster),SH_GojoQU)
         call SaveUnitHandle(HH,id,20,n0)
@@ -263050,7 +263175,7 @@ if Have_balls==1 then
     endif
 else
     if Have_balls==2 then
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             call SaveBoolean(HH,GetHandleId(caster),SH_GojoE2act,true)
             set n0=LoadUnitHandle(HH,GetHandleId(caster),SH_GojoEU)
             call SaveUnitHandle(HH,id,20,n0)
@@ -263077,7 +263202,7 @@ else
             call FlushChildHashtable(HH,id)
         endif
     else
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             call SetControlToUnit(target,target, 1.7, "heavystun")
             call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[956],caster,"hand right"))
             call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[956],caster,"hand left"))
@@ -264734,7 +264859,7 @@ set n0=FirstOfGroup(G)
 exitwhen n0==null
 if IsUnitInGroup(n0,gr)==false and IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
 
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==true then
+    if ReverseActiveId(GetHandleId(n0))==true then
         set time=20+time
         call SaveReal(HH,id,5,20+time)
         call SaveUnitHandle(HH,GetHandleId(n0),REVERSE_TARGET,caster)
@@ -266710,20 +266835,30 @@ endfunction
 
 // В 1.26 событие изменения текста поля не приходит, поэтому, пока магазин открыт,
 // читаем поле сами (раз в 0.1 с). Это только локальный показ, по сети ничего не идёт.
+function SG_FilterChanged takes string sfQuery returns nothing
+local boolean sfFocused=IsFrameFocused(SG_ItemSearch)
+if sfQuery==null then
+set sfQuery=""
+endif
+if sfQuery==SG_ItemQuery then
+return
+endif
+set SG_ItemQuery=sfQuery
+set SG_ItemPage=0
+set SG_Notice=""
+// Match the shop search: redraw results, not the editbox or the whole window.
+call ExecuteFunc("SG_DrawItemPicker")
+call BlzFrameSetVisible(SG_SearchPrompt,sfQuery=="")
+if sfFocused then
+call SetFrameFocus(SG_ItemSearch,true)
+endif
+endfunction
+
 function SG_SearchPoll takes nothing returns nothing
-local string spQuery
 if not SG_Open or not ShOpened or not SG_ItemPicker or SG_ItemSearch==null then
 return
 endif
-set spQuery=BlzFrameGetText(SG_ItemSearch)
-if spQuery==null then
-set spQuery=""
-endif
-if spQuery!=SG_ItemQuery then
-set SG_ItemQuery=spQuery
-set SG_ItemPage=0
-call ExecuteFunc("SG_Refresh")
-endif
+call SG_FilterChanged(GetFrameText(SG_ItemSearch))
 endfunction
 function Sh_SearchPoll takes nothing returns nothing
 local string qtext
@@ -266948,6 +267083,9 @@ endfunction
 function Sh_Tick takes nothing returns nothing
 local integer id
 local boolean inv
+call ExecuteFunc("SG_ExportAllTick")
+call ExecuteFunc("SG_PackageTick")
+call ExecuteFunc("SG_ImportTick")
 call Sh_Snapshot()
 if SG_Loaded and SG_Read<SG_Total then
 call ExecuteFunc("SG_ReadBatch")
@@ -267854,8 +267992,8 @@ call SaveStr(SG_DB,'H012',0,"I01F I01M I01H I046 I13R I01U I02V IBSI I03L IPlA I
 call SaveStr(SG_DB,'H012',1,"I01F I01M I01H I046 I13R I03F I01U I04T IPlA I02V IBSI I03P I03L I03A I06Q")
 call SaveInteger(SG_DB,'H012',20,3)
 call SaveInteger(SG_DB,'H012',21,3)
-call SaveStr(SG_DB,'H014',0,"I01F I01M I01M I00K I046 I13R I04H I040 I06Q IPRB I06J I01U IBBi I00W I06E")
-call SaveStr(SG_DB,'H014',1,"I01F I01M I01M I00K I046 I13R I04H I040 I06Q I04T IPRB I06J I01U IBBi I06E")
+call SaveStr(SG_DB,'H014',0,"I01F I01M I01M I00K I046 I13R I04H I040 I06Q I06R I06J I01U IBBi I00W I06E")
+call SaveStr(SG_DB,'H014',1,"I01F I01M I01M I00K I046 I13R I04H I040 I06Q I04T I06R I06J I01U IBBi I06E")
 call SaveInteger(SG_DB,'H014',20,4)
 call SaveInteger(SG_DB,'H014',21,3)
 call SaveStr(SG_DB,'H00N',0,"I01F I01M I01M I054 I018 I04H I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -267941,8 +268079,8 @@ call SaveStr(SG_DB,'H02M',0,"I01F I01M I01M I054 I018 I04H I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'H02M',1,"I01F I01M I01M I054 I13R I00K I04H I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H02M',20,1)
 call SaveInteger(SG_DB,'H02M',21,3)
-call SaveStr(SG_DB,'H02O',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
-call SaveStr(SG_DB,'H02O',1,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
+call SaveStr(SG_DB,'H02O',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I06E I02Y I06Q I043")
+call SaveStr(SG_DB,'H02O',1,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I06E I02Y I06Q I043")
 call SaveInteger(SG_DB,'H02O',20,6)
 call SaveInteger(SG_DB,'H02O',21,3)
 call SaveStr(SG_DB,'H02P',0,"I01F I01M I01M I054 I018 I04H I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -268261,8 +268399,8 @@ call SaveStr(SG_DB,'HRen',0,"I01F I01M I01M I046 IMDi I012 IPlA I06Q I05T I1S4 I
 call SaveStr(SG_DB,'HRen',1,"I01F I01M I01M I046 I13R I012 IPlA I06Q I04T I05T I1S4 I03A I03P I04L I06E")
 call SaveInteger(SG_DB,'HRen',20,9)
 call SaveInteger(SG_DB,'HRen',21,3)
-call SaveStr(SG_DB,'HMin',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'HMin',1,"I01F I01M I01M I046 I13R I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'HMin',0,"I01F I01M I01M I046 IMDi I012 I03Q IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
+call SaveStr(SG_DB,'HMin',1,"I01F I01M I01M I046 I13R I012 I03Q IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'HMin',20,9)
 call SaveInteger(SG_DB,'HMin',21,3)
 call SaveStr(SG_DB,'HMad',0,"I01F I01M I01M I054 I018 I04H I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -268761,6 +268899,154 @@ call SaveBoolean(SG_DB,-1,'IOS3',true)
 call SaveBoolean(SG_DB,-1,'IOS4',true)
 endfunction
 
+function SG_Folders0 takes nothing returns nothing
+call SaveStr(SG_DB,'H00I',22,"Byakuran")
+call SaveStr(SG_DB,'H00E',22,"Kimimaro Kaguya")
+call SaveStr(SG_DB,'H00A',22,"Bovino Lambo")
+call SaveStr(SG_DB,'H00J',22,"Monkey D. Luffy")
+call SaveStr(SG_DB,'H016',22,"Yamamoto Takeshi")
+call SaveStr(SG_DB,'H018',22,"Uryu Ishida")
+call SaveStr(SG_DB,'H01A',22,"Rokudo Mukuro")
+call SaveStr(SG_DB,'H00M',22,"Roronoa Zoro")
+call SaveStr(SG_DB,'H00H',22,"Sasagawa Ryohei")
+call SaveStr(SG_DB,'H00C',22,"Sawada Tsunayoshi")
+call SaveStr(SG_DB,'H006',22,"Itachi Uchiha")
+call SaveStr(SG_DB,'H017',22,"Shakugan no Shana")
+call SaveStr(SG_DB,'H00P',22,"Gekko Moria")
+call SaveStr(SG_DB,'H00D',22,"Portgas D. Ace")
+call SaveStr(SG_DB,'H00K',22,"Enel")
+call SaveStr(SG_DB,'H00X',22,"Hibari Kyoya")
+call SaveStr(SG_DB,'H032',22,"Terumi Mei")
+call SaveStr(SG_DB,'H00Z',22,"Sakata Gintoki")
+call SaveStr(SG_DB,'H012',22,"Hichigo Shirosaki")
+call SaveStr(SG_DB,'H014',22,"Gokudera Hayato")
+call SaveStr(SG_DB,'H00N',22,"Viper")
+call SaveStr(SG_DB,'H01C',22,"Urahara Kisuke")
+call SaveStr(SG_DB,'H01D',22,"Maka Albarn")
+call SaveStr(SG_DB,'H01F',22,"Black Star")
+call SaveStr(SG_DB,'H01H',22,"Death the Kid")
+call SaveStr(SG_DB,'H01J',22,"Jiraiya")
+call SaveStr(SG_DB,'H01L',22,"Kurotsuchi Mayuri")
+call SaveStr(SG_DB,'H01M',22,"Dante")
+call SaveStr(SG_DB,'H027',22,"Ouma Shu")
+call SaveStr(SG_DB,'H02B',22,"Accelerator")
+call SaveStr(SG_DB,'H02D',22,"Haku")
+call SaveStr(SG_DB,'H01B',22,"Gamma")
+call SaveStr(SG_DB,'H02F',22,"Kirito")
+call SaveStr(SG_DB,'H02G',22,"Jellal Fernandes")
+call SaveStr(SG_DB,'H02H',22,"Son Goku")
+call SaveStr(SG_DB,'H02I',22,"Vegeta")
+call SaveStr(SG_DB,'H02J',22,"Ichimaru Gin")
+call SaveStr(SG_DB,'H02K',22,"Kaname Tousen")
+call SaveStr(SG_DB,'H02L',22,"Broly")
+call SaveStr(SG_DB,'H02M',22,"Aizen Sousuke")
+call SaveStr(SG_DB,'H02O',22,"Super Buu")
+call SaveStr(SG_DB,'H02P',22,"Trafalgar Law")
+call SaveStr(SG_DB,'H02R',22,"Gaara")
+call SaveStr(SG_DB,'H02S',22,"Admiral Kizaru")
+call SaveStr(SG_DB,'H02U',22,"Admiral Aokiji")
+call SaveStr(SG_DB,'H02V',22,"Stiyl Magnus")
+call SaveStr(SG_DB,'H02X',22,"Killer Bee")
+call SaveStr(SG_DB,'H02Y',22,"Genkishi")
+call SaveStr(SG_DB,'H033',22,"Uchiha Madara")
+call SaveStr(SG_DB,'H034',22,"Gotenks")
+call SaveStr(SG_DB,'H03B',22,"Kuuko")
+call SaveStr(SG_DB,'H00Y',22,"Admiral Akainu")
+call SaveStr(SG_DB,'H03K',22,"Gogeta")
+call SaveStr(SG_DB,'H03L',22,"Nelliel Tu Odelschwanck")
+call SaveStr(SG_DB,'H03N',22,"Vergil")
+call SaveStr(SG_DB,'H03P',22,"Katsura Kotarou")
+call SaveStr(SG_DB,'H03R',22,"Yomu Konpaku")
+call SaveStr(SG_DB,'H03S',22,"Pain")
+call SaveStr(SG_DB,'H031',22,"Sanji")
+call SaveStr(SG_DB,'H042',22,"Trunks")
+call SaveStr(SG_DB,'H043',22,"Vegito")
+call SaveStr(SG_DB,'H044',22,"Misaka Mikoto")
+call SaveStr(SG_DB,'H045',22,"Ulquiorra Schiffer")
+call SaveStr(SG_DB,'H047',22,"Laxus Dreyar")
+call SaveStr(SG_DB,'H048',22,"Lord Frieza")
+call SaveStr(SG_DB,'HYuj',22,"Sakai Yuji")
+call SaveStr(SG_DB,'H04A',22,"Gon Freecss")
+call SaveStr(SG_DB,'H04C',22,"Yuzuriha Inori")
+call SaveStr(SG_DB,'H04E',22,"Killua Zoldyck")
+call SaveStr(SG_DB,'H04F',22,"Naruto Uzumaki")
+call SaveStr(SG_DB,'H04H',22,"Sogiita Gunha")
+call SaveStr(SG_DB,'H04L',22,"Gray Fullbuster")
+call SaveStr(SG_DB,'H04O',22,"Kurapika")
+call SaveStr(SG_DB,'H04T',22,"Sinon")
+call SaveStr(SG_DB,'H052',22,"Perfect Cell")
+endfunction
+
+function SG_Folders1 takes nothing returns nothing
+call SaveStr(SG_DB,'H053',22,"Louise Francoise Le Blanc de La Valliere")
+call SaveStr(SG_DB,'H054',22,"Natsu Dragneel")
+call SaveStr(SG_DB,'H057',22,"Sasuke Uchiha")
+call SaveStr(SG_DB,'H055',22,"Xanxus")
+call SaveStr(SG_DB,'H059',22,"Gilgamesh")
+call SaveStr(SG_DB,'H05A',22,"Emiya Shirou")
+call SaveStr(SG_DB,'H05D',22,"Haruno Sakura")
+call SaveStr(SG_DB,'H05N',22,"Gajeel Redfox")
+call SaveStr(SG_DB,'H05Q',22,"Admiral Fujitora")
+call SaveStr(SG_DB,'H05R',22,"Kamijo Touma")
+call SaveStr(SG_DB,'H060',22,"Whitebeard")
+call SaveStr(SG_DB,'H061',22,"Ryougi Shiki")
+call SaveStr(SG_DB,'H063',22,"Frenda Seivelun")
+call SaveStr(SG_DB,'H066',22,"Donquixote Doflamingo")
+call SaveStr(SG_DB,'H067',22,"Tamamo no Mae")
+call SaveStr(SG_DB,'H069',22,"Nanaya Shiki")
+call SaveStr(SG_DB,'H06B',22,"Saber Nero")
+call SaveStr(SG_DB,'H06F',22,"Alter Jeanne D'Arc")
+call SaveStr(SG_DB,'H051',22,"Shielder")
+call SaveStr(SG_DB,'H06G',22,"Atalanta")
+call SaveStr(SG_DB,'H06M',22,"Mysterious Heroine X-EX")
+call SaveStr(SG_DB,'H06C',22,"Li Shuwen")
+call SaveStr(SG_DB,'H06Y',22,"Scathach")
+call SaveStr(SG_DB,'H072',22,"Archetype of Earth")
+call SaveStr(SG_DB,'H075',22,"King Hassan")
+call SaveStr(SG_DB,'H076',22,"Jeanne D'Arc")
+call SaveStr(SG_DB,'H077',22,"Enkidu")
+call SaveStr(SG_DB,'H112',22,"Deidara")
+call SaveStr(SG_DB,'H074',22,"Orihime")
+call SaveStr(SG_DB,'H05C',22,"Saber Artoria")
+call SaveStr(SG_DB,'Ho0Z',22,"Edmond Dantes")
+call SaveStr(SG_DB,'H078',22,"Kotomine Kirei")
+call SaveStr(SG_DB,'H073',22,"Tohsaka Rin")
+call SaveStr(SG_DB,'ORH1',22,"Orochimaru")
+call SaveStr(SG_DB,'H06T',22,"Lucy Heartfilia")
+call SaveStr(SG_DB,'WEND',22,"Wendy Marvell")
+call SaveStr(SG_DB,'Hbel',22,"Belphegor")
+call SaveStr(SG_DB,'Ho11',22,"Kiyohime")
+call SaveStr(SG_DB,'H116',22,"Hyuga Neji")
+call SaveStr(SG_DB,'Ho0O',22,"Waver Velvet")
+call SaveStr(SG_DB,'HAlb',22,"Albedo")
+call SaveStr(SG_DB,'HRen',22,"Rengoku Kyojuro")
+call SaveStr(SG_DB,'HMin',22,"Minato Namikaze")
+call SaveStr(SG_DB,'HMad',22,"Madoka Kaname")
+call SaveStr(SG_DB,'H10L',22,"Rob Lucci")
+call SaveStr(SG_DB,'HIc1',22,"Ichigo Kurosaki")
+call SaveStr(SG_DB,'Ho14',22,"Satou Kazuma")
+call SaveStr(SG_DB,'H35Z',22,"Yoruichi Shihōin")
+call SaveStr(SG_DB,'HHSN',22,"Hashirama Senju")
+call SaveStr(SG_DB,'H34Z',22,"Tobirama Senju")
+call SaveStr(SG_DB,'HDSN',22,"Danzo Shimura")
+call SaveStr(SG_DB,'HKar',22,"Karna")
+call SaveStr(SG_DB,'HBGN',22,"Goku Black")
+call SaveStr(SG_DB,'HSab',22,"Sabrac")
+call SaveStr(SG_DB,'HJi1',22,"Jiren")
+call SaveStr(SG_DB,'HGoj',22,"Satoru Gojo")
+call SaveStr(SG_DB,'HGrp',22,"Monkey D. Garp")
+call SaveStr(SG_DB,'HSig',22,"Signum")
+call SaveStr(SG_DB,'Rosh',22,"Muten Roshi")
+call SaveStr(SG_DB,'HBrg',22,"Baraggan Louisenbairn")
+call SaveStr(SG_DB,'HSui',22,"Suigintou")
+call SaveStr(SG_DB,'HRem',22,"Remilia Scarlet")
+call SaveStr(SG_DB,'HFla',22,"Flandre Scarlet")
+call SaveStr(SG_DB,'HEsc',22,"Escanor")
+call SaveStr(SG_DB,'HShn',22,"Hirako Shinji")
+call SaveStr(SG_DB,'HDMa',22,"Dead Master")
+call SaveStr(SG_DB,'HHit',22,"Hit")
+endfunction
+
 function SG_DataInit takes nothing returns nothing
 call SG_Data0()
 call SG_Data1()
@@ -268773,14 +269059,44 @@ call SG_Data7()
 call SG_Data8()
 call SG_Data9()
 call SG_Data10()
+call SG_Folders0()
+call SG_Folders1()
+call SaveInteger(SG_DB,-2,'H06X','H05D')
+call SaveInteger(SG_DB,-2,'H06V','H04L')
+call SaveInteger(SG_DB,-2,'H06Z','H06Y')
+call SaveInteger(SG_DB,-2,'H16Z','H06Y')
+call SaveInteger(SG_DB,-2,'H05E','H05C')
+call SaveInteger(SG_DB,-2,'H15C','H05C')
+call SaveInteger(SG_DB,-2,'H06P','H05C')
+call SaveInteger(SG_DB,-2,'H06R','H044')
+call SaveInteger(SG_DB,-2,'H26B','H06B')
+call SaveInteger(SG_DB,-2,'H16B','H06B')
+call SaveInteger(SG_DB,-2,'H12M','H02M')
+call SaveInteger(SG_DB,-2,'H14H','H04H')
+call SaveInteger(SG_DB,-2,'H06S','H059')
+call SaveInteger(SG_DB,-2,'H070','H059')
+call SaveInteger(SG_DB,-2,'H06Q','H053')
+call SaveInteger(SG_DB,-2,'H06N','H01H')
+call SaveInteger(SG_DB,-2,'H05B','H05A')
+call SaveInteger(SG_DB,-2,'H06D','H012')
+call SaveInteger(SG_DB,-2,'H064','H03R')
+call SaveInteger(SG_DB,-2,'Ho1O','Ho0O')
+call SaveInteger(SG_DB,-2,'H05X','H02U')
+call SaveInteger(SG_DB,-2,'H05Y','H02F')
+call SaveInteger(SG_DB,-2,'H12G','H02G')
 endfunction
 
 function SG_Canonical takes integer sgType returns integer
-local integer sgId=LoadInteger(SG_DB,-2,sgType)
-if sgId==0 then
+local integer sgId
+local integer sgDepth=0
+loop
+exitwhen sgDepth>=8
+set sgId=LoadInteger(SG_DB,-2,sgType)
+exitwhen sgId==0 or sgId==sgType
+set sgType=sgId
+set sgDepth=sgDepth+1
+endloop
 return sgType
-endif
-return sgId
 endfunction
 // Shared, immutable default data only: bots never read player custom guide state.
 function SG_Compact takes string srInput returns string
@@ -268884,6 +269200,19 @@ return ""
 endif
 return so
 endfunction
+function SG_HeroFolder takes integer sgType returns string
+local integer sfHero=SG_Canonical(sgType)
+local string sfName=LoadStr(SG_DB,sfHero,22)
+if sfName==null or sfName=="" then
+set sfName=GetObjectName(sfHero)
+endif
+return SG_NameSafe(sfName)
+endfunction
+
+function SG_GuidePath takes integer sgType,string sfName returns string
+return "ChoiceBattle\\Guides\\"+SG_HeroFolder(sgType)+"\\"+SG_NameSafe(sfName)+".txt"
+endfunction
+
 function SG_FileRead takes string sf returns string
 local string old=GetPlayerName(Player(14))
 local string data
@@ -268906,7 +269235,7 @@ return SG_FileRead(sf)==data
 endfunction
 function SG_List takes nothing returns string
 if SG_Mode>=0 then
-return SG_Compact(LoadStr(SG_DB,SG_Hero,SG_Mode))
+return SG_Compact(LoadStr(SG_DB,SG_Canonical(SG_Hero),SG_Mode))
 endif
 return LoadStr(SG_Custom,-SG_Mode,2)
 endfunction
@@ -268977,6 +269306,7 @@ if SG_Read<SG_Total then
 call SG_Message(Lng("Дождитесь загрузки списка гайдов.","Wait for the guide list to finish loading."))
 return false
 endif
+set SG_Hero=SG_Canonical(SG_Hero)
 set epList=SG_List()
 loop
 exitwhen epStage>=3
@@ -269088,6 +269418,8 @@ endfunction
 function SG_ReadBatch takes nothing returns nothing
 local integer si=0
 local integer sh
+local integer sfOldHero
+local string sfFolder
 local integer sgStart
 local string sd
 local string sn
@@ -269096,14 +269428,24 @@ exitwhen SG_Read>=SG_Total or si>=8
 set SG_Read=SG_Read+1
 // Index entries contain metadata only; each actual guide is named by the player.
 set sd=SG_FileRead("ChoiceBattle\\Guides\\Index_"+I2S(SG_Read)+".txt")
-set sh=String2Id(CBS_Tok(sd,2))
+set sfOldHero=String2Id(CBS_Tok(sd,2))
+set sh=SG_Canonical(sfOldHero)
+set sfFolder=SG_NameSafe(CBS_Tok(sd,4))
 set sn=SG_NameSafe(CBS_Tok(sd,3))
 if CBS_Tok(sd,0)=="SGX" and S2I(CBS_Tok(sd,1))==SG_Read and sn!="" and LoadStr(SG_DB,sh,0)!="" and LoadStr(SG_DB,sh,0)!=null then
-set sd=SG_FileRead("ChoiceBattle\\Guides\\"+Id2String(sh)+"\\"+sn+".txt")
-if CBS_Tok(sd,0)=="SG2" and S2I(CBS_Tok(sd,1))==SG_Read and CBS_Tok(sd,2)==Id2String(sh) then
+if sfFolder!="" then
+set sd=SG_FileRead("ChoiceBattle\\Guides\\"+sfFolder+"\\"+sn+".txt")
+else
+set sd=SG_FileRead(SG_GuidePath(sh,sn))
+endif
+if sd=="" then
+set sd=SG_FileRead("ChoiceBattle\\Guides\\"+Id2String(sfOldHero)+"\\"+sn+".txt")
+endif
+if CBS_Tok(sd,0)=="SG2" and S2I(CBS_Tok(sd,1))==SG_Read and SG_Canonical(String2Id(CBS_Tok(sd,2)))==sh then
 call SaveInteger(SG_Custom,SG_Read,0,sh)
 call SaveStr(SG_Custom,SG_Read,1,sn)
 call SaveStr(SG_Custom,SG_Read,2,SG_Validate(CBS_Tok(sd,4)))
+call SaveStr(SG_Custom,SG_Read,8,CBS_Tok(sd,8))
 set sgStart=S2I(CBS_Tok(sd,5))
 if CBS_Tok(sd,5)=="" or sgStart<0 or sgStart>16 then
 set sgStart=4
@@ -269123,15 +269465,11 @@ set si=si+1
 endloop
 endfunction
 function SG_NameEnter takes nothing returns nothing
-local string sn
-if TrigP()!=GetLocalPlayer() or SG_Mode>=0 then
+if TrigP()!=GetLocalPlayer() then
 return
 endif
-set sn=SG_NameSafe(BlzGetTriggerFrameText())
-if sn!="" then
-call SaveStr(SG_Custom,-SG_Mode,1,sn)
-endif
-call ExecuteFunc("SG_Refresh")
+call ExecuteFunc("SG_NameChanged")
+call SetFrameFocus(SG_NameBox,false)
 endfunction
 
 function SG_Load takes nothing returns nothing
@@ -269157,13 +269495,14 @@ return
 endif
 set si=-SG_Mode
 endif
-set sn=SG_NameSafe(BlzFrameGetText(SG_NameBox))
+set sn=SG_NameSafe(GetFrameText(SG_NameBox))
 if sn=="" then
 call SG_Message(Lng("Укажите допустимое имя гайда и файла.","Enter a valid guide and file name."))
 return
 endif
-set sh=LoadInteger(SG_Custom,si,0)
-set file="ChoiceBattle\\Guides\\"+Id2String(sh)+"\\"+sn+".txt"
+set sh=SG_Canonical(LoadInteger(SG_Custom,si,0))
+call SaveInteger(SG_Custom,si,0,sh)
+set file=SG_GuidePath(sh,sn)
 if StringLength(file)>240 then
 call SG_Message(Lng("Имя гайда слишком длинное.","The guide name is too long."))
 return
@@ -269175,11 +269514,11 @@ return
 endif
 call SaveStr(SG_Custom,si,1,sn)
 call SG_Message(Lng("Запись гайда...", "Writing guide..."))
-if not SG_FileWrite(file,"SG2;"+I2S(si)+";"+Id2String(sh)+";"+sn+";"+SG_Spaced(SG_Validate(LoadStr(SG_Custom,si,2)))+";"+I2S(SG_PhaseCount(0))+";"+I2S(SG_PhaseCount(1))+";"+I2S(SG_PhaseCount(2))) then
+if not SG_FileWrite(file,"SG2;"+I2S(si)+";"+Id2String(sh)+";"+sn+";"+SG_Spaced(SG_Validate(LoadStr(SG_Custom,si,2)))+";"+I2S(SG_PhaseCount(0))+";"+I2S(SG_PhaseCount(1))+";"+I2S(SG_PhaseCount(2))+";"+LoadStr(SG_Custom,si,8)) then
 call SG_Message(Lng("Не удалось сохранить гайд. Проверьте доступ к папке Warcraft III.","Could not save the guide. Check Warcraft III folder access."))
 return
 endif
-if not SG_FileWrite("ChoiceBattle\\Guides\\Index_"+I2S(si)+".txt","SGX;"+I2S(si)+";"+Id2String(sh)+";"+sn) then
+if not SG_FileWrite("ChoiceBattle\\Guides\\Index_"+I2S(si)+".txt","SGX;"+I2S(si)+";"+Id2String(sh)+";"+sn+";"+SG_HeroFolder(sh)) then
 call SG_Message(Lng("Не удалось сохранить гайд. Проверьте доступ к папке Warcraft III.","Could not save the guide. Check Warcraft III folder access."))
 return
 endif
@@ -269284,6 +269623,422 @@ call BlzFrameSetEnable(SG_PagePrev,SG_HeroPage>0)
 call BlzFrameSetEnable(SG_PageNext,(SG_HeroPage+1)*6<SG_RosterN)
 endfunction
 
+function SG_ImportCount takes integer iaGuide,integer iaStage returns integer
+local integer iaTotal=StringLength(LoadStr(SG_Custom,iaGuide,2))/4
+local integer iaIndex=0
+local integer iaValue=0
+loop
+exitwhen iaIndex>iaStage
+if HaveSavedInteger(SG_Custom,iaGuide,5+iaIndex) then
+set iaValue=LoadInteger(SG_Custom,iaGuide,5+iaIndex)
+elseif iaIndex==0 then
+set iaValue=4
+elseif iaIndex==1 then
+set iaValue=3
+else
+set iaValue=4
+endif
+set iaValue=IMaxBJ(0,IMinBJ(iaTotal,iaValue))
+set iaTotal=iaTotal-iaValue
+set iaIndex=iaIndex+1
+endloop
+return iaValue
+endfunction
+
+function SG_ImportNameUsed takes integer iaHero,string iaName returns boolean
+local integer iaGuide=LoadInteger(SG_Custom,-1,iaHero)
+local integer iaGuard=0
+loop
+exitwhen iaGuide<=0 or iaGuard>SG_Total
+if StringCase(LoadStr(SG_Custom,iaGuide,1),false)==StringCase(iaName,false) then
+return true
+endif
+set iaGuide=LoadInteger(SG_Custom,iaGuide,3)
+set iaGuard=iaGuard+1
+endloop
+return false
+endfunction
+
+function SG_ImportOne takes string iaData returns integer
+local integer iaHero=SG_Canonical(String2Id(CBS_Tok(iaData,1)))
+local string iaOrigin=CBS_Tok(iaData,7)
+local string iaName=SG_NameSafe(CBS_Tok(iaData,2))
+local string iaOriginal=iaName
+local string iaRaw=SG_Compact(CBS_Tok(iaData,3))
+local string iaItems=SG_Validate(iaRaw)
+local integer iaStart=S2I(CBS_Tok(iaData,4))
+local integer iaEarly=S2I(CBS_Tok(iaData,5))
+local integer iaMid=S2I(CBS_Tok(iaData,6))
+local integer iaGuide=LoadInteger(SG_Custom,-1,iaHero)
+local integer iaGuard=0
+local integer iaSuffix=1
+local integer iaNew=SG_Total+1
+local string iaPath
+if StringLength(iaOrigin)!=64 or CBS_Tok(iaData,0)!="SGI" or iaName=="" or iaName!=CBS_Tok(iaData,2) or LoadStr(SG_DB,iaHero,0)==null or LoadStr(SG_DB,iaHero,0)=="" or iaRaw!=iaItems or iaStart<0 or iaEarly<0 or iaMid<0 or iaStart+iaEarly+iaMid>StringLength(iaItems)/4 then
+return -1
+endif
+loop
+exitwhen iaGuard>=64
+if StringFind("0123456789abcdef",SubString(iaOrigin,iaGuard,iaGuard+1),true)<0 then
+return -1
+endif
+set iaGuard=iaGuard+1
+endloop
+set iaGuard=0
+loop
+exitwhen iaGuide<=0 or iaGuard>SG_Total
+if LoadStr(SG_Custom,iaGuide,8)==iaOrigin or (StringCase(LoadStr(SG_Custom,iaGuide,1),false)==StringCase(iaName,false) and LoadStr(SG_Custom,iaGuide,2)==iaItems and SG_ImportCount(iaGuide,0)==iaStart and SG_ImportCount(iaGuide,1)==iaEarly and SG_ImportCount(iaGuide,2)==iaMid) then
+return 0
+endif
+set iaGuide=LoadInteger(SG_Custom,iaGuide,3)
+set iaGuard=iaGuard+1
+endloop
+set iaPath=SG_GuidePath(iaHero,iaName)
+loop
+exitwhen not SG_ImportNameUsed(iaHero,iaName) and SG_FileRead(iaPath)==""
+set iaSuffix=iaSuffix+1
+set iaName=iaOriginal+" ("+I2S(iaSuffix)+")"
+set iaPath=SG_GuidePath(iaHero,iaName)
+endloop
+if StringLength(iaPath)>240 then
+return -1
+endif
+if not SG_FileWrite(iaPath,"SG2;"+I2S(iaNew)+";"+Id2String(iaHero)+";"+iaName+";"+SG_Spaced(iaItems)+";"+I2S(iaStart)+";"+I2S(iaEarly)+";"+I2S(iaMid)+";"+iaOrigin) then
+return -2
+endif
+if not SG_FileWrite("ChoiceBattle\\Guides\\Index_"+I2S(iaNew)+".txt","SGX;"+I2S(iaNew)+";"+Id2String(iaHero)+";"+iaName+";"+SG_HeroFolder(iaHero)) then
+return -2
+endif
+if not SG_FileWrite("ChoiceBattle\\Guides\\Index.txt","SG2;"+I2S(iaNew)) then
+return -2
+endif
+call SaveInteger(SG_Custom,iaNew,0,iaHero)
+call SaveStr(SG_Custom,iaNew,1,iaName)
+call SaveStr(SG_Custom,iaNew,2,iaItems)
+call SaveInteger(SG_Custom,iaNew,5,iaStart)
+call SaveInteger(SG_Custom,iaNew,6,iaEarly)
+call SaveInteger(SG_Custom,iaNew,7,iaMid)
+call SaveStr(SG_Custom,iaNew,8,iaOrigin)
+call SaveInteger(SG_Custom,iaNew,3,LoadInteger(SG_Custom,-1,iaHero))
+call SaveInteger(SG_Custom,-1,iaHero,iaNew)
+set SG_Total=iaNew
+set SG_Read=iaNew
+return 1
+endfunction
+
+// Sharing uses known manifest/entry paths; no directory enumeration or launcher is needed.
+function SG_PackageOrigin takes string spData returns string
+local integer spPart=0
+local integer spNibble
+local integer spHash
+local integer spDigit
+local string spOrigin=""
+loop
+exitwhen spPart>=8
+set spHash=StringHash("ChoiceGuidePackage/"+I2S(spPart)+"/"+spData)
+set spNibble=7
+loop
+exitwhen spNibble<0
+set spDigit=BitwiseAND(BitwiseShiftRightLogical(spHash,spNibble*4),15)
+set spOrigin=spOrigin+SubString("0123456789abcdef",spDigit,spDigit+1)
+set spNibble=spNibble-1
+endloop
+set spPart=spPart+1
+endloop
+return spOrigin
+endfunction
+// Shared writer for one selected guide and batch export. spSlot=0 appends/updates a selected guide.
+// A positive slot writes into a fresh packet, whose manifest the batch commits only at completion.
+function SG_ExportWrite takes string spRoot,integer spHero,string spName,string spItems,integer spStart,integer spEarly,integer spMid,integer spSlot returns boolean
+local string spPath
+local string spManifest=""
+local string spOld
+local string spData
+local string spEntry
+local string spOriginal
+local integer spSuffix=1
+local integer spTotal=0
+local boolean spBatch=spSlot>0
+set spHero=SG_Canonical(spHero)
+set spName=SG_NameSafe(spName)
+set spOriginal=spName
+set spItems=SG_Compact(spItems)
+if spName=="" or LoadStr(SG_DB,spHero,0)==null or LoadStr(SG_DB,spHero,0)=="" or SG_Validate(spItems)!=spItems or spStart<0 or spEarly<0 or spMid<0 or spStart+spEarly+spMid>StringLength(spItems)/4 then
+call SG_Message(Lng("Не удалось экспортировать: проверьте героя, имя и предметы гайда.","Could not export: check the hero, name and guide items."))
+return false
+endif
+if not spBatch then
+set spManifest=SG_FileRead(spRoot+"Manifest.txt")
+set spTotal=S2I(CBS_Tok(spManifest,1))
+if spManifest!="" and (CBS_Tok(spManifest,0)!="SGPK1" or spTotal<0 or I2S(spTotal)!=CBS_Tok(spManifest,1)) then
+call SG_Message(Lng("Список пакета повреждён. Переместите папку Share и повторите экспорт.","The package manifest is invalid. Move the Share folder and export again."))
+return false
+endif
+endif
+set spPath=spRoot+SG_HeroFolder(spHero)+"\\"+spName+".txt"
+if spBatch then
+loop
+exitwhen SG_FileRead(spPath)=="" or StringLength(spPath)>240
+set spSuffix=spSuffix+1
+set spName=spOriginal+" ("+I2S(spSuffix)+")"
+set spPath=spRoot+SG_HeroFolder(spHero)+"\\"+spName+".txt"
+endloop
+endif
+if StringLength(spPath)>240 then
+call SG_Message(Lng("Имя гайда слишком длинное для экспорта.","The guide name is too long to export."))
+return false
+endif
+set spEntry="SGPE;"+Id2String(spHero)+";"+spName
+if not spBatch then
+set spOld=SG_FileRead(spPath)
+set spSlot=S2I(CBS_Tok(spOld,8))
+if spSlot<=0 or spSlot>spTotal or SG_FileRead(spRoot+"Entry_"+I2S(spSlot)+".txt")!=spEntry then
+set spSlot=spTotal+1
+endif
+endif
+set spData="SGI;"+Id2String(spHero)+";"+spName+";"+SG_Spaced(spItems)+";"+I2S(spStart)+";"+I2S(spEarly)+";"+I2S(spMid)
+set spData=spData+";"+SG_PackageOrigin(spData)+";"+I2S(spSlot)
+if not SG_FileWrite(spPath,spData) then
+call SG_Message(Lng("Не удалось записать файл пакета.","Could not write the package guide."))
+return false
+endif
+if not SG_FileWrite(spRoot+"Entry_"+I2S(spSlot)+".txt",spEntry) then
+call SG_Message(Lng("Не удалось записать список пакета.","Could not write the package entry."))
+return false
+endif
+if not spBatch then
+if not SG_FileWrite(spRoot+"Manifest.txt","SGPK1;"+I2S(IMaxBJ(spTotal,spSlot))) then
+call SG_Message(Lng("Не удалось завершить экспорт пакета.","Could not commit the exported package."))
+return false
+endif
+endif
+return true
+endfunction
+function SG_Export takes nothing returns nothing
+if SG_ExportAllRunning then
+call SG_Message(Lng("Дождитесь завершения общего экспорта.","Wait for the bulk export to finish."))
+return
+endif
+if SG_Read<SG_Total then
+call SG_Message(Lng("Дождитесь загрузки списка гайдов.","Wait for the guide list to finish loading."))
+return
+endif
+if SG_ExportWrite("ChoiceBattle\\Guides\\Share\\Import\\",SG_Hero,SG_ModeName(SG_Mode),SG_List(),SG_PhaseCount(0),SG_PhaseCount(1),SG_PhaseCount(2),0) then
+set SG_ExportShown=true
+set SG_ExportAllInfo=""
+set SG_ExportPath="ChoiceBattle\\Guides\\Share\\Import"
+call SG_Message(Lng("Гайд в пакете. Передайте папку Import целиком.","Guide exported. Share the entire Import folder."))
+endif
+endfunction
+function SG_ExportAllStart takes nothing returns nothing
+local string spIndex
+local integer spSerial
+local string spRoot
+if SG_ExportAllRunning then
+call SG_Message(Lng("Общий экспорт уже выполняется.","Bulk export is already running."))
+return
+endif
+if not SG_Loaded or SG_Read<SG_Total then
+call SG_Message(Lng("Дождитесь загрузки списка гайдов.","Wait for the guide list to finish loading."))
+return
+endif
+if SG_Total<=0 then
+call SG_Message(Lng("Личных гайдов для экспорта пока нет.","There are no custom guides to export yet."))
+return
+endif
+set spIndex=SG_FileRead("ChoiceBattle\\Guides\\ShareAll\\Index.txt")
+set spSerial=S2I(CBS_Tok(spIndex,1))
+if spIndex!="" and (CBS_Tok(spIndex,0)!="SGEA" or spSerial<0 or spSerial>=2147483646 or I2S(spSerial)!=CBS_Tok(spIndex,1)) then
+call SG_Message(Lng("Не удалось открыть список экспорта. Переместите папку ShareAll и повторите.","Could not read the export index. Move the ShareAll folder and retry."))
+return
+endif
+loop
+set spSerial=spSerial+1
+set spRoot="ChoiceBattle\\Guides\\ShareAll\\Pack_"+I2S(spSerial)+"\\Import\\"
+exitwhen SG_FileRead(spRoot+"Manifest.txt")==""
+endloop
+if not SG_FileWrite("ChoiceBattle\\Guides\\ShareAll\\Index.txt","SGEA;"+I2S(spSerial)) then
+call SG_Message(Lng("Не удалось подготовить папку экспорта.","Could not prepare the export folder."))
+return
+endif
+set SG_ExportAllReady=false
+set SG_ExportAllCursor=0
+set SG_ExportAllLimit=SG_Total
+set SG_ExportAllWritten=0
+set SG_ExportAllFailed=0
+set SG_ExportAllSkipped=0
+set SG_ExportAllRoot=spRoot
+set SG_ExportAllRunning=true
+set SG_ExportAllInfo=Lng("Экспорт личных гайдов: 0 / ","Exporting custom guides: 0 / ")+I2S(SG_ExportAllLimit)
+set SG_ExportShown=true
+set SG_ExportPath=SubString(spRoot,0,StringLength(spRoot)-1)
+call SG_Message(SG_ExportAllInfo)
+endfunction
+function SG_ExportAllTick takes nothing returns nothing
+local integer spBatch=0
+local integer spHero
+local string spName
+local boolean spReady=true
+if not SG_ExportAllRunning then
+return
+endif
+loop
+exitwhen spBatch>=4 or SG_ExportAllCursor>=SG_ExportAllLimit
+set SG_ExportAllCursor=SG_ExportAllCursor+1
+set spHero=LoadInteger(SG_Custom,SG_ExportAllCursor,0)
+set spName=LoadStr(SG_Custom,SG_ExportAllCursor,1)
+if spHero==0 or spName==null or spName=="" then
+set SG_ExportAllSkipped=SG_ExportAllSkipped+1
+elseif SG_ExportWrite(SG_ExportAllRoot,spHero,spName,LoadStr(SG_Custom,SG_ExportAllCursor,2),SG_ImportCount(SG_ExportAllCursor,0),SG_ImportCount(SG_ExportAllCursor,1),SG_ImportCount(SG_ExportAllCursor,2),SG_ExportAllWritten+1) then
+set SG_ExportAllWritten=SG_ExportAllWritten+1
+else
+set SG_ExportAllFailed=SG_ExportAllFailed+1
+endif
+set spBatch=spBatch+1
+endloop
+set SG_ExportAllInfo=Lng("Экспорт личных гайдов: ","Exporting custom guides: ")+I2S(SG_ExportAllCursor)+" / "+I2S(SG_ExportAllLimit)
+if SG_ExportAllCursor>=SG_ExportAllLimit then
+set SG_ExportAllRunning=false
+if SG_ExportAllWritten==0 then
+set spReady=false
+set SG_ExportAllInfo=Lng("Не экспортировано ни одного гайда. Ошибок: ","No guides exported. Errors: ")+I2S(SG_ExportAllFailed)
+elseif not SG_FileWrite(SG_ExportAllRoot+"Manifest.txt","SGPK1;"+I2S(SG_ExportAllWritten)) then
+set spReady=false
+set SG_ExportAllInfo=Lng("Не удалось завершить пакет. Повторите экспорт.","Could not complete the package. Export again.")
+else
+set SG_ExportAllReady=true
+set SG_ExportAllInfo=Lng("Экспорт: ","Exported: ")+I2S(SG_ExportAllWritten)+Lng("; ошибок: ","; errors: ")+I2S(SG_ExportAllFailed)+Lng("; пропущено: ","; skipped: ")+I2S(SG_ExportAllSkipped)+"."
+endif
+if SG_ExportButton!=null then
+call BlzFrameSetEnable(SG_ExportButton,true)
+call BlzFrameSetEnable(SG_ExportAllButton,true)
+endif
+endif
+set SG_ExportShown=spReady
+set SG_ExportPath=SubString(SG_ExportAllRoot,0,StringLength(SG_ExportAllRoot)-1)
+call SG_Message(SG_ExportAllInfo)
+// Do not refresh the modal while typing: only update its status/path.
+if SG_SavePath!=null and SG_Open and ShOpened and spReady then
+call BlzFrameSetText(SG_SavePath,"Warcraft III: "+SG_ExportPath)
+call BlzFrameSetVisible(SG_SavePath,true)
+endif
+endfunction
+function SG_PackageEntry takes integer spIndex returns string
+local string spRoot="ChoiceBattle\\Guides\\Import\\"
+local string spEntry=SG_FileRead(spRoot+"Entry_"+I2S(spIndex)+".txt")
+local integer spHero=SG_Canonical(String2Id(CBS_Tok(spEntry,1)))
+local string spName=CBS_Tok(spEntry,2)
+local string spData
+local string spPath
+if CBS_Tok(spEntry,0)!="SGPE" or spName=="" or SG_NameSafe(spName)!=spName or LoadStr(SG_DB,spHero,0)==null or LoadStr(SG_DB,spHero,0)=="" then
+return ""
+endif
+set spPath=spRoot+SG_HeroFolder(spHero)+"\\"+spName+".txt"
+if StringLength(spPath)>240 then
+return ""
+endif
+set spData=SG_FileRead(spPath)
+if CBS_Tok(spData,0)!="SGI" or SG_Canonical(String2Id(CBS_Tok(spData,1)))!=spHero or CBS_Tok(spData,2)!=spName then
+return ""
+endif
+return spData
+endfunction
+function SG_PackageTick takes nothing returns nothing
+local string spManifest
+local integer spBatch=0
+local integer spResult
+if SG_PackageStage==3 then
+return
+endif
+call SG_Load()
+if SG_Read<SG_Total then
+return
+endif
+if SG_PackageStage==0 then
+set spManifest=SG_FileRead("ChoiceBattle\\Guides\\Import\\Manifest.txt")
+if spManifest=="" then
+set SG_PackageStage=3
+return
+endif
+set SG_PackageTotal=S2I(CBS_Tok(spManifest,1))
+if CBS_Tok(spManifest,0)!="SGPK1" or SG_PackageTotal<0 or I2S(SG_PackageTotal)!=CBS_Tok(spManifest,1) then
+set SG_PackageStage=3
+set SG_PackageInfo=Lng("Пакет гайдов: неверный Manifest.txt.","Guide package: invalid Manifest.txt.")
+return
+endif
+set SG_PackageStage=2
+endif
+loop
+exitwhen spBatch>=8 or SG_PackageRead>=SG_PackageTotal
+set SG_PackageRead=SG_PackageRead+1
+set spResult=SG_ImportOne(SG_PackageEntry(SG_PackageRead))
+if spResult==1 then
+set SG_PackageAdded=SG_PackageAdded+1
+elseif spResult<0 then
+set SG_PackageFailed=SG_PackageFailed+1
+endif
+set spBatch=spBatch+1
+endloop
+if SG_PackageRead>=SG_PackageTotal then
+set SG_PackageStage=3
+set SG_PackageInfo=Lng("Пакет: добавлено ","Package: added ")+I2S(SG_PackageAdded)+Lng(", ошибок ",", errors ")+I2S(SG_PackageFailed)+"."
+if SG_Open and ShOpened then
+call SG_Message(SG_PackageInfo)
+call ExecuteFunc("SG_Refresh")
+endif
+endif
+endfunction
+function SG_ImportTick takes nothing returns nothing
+local string iaManifest
+local integer iaIndex=0
+local integer iaResult
+if SG_ImportStage==3 then
+return
+endif
+call SG_Load()
+if SG_Read<SG_Total then
+return
+endif
+if SG_ImportStage==0 then
+set iaManifest=SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\Manifest.pld")
+set SG_ImportGeneration=CBS_Tok(iaManifest,1)
+set SG_ImportTotal=S2I(CBS_Tok(iaManifest,2))
+if CBS_Tok(iaManifest,0)!="SGIM" or StringLength(SG_ImportGeneration)!=64 or SG_ImportTotal<0 then
+set SG_ImportStage=3
+return
+endif
+loop
+exitwhen iaIndex>=64
+if StringFind("0123456789abcdef",SubString(SG_ImportGeneration,iaIndex,iaIndex+1),true)<0 then
+set SG_ImportStage=3
+return
+endif
+set iaIndex=iaIndex+1
+endloop
+set SG_ImportStage=2
+set iaIndex=0
+endif
+loop
+exitwhen iaIndex>=8 or SG_ImportRead>=SG_ImportTotal
+set SG_ImportRead=SG_ImportRead+1
+set iaResult=SG_ImportOne(SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\"+SG_ImportGeneration+"\\"+I2S(SG_ImportRead)+".pld"))
+if iaResult==1 then
+set SG_ImportAdded=SG_ImportAdded+1
+elseif iaResult<0 then
+set SG_ImportFailed=SG_ImportFailed+1
+endif
+set iaIndex=iaIndex+1
+endloop
+if SG_ImportRead>=SG_ImportTotal then
+set SG_ImportStage=3
+set SG_ImportInfo=Lng("Автоимпорт: добавлено ","Auto import: added ")+I2S(SG_ImportAdded)+Lng(", ошибок ",", errors ")+I2S(SG_ImportFailed)+"."
+if SG_Open and ShOpened then
+call SG_Message(SG_ImportInfo)
+call ExecuteFunc("SG_Refresh")
+endif
+endif
+endfunction
+
 function SG_ButtonText takes framehandle sbtButton,string sbtText returns nothing
 local framehandle sbtLabel=LoadFrameHandle(SG_DB,-6,GetHandleId(sbtButton))
 if sbtLabel!=null then
@@ -269327,7 +270082,7 @@ call BlzFrameClearAllPoints(SG_Row[epRow])
 call BlzFrameSetAbsPoint(SG_Row[epRow],FRAMEPOINT_CENTER,.232+.152*I2R(ModuloInteger(epRow,2)),.416-.022*I2R((epRow-ModuloInteger(epRow,2))/2))
 call BlzFrameSetSize(SG_Row[epRow],.145,.021)
 call BlzFrameClearAllPoints(SG_Text[epRow])
-call BlzFrameSetPoint(SG_Text[epRow],FRAMEPOINT_LEFT,SG_Row[epRow],FRAMEPOINT_LEFT,.021,-.004)
+call BlzFrameSetPoint(SG_Text[epRow],FRAMEPOINT_LEFT,SG_Row[epRow],FRAMEPOINT_LEFT,.021,-.007)
 call BlzFrameSetSize(SG_Text[epRow],.120,.021)
 call BlzFrameSetFont(SG_Text[epRow],"Fonts\\FRIZQT__.TTF",.0065,0)
 call BlzFrameSetTexture(SG_Icon[epRow],Sh_Icon(epId),0,true)
@@ -269358,13 +270113,7 @@ function SG_SearchChanged takes nothing returns nothing
 if TrigP()!=GetLocalPlayer() or not SG_Open or not SG_ItemPicker then
 return
 endif
-set SG_ItemQuery=BlzGetTriggerFrameText()
-if SG_ItemQuery==null then
-set SG_ItemQuery=""
-endif
-set SG_ItemPage=0
-set SG_Notice=""
-call ExecuteFunc("SG_Refresh")
+call SG_FilterChanged(GetFrameText(SG_ItemSearch))
 endfunction
 function SG_DragStart takes nothing returns nothing
 local integer epTag=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
@@ -269479,8 +270228,10 @@ function SG_SearchLayout takes nothing returns nothing
 call BlzFrameSetVisible(ShSearch,ShOpened and not SG_Open)
 call BlzFrameSetVisible(ShSearchHint,ShOpened and not SG_Open and ShQuery=="")
 if SG_ItemSearch!=null then
+call BlzFrameSetVisible(SG_SearchBox,SG_Open and ShOpened and SG_ItemPicker)
 call BlzFrameSetVisible(SG_ItemSearch,SG_Open and ShOpened and SG_ItemPicker)
-call SetFramePriority(SG_ItemSearch,20)
+call BlzFrameSetVisible(SG_SearchPrompt,SG_Open and ShOpened and SG_ItemPicker and (SG_ItemQuery==null or SG_ItemQuery==""))
+
 endif
 endfunction
 function SG_Refresh takes nothing returns nothing
@@ -269523,12 +270274,24 @@ call SG_ButtonText(SG_SaveButton,Lng("Сохр.","Save"))
 if SG_ItemPicker then
 call SG_ButtonText(SG_SaveButton,Lng("Назад","Back"))
 endif
-call BlzFrameSetText(SG_NameBox,SG_ModeName(SG_Mode))
-call BlzFrameSetEnable(SG_NameBox,SG_Mode<0)
-call BlzFrameSetVisible(SG_NameBox,SG_Mode<0 and not erPicker)
+if not IsFrameFocused(SG_NameBox) then
+if SG_Mode<0 then
+call SetFrameText(SG_NameBox,SG_ModeName(SG_Mode))
+else
+call SetFrameText(SG_NameBox,"")
+endif
+endif
+call BlzFrameSetEnable(SG_NameBox,true)
+call BlzFrameSetVisible(SG_ExportButton,not erPicker)
+call BlzFrameSetVisible(SG_ExportAllButton,not erPicker)
+call BlzFrameSetEnable(SG_ExportButton,not SG_ExportAllRunning)
+call BlzFrameSetEnable(SG_ExportAllButton,not SG_ExportAllRunning)
+call BlzFrameSetVisible(SG_NameArea,not erPicker)
+call BlzFrameSetVisible(SG_NameLabel,not erPicker)
+call BlzFrameSetVisible(SG_NameBox,not erPicker)
 call BlzFrameSetVisible(SG_ItemSearch,SG_ItemPicker)
 if SG_ItemPicker then
-call BlzFrameSetLevel(SG_ItemSearch,8)
+call BlzFrameSetLevel(SG_ItemSearch,6)
 call SetFramePriority(SG_ItemSearch,20)
 else
 call BlzFrameSetFocus(SG_ItemSearch,false)
@@ -269538,9 +270301,11 @@ call BlzFrameSetVisible(SG_PagePrev,erPicker)
 call BlzFrameSetVisible(SG_PageNext,erPicker)
 call BlzFrameSetEnable(SG_PagePrev,true)
 call BlzFrameSetEnable(SG_PageNext,true)
-call BlzFrameSetVisible(SG_SavePath,SG_Mode<0)
-if SG_Mode<0 then
-call BlzFrameSetText(SG_SavePath,Lng("В папке Warcraft III: ","In the Warcraft III folder: ")+"ChoiceBattle\\Guides\\"+Id2String(SG_Hero)+"\\"+SG_ModeName(SG_Mode)+".txt")
+call BlzFrameSetVisible(SG_SavePath,SG_Mode<0 or SG_ExportShown)
+if SG_ExportShown then
+call BlzFrameSetText(SG_SavePath,"Warcraft III: "+SG_ExportPath)
+elseif SG_Mode<0 then
+call BlzFrameSetText(SG_SavePath,Lng("В папке Warcraft III: ","In the Warcraft III folder: ")+SG_GuidePath(SG_Hero,SG_ModeName(SG_Mode)))
 endif
 loop
 exitwhen erIndex>=12
@@ -269595,15 +270360,26 @@ call BlzFrameSetText(SG_Hint,SG_Notice)
 endif
 endfunction
 function SG_NameChanged takes nothing returns nothing
+local string enInput
 local string enName
-if TrigP()!=GetLocalPlayer() or SG_Mode>=0 then
+if TrigP()!=GetLocalPlayer() then
 return
 endif
-set enName=SG_NameSafe(BlzFrameGetText(SG_NameBox))
-if enName!="" then
-call SaveStr(SG_Custom,-SG_Mode,1,enName)
-call BlzFrameSetText(SG_SavePath,Lng("В папке Warcraft III: ","In the Warcraft III folder: ")+"ChoiceBattle\\Guides\\"+Id2String(SG_Hero)+"\\"+enName+".txt")
+set enInput=GetFrameText(SG_NameBox)
+set enName=SG_NameSafe(enInput)
+if enName=="" then
+return
 endif
+if SG_Mode>=0 then
+if not SG_CopyGuide() then
+return
+endif
+call SetFrameText(SG_NameBox,enInput)
+endif
+call SaveStr(SG_Custom,-SG_Mode,1,enName)
+call SG_ButtonText(SG_Choose,enName+" v")
+call BlzFrameSetVisible(SG_SavePath,true)
+call BlzFrameSetText(SG_SavePath,Lng("В папке Warcraft III: ","In the Warcraft III folder: ")+SG_GuidePath(SG_Hero,enName))
 endfunction
 function SG_Click takes nothing returns nothing
 local integer ecTag=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
@@ -269619,8 +270395,20 @@ return
 endif
 set SG_DragSkip=-1
 set SG_Notice=""
+set SG_ExportShown=false
 if ecTag==1 then
 set SG_Open=not SG_Open
+if SG_Open then
+set SG_Notice=SG_PackageInfo
+if SG_ImportInfo!="" then
+set SG_Notice=SG_Notice+" "+SG_ImportInfo
+endif
+if SG_ExportAllInfo!="" then
+set SG_Notice=SG_ExportAllInfo
+set SG_ExportShown=SG_ExportAllRunning or SG_ExportAllReady
+set SG_ExportPath=SubString(SG_ExportAllRoot,0,StringLength(SG_ExportAllRoot)-1)
+endif
+endif
 elseif ecTag==2 then
 set SG_ItemPicker=false
 set SG_HeroPicker=false
@@ -269646,6 +270434,14 @@ set SG_ItemPicker=false
 else
 call SG_Save()
 endif
+elseif ecTag==19 then
+call SG_Export()
+elseif ecTag==20 then
+call SG_ExportAllStart()
+elseif ecTag==241 then
+call SetFrameFocus(SG_NameBox,true)
+elseif ecTag==240 then
+call SetFrameFocus(SG_ItemSearch,true)
 elseif ecTag==5 or ecTag==18 then
 if ecTag==18 and SG_Select<0 then
 call SG_Message(Lng("Сначала выберите предмет в гайде.","Select an item in the guide first."))
@@ -269659,7 +270455,7 @@ set SG_HeroPicker=false
 set SG_Picker=false
 set SG_ItemPage=0
 set SG_ItemQuery=""
-call BlzFrameSetText(SG_ItemSearch,"")
+call SetFrameText(SG_ItemSearch,"")
 endif
 elseif ecTag==6 then
 if SG_Select<0 then
@@ -270101,9 +270897,12 @@ call BlzFrameSetPoint(sgb,FRAMEPOINT_RIGHT,SG_Title,FRAMEPOINT_LEFT,-0.003,0.)
 set sgb=SG_Button(SG_Panel,14,">",0.446,0.503,0.020)
 call BlzFrameClearAllPoints(sgb)
 call BlzFrameSetPoint(sgb,FRAMEPOINT_LEFT,SG_Title,FRAMEPOINT_RIGHT,0.003,0.)
-set SG_Choose=SG_Button(SG_Panel,2,"",0.244,0.470,0.17)
-set sgb=SG_Button(SG_Panel,3,Lng("Копия","Copy"),0.369,0.477,0.065)
-set SG_SaveButton=SG_Button(SG_Panel,4,Lng("Сохр.","Save"),0.434,0.477,0.058)
+set SG_Choose=SG_Button(SG_Panel,2,"",0.2115,0.477,0.105)
+set sgb=SG_Button(SG_Panel,3,Lng("Копия","Copy"),0.288,0.477,0.040)
+set SG_SaveButton=SG_Button(SG_Panel,4,Lng("Сохр.","Save"),0.332,0.477,0.040)
+set SG_ExportButton=SG_Button(SG_Panel,19,Lng("Экспорт","Export"),0.380,0.477,0.048)
+set SG_ExportAllButton=SG_Button(SG_Panel,20,Lng("Экспорт всех","Export all"),0.436,0.477,0.056)
+call BlzFrameSetFont(LoadFrameHandle(SG_DB,-6,GetHandleId(SG_ExportAllButton)),"Fonts\\FRIZQT__.TTF",.0075,0)
 loop
 exitwhen sgbI>=12
 set SG_Row[sgbI]=SG_Button(SG_Panel,100+sgbI,"",0.308,0.425-0.023*sgbI,0.298)
@@ -270116,7 +270915,7 @@ call Sh_Fit(SG_Icon[sgbI],.014,.014)
 call BlzFrameSetEnable(SG_Icon[sgbI],false)
 set SG_Text[sgbI]=BlzCreateFrameByType("TEXT","SGItemText",SG_Row[sgbI],"",0)
 call BlzFrameClearAllPoints(SG_Text[sgbI])
-call BlzFrameSetPoint(SG_Text[sgbI],FRAMEPOINT_LEFT,SG_Row[sgbI],FRAMEPOINT_LEFT,0.023,-0.004)
+call BlzFrameSetPoint(SG_Text[sgbI],FRAMEPOINT_LEFT,SG_Row[sgbI],FRAMEPOINT_LEFT,0.023,-0.007)
 call BlzFrameSetSize(SG_Text[sgbI],0.270,0.021)
 call BlzFrameSetFont(SG_Text[sgbI],"Fonts\\FRIZQT__.TTF",0.0085,0)
 call SetFrameTextAlignment(SG_Text[sgbI],TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_LEFT)
@@ -270137,11 +270936,26 @@ set SG_PagePrev=SG_Button(SG_Panel,15,Lng("< Назад","< Previous"),0.233,0.2
 set SG_PageNext=SG_Button(SG_Panel,16,Lng("Далее >","Next >"),0.383,0.246,0.14)
 call BlzFrameSetVisible(SG_PagePrev,false)
 call BlzFrameSetVisible(SG_PageNext,false)
-set SG_NameBox=BlzCreateFrame("EscMenuEditBoxTemplate",SG_Panel,0,1)
-call BlzFrameSetAbsPoint(SG_NameBox,FRAMEPOINT_CENTER,0.308,0.210)
-call BlzFrameSetSize(SG_NameBox,0.296,0.026)
+set SG_NameArea=BlzCreateFrameByType("BUTTON","SGNameArea",SG_Panel,"",0)
+call BlzFrameSetAbsPoint(SG_NameArea,FRAMEPOINT_CENTER,.340,.208)
+call BlzFrameSetSize(SG_NameArea,.235,.022)
+call SaveInteger(SG_DB,-3,GetHandleId(SG_NameArea),241)
+call BlzTriggerRegisterFrameEvent(SG_Trg,SG_NameArea,FRAMEEVENT_CONTROL_CLICK)
+set sgb=BlzCreateFrame("ChoiceGuideInputBackdrop",SG_NameArea,0,0)
+call BlzFrameSetAllPoints(sgb,SG_NameArea)
+call BlzFrameSetEnable(sgb,false)
+set SG_NameLabel=BlzCreateFrameByType("TEXT","SGNameLabel",SG_Panel,"",0)
+call BlzFrameSetAbsPoint(SG_NameLabel,FRAMEPOINT_CENTER,.184,.208)
+call BlzFrameSetSize(SG_NameLabel,.060,.022)
+call BlzFrameSetFont(SG_NameLabel,"Fonts\\FRIZQT__.TTF",.0085,0)
+call BlzFrameSetText(SG_NameLabel,Lng("Имя гайда","Guide name"))
+call BlzFrameSetEnable(SG_NameLabel,false)
+set SG_NameBox=CreateFrameByType("EDITBOX","SGGuideName",SG_NameArea,"",0)
+call BlzFrameSetAbsPoint(SG_NameBox,FRAMEPOINT_CENTER,.340,.208)
+call BlzFrameSetSize(SG_NameBox,.223,.022)
 call BlzFrameSetLevel(SG_NameBox,8)
-call BlzFrameSetFont(SG_NameBox,"Fonts\\FRIZQT__.TTF",0.0075,0)
+call SetFrameFont(SG_NameBox,"Fonts\\FRIZQT__.TTF",.0085,0)
+call SetFrameTextColour(SG_NameBox,0xFFFFFFFF)
 call BlzFrameSetTextSizeLimit(SG_NameBox,80)
 call BlzTriggerRegisterFrameEvent(sgt,SG_NameBox,FRAMEEVENT_EDITBOX_ENTER)
 call TriggerAddAction(sgt,function SG_NameEnter)
@@ -270153,20 +270967,38 @@ call BlzFrameSetSize(SG_SavePath,.298,.014)
 call BlzFrameSetFont(SG_SavePath,"Fonts\\FRIZQT__.TTF",.0065,0)
 call SetFrameTextAlignment(SG_SavePath,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_LEFT)
 call BlzFrameSetEnable(SG_SavePath,false)
-set SG_ItemSearch=BlzCreateFrame("EscMenuEditBoxTemplate",SG_Panel,0,2)
+set SG_SearchBox=BlzCreateFrameByType("BUTTON","SGSearchArea",SG_Panel,"",0)
+call BlzFrameSetAbsPoint(SG_SearchBox,FRAMEPOINT_CENTER,.334,.278)
+call BlzFrameSetSize(SG_SearchBox,.190,.022)
+call BlzFrameSetLevel(SG_SearchBox,6)
+call SaveInteger(SG_DB,-3,GetHandleId(SG_SearchBox),240)
+call BlzTriggerRegisterFrameEvent(SG_Trg,SG_SearchBox,FRAMEEVENT_CONTROL_CLICK)
+set sgb=BlzCreateFrame("ChoiceGuideInputBackdrop",SG_SearchBox,0,0)
+call BlzFrameSetAllPoints(sgb,SG_SearchBox)
+call BlzFrameSetEnable(sgb,false)
+call SaveFrameHandle(SG_DB,-7,GetHandleId(SG_SearchBox),sgb)
+set SG_ItemSearch=CreateFrameByType("EDITBOX","SGSearchInput",SG_SearchBox,"",0)
+call BlzFrameClearAllPoints(SG_ItemSearch)
 call BlzFrameSetAbsPoint(SG_ItemSearch,FRAMEPOINT_CENTER,.334,.278)
-call BlzFrameSetSize(SG_ItemSearch,.232,.026)
+call BlzFrameSetSize(SG_ItemSearch,.178,.022)
 call BlzFrameSetLevel(SG_ItemSearch,8)
 call BlzFrameSetEnable(SG_ItemSearch,true)
 call BlzFrameSetText(SG_ItemSearch,"")
-call BlzFrameSetFont(SG_ItemSearch,"Fonts\\FRIZQT__.TTF",.0075,0)
+call SetFrameFont(SG_ItemSearch,"Fonts\\FRIZQT__.TTF",.0075,0)
+call SetFrameTextColour(SG_ItemSearch,0xFFFFFFFF)
 call BlzFrameSetTextSizeLimit(SG_ItemSearch,60)
 call BlzTriggerRegisterFrameEvent(seSearch,SG_ItemSearch,FRAMEEVENT_EDITBOX_TEXT_CHANGED)
 call TriggerAddAction(seSearch,function SG_SearchChanged)
+set SG_SearchPrompt=BlzCreateFrameByType("TEXT","SGSearchPrompt",SG_SearchBox,"",0)
+call BlzFrameSetAllPoints(SG_SearchPrompt,SG_SearchBox)
+call BlzFrameSetFont(SG_SearchPrompt,"Fonts\\FRIZQT__.TTF",.0075,0)
+call BlzFrameSetTextAlignment(SG_SearchPrompt,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_CENTER)
+call BlzFrameSetText(SG_SearchPrompt,Lng("Название предмета...","Item name..."))
+call BlzFrameSetEnable(SG_SearchPrompt,false)
 set SG_ItemSearchLabel=BlzCreateFrameByType("TEXT","SGSearchLabel",SG_Panel,"",0)
 call BlzFrameSetAbsPoint(SG_ItemSearchLabel,FRAMEPOINT_CENTER,.185,.278)
 call BlzFrameSetSize(SG_ItemSearchLabel,.050,.020)
-call BlzFrameSetFont(SG_ItemSearchLabel,"Fonts\\FRIZQT__.TTF",.0075,0)
+call BlzFrameSetFont(SG_ItemSearchLabel,"Fonts\\FRIZQT__.TTF",.0095,0)
 call BlzFrameSetText(SG_ItemSearchLabel,Lng("Поиск","Search"))
 call SetFrameTextAlignment(SG_ItemSearchLabel,TEXT_JUSTIFY_MIDDLE,TEXT_JUSTIFY_LEFT)
 call BlzFrameSetEnable(SG_ItemSearchLabel,false)
@@ -270997,23 +271829,143 @@ endfunction
 
 
 
+// Soul progress belongs to this hero and never decreases when energy is spent.
+function DM_SoulProgress takes unit dmU,integer dmSouls returns nothing
+local integer dmId=GetHandleId(dmU)
+local integer dmRank=0
+local real dmBonus=0.
+local real dmRadius=600.
+if dmSouls>LoadInteger(HH,dmId,StringHash("DMHighSouls")) then
+call SaveInteger(HH,dmId,StringHash("DMHighSouls"),dmSouls)
+endif
+if LoadInteger(HH,dmId,StringHash("DMHighSouls"))>=10 then
+set dmBonus=150.
+endif
+if LoadInteger(HH,dmId,StringHash("DMHighSouls"))>=20 then
+set dmRadius=700.
+endif
+loop
+exitwhen dmRank>=5
+if GetUnitAbility(dmU,'DMW1')!=null then
+call SetAbilityRealLevelField(GetUnitAbility(dmU,'DMW1'),ABILITY_RLF_CAST_RANGE,dmRank,1100.+100.*dmRank+dmBonus)
+call SetAbilityRealLevelField(GetUnitAbility(dmU,'DMW1'),ABILITY_RLF_AREA_OF_EFFECT,dmRank,400.)
+endif
+if GetUnitAbility(dmU,'DMR1')!=null then
+call SetAbilityRealLevelField(GetUnitAbility(dmU,'DMR1'),ABILITY_RLF_AREA_OF_EFFECT,dmRank,dmRadius)
+endif
+set dmRank=dmRank+1
+endloop
+if dmSouls>=15 and not LoadBoolean(HH,dmId,StringHash("DMThirdUnlocked")) then
+call SaveBoolean(HH,dmId,StringHash("DMThirdUnlocked"),true)
+call SaveBoolean(HH,dmId,StringHash("DM_Skull_3"),true)
+endif
+endfunction
+function DM_ConsumeSoul takes unit dmU returns boolean
+local integer dmId=GetHandleId(dmU)
+local integer dmSouls=LoadInteger(HH,dmId,StringHash("DMSouls"))
+if dmSouls<1 then
+return false
+endif
+call SaveInteger(HH,dmId,StringHash("DMSouls"),dmSouls-1)
+return true
+endfunction
+function DM_Empower takes unit dmU returns boolean
+if GetUnitAbilityLevel(dmU,'DME2')==0 or LoadBoolean(HH,GetHandleId(dmU),StringHash("DMNoSpend")) then
+return false
+endif
+return DM_ConsumeSoul(dmU)
+endfunction
+function DM_SkullReady takes unit dmU,integer dmSlot returns boolean
+return LoadBoolean(HH,GetHandleId(dmU),StringHash("DM_Skull_"+I2S(dmSlot)))
+endfunction
+function DM_FirstSkull takes unit dmU returns integer
+local integer dmSlot=1
+loop
+exitwhen dmSlot>3
+if DM_SkullReady(dmU,dmSlot) then
+return dmSlot
+endif
+set dmSlot=dmSlot+1
+endloop
+return 0
+endfunction
+function DM_Refund takes unit dmU,integer dmAb returns nothing
+local integer dmLv=GetUnitAbilityLevel(dmU,dmAb)-1
+call AbilityCD(dmU,dmAb,0.)
+if dmLv>=0 then
+call SetUnitState(dmU,UNIT_STATE_MANA,GetUnitState(dmU,UNIT_STATE_MANA)+GetAbilityBaseIntegerLevelFieldById(dmAb,ABILITY_ILF_MANA_COST,dmLv))
+endif
+endfunction
+// Enkidu-style airborne knockback; no damage is dealt by this motion.
+function DM_WKnockTick takes nothing returns nothing
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmU=LoadUnitHandle(HH,dmId,1)
+local unit dmC=LoadUnitHandle(HH,dmId,2)
+local real dmElapsed=LoadReal(HH,dmId,3)+0.02
+local real dmAngle=LoadReal(HH,dmId,4)
+local real dmHeight=LoadReal(HH,dmId,5)
+if dmElapsed>=0.6 or not UnitIsAlive(dmU) or not udg_B then
+call SetUnitFlyHeight(dmU,dmHeight,0.)
+call RemoveSavedBoolean(HH,GetHandleId(dmU),StringHash("DMWKnockRunning"))
+if UnitIsAlive(dmU) and udg_B then
+call SetControlToUnit(dmC,dmU,1.,"stun")
+endif
+call FlushChildHashtable(HH,dmId)
+call TSE_DestroyTimer(dmT)
+else
+call SaveReal(HH,dmId,3,dmElapsed)
+if not IsTerrainPathable(PolX(GetUnitX(dmU),40.,dmAngle),PolY(GetUnitY(dmU),40.,dmAngle),PATHING_TYPE_FLYABILITY) then
+call MoveUnit(dmU,dmU,40.,dmAngle)
+endif
+call SetUnitFlyHeight(dmU,dmHeight+ParabolaZ(450.,1200.,dmElapsed*2000.),0.)
+endif
+set dmT=null
+set dmU=null
+set dmC=null
+endfunction
+function DM_WKnock takes unit dmC,unit dmU,real dmAngle returns nothing
+local timer dmT
+local integer dmId
+if not UnitIsAlive(dmU) or IsUnitType(dmU,UNIT_TYPE_STRUCTURE) or LoadBoolean(HH,GetHandleId(dmU),TARGET_ABILITY) or LoadBoolean(HH,GetHandleId(dmU),StringHash("DMWKnockRunning")) then
+return
+endif
+call SaveBoolean(HH,GetHandleId(dmU),StringHash("DMWKnockRunning"),true)
+set dmT=CreateTimer()
+set dmId=GetHandleId(dmT)
+call SaveUnitHandle(HH,dmId,1,dmU)
+call SaveUnitHandle(HH,dmId,2,dmC)
+call SaveReal(HH,dmId,4,dmAngle)
+call SaveReal(HH,dmId,5,GetUnitFlyHeight(dmU))
+call UnitAddAbility(dmU,'Amrf')
+call UnitRemoveAbility(dmU,'Amrf')
+call SetControlToUnit(dmC,dmU,0.6,"stun")
+call DestroyEffect(AddSpecialEffectTarget(EffectID[2217],dmU,"origin"))
+call TSE_TimerStart(dmT,0.02,true,function DM_WKnockTick)
+set dmT=null
+endfunction
 function Death_Master_Drain takes unit caster0,real value0 returns nothing
-local integer energy=LoadInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"))
-local integer energy_count1=0
-local integer energy_count2=0
-if energy+value0>energy then
-//set energy_count1=R2I(energy*0.0001)
-//set energy_count2=R2I((energy+value0)*0.0001)
-set energy_count1=R2I(energy/7000)
-set energy_count2=R2I((energy+value0)/7000)
-
-if energy_count2>energy_count1 then
+local integer dmId=GetHandleId(caster0)
+local integer dmP=PH(OwnerOf(caster0))
+local integer dmEnergy=LoadInteger(HH,dmP,StringHash("KimiEnergy"))
+local integer dmGain=R2I(value0)
+local integer dmProgress
+local integer dmNewSouls
+local integer dmSouls
+call SaveInteger(HH,dmP,StringHash("KimiEnergy"),IMaxBJ(0,dmEnergy+dmGain))
+if dmGain>0 then
+// Energy is retained. Spending energy never erases progress or earns the same progress twice.
+set dmProgress=LoadInteger(HH,dmId,StringHash("DMEnergySoulProgress"))+dmGain
+set dmNewSouls=dmProgress/7000
+call SaveInteger(HH,dmId,StringHash("DMEnergySoulProgress"),ModuloInteger(dmProgress,7000))
+if dmNewSouls>0 then
+set dmSouls=LoadInteger(HH,dmId,StringHash("DMSouls"))+dmNewSouls
+call SaveInteger(HH,dmId,StringHash("DMSouls"),dmSouls)
+call DM_SoulProgress(caster0,dmSouls)
 call Bof_Heal(caster0,caster0,GetUnitState(caster0,UNIT_STATE_MAX_LIFE)*0.05)
 call SetUnitState(caster0,UNIT_STATE_MANA,GetUnitState(caster0,UNIT_STATE_MANA)+GetUnitState(caster0,UNIT_STATE_MAX_MANA)*0.05)
 endif
-
 endif
-call SaveInteger(HH,PH(OwnerOf(caster0)),StringHash("KimiEnergy"),energy+R2I(value0))
 endfunction
 
 function DMFxDrainStep takes integer dmxId returns boolean
@@ -271291,10 +272243,7 @@ local real facing0=Angle2(x0,y0,x1,y1)
 local real damage0=GetUnitState(target0,UNIT_STATE_MAX_LIFE)*0.015
 local real damage1=GetUnitState(target0,UNIT_STATE_MAX_MANA)*0.015
 
-  if GetUnitAbilityLevel(caster0,'DMT2')>0 then
-    set damage0=damage0*1.3
-    set damage1=damage1*1.3
-  endif
+  // T no longer increases outgoing drain damage.
 
   if GetUnitState(target0,UNIT_STATE_LIFE)>damage0 then
      call SetUnitState(target0,UNIT_STATE_LIFE,GetUnitState(target0,UNIT_STATE_LIFE)-damage0)
@@ -271907,26 +272856,21 @@ set t=null
 endfunction
 
 function DeadMaster_T3 takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local real x1=LoadReal(HH,id,11)
-local real y1=LoadReal(HH,id,12)
-local group gr=LoadGroupHandle(HH,id,4)
-local real time=LoadReal(HH,id,5)
-
-if SR(x1,y1,GetUnitX(GetEnumUnit()),GetUnitY(GetEnumUnit()))>1800 then
-call UnitRemoveAbility(GetEnumUnit(),'DMT3')
-call GroupRemoveUnit(gr,GetEnumUnit())
-call SaveGroupHandle(HH,id,4,gr)
-
+local integer dmId=GetHandleId(GetExpiredTimer())
+local unit dmU=GetEnumUnit()
+local group dmGr=LoadGroupHandle(HH,dmId,4)
+local integer dmUid=GetHandleId(dmU)
+local integer dmStacks
+if not UnitIsAlive(dmU) or SR(LoadReal(HH,dmId,11),LoadReal(HH,dmId,12),GetUnitX(dmU),GetUnitY(dmU))>1800. or LoadReal(HH,dmId,5)>=16. or not udg_B then
+set dmStacks=IMaxBJ(0,LoadInteger(HH,dmUid,StringHash("DMTControlStacks"))-1)
+call SaveInteger(HH,dmUid,StringHash("DMTControlStacks"),dmStacks)
+if dmStacks==0 then
+call UnitRemoveAbility(dmU,'DMT3')
 endif
-
-//if time>=21 then
-// 29 окт: зона кончается на 16 с или с концом раунда — DMT3 снимается тогда (раньше оставался навсегда)
-if time>=16 or udg_B==false then
-call UnitRemoveAbility(GetEnumUnit(),'DMT3')
+call GroupRemoveUnit(dmGr,dmU)
 endif
-
-set gr=null
+set dmGr=null
+set dmU=null
 endfunction
 function Death_Master_T1_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
@@ -272083,8 +273027,9 @@ else
 if IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
 
 
-if GetUnitAbilityLevel(n0,'DMT3')==0 and IsUnitEnemy(n0,OwnerOf(caster))==true then 
+if not IsUnitInGroup(n0,gr) and UnitIsAlive(n0) and SR(x1,y1,GetUnitX(n0),GetUnitY(n0))<=1800. and IsUnitEnemy(n0,OwnerOf(caster)) then
 
+call SaveInteger(HH,GetHandleId(n0),StringHash("DMTControlStacks"),LoadInteger(HH,GetHandleId(n0),StringHash("DMTControlStacks"))+1)
 call UnitAddAbility(n0,'DMT3') 
 call GroupAddUnit(gr,n0)
 
@@ -272147,54 +273092,38 @@ endfunction
 
 
 function DM_Q_CD_Act takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit caster=LoadUnitHandle(HH,id,0)
-if LoadInteger(HH,id,6)==1 then
-
-
-call EnableUnitAbility2(caster,'DMQ1',false,true)
-
-call UnitAddAbility(caster,'DMQ3')
-call UnitMakeAbilityPermanent(caster,true,'DMQ3')
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),true)
-else
-
-call EnableUnitAbility2(caster,'DMQ2',false,true)
-
-
-call UnitAddAbility(caster,'DMQ4')
-call UnitMakeAbilityPermanent(caster,true,'DMQ4')
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),true)
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmU=LoadUnitHandle(HH,dmId,0)
+local integer dmSlot=LoadInteger(HH,dmId,6)
+if GetUnitTypeId(dmU)=='HDMa' and GetUnitAbilityLevel(dmU,'DMQ1')>0 then
+call SaveBoolean(HH,GetHandleId(dmU),StringHash("DM_Skull_"+I2S(dmSlot)),true)
+if dmSlot==1 then
+call UnitAddAbility(dmU,'DMQ3')
+call UnitMakeAbilityPermanent(dmU,true,'DMQ3')
+elseif dmSlot==2 then
+call UnitAddAbility(dmU,'DMQ4')
+call UnitMakeAbilityPermanent(dmU,true,'DMQ4')
 endif
-call PauseTimer(t)
-call TSE_DestroyTimer(t)
-call FlushChildHashtable(HH,id)
-set caster=null
-set t=null
+endif
+call FlushChildHashtable(HH,dmId)
+call TSE_DestroyTimer(dmT)
+set dmT=null
+set dmU=null
 endfunction
 function DM_Q_CD takes unit caster,integer id_Q returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(HH,id,0,caster)
+local timer dmT=CreateTimer()
+local integer dmId=GetHandleId(dmT)
+call SaveUnitHandle(HH,dmId,0,caster)
+call SaveInteger(HH,dmId,6,id_Q)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_"+I2S(id_Q)),false)
 if id_Q==1 then
-
-
-call DisableUnitAbility2(caster,'DMQ1',false,true)
-
 call UnitRemoveAbility(caster,'DMQ3')
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
-else
-
-call DisableUnitAbility2(caster,'DMQ2',false,true)
-
-
+elseif id_Q==2 then
 call UnitRemoveAbility(caster,'DMQ4')
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
 endif
-call SaveInteger(HH,id,6,id_Q)
-call TSE_TimerStart(t,15-GetUnitAbilityLevel(caster,'DMQ1'),false,function DM_Q_CD_Act)
-set t=null
+call TSE_TimerStart(dmT,8.,false,function DM_Q_CD_Act)
+set dmT=null
 endfunction
 
 
@@ -272246,6 +273175,9 @@ call SaveUnitHandle(HH,id,21,n0)
 set n0=CreateUnit(OwnerOf(caster),'e600',x0,y0,facing)
 call SaveUnitHandle(HH,id,22,n0)
 if IsUnitAlly(target,OwnerOf(caster))==false then
+if LoadInteger(HH,GetHandleId(caster),StringHash("DMHighSouls"))>=5 then
+call SetControlToUnit(caster,target,1.5,"root")
+endif
 call SetUnitModel(n0,EffectID[2236])
 call UnitSize(n0,2.5,1,1)
 call SetUnitFlyHeight(n0,100,0)
@@ -272259,7 +273191,7 @@ call UnitAddAbilityTimed(target,5,'DMQ4')
 endif
 endif
 call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
-if GetUnitAbilityLevel(caster,'DME2')>0 then
+if LoadBoolean(HH,id,30) then
 call Death_Master_E_F_Act0(caster,target,0)
 endif
 call EffectCreateAndMove(true,EffectID[2251],facing,1.5,2,1,100,100,100,0,100,target,0,facing)
@@ -272278,6 +273210,7 @@ if time1>=1 or time==10.02 then
 set time1=0
 if IsUnitAlly(target,OwnerOf(caster))==false then
 call Death_Master_Drain_Passive(caster,target)
+call SetControlToUnit(caster,target,0.1,"stun")
 call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),2,1.5,1,100,100,100,0,100,target,0,facing)
 call EffectCreateAndMove(true,EffectID[2251],GetRandomReal(0,360),1.5,1,1,100,100,100,0,100,target,0,facing)
 else
@@ -272302,6 +273235,7 @@ local real y1=GetUnitY(target)
 local real facing=GetUnitFacing(caster)
 local real dist
 local real damage=GetHeroInt(caster,true)
+
 call SaveInteger(HH,id,19,id_Q)
 if id_Q==1 then
 set x0=PolX(GetUnitX(caster),200,facing+90)
@@ -272312,7 +273246,12 @@ set x0=PolX(GetUnitX(caster),200,facing-90)
 set y0=PolY(GetUnitY(caster),200,facing-90)
 call DM_Q_CD(caster,id_Q)
 endif
+if id_Q==3 then
+set x0=PolX(GetUnitX(caster),200.,GetUnitFacing(caster)+180.)
+set y0=PolY(GetUnitY(caster),200.,GetUnitFacing(caster)+180.)
+endif
 set facing=Angle2(x0,y0,x1,y1)
+call SaveBoolean(HH,id,30,DM_Empower(caster))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,15,damage)
@@ -272331,60 +273270,87 @@ call TSE_TimerStart(t,0.02,true,function Death_Master_F1_Act3)
 set t=null
 endfunction
 function Death_Master_F1_Act takes unit caster,unit target returns nothing
-local integer random_int=0
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==false then
-call Death_Master_F1_Act2(caster,target,1)
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
-
-
-if GetUnitAbilityLevel(caster,'DMQ1')>3 then
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
+local integer dmSlot=1
+local integer dmCount=0
+local integer dmFirst=DM_FirstSkull(caster)
+local integer dmNeed=1
+if IsUnitEnemy(target,OwnerOf(caster)) then
+set dmNeed=2
 endif
-
-
+loop
+exitwhen dmSlot>3
+if DM_SkullReady(caster,dmSlot) then
+set dmCount=dmCount+1
 endif
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==false then
-call Death_Master_F1_Act2(caster,target,2)
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
-
-
-if GetUnitAbilityLevel(caster,'DMQ1')>3 then
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
+set dmSlot=dmSlot+1
+endloop
+if dmCount<dmNeed then
+call DM_Refund(caster,'DMF1')
+return
 endif
-
+// Consume the extra enemy skull now; Act2 consumes the launched skull.
+if dmNeed==2 then
+set dmSlot=dmFirst+1
+loop
+exitwhen dmSlot>3
+if DM_SkullReady(caster,dmSlot) then
+call DM_Q_CD(caster,dmSlot)
+exitwhen true
 endif
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true then
-set random_int=GetRandomInt(1,2)
-call Death_Master_F1_Act2(caster,target,random_int)
-if random_int==1 then
-
-
-if GetUnitAbilityLevel(caster,'DMQ1')>3 then
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
+set dmSlot=dmSlot+1
+endloop
 endif
-
-
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"),false)
-else
-
-
-if GetUnitAbilityLevel(caster,'DMQ1')>3 then
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
-endif
-
-
-call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),false)
-endif
-endif
+call Death_Master_F1_Act2(caster,target,dmFirst)
 endfunction
 
 
 
 
+function DM_GShieldTick takes nothing returns nothing
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmU=LoadUnitHandle(HH,dmId,1)
+local integer dmUid=GetHandleId(dmU)
+local real dmLife=LoadReal(HH,dmUid,StringHash("DMShieldLife"))-0.1
+if dmLife<=0. or not UnitIsAlive(dmU) or not udg_B or LoadReal(HH,dmUid,StringHash("DMShield"))<=0. then
+call RemoveSavedReal(HH,dmUid,StringHash("DMShield"))
+call RemoveSavedReal(HH,dmUid,StringHash("DMShieldLife"))
+call RemoveSavedBoolean(HH,dmUid,StringHash("DMShieldRunning"))
+call FlushChildHashtable(HH,dmId)
+call TSE_DestroyTimer(dmT)
+else
+call SaveReal(HH,dmUid,StringHash("DMShieldLife"),dmLife)
+endif
+set dmT=null
+set dmU=null
+endfunction
+function DM_GTransfer takes unit dmC,unit dmU,real dmAmount,real dmMana returns nothing
+local real dmTaken=RMinBJ(dmAmount,RMaxBJ(0.,GetWidgetLife(dmU)-1.))
+local real dmTakenMana=RMinBJ(dmMana,RMaxBJ(0.,GetUnitState(dmU,UNIT_STATE_MANA)))
+local real dmExcess
+local timer dmT
+if not UnitIsAlive(dmC) or not UnitIsAlive(dmU) or IsUnitInvulnerable(dmU) or not IsUnitEnemy(dmU,OwnerOf(dmC)) or (dmTaken<=0. and dmTakenMana<=0.) then
+return
+endif
+call SetUnitState(dmU,UNIT_STATE_LIFE,GetWidgetLife(dmU)-dmTaken)
+call SetUnitState(dmU,UNIT_STATE_MANA,GetUnitState(dmU,UNIT_STATE_MANA)-dmTakenMana)
+call Death_Master_Drain(dmC,dmTaken+dmTakenMana)
+call DamageIndicatorFunction(dmC,dmU,dmTaken)
+call DamageTextTag(dmC,dmU,dmTaken)
+set dmExcess=RMaxBJ(0.,dmTaken*myCustomHeal2(dmC,1)-(GetUnitMaxLife(dmC)-GetWidgetLife(dmC)))
+call Bof_Heal(dmC,dmC,dmTaken)
+if dmExcess>0. then
+call SaveReal(HH,GetHandleId(dmC),StringHash("DMShield"),LoadReal(HH,GetHandleId(dmC),StringHash("DMShield"))+dmExcess)
+call SaveReal(HH,GetHandleId(dmC),StringHash("DMShieldLife"),12.)
+if not LoadBoolean(HH,GetHandleId(dmC),StringHash("DMShieldRunning")) then
+call SaveBoolean(HH,GetHandleId(dmC),StringHash("DMShieldRunning"),true)
+set dmT=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(dmT),1,dmC)
+call TSE_TimerStart(dmT,0.1,true,function DM_GShieldTick)
+endif
+endif
+set dmT=null
+endfunction
 function Death_Master_G_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
@@ -272440,14 +273406,15 @@ call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),1.5,2,1,100,10
 endif
 
 
-if  GetUnitAbilityLevel(caster,'DME2')>0 and  IsUnitEnemy(target,OwnerOf(caster))==true then
+if  LoadBoolean(HH,id,30) and  IsUnitEnemy(target,OwnerOf(caster))==true then
 call SetControlToUnit(target,target,0.1,"doom")
 call SetControlToUnit(target,target,0.1,"stunbkb")
 endif
 
 
 set time1=time1+.02
-if time1>=0 then
+if LoadInteger(HH,id,31)<10 and time>=0.02+0.15*LoadInteger(HH,id,31) then
+call SaveInteger(HH,id,31,LoadInteger(HH,id,31)+1)
 
 
 
@@ -272459,7 +273426,7 @@ if IsUnitEnemy(target,OwnerOf(caster))==true then
 
 
 call EffectCreateAndMove(true,EffectID[589],GetRandomReal(0,360),1,1.4,0.8,100,100,100,40,0,target,0,facing)
-call Death_Master_Drain_Passive(caster,target)
+call DM_GTransfer(caster,target,damage,LoadReal(HH,id,16))
 else
 call EffectCreateAndMove(true,EffectID[1537],GetRandomReal(0,360),1,2,1,100,100,100,0,0,target,0,facing)
 call Death_Master_Heal(caster,target,1)
@@ -272479,7 +273446,9 @@ local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=GetUnitState(target,UNIT_STATE_LIFE)*0.01
+local real damage=GetUnitState(target,UNIT_STATE_MAX_LIFE)*0.015
+
+call SaveBoolean(HH,id,30,DM_Empower(caster))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
 set facing=Angle2(x0,y0,x1,y1)
@@ -272499,6 +273468,7 @@ set n0=null
 call SaveReal(HH,id,3,facing)
 call SetUnitInvulnerable(caster,true)
 call SaveReal(HH,id,15,damage)
+call SaveReal(HH,id,16,GetUnitState(target,UNIT_STATE_MAX_MANA)*0.015)
 call TSE_TimerStart(t,0.02,true,function Death_Master_G_Act2)
 set t=null
 endfunction
@@ -272510,6 +273480,11 @@ function Death_Master_R1_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
 local unit Dummy=LoadUnitHandle(HH,id,20)
+local integer dmSlot=1
+local unit dmSkull
+local group dmG
+local unit dmU
+local real dmRadius=LoadReal(HH,id,31)
 local real time=LoadReal(HH,id,5)
 local real time1=LoadReal(HH,id,6)
 local real x0=GetUnitX(Dummy)
@@ -272542,27 +273517,51 @@ call Effect_Visible_Timed_RGB(LoadUnitHandle(HH,id,20),2,100,100,100)
 
 call Death_Master_Poison_Act(caster,x1,y1)
 call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
-if LoadBoolean(HH,id,19)==true then
+loop
+exitwhen dmSlot>3
+set dmSkull=LoadUnitHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(dmSlot)))
+if dmSkull!=null and GetUnitTypeId(dmSkull)!=0 and SR(x1,y1,GetUnitX(dmSkull),GetUnitY(dmSkull))<=dmRadius then
+call SaveBoolean(HH,id,19,true)
+endif
+set dmSlot=dmSlot+1
+endloop
+if LoadBoolean(HH,id,19) then
 call EffectCreateAndMove(true,EffectID[2226],facing,1.5,2.25,0.5,100,100,100,0,0,Dummy,-600,facing)
 call EffectCreateAndMove(true,EffectID[2251],facing,1.5,5,1,100,100,100,0,0,Dummy,-600,facing)
-call DamageAoeOneTime0_DM(caster,x1,y1,600,GetHeroInt(caster,true)*2  )
+call DamageAoeOneTime0_DM(caster,x1,y1,dmRadius,GetHeroInt(caster,true)*2  )
 endif
 call EffectCreateAndMove(true,EffectID[2217],facing,1.5,5,0.5,100,100,100,0,100,Dummy,-600,facing)
 call EffectCreateAndMove(true,EffectID[2208],facing,1.5,1.75,0.5,100,100,100,0,100,Dummy,-600,facing)
 call EffectCreateAndMove(true,EffectID[2209],facing,1.5,2,0.5,100,100,100,0,150,Dummy,-600,facing)
 //call EffectCreateAndMove(true,EffectID[214],facing,1.5,6,0.5,60,100,60,60,0,Dummy,-600,facing)
-call DamageAoeAndStun_DM(caster,x1,y1,600,damage,2)
+call DamageAoeAndStun_DM(caster,x1,y1,dmRadius,damage,2)
 endif
 if time==1.2 then
 call sound_play("Sound\\DeadMaster\\DeadMaster_R2.mp3",200)
 endif
-if time==1.5 and GetUnitAbilityLevel(caster,'DME2')>0 then
+if time==1.5 and LoadBoolean(HH,id,30) then
 call EffectCreateAndMove(true,EffectID[2204],facing,1.5,3,1.5,100,100,100,0,100,Dummy,-600,facing)
 call EffectCreateAndMove(true,EffectID[2205],facing,1.5,4,0.75,100,100,100,0,0,Dummy,-600,facing)
-call Death_Master_E_Root(caster,x1,y1,600,2)
-call DamageAoeOneTime0_DM(caster,x1,y1,600,GetHeroInt(caster,true)*2)
+call Death_Master_E_Root(caster,x1,y1,dmRadius,2)
+call DamageAoeOneTime0_DM(caster,x1,y1,dmRadius,GetHeroInt(caster,true)*2)
 endif
 endif
+if time>=0.5 and time<=3. and ModuloInteger(R2I(time*50.+0.5),5)==0 then
+set dmG=CreateGroup()
+call GroupEnumUnitsInRange(dmG,x1,y1,dmRadius,Base)
+loop
+set dmU=FirstOfGroup(dmG)
+exitwhen dmU==null
+call GroupRemoveUnit(dmG,dmU)
+if Condition_Base(OwnerOf(caster),dmU) then
+call SlowUnit(caster,dmU,0.8,0.8,0.15,2,false)
+endif
+endloop
+call DestroyGroup(dmG)
+endif
+set dmG=null
+set dmU=null
+set dmSkull=null
 set caster=null
 set Dummy=null
 endfunction
@@ -272573,20 +273572,14 @@ local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=GetUnitFacing(caster)
 local real dist
-local real damage=GetHeroInt(caster,true)*(GetUnitAbilityLevel(caster,'DMR1')+2)
-local real x2=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_X1"))
-local real y2=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"))
-local real x3=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_X2"))
-local real y3=LoadReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"))
-
-
-
-if (SR(x1,y1,x2,y2)<=600 or SR(x1,y1,x3,y3)<=600) and  (x2!=0 or x3!=0) then
-call SaveBoolean(HH,id,19,true)
-else
-call SaveBoolean(HH,id,19,false)
+local real damage=GetHeroInt(caster,true)*(GetUnitAbilityLevel(caster,'DMR1')+1)
+call SaveReal(HH,id,31,600.)
+if LoadInteger(HH,GetHandleId(caster),StringHash("DMHighSouls"))>=20 then
+call SaveReal(HH,id,31,700.)
 endif
+
 set facing=Angle2(x0,y0,x1,y1)
+call SaveBoolean(HH,id,30,DM_Empower(caster))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,15,damage)
 set n0=CreateUnit(OwnerOf(caster),'e600',x1,y1,facing+180)
@@ -272628,7 +273621,7 @@ local real dist=LoadReal(HH,id,8)
 local real dist_Base=LoadReal(HH,id,9)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if dist<0 and time>0.02 then
+if dist<=0 and time>0.02 then
 call Death_Master_Poison_Act(caster,x0,y0)
 call Death_Master_Drain_Passive_Aoe(caster,x0,y0,1000)
 call UnitSpeed(caster,1)
@@ -272653,7 +273646,11 @@ call DamageU(false,caster,n0,damage)
 
 
 
-call SetControlToUnit(n0,n0,2,"stun")
+if LoadBoolean(HH,id,30) then
+call DM_WKnock(caster,n0,facing)
+else
+call SetControlToUnit(caster,n0,2.,"stun")
+endif
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -272681,7 +273678,7 @@ call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,20,n0)
 call SetUnitAnimationByIndex(caster,10)
 call UnitSpeed(caster,2)
-if GetUnitAbilityLevel(caster,'DME2')>0 then
+if LoadBoolean(HH,id,30) then
 call Death_Master_E_F_Act0(caster,n0,1)
 endif
 set n0=null
@@ -272690,14 +273687,14 @@ if dist>0 then
 call SaveReal(HH,id,8,dist-40)
 call MoveUnit(caster,caster,40,facing)
 call MoveUnit(caster,Dummy,200,facing)
-if GetUnitAbilityLevel(caster,'DME2')>0 then
+if LoadBoolean(HH,id,30) then
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x0,y0,250,Base)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if UnitIsAlive(n0)and IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
-call SetUnitPathing(n0,false)
+call UnitPathingTimed(n0,0.1)
 if SR(x0,y0,GetUnitX(n0),GetUnitY(n0))>100 then
 call MoveUnit(n0,n0,35,facing)
 else
@@ -272719,8 +273716,9 @@ local integer id=GetHandleId(t)
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real facing=Angle2(x0,y0,x1,y1)
-local real damage=(1+GetUnitAbilityLevel(caster,'DMW1'))*GetHeroInt(caster,true)
+local real damage=GetUnitAbilityLevel(caster,'DMW1')*GetHeroInt(caster,true)
 local real dist=SR(x0,y0,x1,y1)-200
+call SaveBoolean(HH,id,30,DM_Empower(caster))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
 call SaveReal(HH,id,8,dist)
@@ -272736,6 +273734,215 @@ endfunction
 
 
 
+// A wall lives only while both ground skull projectiles are still present.
+function DM_QWallTick takes nothing returns nothing
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmC=LoadUnitHandle(HH,dmId,1)
+local unit dmA=LoadUnitHandle(HH,dmId,2)
+local unit dmB=LoadUnitHandle(HH,dmId,3)
+local group dmFx=LoadGroupHandle(HH,dmId,4)
+local group dmG
+local unit dmU
+local real dmX=GetUnitX(dmA)
+local real dmY=GetUnitY(dmA)
+local real dmDx=GetUnitX(dmB)-dmX
+local real dmDy=GetUnitY(dmB)-dmY
+local real dmLen=SquareRoot(dmDx*dmDx+dmDy*dmDy)
+local real dmAlong
+local real dmSide
+if GetUnitTypeId(dmA)==0 or GetUnitTypeId(dmB)==0 or not udg_B or dmLen>600. or dmLen<1. then
+loop
+set dmU=FirstOfGroup(dmFx)
+exitwhen dmU==null
+call GroupRemoveUnit(dmFx,dmU)
+call RemoveUnit(dmU)
+endloop
+call DestroyGroup(dmFx)
+call FlushChildHashtable(HH,dmId)
+call TSE_DestroyTimer(dmT)
+else
+set dmG=CreateGroup()
+call GroupEnumUnitsInRange(dmG,dmX+dmDx*.5,dmY+dmDy*.5,dmLen*.5+100.,Base)
+loop
+set dmU=FirstOfGroup(dmG)
+exitwhen dmU==null
+call GroupRemoveUnit(dmG,dmU)
+if Condition_Base(OwnerOf(dmC),dmU) and not IsUnitType(dmU,UNIT_TYPE_STRUCTURE) then
+set dmAlong=((GetUnitX(dmU)-dmX)*dmDx+(GetUnitY(dmU)-dmY)*dmDy)/dmLen
+set dmSide=((GetUnitX(dmU)-dmX)*(-dmDy)+(GetUnitY(dmU)-dmY)*dmDx)/dmLen
+if dmAlong>=0. and dmAlong<=dmLen and RAbsBJ(dmSide)<70. then
+if dmSide<0. then
+set dmSide=-1.
+else
+set dmSide=1.
+endif
+call SetUnitXY_1(dmU,dmX+dmAlong*dmDx/dmLen-dmSide*85.*dmDy/dmLen,dmY+dmAlong*dmDy/dmLen+dmSide*85.*dmDx/dmLen,false)
+call SetControlToUnit(dmC,dmU,0.15,"stun")
+endif
+endif
+endloop
+call DestroyGroup(dmG)
+endif
+set dmT=null
+set dmC=null
+set dmA=null
+set dmB=null
+set dmU=null
+set dmG=null
+set dmFx=null
+endfunction
+function DM_QWalls takes unit dmC,unit dmA returns nothing
+local integer dmSlot=1
+local unit dmB
+local unit dmFxU
+local timer dmT
+local integer dmId
+local real dmLen
+local real dmAngle
+local real dmPos
+local group dmFx
+local boolean dmPaid=false
+loop
+exitwhen dmSlot>3
+set dmB=LoadUnitHandle(HH,GetHandleId(dmC),StringHash("DMQ_Ground_"+I2S(dmSlot)))
+if dmB!=null and dmB!=dmA and GetUnitTypeId(dmB)!=0 and LoadBoolean(HH,GetHandleId(dmA),StringHash("DMQPaidSoul")) and LoadBoolean(HH,GetHandleId(dmB),StringHash("DMQPaidSoul")) then
+set dmLen=SR(GetUnitX(dmA),GetUnitY(dmA),GetUnitX(dmB),GetUnitY(dmB))
+if dmLen>=1. and dmLen<=600. then
+if not dmPaid then
+set dmPaid=true
+endif
+if dmPaid then
+set dmT=CreateTimer()
+set dmId=GetHandleId(dmT)
+set dmFx=CreateGroup()
+set dmAngle=Angle2(GetUnitX(dmA),GetUnitY(dmA),GetUnitX(dmB),GetUnitY(dmB))
+set dmPos=0.
+loop
+exitwhen dmPos>dmLen
+set dmFxU=CreateUnit(OwnerOf(dmC),'090e',PolX(GetUnitX(dmA),dmPos,dmAngle),PolY(GetUnitY(dmA),dmPos,dmAngle),dmAngle)
+call SetUnitModel(dmFxU,EffectID[2210])
+call UnitSize(dmFxU,1.,1.,1.)
+call UnitSpeed(dmFxU,0.5)
+call UnitColor(dmFxU,65,100,80,80)
+call GroupAddUnit(dmFx,dmFxU)
+set dmPos=dmPos+80.
+endloop
+call SaveUnitHandle(HH,dmId,1,dmC)
+call SaveUnitHandle(HH,dmId,2,dmA)
+call SaveUnitHandle(HH,dmId,3,dmB)
+call SaveGroupHandle(HH,dmId,4,dmFx)
+call TSE_TimerStart(dmT,0.04,true,function DM_QWallTick)
+endif
+endif
+endif
+set dmSlot=dmSlot+1
+endloop
+set dmT=null
+set dmB=null
+set dmFxU=null
+set dmFx=null
+endfunction
+// Only skulls left from this series may follow up; regenerated spent skulls wait for the next series.
+function DM_QNextSkull takes unit dmU returns integer
+local timer dmT=LoadTimerHandle(HH,GetHandleId(dmU),StringHash("DMQChainTimer"))
+local integer dmMask=LoadInteger(HH,GetHandleId(dmT),4)
+local integer dmSlot=1
+if dmT==null then
+return DM_FirstSkull(dmU)
+endif
+loop
+exitwhen dmSlot>3
+if BitwiseAND(dmMask,BitwiseShiftLeft(1,dmSlot-1))!=0 and DM_SkullReady(dmU,dmSlot) then
+set dmT=null
+return dmSlot
+endif
+set dmSlot=dmSlot+1
+endloop
+set dmT=null
+return 0
+endfunction
+function DM_QChainClose takes unit dmU returns nothing
+local timer dmT=LoadTimerHandle(HH,GetHandleId(dmU),StringHash("DMQChainTimer"))
+local real dmCooldown=18.
+if dmT!=null then
+set dmCooldown=RMaxBJ(0.,18.-LoadReal(HH,GetHandleId(dmT),3))
+call RemoveSavedHandle(HH,GetHandleId(dmU),StringHash("DMQChainTimer"))
+call FlushChildHashtable(HH,GetHandleId(dmT))
+call TSE_DestroyTimer(dmT)
+endif
+if GetUnitAbilityLevel(dmU,'DMQ1')>0 then
+call AbilityCD(dmU,'DMQ1',dmCooldown)
+endif
+if GetUnitAbilityLevel(dmU,'DMQ2')>0 then
+call AbilityCD(dmU,'DMQ2',dmCooldown)
+endif
+set dmT=null
+endfunction
+function DM_QChainTick takes nothing returns nothing
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmU=LoadUnitHandle(HH,dmId,1)
+local real dmLeft=LoadReal(HH,dmId,2)-0.05
+local real dmElapsed=LoadReal(HH,dmId,3)+0.05
+local integer dmMask=LoadInteger(HH,dmId,4)
+local integer dmSlot=1
+loop
+exitwhen dmSlot>3
+if not DM_SkullReady(dmU,dmSlot) then
+set dmMask=BitwiseAND(dmMask,BitwiseNOT(BitwiseShiftLeft(1,dmSlot-1)))
+endif
+set dmSlot=dmSlot+1
+endloop
+call SaveReal(HH,dmId,2,dmLeft)
+call SaveReal(HH,dmId,3,dmElapsed)
+call SaveInteger(HH,dmId,4,dmMask)
+if dmLeft<=0.001 or dmElapsed>=17.999 or DM_QNextSkull(dmU)==0 or not udg_B or GetUnitTypeId(dmU)==0 then
+call DM_QChainClose(dmU)
+else
+call BlzEndUnitAbilityCooldown(dmU,'DMQ1')
+if GetUnitAbilityLevel(dmU,'DMQ2')>0 then
+call BlzEndUnitAbilityCooldown(dmU,'DMQ2')
+endif
+endif
+set dmT=null
+set dmU=null
+endfunction
+function DM_QChainCast takes unit dmU returns nothing
+local timer dmT=LoadTimerHandle(HH,GetHandleId(dmU),StringHash("DMQChainTimer"))
+local integer dmMask=0
+local integer dmSlot=1
+if dmT==null then
+loop
+exitwhen dmSlot>3
+if DM_SkullReady(dmU,dmSlot) then
+set dmMask=BitwiseOR(dmMask,BitwiseShiftLeft(1,dmSlot-1))
+endif
+set dmSlot=dmSlot+1
+endloop
+if dmMask==0 then
+call DM_QChainClose(dmU)
+return
+endif
+set dmT=CreateTimer()
+call SaveTimerHandle(HH,GetHandleId(dmU),StringHash("DMQChainTimer"),dmT)
+call SaveUnitHandle(HH,GetHandleId(dmT),1,dmU)
+call SaveInteger(HH,GetHandleId(dmT),4,dmMask)
+call TSE_TimerStart(dmT,0.05,true,function DM_QChainTick)
+endif
+call SaveReal(HH,GetHandleId(dmT),3,0.)
+if DM_QNextSkull(dmU)==0 then
+call DM_QChainClose(dmU)
+else
+// Each actual throw restarts both the follow-up window and its cooldown clock.
+call SaveReal(HH,GetHandleId(dmT),2,5.)
+call BlzEndUnitAbilityCooldown(dmU,'DMQ1')
+if GetUnitAbilityLevel(dmU,'DMQ2')>0 then
+call BlzEndUnitAbilityCooldown(dmU,'DMQ2')
+endif
+endif
+set dmT=null
+endfunction
 function Death_Master_Q1_Act2 takes nothing returns nothing
 local integer id=GetHandleId(GetExpiredTimer())
 local unit caster=LoadUnitHandle(HH,id,1)
@@ -272752,14 +273959,11 @@ local real facing=LoadReal(HH,id,3)
 local integer id_Q=LoadInteger(HH,id,19)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>12 then
-if id_Q==1 then
-call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_X1"))
-call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"))
-else
-call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_X2"))
-call RemoveSavedReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"))
+if time>18 then
+if LoadUnitHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(id_Q)))==Dummy then
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(id_Q)))
 endif
+call RemoveSavedBoolean(HH,GetHandleId(Dummy),StringHash("DMQPaidSoul"))
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -272799,14 +274003,12 @@ call GroupClear(G)
 if dist<=80 or IsTerrainPathable(PolX(x0,50,facing),PolY(y0,50,facing),PATHING_TYPE_FLYABILITY)==true then
 call Death_Master_Poison_Act(caster,x1,y1)
 call Death_Master_Drain_Passive_Aoe(caster,x1,y1,1000)
-if id_Q==1 then
-call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_X1"),x1)
-call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_Y1"),y1)
-else
-call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_X2"),x1)
-call SaveReal(HH,GetHandleId(caster),StringHash("DMQ_Y2"),y1)
+call SaveBoolean(HH,GetHandleId(Dummy),StringHash("DMQPaidSoul"),LoadBoolean(HH,id,30))
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(id_Q)),Dummy)
+if LoadBoolean(HH,id,30) then
+call DM_QWalls(caster,Dummy)
 endif
-call DamageAoeOneTime0_DM(caster,x0,y0,400,damage*2)
+call DamageAoeOneTime0_DM(caster,x0,y0,400,damage)
 call EffectCreateAndMove(true,EffectID[2208],GetRandomReal(0,360),2,0.5,0.5,100,100,100,60,0,Dummy,0,facing)
 call EffectCreateAndMove(true,EffectID[2226],GetRandomReal(0,360),2,0.5,0.5,100,100,100,0,0,Dummy,0,facing)
 call EffectCreateAndMoveAn(true,EffectID[2224],GetRandomReal(0,360),2,2,0.5,100,100,100,60,0,Dummy,0,facing,1)
@@ -272816,8 +274018,8 @@ set time=10
 call SaveReal(HH,id,5,10)
 endif
 endif
-if time>10 then
-if time==10.02 and GetUnitAbilityLevel(caster,'DME2')>0 then
+if time>10 and time<=12 then
+if time==10.02 and LoadBoolean(HH,id,30) then
 call Death_Master_E_Root(caster,x0,y0,400,3)
 endif
 if time==10.02 or time==10.4 or time==10.8 or time==11.2 or time==11.6 then
@@ -272828,7 +274030,7 @@ endif
 set time1=time1-0.02
 if time1<0 then
 set time1=0.2
-call DamageAoeOneTime0_DM(caster,x0,y0,400,damage*0.1)
+call DamageAoeOneTime0_DM(caster,x0,y0,400,damage*0.05)
 endif
 call SaveReal(HH,id,6,time1)
 call GroupClear(G)
@@ -272859,32 +274061,18 @@ local real y0=GetUnitY(caster)
 local real facing=GetUnitFacing(caster)
 local real dist
 local real damage=GetHeroInt(caster,true)
-local integer random_int=0
-local boolean Throw_Skull=false
+set id_Q=DM_QNextSkull(caster)
 call SaveInteger(HH,id,19,id_Q)
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true and id_Q==1 then
-set Throw_Skull=true
-endif
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true and id_Q==2 then
-set Throw_Skull=true
-endif
-if Throw_Skull==true then
-if id_Q==1 then
+if id_Q>0 then
+call SaveBoolean(HH,id,30,DM_Empower(caster))
+set x0=PolX(GetUnitX(caster),200.,GetUnitFacing(caster)+90.-180.*(id_Q-1))
+set y0=PolY(GetUnitY(caster),200.,GetUnitFacing(caster)+90.-180.*(id_Q-1))
 call sound_play("Sound\\DeadMaster\\DeadMaster_Q1.mp3",200)
-set x0=PolX(GetUnitX(caster),200,facing+90)
-set y0=PolY(GetUnitY(caster),200,facing+90)
-if GetUnitAbilityLevel(caster,'DMQ1')>3 then
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',true)
-endif
 call DM_Q_CD(caster,id_Q)
-else
-call sound_play("Sound\\DeadMaster\\DeadMaster_Q2.mp3",200)
-set x0=PolX(GetUnitX(caster),200,facing-90)
-set y0=PolY(GetUnitY(caster),200,facing-90)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ2',false)
-call SetPlayerAbilityAvailable(OwnerOf(caster),'DMQ1',true)
-call DM_Q_CD(caster,id_Q)
+call DM_QChainCast(caster)
+if id_Q==3 then
+set x0=PolX(GetUnitX(caster),200.,GetUnitFacing(caster)+180.)
+set y0=PolY(GetUnitY(caster),200.,GetUnitFacing(caster)+180.)
 endif
 set facing=Angle2(x0,y0,x1,y1)
 call SaveUnitHandle(HH,id,1,caster)
@@ -272894,7 +274082,6 @@ call SetUnitModel(n0,EffectID[1446])
 call UnitSize(n0,0.5,1,1)
 set facing=Angle2(x0,y0,x1,y1)
 set dist=SR(x0,y0,x1,y1)
-set dist=SR(x0,y0,x1,y1)
 call SaveReal(HH,id,8,dist)
 call SaveReal(HH,id,11,x1)
 call SaveReal(HH,id,12,y1)
@@ -272902,7 +274089,9 @@ call SaveReal(HH,id,3,facing)
 call SaveUnitHandle(HH,id,20,n0)
 call TSE_TimerStart(t,0.02,true,function Death_Master_Q1_Act2)
 else
-call TSE_TimerStart(t,0.02,false,function SabracGnull)
+call DM_Refund(caster,GetSpellAbilityId())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(t)
 endif
 set t=null
 endfunction
@@ -272918,7 +274107,7 @@ local integer en
 if GetUnitTypeId(u)=='HDMa' then
     if IsUnitSelected(u,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) then
         set en=LoadInteger(HH,PH(OwnerOf(u)),StringHash("KimiEnergy"))
-        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cff40ff40Soul|r: "+I2S(en/7000)+"  |cff40ff40Energy|r: "+I2S(en))
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cff40ff40Soul|r: "+I2S(LoadInteger(HH,GetHandleId(u),StringHash("DMSouls")))+"  |cff40ff40Energy|r: "+I2S(en))
         call ShowFrame(GetFrameByName("CustomLeaderboard",0), true)
         call SetFrameSize( GetFrameByName("CustomLeaderboard",0), .1775, GetFrameHeight( GetFrameByName("CustomLeaderboardText",0))+0.016)
         call SetFrameTextAlignment( GetFrameByName("CustomLeaderboardText",0), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
@@ -272949,99 +274138,83 @@ call TSE_TimerStart(t,0.2,true,function Death_Master_Board_Act2)
 set t=null
 endfunction
 function Death_Master_Skull_Summon_Act takes nothing returns nothing
-local integer id=GetHandleId(GetExpiredTimer())
-local unit caster=Hero[LoadInteger(HH,id,16)]
-local real facing=GetUnitFacing(caster)
-local unit Dummy1=LoadUnitHandle(HH,id,20)
-local unit Dummy2=LoadUnitHandle(HH,id,21)
-local real x=GetUnitX(caster)
-local real y=GetUnitY(caster)
-local real x1=0
-local real y1=0
-local real x2=0
-local real y2=0
-local real facing2=0
-call SetUnitFacing(Dummy1,facing)
-call SetUnitFacing(Dummy2,facing)
-
-
-if UnitIsAlive(caster) then
-
-set x1=PolX(x,200,facing+90)
-set y1=PolY(y,200,facing+90)
-call SetUnitX(Dummy1,x1)
-call SetUnitY(Dummy1,y1)
-set x2=PolX(x,200,facing-90)
-set y2=PolY(y,200,facing-90)
-call SetUnitX(Dummy2,x2)
-call SetUnitY(Dummy2,y2)
-
+local timer dmT=GetExpiredTimer()
+local integer dmId=GetHandleId(dmT)
+local unit dmU=LoadUnitHandle(HH,dmId,1)
+local integer dmSlot=1
+local unit dmDummy
+local real dmAngle
+local boolean dmDone=GetUnitTypeId(dmU)!='HDMa' or GetUnitAbilityLevel(dmU,'DMQ1')==0
+loop
+exitwhen dmSlot>3
+set dmDummy=LoadUnitHandle(HH,dmId,19+dmSlot)
+if dmDone then
+call RemoveUnit(dmDummy)
 else
-call MoveAoe1(GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),Dummy1,0,GetUnitFacing(caster))
-call MoveAoe1(GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),Dummy2,0,GetUnitFacing(caster))
+set dmAngle=GetUnitFacing(dmU)+90.-180.*(dmSlot-1)
+if dmSlot==3 then
+set dmAngle=GetUnitFacing(dmU)+180.
 endif
-
-
-
-
-
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_1"))==true then
-call SetUnitFlyHeight(Dummy1,GetUnitFlyHeight(caster),0)
+call SetUnitX(dmDummy,PolX(GetUnitX(dmU),200.,dmAngle))
+call SetUnitY(dmDummy,PolY(GetUnitY(dmU),200.,dmAngle))
+call SetUnitFacing(dmDummy,GetUnitFacing(dmU))
+if UnitIsAlive(dmU) and DM_SkullReady(dmU,dmSlot) then
+call SetUnitFlyHeight(dmDummy,GetUnitFlyHeight(dmU),0.)
 else
-call SetUnitFlyHeight(Dummy1,5000,0)
+call SetUnitFlyHeight(dmDummy,5000.,0.)
 endif
-if LoadBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"))==true then
-call SetUnitFlyHeight(Dummy2,GetUnitFlyHeight(caster),0)
-else
-call SetUnitFlyHeight(Dummy2,5000,0)
-endif
-if CheckUnitInvisible(caster)then
-if GetUnitAbilityLevel(Dummy1,'A0A1')==0 then
-call UnitAddAbility(Dummy1,'A0A1')
-call UnitAddAbility(Dummy2,'A0A1')
+if CheckUnitInvisible(dmU) then
+if GetUnitAbilityLevel(dmDummy,'A0A1')==0 then
+call UnitAddAbility(dmDummy,'A0A1')
 endif
 else
-call UnitRemoveAbility(Dummy1,'A0A1')
-call UnitRemoveAbility(Dummy2,'A0A1')
+call UnitRemoveAbility(dmDummy,'A0A1')
 endif
-if GetUnitAbilityLevel(caster,'DMQ1')==0 then
-call RemoveUnit(Dummy1)
-call RemoveUnit(Dummy2)
-//call DisplayTextToPlayer(OwnerOf(caster),0,0,Lng("Черепки исчезли","The skulls are gone")) // 29 окт: сообщение отключено
-call PauseTimer(GetExpiredTimer())
-call FlushChildHashtable(HH,id)
-call TSE_DestroyTimer(GetExpiredTimer())
 endif
-set caster=null
-set Dummy1=null
-set Dummy2=null
+set dmSlot=dmSlot+1
+endloop
+if dmDone then
+call SaveBoolean(HH,GetHandleId(dmU),StringHash("DMSkullOrbit"),false)
+call FlushChildHashtable(HH,dmId)
+call TSE_DestroyTimer(dmT)
+endif
+set dmU=null
+set dmDummy=null
+set dmT=null
 endfunction
 function Death_Master_Skull_Summon takes unit caster0 returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SaveUnitHandle(HH,id,1,caster0)
-//call DisplayTextToPlayer(OwnerOf(caster0),0,0,Lng("Черепки появились","The skulls are back")) // 29 окт: сообщение отключено
-set n0=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
-call SetUnitModel(n0,EffectID[1446])
-call UnitSize(n0,0.5,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call SaveUnitHandle(HH,id,20,n0)
-call SaveUnitHandle(HH,GetHandleId(caster0),StringHash("DM_Skull_1_U"),n0)
-set n0=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),GetUnitFacing(caster0))
-call SetUnitModel(n0,EffectID[1446])
-call UnitSize(n0,0.5,1,1)
-call SetUnitFlyHeight(n0,0,0)
-call SaveUnitHandle(HH,id,21,n0)
-call SaveUnitHandle(HH,GetHandleId(caster0),StringHash("DM_Skull_2_U"),n0)
-call SaveBoolean(HH,GetHandleId(caster0),StringHash("DM_Skull_1"),true)
-call SaveBoolean(HH,GetHandleId(caster0),StringHash("DM_Skull_2"),false)
-
-call SaveInteger(HH,id,16,PId(OwnerOf(caster0)))
-
-
-call TSE_TimerStart(t,0.02,true,function Death_Master_Skull_Summon_Act)
-set caster0=null
-set t=null
+local timer dmT
+local integer dmId
+local integer dmSlot=1
+local unit dmDummy
+if LoadBoolean(HH,GetHandleId(caster0),StringHash("DMSkullOrbit")) then
+return
+endif
+call SaveBoolean(HH,GetHandleId(caster0),StringHash("DMSkullOrbit"),true)
+set dmT=CreateTimer()
+set dmId=GetHandleId(dmT)
+call SaveUnitHandle(HH,dmId,1,caster0)
+loop
+exitwhen dmSlot>3
+set dmDummy=CreateUnit(OwnerOf(caster0),'gb01',GetUnitX(caster0),GetUnitY(caster0),0.)
+call SetUnitModel(dmDummy,EffectID[1446])
+call UnitSize(dmDummy,0.5,1.,1.)
+call SaveUnitHandle(HH,dmId,19+dmSlot,dmDummy)
+call SaveUnitHandle(HH,GetHandleId(caster0),StringHash("DM_Skull_"+I2S(dmSlot)+"_U"),dmDummy)
+call SaveBoolean(HH,GetHandleId(caster0),StringHash("DM_Skull_"+I2S(dmSlot)),dmSlot==1 or (dmSlot==2 and GetUnitAbilityLevel(caster0,'DMQ1')>=4) or (dmSlot==3 and LoadBoolean(HH,GetHandleId(caster0),StringHash("DMThirdUnlocked"))))
+set dmSlot=dmSlot+1
+endloop
+call UnitAddAbility(caster0,'DMQ3')
+call UnitMakeAbilityPermanent(caster0,true,'DMQ3')
+if GetUnitAbilityLevel(caster0,'DMQ1')>=4 then
+call UnitAddAbility(caster0,'DMQ4')
+call UnitMakeAbilityPermanent(caster0,true,'DMQ4')
+endif
+call SetPlayerAbilityAvailable(OwnerOf(caster0),'DMQ1',true)
+call SetPlayerAbilityAvailable(OwnerOf(caster0),'DMQ2',false)
+call TSE_TimerStart(dmT,0.02,true,function Death_Master_Skull_Summon_Act)
+set dmDummy=null
+set dmT=null
 endfunction
 
 
@@ -273056,13 +274229,10 @@ local integer swords=0
 //call SaveReal(HH,id,5,time)
 if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(Dummy),GetUnitY(Dummy))<150 then
 call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,0,caster,0,0)
-set swords=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiFormDur"))
-call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiFormDur"),swords+1)
-set swords=LoadInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"))
-call SaveInteger(HH,PH(OwnerOf(caster)),StringHash("KimiEnergy"),swords+7000)
+// The pickup grants 7000 energy; Drain awards exactly one soul for that gain.
+call Death_Master_Drain(caster,7000.)
 
-call Bof_Heal(caster,caster,GetUnitState(caster,UNIT_STATE_MAX_LIFE)*0.05)
-call SetUnitState(caster,UNIT_STATE_MANA,GetUnitState(caster,UNIT_STATE_MANA)+GetUnitState(caster,UNIT_STATE_MAX_MANA)*0.05)
+
 
 set time=25
 call SaveReal(HH,id,5,time)
@@ -274643,7 +275813,7 @@ endif
 set n0=First_Target_Skill(caster,null,PolX(GetUnitX(caster),120,facing),PolY(GetUnitY(caster),120,facing),150)
 if n0!=null then
 // ПОПАЛ -> хватаем врага, прыгаем высоко, слэм
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call SetUnitX(caster,GetUnitX(n0))
 call SetUnitY(caster,GetUnitY(n0))
 call SaveReal(HH,id,11,GetUnitX(caster))
@@ -274853,7 +276023,7 @@ call SetUnitFacingInstant(caster,facing)
 if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))>130 and time<1.2 then
 call MoveUnit(caster,caster,40,facing)
 else
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call SaveReal(HH,id,3,facing)
 call MapPauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
@@ -275487,7 +276657,7 @@ set n0=FirstOfGroup(G)
 exitwhen n0==null
 call GroupRemoveUnit(G,n0)
 if IsUnitInGroup(n0,gr)==false and Condition_Base(OwnerOf(caster),n0) and GetUnitAbilityLevel(n0,'Avul')==0 then
-if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(n0))==false then
 call GroupAddUnit(gr,n0)
 call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,true)
 call SetControlToUnit(caster,n0,1.5,"stun")
@@ -276095,7 +277265,7 @@ else
     call UnitRemoveAbility(u,'GrGs')
     call UnitRemoveBuffs(u,false,true)
     call SetUnitTimeScale(u,1)
-    call SaveBoolean(HH,idu,ANTITARGET_ABILITY,false)
+    call ReverseEnd(idu)
     if c!=null then
         set a=Atan2(GetUnitY(c)-y,GetUnitX(c)-x)
         call SetUnitFacingInstant(u,a*bj_RADTODEG)
@@ -276173,7 +277343,7 @@ call UnitMakeAbilityPermanent(u,true,'GrGs')
 call MapPauseUnit(u,true)
 call Garp_Sound("Sound\\Music\\mp3Music\\Garp_G_Cast.mp3")
 call EffectCreateAndMove(true,"Garp\\Garp_HandsFX.mdx",GetUnitFacing(u),1.2,1.4,1.0,100,100,100,0,0,u,0,GetUnitFacing(u))
-call SaveBoolean(HH,GetHandleId(u),ANTITARGET_ABILITY,true)
+call ReverseBegin(u)
 call TSE_TimerStart(t,0.04,true,function Garp_G_Act2)
 set p=null
 set t=null
@@ -276459,7 +277629,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(OwnerOf(caster),n0) and UnitIsAlive(n0) then
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(n0))==false then
         call MoveUnit(n0,n0,5,facing)
     else
         call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
@@ -276892,7 +278062,7 @@ if time>0.2 then
 if target==null then
 call MoveUnit(caster,caster,30,facing)
 else
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call MoveUnit(target,target,30,facing)
         call MoveUnit(target,caster,-150,facing)
         call MapPauseUnit(target,true)
@@ -277061,7 +278231,7 @@ if time>0.3 and time<9.8 then
     call SaveReal(HH,id,3,facing)
     call MoveUnit(target,target,-(35+SR(x0,y0,x1,y1)*0.02),facing)
     if SR(x0,y0,x1,y1)<500 and time<9.8 then
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             call SaveReal(HH,id,5,9.8)
             call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\ArrowSqwirl.mdl",caster,"hand right"))
         else
@@ -277173,7 +278343,7 @@ call MoveUnit(caster,caster,35+SR(x0,y0,x1,y1)*0.02,facing)
 call MoveUnit(caster,LoadUnitHandle(HH,id,20),150,facing)
 call SetUnitFacing(LoadUnitHandle(HH,id,20),facing)
 if SR(x0,y0,x1,y1)<250 and time<9.8 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call SaveReal(HH,id,5,9.8)
     else
         call SaveUnitHandle(HH,GetHandleId(target),REVERSE_TARGET,caster)
@@ -277715,7 +278885,7 @@ call SetUnitPathing(caster,false)
 if time>0.2 then
 //Проверка на паузу
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call MapPauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
@@ -278032,7 +279202,7 @@ call MoveUnit(target,caster,-200,facing)
 endif
 //Проверка на паузу
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call MapPauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
@@ -278402,7 +279572,7 @@ call MoveUnit(Dummy,Dummy,45,facing)
 if distance<=50 or SR(GetUnitX( caster ),GetUnitY( caster ),x0,y0)>=4000 then
 
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
     if GetUnitAbilityLevel(target,'Avul')==0 then
         call SaveBoolean(HH,id,26,false)
     else
@@ -280222,7 +281392,7 @@ call SetUnitFacing(caster,facing)
 call SetUnitFacing(target,facing+180)
 //Проверка на паузу
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
 call MapPauseUnit(target,true)
 call SaveBoolean(HH,GetHandleId( target ),TARGET_ABILITY,true)
 else
@@ -280250,7 +281420,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if Condition_Base(OwnerOf(caster),n0) then
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(n0))==false then
         call MoveUnit(n0,n0,12,facing)
     else
         call SaveBoolean(HH,GetHandleId(n0),TARGET_ABILITY,false)
@@ -280383,7 +281553,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if IsUnitInGroup(n0,LoadGroupHandle(HH,id,4))==false and Condition_Base(OwnerOf(caster),n0) then
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(n0))==false then
         if GetUnitAbilityLevel(caster,'LamS')>0 then
             call myCustomDamage(caster,n0,50*damage*1.3+GetUnitState(n0,UNIT_STATE_MAX_LIFE)*0.05*damage*1.3,false,false,null,null,null)
         else
@@ -280521,7 +281691,7 @@ endif
 
 
 
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
         if IsUnitPaused(target)==true then
             //Проверка на паузу
 
@@ -280918,7 +282088,7 @@ set facing=Angle2(x0,y0,x1,y1)
 call SaveReal(HH,id,3,facing)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<300 and time<5 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call MoveUnit(target,caster,-150,facing)
         call SaveReal(HH,id,5,5)
         call UnitSpeed(caster,2)
@@ -282056,7 +283226,7 @@ endif
 call SaveReal(HH,id,6,time1)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<400 and time<5 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call SaveReal(HH,id,5,5)
         set soundplay=SndN(4683) // Sound\Roshi\Roshi_T_R_TP.mp3
         call StartSound(soundplay)
@@ -282357,7 +283527,7 @@ loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
 if UnitIsAlive(n0)and IsUnitEnemy(n0,OwnerOf(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false then
-    if LoadBoolean(HH,GetHandleId(n0),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(n0))==false then
         call SetUnitPathing(n0,false)
         if IsUnitInGroup(n0,gr)==false then
             call GroupAddUnit(gr,n0)
@@ -282938,7 +284108,7 @@ endif
 call SaveReal(HH,id,6,time1)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<400 and time<5 then
-    if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(target))==false then
         call SaveReal(HH,id,5,5)
         call UnitSpeed(caster,1.25)
         call SetUnitAnimationByIndex(caster,17)
@@ -283429,7 +284599,7 @@ local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
 local real damage=0.5*(GetUnitAbilityLevel(caster,'RsE1')+3)*GetHeroInt(caster,true)
-if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+if ReverseActiveId(GetHandleId(target))==false then
     call SetUnitFacing(caster,facing)
     call MapPauseUnit(caster,true)
     call SetUnitInvulnerable(caster,true)
@@ -283664,7 +284834,7 @@ else
         call SaveUnitHandle(HH,id,24,n0)
         call GroupRemoveUnit(gr,n0)
         call DestroyGroup(gr)
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             call PushTimed(LoadUnitHandle(HH,id,21),GetUnitFacing(LoadUnitHandle(HH,id,21))-180,30,25)
             call PushTimed(LoadUnitHandle(HH,id,22),GetUnitFacing(LoadUnitHandle(HH,id,22))-180,30,25)
             call PushTimed(LoadUnitHandle(HH,id,23),GetUnitFacing(LoadUnitHandle(HH,id,23))-180,30,25)
@@ -283734,7 +284904,7 @@ else
     if time==1.5 then
         call EffectCreateAndMove(true,EffectID[1775],GetUnitFacing(LoadUnitHandle(HH,id,24)),1.25,1.25,0.75,100,100,100,0,100,target,200,GetUnitFacing(LoadUnitHandle(HH,id,24))+180)
     endif
-    if time>1.16 and LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+    if time>1.16 and ReverseActiveId(GetHandleId(target))==false then
         if time==1.26 or time==1.36 or time==1.46 or time==1.56 then
             call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,100,target,0,facing)
             call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,360),1.5,1.55,0.75,100,100,100,0,100,target,0,facing)
@@ -283766,7 +284936,7 @@ else
 
         endif
     else
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==true then
+        if ReverseActiveId(GetHandleId(target))==true then
             if LoadUnitHandle(HH,id,20)!=null then
             call RemoveUnit(LoadUnitHandle(HH,id,20))
             call SaveUnitHandle(HH,id,20,null)
@@ -284193,7 +285363,7 @@ if target==null then
     set target=First_Target_Skill(caster,null,x0,y0,200)
     if target!=null then
         call SaveReal(HH,id,5,5)
-        if LoadBoolean(HH,GetHandleId(target),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(target))==false then
             call SaveUnitHandle(HH,id,2,target)
             call MoveUnit(target,caster,-200,facing)
         else
@@ -285011,8 +286181,9 @@ if GetLearnedSkill()==lvl then
 
 call SetUnitAbilityLevel(caster,'DMQ2',GetUnitAbilityLevel(caster,lvl))
 
-if GetUnitAbilityLevel(caster,lvl)>3 then
+if GetUnitAbilityLevel(caster,lvl)==4 then
 call SaveBoolean(HH,GetHandleId(caster),StringHash("DM_Skull_2"),true)
+call UnitAddAbility(caster,'DMQ4')
 endif
 
 
@@ -285030,6 +286201,9 @@ endif
 endif
 
 
+if GetLearnedSkill()=='DMW1' or GetLearnedSkill()=='DMR1' then
+call DM_SoulProgress(caster,LoadInteger(HH,GetHandleId(caster),StringHash("DMSouls")))
+endif
 //DeadMaster5End
 //Kimimaro GPass
 set lvl='AKR1'
@@ -285235,7 +286409,7 @@ function OrochimaruF4Cast takes nothing returns nothing
     local real y=GetUnitY(c)
     local player p=OwnerOf(u)
     local integer ip=PId(p)
-    if GetUnitAbilityLevel(c,'ore3')>0 and LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if GetUnitAbilityLevel(c,'ore3')>0 and ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(u,true)
         call MapPauseUnit(c,true)
         call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,true)
@@ -285253,7 +286427,7 @@ function OrochimaruF4Cast takes nothing returns nothing
         call SaveReal(h,id,2,20)
         call TSE_TimerStart(t,1.0,false,function OrochimaruF4Cast12)
     else
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==true then
+        if ReverseActiveId(GetHandleId(c))==true then
             call SaveUnitHandle(HH,GetHandleId(c),REVERSE_TARGET,u)
         else
             call IssueImmediateOrder(u,"stop")
@@ -285435,7 +286609,7 @@ function OrochimaruFCast2 takes nothing returns nothing
         call SetUnitVertexColor(n,255,255,255,75)
         call UnitApplyTimedLife(n,'BTLF',0.2)
     else
-        if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+        if ReverseActiveId(GetHandleId(c))==false then
             call UnitRemoveAbility(l__d,'ore2')
             call SetUnitTimeScale(l__d,1)
             call MapPauseUnit(c,true)
@@ -286074,7 +287248,7 @@ function OrochimaruECast takes nothing returns nothing
     local real rad=72*bj_DEGTORAD
     local group g=CreateGroup()
     local integer i=0
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         call MapPauseUnit(u,true)
         call SetControlToUnit(c,c,1,"heavystun")
         set n=CreateUnit(p,'or08',x1,y1,0)
@@ -287051,7 +288225,7 @@ function OrochimaruVCast takes nothing returns nothing
     local real y2
     local real a=Atan2(y1-y,x1-x)
     local group g=CreateGroup()
-    if LoadBoolean(HH,GetHandleId(c),ANTITARGET_ABILITY)==false then
+    if ReverseActiveId(GetHandleId(c))==false then
         set x2=x-150*Cos(a)
         set y2=y-150*Sin(a)
         set n=CreateUnit(p,0x6F723432,x2,y2,a*bj_RADTODEG)
@@ -288930,7 +290104,7 @@ set hsfl=null
 set hsfe=null
 endfunction
 function HitReverse takes unit hrvu,unit hrve returns boolean
-if hrvu==null or hrve==null or TSE_ReverseBlocked(hrve) or not LoadBoolean(HH,GetHandleId(hrve),ANTITARGET_ABILITY) then
+if hrvu==null or hrve==null or ReverseBlocked(hrve) or not ReverseActiveId(GetHandleId(hrve)) then
 return false
 endif
 call SaveUnitHandle(HH,GetHandleId(hrve),REVERSE_TARGET,hrvu)
@@ -306292,91 +307466,91 @@ call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
-call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies, restores HP/MP to allies.|nFrom level 20 her abilities leave poison in their area for 5 sec.; it spends energy.|nA slain enemy hero leaves a soul (7000 energy); picking up a soul and every 7000 energy — +5% HP/MP.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077"+"FFFFINT|r|cFF00A5FF every 0.5 sec.|nRestoration: 1.5% HP/MP every 0.5 sec.|nPoison: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAoE: 600|nRange: 2000|nCooldown: 20 sec.|r")
+call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies and restores allied HP/MP using energy. From level 20 her abilities leave poison for 5 sec., consuming energy.|nA fallen enemy hero of level 20 or higher leaves a soul: pic"+"kup grants 1 soul and 7000 energy. Every 7000 energy gained grants a soul without consuming energy and restores 5% HP/MP.|nPermanent soul milestones: 5 - F roots for 1.5 sec.; 10 - W +150 range; 15 - third skull; 20 - R "+"+100 radius. Spending souls never removes unlocked improvements.|n|n|cFF00A5FFDamage: 0.5*|c0077FFFFINT|r every 0.5 sec.|nRestoration: 1.5% HP/MP every 0.5 sec.|nPoison: 0.1*|c0077FFFFINT|r every 0.2 sec.|nAoE: 600|nRang"+"e: 2000|nCooldown: 20 sec.|r")
 call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40 sec. (after it ends)|r")
-call LANG_A('DME1',1,1,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 35 sec. (after it ends)|r")
-call LANG_A('DME1',1,2,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 30 sec. (after it ends)|r")
-call LANG_A('DME1',1,3,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 25 sec. (after it ends)|r")
-call LANG_A('DME1',1,4,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 20 sec. (after it ends)|r")
+call LANG_A('DME1',1,0,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 40 sec. after the effect ends|r")
+call LANG_A('DME1',1,1,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 35 sec. after the effect ends|r")
+call LANG_A('DME1',1,2,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 30 sec. after the effect ends|r")
+call LANG_A('DME1',1,3,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 25 sec. after the effect ends|r")
+call LANG_A('DME1',1,4,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 20 sec. after the effect ends|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"Empowers her for 15 sec. (can be dispelled): attacks deal 0.5*|c0077FFFFINT|r and ensnare for 1 sec., energy gathering +500.|nQ: the skull roots for 3 sec.|nW: chains pull enemies within 1250 and drag them into the area.|nF: chains pull enemies within 1250 to the target.|nR: after 1 sec. another 2*|"+"c0077FFFFINT|r and a 2 sec. root.|nG: the enemy is held while the drain lasts.|nRoots break on teleporting farther than 600.|n|n|cFF00A5FF|nCooldown: 40\\35\\30\\25\\20 sec. (after it ends)|r")
+call LANG_A('DME1',3,0,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,3,"Zugaikotsu/Kyushu, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,4,"Zugaikotsu/Kyushu, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
-call LANG_A('DMF1',1,0,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1200|nCooldown: 6 sec.|r")
-call LANG_A('DMF1',1,1,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1400|nCooldown: 5 sec.|r")
-call LANG_A('DMF1',1,2,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1600|nCooldown: 4 sec.|r")
-call LANG_A('DMF1',1,3,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 1800|nCooldown: 3 sec.|r")
-call LANG_A('DMF1',1,4,"A skull at the target (needs a free one): an ally gets 1.5% HP/MP per sec. and +10% resistance, an enemy is drained of 1.5% HP/MP per sec.; 5 sec.|nPassive: every ability drains 1.5% HP/MP from enemies within 1000 — energy for D, F and G.|n|n|cFF00A5FF|nRange: 2000|nCooldown: 2 sec.|r")
+call LANG_A('DMF1',1,0,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1200|nCooldown: 6 sec.|r")
+call LANG_A('DMF1',1,1,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1400|nCooldown: 5 sec.|r")
+call LANG_A('DMF1',1,2,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1600|nCooldown: 4 sec.|r")
+call LANG_A('DMF1',1,3,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1800|nCooldown: 3 sec.|r")
+call LANG_A('DMF1',1,4,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 2000|nCooldown: 2 sec.|r")
 call LANG_A('DMG1',0,0,"Hikiwatasu/Torinozoku, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
-call LANG_A('DMG1',1,0,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 50 sec.|r")
-call LANG_A('DMG1',1,1,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 45 sec.|r")
-call LANG_A('DMG1',1,2,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 40 sec.|r")
-call LANG_A('DMG1',1,3,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 35 sec.|r")
-call LANG_A('DMG1',1,4,"Lifts and holds the target for 1.5 sec.: drains 15% HP/MP from an enemy, heals an ally (or herself) at the cost of energy.|n|n|cFF00A5FF|nRange: 300|nCooldown: 30 sec.|r")
+call LANG_A('DMG1',1,0,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 50 sec.|r")
+call LANG_A('DMG1',1,1,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 45 sec.|r")
+call LANG_A('DMG1',1,2,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 40 sec.|r")
+call LANG_A('DMG1',1,3,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 35 sec.|r")
+call LANG_A('DMG1',1,4,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 30 sec.|r")
 call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1200|nSkull restores in: 9 sec.|nCooldown: 19 sec.|r")
-call LANG_A('DMQ1',1,1,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1400|nSkull restores in: 8 sec.|nCooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,2,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1600|nSkull restores in: 7 sec.|nCooldown: 17 sec.|r")
-call LANG_A('DMQ1',1,3,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1800|nSkull restores in: 6 sec.|nCooldown: 16 sec.|r")
-call LANG_A('DMQ1',1,4,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 2000|nSkull restores in: 5 sec.|nCooldown: 15 sec.|r")
+call LANG_A('DMQ1',1,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,1,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1400|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1600|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,3,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1800|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,4,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"Throws a skull that drags enemies along and pulls them into the area. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. ("+"2 sec.)|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull restores in: 9\\8\\7\\6\\5 sec.|nCooldown: 19\\18\\17\\16\\15 sec.|r")
+call LANG_A('DMQ1',3,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1200|nSku"+"ll restores in: 9 sec.|nCooldown: 19 sec.|r")
-call LANG_A('DMQ2',1,1,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1400|nSku"+"ll restores in: 8 sec.|nCooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,2,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1600|nSku"+"ll restores in: 7 sec.|nCooldown: 17 sec.|r")
-call LANG_A('DMQ2',1,3,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1800|nSku"+"ll restores in: 6 sec.|nCooldown: 16 sec.|r")
-call LANG_A('DMQ2',1,4,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 2000|nSku"+"ll restores in: 5 sec.|nCooldown: 15 sec.|r")
+call LANG_A('DMQ2',1,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,1,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1400|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1600|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,3,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1800|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,4,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"Second skull: the same throw as Q. She has two skulls (the second from level 4), spent by Q and F; each skull she holds reduces incoming damage by 10%.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF instantly + 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. (2 sec.)|nAoE: 400|nRange: 1200\\140"+"0\\1600\\1800\\2000|nSkull restores in: 9\\8\\7\\6\\5 sec.|nCooldown: 19\\18\\17\\16\\15 sec.|r")
+call LANG_A('DMQ2',3,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,3,"Kyojin no senshi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,4,"Kyojin no senshi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',1,0,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,1,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,2,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,3,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,4,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,0,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 2*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,1,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 3*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,2,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 4*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,3,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 5*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,4,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 6*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',3,0,"A summoned monster strikes the area and stuns. If a Q skull was in the area — another 2*|c0077FFFFINT|r.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF (+2*|r|c0077FFFFINT|r|cFF00A5FF with a skull)|nStun: 2 sec.|nAoE: 600|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',3,0,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 2\\3\\4\\5\\6*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"5 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',1,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration. Control amplifi"+"cation stacks with other effects; overlapping worlds each add 25%.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"After 1 sec. — her own world: inside the zone Dead Master is stronger and enemies weaker; everyone except her enters and leaves the zone slowly.|n|n|cFF00A5FF|nHer in the zone: +100% AS, +1000% MS, +30% magic damage, +30% HP/MP restoration|nEnemies: −30% HP/MP restoration|nAoE: 1500|nDuration: 1"+"5 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',3,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration. Control amplifi"+"cation stacks with other effects; overlapping worlds each add 25%.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,3,"Desusaizu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,4,"Desusaizu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',1,0,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,1,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1200|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,2,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1300|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,3,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1400|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,4,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1500|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,0,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1100 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,1,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 2*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1200 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,2,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 3*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1300 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,3,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 4*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1400 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,4,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 5*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1500 (+150 soul milestone)|nCooldown: 20 sec.|r")
 call LANG_A('DMW1',2,0,"Desusaizu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',3,0,"Dashes to the point: damages and stuns all enemies in the area.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec.|nAoE: 400|nRange: 1100\\1200\\1300\\1400\\1500|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',3,0,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 1\\2\\3\\4\\5*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1100\\1200\\1300\\1400\\1500 (+150 soul milestone)|nCooldown: 20 sec.|r")
 call LANG_A('HtQ1',0,0,"Flash Fist Crush, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
