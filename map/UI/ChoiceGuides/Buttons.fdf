@@ -1,8 +1,11 @@
 // A standalone backdrop: no inherited tile flag or square background size.
 Frame "BACKDROP" "ChoiceGuidePurchaseBackdrop" {
-    BackdropBackground "UI\ChoiceGuides\Purchase.tga",
+    BackdropBackground "UI\ChoiceGuides\Fill.tga",
+    BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+    BackdropCornerSize 0.006,
+    BackdropEdgeFile "UI\Widgets\EscMenu\Human\human-options-button-border-up.blp",
     BackdropBlendAll,
-    BackdropBackgroundInsets 0.0 0.0 0.0 0.0,
+    BackdropBackgroundInsets 0.002 0.002 0.002 0.002,
 }
 
 // Small border and explicit font: the stock editbox's border consumes this short field.
