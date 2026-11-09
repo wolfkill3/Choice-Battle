@@ -194380,7 +194380,7 @@ call TriggerAddCondition(gg_trg_OrihimeT,Condition(function OrihimeTCond))
 call TriggerAddAction(gg_trg_OrihimeT,function OrihimeTCast)
 endfunction
 function TOrihimeCond takes nothing returns boolean
-return GetHeroLevel(oreha)>24 and oreha!=GetTriggerUnit()and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and udg_B==true and UnitIsAlive(oreha) and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H039' 
+return GetHeroLevel(oreha)>24 and oreha!=GetTriggerUnit()and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)and udg_B==true and UnitIsAlive(oreha) and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='H14F' and GetUnitTypeId(GetTriggerUnit())!='H039'
 endfunction
 function TOrihimeCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -274227,7 +274227,7 @@ local real time=LoadReal(HH,id,5)
 local integer swords=0
 //set time=time+0.02
 //call SaveReal(HH,id,5,time)
-if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(Dummy),GetUnitY(Dummy))<150 then
+if GetHeroLevel(caster)>=20 and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(Dummy),GetUnitY(Dummy))<150 then
 call EffectCreateAndMove(true,EffectID[2217],GetRandomReal(0,360),1.5,1.75,1,100,100,100,0,0,caster,0,0)
 // The pickup grants 7000 energy; Drain awards exactly one soul for that gain.
 call Death_Master_Drain(caster,7000.)
@@ -274281,7 +274281,7 @@ endfunction
 
 
 function DeadMasterHeroDieCond takes nothing returns boolean
-return   IsUnitEnemy(GetTriggerUnit(),OwnerOf(   Deadmaster ))==true  and     GetHeroLevel(GetTriggerUnit())>=20 and udg_B==true and UnitIsAlive(Deadmaster) and  Deadmaster!=null  and  LoadBoolean(HH,GetHandleId( Hero[ PId( OwnerOf( GetTriggerUnit() )  )  ] ), StringHash("SabracKillme") ) ==false and OwnerOf( GetTriggerUnit() )!= PlayerV(14) and IsUnitIllusion( GetTriggerUnit() )==false  and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)  and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='HASC'  and GetUnitTypeId(GetTriggerUnit())!='HSaC' and GetUnitTypeId(GetTriggerUnit())!='H039'  
+return   IsUnitEnemy(GetTriggerUnit(),OwnerOf(   Deadmaster ))==true  and     GetHeroLevel(Deadmaster)>=20 and udg_B==true and UnitIsAlive(Deadmaster) and  Deadmaster!=null  and  LoadBoolean(HH,GetHandleId( Hero[ PId( OwnerOf( GetTriggerUnit() )  )  ] ), StringHash("SabracKillme") ) ==false and OwnerOf( GetTriggerUnit() )!= PlayerV(14) and IsUnitIllusion( GetTriggerUnit() )==false  and IsUnitType(GetTriggerUnit(),UNIT_TYPE_HERO)  and GetUnitTypeId(GetTriggerUnit())!='H035' and GetUnitTypeId(GetTriggerUnit())!='Ho13' and GetUnitTypeId(GetTriggerUnit())!='H34X' and GetUnitTypeId(GetTriggerUnit())!='HASC'  and GetUnitTypeId(GetTriggerUnit())!='HSaC' and GetUnitTypeId(GetTriggerUnit())!='H039'  
 endfunction
 function InitTrig_DeadMasterHeroDie takes nothing returns nothing
 local trigger t=CreateTrigger()
