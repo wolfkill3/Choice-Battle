@@ -6580,14 +6580,22 @@ function MUIHandle takes nothing returns integer
         endif
     endfunction
     
+    function DM_ControlMultiplier takes unit target returns real
+        local real bonus=0.
+        if LoadInteger(HH,GetHandleId(target),StringHash("DMTControlStacks"))>0 then
+            set bonus=0.25
+        endif
+        if GetUnitAbilityLevel(target,'IOb5')>0 then
+            set bonus=bonus+0.25
+        endif
+        return 1.+bonus
+    endfunction
+
     function CalculateControlResist takes unit target, real newTime returns real
         local real time=newTime
-        set time=time*(1.+0.25*LoadInteger(HH,GetHandleId(target),StringHash("DMTControlStacks")))
+        set time=time*DM_ControlMultiplier(target)
         if GetUnitAbilityLevel(target,'A1GA')>0 then //Quincy set
             set time=time*1.5
-        endif
-        if GetUnitAbilityLevel(target,'IOb5')>0 then //sode/hakka
-            set time=time*1.25
         endif
         if GetUnitAbilityLevel(target,'A2b5')>0 then //Gajeel
             set time=time*1.15
@@ -307536,9 +307544,9 @@ call LANG_A('DMR1',1,4,"A summoned monster strikes and stuns the area. A ground 
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',3,0,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 2\\3\\4\\5\\6*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration. Control amplifi"+"cation stacks with other effects; overlapping worlds each add 25%.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',1,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration. Control amplifi"+"cation stacks with other effects; overlapping worlds each add 25%.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',3,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
