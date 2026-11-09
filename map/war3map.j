@@ -6586,7 +6586,7 @@ function MUIHandle takes nothing returns integer
             set bonus=0.25
         endif
         if GetUnitAbilityLevel(target,'IOb5')>0 then
-            set bonus=bonus+0.25
+            set bonus=(1.+bonus)*1.25-1.
         endif
         return 1.+bonus
     endfunction
