@@ -31248,6 +31248,33 @@ endfunction
 function DM_CanToggleSouls takes unit dmU returns boolean
 return GetUnitTypeId(dmU)=='HDMa' and GetHeroLevel(dmU)>=20
 endfunction
+function Mayuri_RIcon takes integer mrMode returns string
+if mrMode==3 then
+return "ReplaceableTextures\\CommandButtons\\BTNMayuriRExplosions.blp"
+elseif mrMode==1 then
+return "ReplaceableTextures\\CommandButtons\\BTNMayuriRMana.blp"
+elseif mrMode==2 then
+return "ReplaceableTextures\\CommandButtons\\BTNMayuriRParalysis.blp"
+endif
+return "ReplaceableTextures\\CommandButtons\\BTNMayuriRPoison.blp"
+endfunction
+function Mayuri_RCycle takes player mrPlayer returns nothing
+local integer mrSlot=0
+local unit mrUnit
+local integer mrMode
+loop
+exitwhen mrSlot>11
+set mrUnit=Hero[mrSlot]
+if GetUnitAbilityLevel(mrUnit,'A0CX')>0 and GetUnitTypeId(mrUnit)=='H01L' and not IsUnitPaused(mrUnit) and (mrPlayer==OwnerOf(mrUnit) or GetPlayerAlliance(OwnerOf(mrUnit),mrPlayer,ALLIANCE_SHARED_CONTROL)) then
+set mrMode=ModuloInteger(LoadInteger(HH,GetHandleId(mrUnit),StringHash("MayuriRMode"))+1,4)
+call SaveInteger(HH,GetHandleId(mrUnit),StringHash("MayuriRMode"),mrMode)
+call SetAbilityStringField(GetUnitAbility(mrUnit,'A0CX'),ABILITY_SF_ICON_NORMAL,Mayuri_RIcon(mrMode))
+exitwhen true
+endif
+set mrSlot=mrSlot+1
+endloop
+set mrUnit=null
+endfunction
 function OnButtonChangeAbilityMode takes nothing returns nothing
     local player p = TrigP()
     local integer pHid = PH( p )
@@ -31259,6 +31286,9 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
 
     if buttonId == -1 then
         return
+    endif
+    if but==GetFrameByName("AbilityVarBarIcon",11) then
+        call Mayuri_RCycle(p)
     endif
     // Хит: Ctrl+W — откуда идёт лёд (от Хита / к Хиту / с обоих концов), Ctrl+E — ответ послеобраза (контрудар / исчезновение)
     if but==GetFrameByName( "AbilityVarBarIcon", 9 ) or but==GetFrameByName( "AbilityVarBarIcon", 10 ) then
@@ -49924,6 +49954,27 @@ if (GetUnitTypeId(krsel)=='H02F' or GetUnitTypeId(krsel)=='H05Y') and (GetLocalP
     else
         call ShowFrame(GetFrameByName( "AbilityVarBarIcon", 7 ),false)
     endif
+endif
+set krsel=null
+set krsel=GetUnitSelected(GetLocalPlayer())
+if GetUnitTypeId(krsel)=='H01L' and GetUnitAbilityLevel(krsel,'A0CX')>0 and IsUnitAbilityVisible(krsel,'A0CX') and (GetLocalPlayer()==OwnerOf(krsel) or GetPlayerAlliance(OwnerOf(krsel),GetLocalPlayer(),ALLIANCE_SHARED_CONTROL)) then
+call ShowFrame(GetFrameByName("AbilityVarBarIcon",11),true)
+set krs=Mayuri_RIcon(LoadInteger(HH,GetHandleId(krsel),StringHash("MayuriRMode")))
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",11),krs,0,true)
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",11),krs,1,true)
+call SetFrameTexture(GetFrameByName("AbilityVarBarIcon",11),krs,2,true)
+if LoadInteger(HH,GetHandleId(krsel),StringHash("MayuriRMode"))==3 then
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",11),Lng("Ctrl+R: дополнительные взрывы. Следующая вариация: яд по HP.","Ctrl+R: extra explosions. Next: HP poison."))
+elseif LoadInteger(HH,GetHandleId(krsel),StringHash("MayuriRMode"))==1 then
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",11),Lng("Ctrl+R: выжигание MP. Следующая вариация: паралич. Переключение не меняет уже брошенную бомбу.","Ctrl+R: mana drain. Next: paralysis. Switching does not change a bomb already thrown."))
+elseif LoadInteger(HH,GetHandleId(krsel),StringHash("MayuriRMode"))==2 then
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",11),Lng("Ctrl+R: паралич. Следующая вариация: дополнительные взрывы.","Ctrl+R: paralysis. Next: extra explosions."))
+else
+call SetFrameText(GetFrameByName("AbilityVarBarTooltipText",11),Lng("Ctrl+R: яд по HP. Следующая вариация: выжигание MP.","Ctrl+R: HP poison. Next: mana drain."))
+endif
+call ShowFrame(GetFrameByName("AbilityVarBarTooltip",11),LoadBoolean(HH,GetHandleId(GetFrameByName("AbilityVarBarIcon",11)),BUTTONHOVER))
+call SetFrameSize(GetFrameByName("AbilityVarBarTooltip",11),.24,GetFrameHeight(GetFrameByName("AbilityVarBarTooltipText",11))+.03)
+call SetFrameRelativePoint(GetFrameByName("AbilityVarBarTooltip",11),FRAMEPOINT_CENTER,GetFrameByName("AbilityVarBarIcon",11),FRAMEPOINT_CENTER,-.06,GetFrameHeight(GetFrameByName("AbilityVarBarTooltipText",11))*.5+.02)
 endif
 set krsel=null
 set krsel=GetUnitSelected(GetLocalPlayer())
@@ -73762,16 +73813,6 @@ endif
             call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
         endif
 
-        if GetUnitAbilityLevel(c,'B04L')>0 then
-            set r=GetRandomReal(0,6.28)
-            set newdmg=SR(x,y,x1,y1)
-            set x1=x+newdmg*Cos(r)
-            set y1=y+newdmg*Sin(r)
-            call SetUnitX(c,x1)
-            call SetUnitY(c,y1)
-            call SetUnitFacingInstant(c,Atan2(y-y1,x-x1)*bj_RADTODEG)
-            call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
-        endif
 
         if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) then
             //call SetUnitOwner(UltimateDamage,Player(idc),false)
@@ -85849,40 +85890,146 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_Tempa_Josai,EVENT_PLAYER_UNIT_SPELL_EF
 call TriggerAddCondition(gg_trg_Tempa_Josai,Condition(function Trig_Tempa_Josai_Conditions))
 call TriggerAddAction(gg_trg_Tempa_Josai,function Trig_Tempa_Josai_Actions)
 endfunction
+// Licht Regen uses its own state so movement and Hirenkyaku do not interrupt it.
+function ISH_QRange takes unit iqU returns real
+if GetUnitAbilityLevel(iqU,'IsiT')>0 then
+return 1700.
+endif
+return 1400.
+endfunction
+function ISH_QCanContinue takes unit iqU,unit iqTarget returns boolean
+if not udg_B or not DU2 or not UnitIsAlive(iqU) or not UnitIsAlive(iqTarget) then
+return false
+endif
+if GetUnitAbilityLevel(iqU,'A08W')==0 or IsUnitPaused(iqU) or IsUnitStunned(iqU) or IsUnitHidden(iqU) or GetUnitAbilityLevel(iqU,'Pet1')>0 then
+return false
+endif
+if GetUnitAbilityLevel(iqU,'cbc3')>0 or GetUnitAbilityLevel(iqU,'cbc5')>0 or GetUnitAbilityLevel(iqU,'cbc7')>0 or GetUnitAbilityLevel(iqU,'BNC3')>0 then
+return false
+endif
+if not IsUnitEnemy(iqTarget,OwnerOf(iqU)) or not IsUnitVisible(iqTarget,OwnerOf(iqU)) or IsUnitHidden(iqTarget) then
+return false
+endif
+return SR(GetUnitX(iqU),GetUnitY(iqU),GetUnitX(iqTarget),GetUnitY(iqTarget))<=ISH_QRange(iqU)
+endfunction
+function ISH_QSlow takes unit iqU returns nothing
+local buff iqBuff=GetUnitBuff(iqU,'IsQb')
+if GetUnitAbilityLevel(iqU,'IsiT')>0 then
+if iqBuff!=null then
+call RemoveBuff(iqBuff)
+endif
+else
+if iqBuff==null then
+set iqBuff=CreateBuff('IsQb')
+call SetBuffRealField(iqBuff,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,0.3)
+call SetBuffRealField(iqBuff,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,0.)
+call SetBuffDispellable(iqBuff,false)
+call SetBuffOwner(iqBuff,iqU)
+endif
+call SetBuffRemainingDuration(iqBuff,0.15)
+endif
+set iqBuff=null
+endfunction
+function ISH_QStop takes unit iqU returns nothing
+local timer iqT=LoadTimerHandle(HH,GetHandleId(iqU),StringHash("ISH_QTimer"))
+local integer iqId
+local buff iqBuff
+if iqT==null then
+return
+endif
+set iqId=GetHandleId(iqT)
+// Clear ownership first so a spell event cannot end the same state twice.
+call RemoveSavedHandle(HH,GetHandleId(iqU),StringHash("ISH_QTimer"))
+set iqBuff=GetUnitBuff(iqU,'IsQb')
+if iqBuff!=null then
+call RemoveBuff(iqBuff)
+endif
+if LoadBoolean(h,iqId,4) then
+call UnitEnableAttack(iqU,true,false)
+endif
+call DisableUnitAbility(iqU,'IsQc',true,true)
+if GetUnitAbilityLevel(iqU,'A08W')>0 then
+call EnableUnitAbility(iqU,'A08W',true,true)
+endif
+call FlushChildHashtable(h,iqId)
+call TSE_DestroyTimer(iqT)
+set iqBuff=null
+set iqT=null
+endfunction
+function ISH_QSpell takes nothing returns nothing
+local unit iqU=GetTriggerUnit()
+local integer iqSpell=GetSpellAbilityId()
+if iqSpell!='A08W' and iqSpell!='A08X' then
+call ISH_QStop(iqU)
+endif
+set iqU=null
+endfunction
 function Trig_LaserStrike_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A08W'
 endfunction
 function Trig_LaserStrike_Actions2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit c=LoadUnitHandle(h,id,1)
-local real m=GetUnitState(u,UNIT_STATE_MANA)
-local real damage = GetHeroInt(u,true)*GetUnitAbilityLevel(u,'A08W')*0.04 + GetUnitTotalDamage(u)*0.05
-if GetUnitCurrentOrder(u)==OrderId("channel")and m>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.01 and GetWidgetLife(c)>0 then
-call MissleMove(u,c,40,GetRandomReal(-0.6,0.6), damage, 'e03L', "")
-call SetUnitState(u,UNIT_STATE_MANA,m-GetUnitState(u,UNIT_STATE_MAX_MANA)*0.005)
-call SetUnitFacing(u, AU(u, c)*bj_RADTODEG)
+local timer iqT=GetExpiredTimer()
+local integer iqId=GetHandleId(iqT)
+local unit iqU=LoadUnitHandle(h,iqId,0)
+local unit iqTarget=LoadUnitHandle(h,iqId,1)
+local integer iqShots=LoadInteger(h,iqId,2)
+local real iqMana=GetUnitState(iqU,UNIT_STATE_MANA)
+local real iqCost=GetUnitState(iqU,UNIT_STATE_MAX_MANA)*0.005
+local real iqDamage
+if LoadTimerHandle(HH,GetHandleId(iqU),StringHash("ISH_QTimer"))!=iqT then
+call FlushChildHashtable(h,iqId)
+call TSE_DestroyTimer(iqT)
+elseif not ISH_QCanContinue(iqU,iqTarget) or iqShots>=80 or iqMana<GetUnitState(iqU,UNIT_STATE_MAX_MANA)*0.01 then
+call ISH_QStop(iqU)
 else
-call SetUnitTimeScale(u,1)
-call FlushChildHashtable(h,id)
-call TSE_DestroyTimer(t)
+call ISH_QSlow(iqU)
+set iqDamage=GetHeroInt(iqU,true)*LoadInteger(h,iqId,3)*0.03+GetUnitTotalDamage(iqU)*0.0375
+call MissleMove(iqU,iqTarget,40,GetRandomReal(-0.6,0.6),iqDamage,'e03L',"")
+call SetUnitState(iqU,UNIT_STATE_MANA,iqMana-iqCost)
+set iqShots=iqShots+1
+call SaveInteger(h,iqId,2,iqShots)
+if iqShots>=80 then
+call ISH_QStop(iqU)
 endif
-set t=null
-set c=null
-set u=null
+endif
+set iqT=null
+set iqU=null
+set iqTarget=null
 endfunction
 function Trig_LaserStrike_Actions takes nothing returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-call SetUnitTimeScale(GetTriggerUnit(),4)
-call SaveUnitHandle(h,id,0,GetTriggerUnit())
-call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
-set soundplay=SndN(969) // Sound\Music\mp3Music\IshidaLichRegen.mp3
+local unit iqU=GetTriggerUnit()
+local unit iqTarget=GetSpellTargetUnit()
+local timer iqT
+local integer iqId
+call ISH_QStop(iqU)
+if not ISH_QCanContinue(iqU,iqTarget) then
+set iqU=null
+set iqTarget=null
+return
+endif
+set iqT=CreateTimer()
+set iqId=GetHandleId(iqT)
+call SaveTimerHandle(HH,GetHandleId(iqU),StringHash("ISH_QTimer"),iqT)
+call SaveUnitHandle(h,iqId,0,iqU)
+call SaveUnitHandle(h,iqId,1,iqTarget)
+call SaveInteger(h,iqId,2,0)
+call SaveInteger(h,iqId,3,GetUnitAbilityLevel(iqU,'A08W'))
+call SaveBoolean(h,iqId,4,IsUnitAttackEnabled(iqU))
+call UnitAttackCancel(iqU)
+call UnitEnableAttack(iqU,false,false)
+call DisableUnitAbility(iqU,'A08W',true,true)
+if GetUnitAbilityLevel(iqU,'IsQc')==0 then
+call UnitAddAbility(iqU,'IsQc')
+call UnitMakeAbilityPermanent(iqU,true,'IsQc')
+endif
+call EnableUnitAbility(iqU,'IsQc',true,true)
+call ISH_QSlow(iqU)
+set soundplay=SndN(969)
 call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TSE_TimerStart(t,0.05,true,function Trig_LaserStrike_Actions2)
-set t=null
+call TSE_TimerStart(iqT,0.05,true,function Trig_LaserStrike_Actions2)
+set iqT=null
+set iqU=null
+set iqTarget=null
 endfunction
 function Trig_Strong_Shot_Conditions takes nothing returns boolean
 return GetSpellAbilityId()=='A08Y' and udg_B==true
@@ -91122,66 +91269,132 @@ call TriggerRegisterAnyUnitEventBJ(gg_trg_PSR,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddAction(gg_trg_PSR,function CastPSR)
 call TriggerAddCondition(gg_trg_PSR,Condition(function CondPSR))
 endfunction
+// Repeat T redirects the active bankai without recreating it or resetting its lifetime.
+function Mayuri_TStop takes unit mtCaster returns nothing
+local timer mtT=LoadTimerHandle(HH,GetHandleId(mtCaster),StringHash("MayuriTTimer"))
+local integer mtId
+local group mtGroup
+if mtT==null then
+return
+endif
+set mtId=GetHandleId(mtT)
+call RemoveSavedHandle(HH,GetHandleId(mtCaster),StringHash("MayuriTTimer"))
+call RemoveUnit(LoadUnitHandle(h,mtId,1))
+set mtGroup=LoadGroupHandle(h,mtId,5)
+call DestroyGroup(mtGroup)
+call DisableUnitAbility(mtCaster,'MaTc',true,true)
+if GetUnitAbilityLevel(mtCaster,'A0CV')>0 then
+call EnableUnitAbility(mtCaster,'A0CV',true,true)
+endif
+call FlushChildHashtable(h,mtId)
+call TSE_DestroyTimer(mtT)
+set mtT=null
+set mtGroup=null
+endfunction
+function Mayuri_TDestination takes unit mtCaster,real mtX,real mtY returns nothing
+local timer mtT=LoadTimerHandle(HH,GetHandleId(mtCaster),StringHash("MayuriTTimer"))
+if mtT!=null then
+call SaveReal(h,GetHandleId(mtT),2,RMaxBJ(GetRectMinX(bj_mapInitialPlayableArea)+64.,RMinBJ(GetRectMaxX(bj_mapInitialPlayableArea)-64.,mtX)))
+call SaveReal(h,GetHandleId(mtT),3,RMaxBJ(GetRectMinY(bj_mapInitialPlayableArea)+64.,RMinBJ(GetRectMaxY(bj_mapInitialPlayableArea)-64.,mtY)))
+endif
+set mtT=null
+endfunction
 function KASCond takes nothing returns boolean
-return GetSpellAbilityId()=='A0CV' and udg_B==true
+return (GetSpellAbilityId()=='A0CV' or GetSpellAbilityId()=='MaTc') and udg_B
 endfunction
 function KASCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=LoadReal(h,id,2)
-local real y1=LoadReal(h,id,3)
-local real a=Atan2(y1-y,x1-x)
-local player p=OwnerOf(u)
-local real dmg=GetHeroInt(u,true)*0.5
-if UnitIsAlive(l__d)then
-call UnitApplyTimedLife(CreateUnit(p,'e07Q',x1,y1,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e07R',x+900*Cos(a),y+900*Sin(a),a*bj_RADTODEG),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e07R',x+1100*Cos(a),y+1100*Sin(a),a*bj_RADTODEG),'BTLF',1)
-call GroupEnumUnitsInRange(G,x1,y1,600,Base)
-loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SlowUnit(u,E,0.7,0.7,5,0,false)
-endif
-call GroupRemoveUnit(G,E)
-endloop
+local timer mtT=GetExpiredTimer()
+local integer mtId=GetHandleId(mtT)
+local unit mtCaster=LoadUnitHandle(h,mtId,0)
+local unit mtBody=LoadUnitHandle(h,mtId,1)
+local group mtGroup=LoadGroupHandle(h,mtId,5)
+local unit mtEnemy
+local integer mtTick=LoadInteger(h,mtId,4)+1
+local real mtX=GetUnitX(mtBody)
+local real mtY=GetUnitY(mtBody)
+local real mtDX=LoadReal(h,mtId,2)-mtX
+local real mtDY=LoadReal(h,mtId,3)-mtY
+local real mtDistance=SquareRoot(mtDX*mtDX+mtDY*mtDY)
+local real mtStep=RMinBJ(14.,mtDistance)
+local real mtAngle
+local real mtPX
+local real mtPY
+if not UnitIsAlive(mtBody) or not udg_B or not DU2 or GetUnitAbilityLevel(mtCaster,'A0CV')==0 then
+call Mayuri_TStop(mtCaster)
 else
-call PauseTimer(t)
-call TSE_DestroyTimer(t)
-call FlushChildHashtable(h,id)
+if mtDistance>1. then
+set mtAngle=Atan2(mtDY,mtDX)
+call SetUnitX(mtBody,mtX+mtStep*Cos(mtAngle))
+call SetUnitY(mtBody,mtY+mtStep*Sin(mtAngle))
+call SetUnitFacingInstant(mtBody,mtAngle*bj_RADTODEG)
 endif
-set p=null
-set u=null
-set l__d=null
-set t=null
+call SaveInteger(h,mtId,4,mtTick)
+if ModuloInteger(mtTick,5)==0 then
+set mtAngle=GetUnitFacing(mtBody)*bj_DEGTORAD
+set mtPX=GetUnitX(mtBody)+600.*Cos(mtAngle)
+set mtPY=GetUnitY(mtBody)+600.*Sin(mtAngle)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mtCaster),'e07Q',mtPX,mtPY,GetRandomReal(0,359)),'BTLF',1.)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mtCaster),'e07R',GetUnitX(mtBody)+900.*Cos(mtAngle),GetUnitY(mtBody)+900.*Sin(mtAngle),mtAngle*bj_RADTODEG),'BTLF',1.)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mtCaster),'e07R',GetUnitX(mtBody)+1100.*Cos(mtAngle),GetUnitY(mtBody)+1100.*Sin(mtAngle),mtAngle*bj_RADTODEG),'BTLF',1.)
+call GroupClear(mtGroup)
+call GroupEnumUnitsInRange(mtGroup,mtPX,mtPY,600.,Base)
+loop
+set mtEnemy=FirstOfGroup(mtGroup)
+exitwhen mtEnemy==null
+call GroupRemoveUnit(mtGroup,mtEnemy)
+if Condition_Base(OwnerOf(mtCaster),mtEnemy) then
+call myCustomDamage(mtCaster,mtEnemy,GetHeroInt(mtCaster,true)*0.5,false,false,null,null,null)
+call SlowUnit(mtCaster,mtEnemy,0.4,0.4,5.,0.,false)
+endif
+endloop
+endif
+if mtTick>=250 then
+call Mayuri_TStop(mtCaster)
+endif
+endif
+set mtT=null
+set mtCaster=null
+set mtBody=null
+set mtGroup=null
+set mtEnemy=null
 endfunction
 function KASCast takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local real x1=GetSpellTargetX()
-local real y1=GetSpellTargetY()
-local real a=Atan2(y1-y,x1-x)
-call SaveUnitHandle(h,id,0,u)
-set n=CreateUnit(OwnerOf(u),'e07P',x-200*Cos(a),y-200*Sin(a),a*bj_RADTODEG)
-call SaveUnitHandle(h,id,1,n)
-call UnitApplyTimedLife(n,'BTLF',10)
-call SaveReal(h,id,2,x1)
-call SaveReal(h,id,3,y1)
-set soundplay=SndN(1093) // Sound\Music\mp3Music\MauriBankai.mp3
+local unit mtCaster=GetTriggerUnit()
+local real mtTX=GetSpellTargetX()
+local real mtTY=GetSpellTargetY()
+local real mtX=GetUnitX(mtCaster)
+local real mtY=GetUnitY(mtCaster)
+local real mtAngle=Atan2(mtTY-mtY,mtTX-mtX)
+local timer mtT
+local integer mtId
+local unit mtBody
+if GetSpellAbilityId()=='MaTc' then
+call Mayuri_TDestination(mtCaster,mtTX,mtTY)
+set mtCaster=null
+return
+endif
+call Mayuri_TStop(mtCaster)
+set mtT=CreateTimer()
+set mtId=GetHandleId(mtT)
+set mtBody=CreateUnit(OwnerOf(mtCaster),'e07P',mtX-200.*Cos(mtAngle),mtY-200.*Sin(mtAngle),mtAngle*bj_RADTODEG)
+call SaveTimerHandle(HH,GetHandleId(mtCaster),StringHash("MayuriTTimer"),mtT)
+call SaveUnitHandle(h,mtId,0,mtCaster)
+call SaveUnitHandle(h,mtId,1,mtBody)
+call SaveGroupHandle(h,mtId,5,CreateGroup())
+call SaveInteger(h,mtId,4,0)
+call Mayuri_TDestination(mtCaster,mtTX,mtTY)
+call DisableUnitAbility(mtCaster,'A0CV',true,true)
+if GetUnitAbilityLevel(mtCaster,'MaTc')==0 then
+call UnitAddAbility(mtCaster,'MaTc')
+call UnitMakeAbilityPermanent(mtCaster,true,'MaTc')
+endif
+call EnableUnitAbility(mtCaster,'MaTc',true,true)
+set soundplay=SndN(1093)
 call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TSE_TimerStart(t,0.2,true,function KASCast2)
-set u=null
-set t=null
+call TSE_TimerStart(mtT,0.04,true,function KASCast2)
+set mtCaster=null
+set mtBody=null
+set mtT=null
 endfunction
 function KASInit takes nothing returns nothing
 endfunction
@@ -91465,122 +91678,80 @@ function MinibombCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0CX' and udg_B==true
 endfunction
 function MinibombCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit l__d=LoadUnitHandle(h,id,1)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=LoadReal(h,id,2)
-local real y1=LoadReal(h,id,3)
-local real f=GetUnitFacing(u)
-local player p=OwnerOf(u)
-local real dist=SR(x,y,x1,y1)
-local real a=Atan2(y1-y,x1-x)
-local integer i=GetRandomInt(1,4)
-local real dmg=GetHeroInt(u,true)*(2+GetUnitAbilityLevel(u,'A0CX'))
-local real di
-local real r
-local integer b=0
-local integer lvl=GetUnitAbilityLevel(u,'A0CX')
-if dist>46.00 then
-call SetUnitX(l__d,x+43*Cos(a))
-call SetUnitY(l__d,y+43*Sin(a))
-call SetUnitFacing(l__d,a*bj_RADTODEG)
-call SetUnitFlyHeight(l__d,ParabolaZ(400,LoadReal(h,id,4),dist),0)
+local timer mrT=GetExpiredTimer()
+local integer mrId=GetHandleId(mrT)
+local unit mrCaster=LoadUnitHandle(h,mrId,0)
+local unit mrBomb=LoadUnitHandle(h,mrId,1)
+local real mrX=GetUnitX(mrBomb)
+local real mrY=GetUnitY(mrBomb)
+local real mrTX=LoadReal(h,mrId,2)
+local real mrTY=LoadReal(h,mrId,3)
+local real mrDist=SR(mrX,mrY,mrTX,mrTY)
+local real mrAngle=Atan2(mrTY-mrY,mrTX-mrX)
+local integer mrMode=LoadInteger(h,mrId,5)
+local integer mrRank=LoadInteger(h,mrId,6)
+local real mrDamage=GetHeroInt(mrCaster,true)*(2+mrRank)
+local group mrGroup
+local unit mrTarget
+local integer mrVolley=0
+local real mrScatter
+local real mrScatterAngle
+local unit mrShard
+if not udg_B or not DU2 then
+call RemoveUnit(mrBomb)
+call FlushChildHashtable(h,mrId)
+call TSE_DestroyTimer(mrT)
+elseif mrDist>46. then
+call SetUnitX(mrBomb,mrX+43.*Cos(mrAngle))
+call SetUnitY(mrBomb,mrY+43.*Sin(mrAngle))
+call SetUnitFacing(mrBomb,mrAngle*bj_RADTODEG)
+call SetUnitFlyHeight(mrBomb,ParabolaZ(400.,LoadReal(h,mrId,4),mrDist),0.)
 else
-call UnitApplyTimedLife(CreateUnit(p,'e07M',x1,y1,GetRandomReal(0,359)),'BTLF',4)
-call UnitApplyTimedLife(CreateUnit(p,'e07M',x1,y1,GetRandomReal(0,359)),'BTLF',4)
-call UnitApplyTimedLife(CreateUnit(p,'e07N',x1,y1,GetRandomReal(0,359)),'BTLF',4)
-call UnitApplyTimedLife(CreateUnit(p,'e07Q',x1,y1,GetRandomReal(0,359)),'BTLF',1)
-call UnitApplyTimedLife(CreateUnit(p,'e07Q',x1,y1,GetRandomReal(0,359)),'BTLF',1)
-call GroupEnumUnitsInRange(G,x1,y1,500,Base)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mrCaster),'e07M',mrTX,mrTY,GetRandomReal(0,359)),'BTLF',4.)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mrCaster),'e07N',mrTX,mrTY,GetRandomReal(0,359)),'BTLF',4.)
+call UnitApplyTimedLife(CreateUnit(OwnerOf(mrCaster),'e07Q',mrTX,mrTY,GetRandomReal(0,359)),'BTLF',1.)
+set mrGroup=CreateGroup()
+call GroupEnumUnitsInRange(mrGroup,mrTX,mrTY,500.,Base)
 loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SetControlToUnit(E,E, 1, "stun")
+set mrTarget=FirstOfGroup(mrGroup)
+exitwhen mrTarget==null
+call GroupRemoveUnit(mrGroup,mrTarget)
+if Condition_Base(OwnerOf(mrCaster),mrTarget) then
+call myCustomDamage(mrCaster,mrTarget,mrDamage,false,false,null,null,null)
+if mrMode==2 then
+call SetControlToUnit(mrCaster,mrTarget,3.,"stun")
+else
+call SetControlToUnit(mrCaster,mrTarget,1.,"stun")
 endif
-call GroupRemoveUnit(G,E)
-endloop
-if GetRandomIntMem(0,100)<=5 then
-call TextTagFull("Everything!",u,250,255,50,1,OwnerOf(u),0.028)
-set i=-1
-set b=0
-loop
-set dist=GetRandomReal(-450,450)
-set r=GetRandomReal(0,7)
-set n=CreateUnit(p,'e07S',x1,y1,a)
-call MauryMissleFly(n,30,GetRandomReal(-1,1),x1+dist*Cos(r),y1+dist*Sin(r),250,350,GetHeroInt(u,true))
-exitwhen b>4+lvl
-set b=b+1
-endloop
-call GroupEnumUnitsInRange(G,x1,y1,500,Base)
-loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call PoisonDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.07+0.03*lvl),10,"war3mapImported\\DeathFumesBreathDamage.mdx")
-call SetUnitState(E,UNIT_STATE_MANA,GetUnitState(E,UNIT_STATE_MANA)-GetUnitState(E,UNIT_STATE_MAX_MANA)*(0.06+0.06*lvl))
-call SetControlToUnit(E,E, 3, "stun")
+if mrMode==0 then
+call PoisonDamage(mrCaster,mrTarget,GetUnitState(mrTarget,UNIT_STATE_MAX_LIFE)*(0.07+0.03*mrRank),10.,"war3mapImported\\DeathFumesBreathDamage.mdx")
+elseif mrMode==1 then
+call SetUnitState(mrTarget,UNIT_STATE_MANA,RMaxBJ(0.,GetUnitState(mrTarget,UNIT_STATE_MANA)-GetUnitState(mrTarget,UNIT_STATE_MAX_MANA)*(0.06+0.06*mrRank)))
 endif
-call GroupRemoveUnit(G,E)
-endloop
-elseif i==1 then
-call TextTagFull("Poison",u,200,255,155,1,OwnerOf(u),0.028)
-call GroupEnumUnitsInRange(G,x1,y1,500,Base)
-loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call PoisonDamage(u,E,GetUnitState(E,UNIT_STATE_MAX_LIFE)*(0.07+0.03*lvl),10,"war3mapImported\\DeathFumesBreathDamage.mdx")
 endif
-call GroupRemoveUnit(G,E)
 endloop
-elseif i==2 then
-call TextTagFull("Mana Loss",u,100,155,255,1,OwnerOf(u),0.028)
-call GroupEnumUnitsInRange(G,x1,y1,500,Base)
+call DestroyGroup(mrGroup)
+if mrMode==3 then
+// Preserve the old extra-explosion volley: rank + 4 fragments.
 loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call SetUnitState(E,UNIT_STATE_MANA,GetUnitState(E,UNIT_STATE_MANA)-GetUnitState(E,UNIT_STATE_MAX_MANA)*(0.06+0.06*lvl))
-endif
-call GroupRemoveUnit(G,E)
-endloop
-elseif i==3 then
-call TextTagFull("Stun",u,150,155,155,1,OwnerOf(u),0.028)
-call GroupEnumUnitsInRange(G,x1,y1,500,Base)
-loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call SetControlToUnit(E,E, 3, "stun")
-endif
-call GroupRemoveUnit(G,E)
-endloop
-elseif i==4 then
-call TextTagFull("Missiles",u,230,155,155,1,OwnerOf(u),0.028)
-set b=0
-loop
-set di=GetRandomReal(-450,450)
-set r=GetRandomReal(0,7)
-set n=CreateUnit(p,'e07S',x1,y1,a)
-call MauryMissleFly(n,30,GetRandomReal(-1,1),x1+di*Cos(r),y1+di*Sin(r),250,350,GetHeroInt(u,true))
-exitwhen b>2+lvl
-set b=b+1
+exitwhen mrVolley>=mrRank+4
+set mrScatter=GetRandomReal(-450.,450.)
+set mrScatterAngle=GetRandomReal(0.,7.)
+set mrShard=CreateUnit(OwnerOf(mrCaster),'e07S',mrTX,mrTY,mrAngle)
+call MauryMissleFly(mrShard,30.,GetRandomReal(-1.,1.),mrTX+mrScatter*Cos(mrScatterAngle),mrTY+mrScatter*Sin(mrScatterAngle),250.,350.,GetHeroInt(mrCaster,true))
+set mrVolley=mrVolley+1
 endloop
 endif
-call RemoveUnit(l__d)
-call FlushChildHashtable(h,id)
-call PauseTimer(t)
-call TSE_DestroyTimer(t)
+call RemoveUnit(mrBomb)
+call FlushChildHashtable(h,mrId)
+call TSE_DestroyTimer(mrT)
 endif
-set l__d=null
-set u=null
-set t=null
-set p=null
+set mrT=null
+set mrCaster=null
+set mrBomb=null
+set mrGroup=null
+set mrTarget=null
+set mrShard=null
 endfunction
 function MinibombCast takes nothing returns nothing
 local unit u=GetSpellAbilityUnit()
@@ -91596,6 +91767,8 @@ call SaveUnitHandle(h,id,1,CreateUnit(OwnerOf(u),'e07S',x,y,f))
 call SaveReal(h,id,2,x1)
 call SaveReal(h,id,3,y1)
 call SaveReal(h,id,4,SR(x,y,x1,y1))
+call SaveInteger(h,id,5,LoadInteger(HH,GetHandleId(u),StringHash("MayuriRMode")))
+call SaveInteger(h,id,6,GetUnitAbilityLevel(u,'A0CX'))
 set soundplay=SndN(1101) // Sound\Music\mp3Music\MayuriR.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -97262,6 +97435,8 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
 local integer i=0
+local texttag ryTag=LoadTextTagHandle(HH,id,1)
+local string ryDots=""
 local integer idu=GetHandleId(u)
 local integer strh=TIME_HASH
 local integer hs=LoadInteger(HH,idu,SH_d)
@@ -97269,7 +97444,16 @@ local real f=0
 local real time=LoadReal(HH,idu,strh)+0.04
 local integer ids=0
 local real ml=GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.05
-set txt=LoadTextTagHandle(HH,id,1)
+if GetUnitTypeId(u)!='H00H' or GetUnitAbilityLevel(u,'A0HC')==0 then
+call DestroyTextTag(ryTag)
+call RemoveSavedBoolean(HH,idu,StringHash("RyoCambioTick"))
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(t)
+set ryTag=null
+set t=null
+set u=null
+return
+endif
 if IsUnitPaused(u)==false and GetUnitAbilityLevel(u,'Pet1')==0 then
 call SaveReal(HH,idu,strh,time)
 call HealTextTag(u,u,(GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.0025)*hs*0.04*myCustomHeal2(u,1),"HealthRes")
@@ -97296,39 +97480,33 @@ if hs>0 then
 call SaveInteger(HH,idu,SH_d,hs-1)
 endif
 endif
-call SetTextTagPos(txt,GetUnitX(u)-190*Cos(f),GetUnitY(u)-190*Sin(f),GetUnitFlyHeight(u)+100+(10.5*0.08)/10)
+call SetTextTagPos(ryTag,GetUnitX(u)-190*Cos(f),GetUnitY(u)-190*Sin(f),GetUnitFlyHeight(u)+100+(10.5*0.08)/10)
 if GetUnitAbilityLevel(u,'A1A3')>0 then
 if GetUnitAbilityLevel(u,'A0HE')==0 and GetUnitAbilityLevel(u,'A0HF')==0 and GetUnitAbilityLevel(u,'A0HG')==0 then
 call UnitAddAbility(u,ids)
 endif
-if GetLocalPlayer()==OwnerOf(u)then
-call SetTextTagVisibility(txt,true)
-endif
+
 else
 call SaveInteger(HH,idu,SH_d,0)
 call UnitRemoveAbility(u,'A0HE')
 call UnitRemoveAbility(u,'A0HF')
 call UnitRemoveAbility(u,'A0HG')
-call SetTextTagVisibility(txt,false)
-call DestroyTextTag(txt)
+
 endif
-if hs<10 then
+// The text tag lives as long as the learned passive, not just the current T.
 loop
 exitwhen i>=10
-if i<hs then
-call SetTextTagText(txt,s,(10.5*0.08)/10)
-set s=s+"|cFFFFFF00•|r"
+if i<IMinBJ(10,IMaxBJ(0,hs)) then
+set ryDots=ryDots+"|cFFFFFF00•|r"
 else
-set s=s+"•"
-call SetTextTagText(txt,s,(10.5*0.08)/10)
+set ryDots=ryDots+"|cff777777•|r"
 endif
 set i=i+1
 endloop
-else
-set s="|cFFFFFF00••••••••••|r"
-call SetTextTagText(txt,s,(10.5*0.08)/10)
-endif
-set s=null
+call SetTextTagText(ryTag,ryDots,(10.5*0.08)/10)
+call SetTextTagVisibility(ryTag,GetUnitAbilityLevel(u,'A1A3')>0 and UnitIsAlive(u) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(u)) and IsUnitVisible(u,GetLocalPlayer()))
+set ryTag=null
+set ryDots=null
 set t=null
 set u=null
 endfunction
@@ -97339,7 +97517,16 @@ local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local integer i=1
 local integer idu=GetHandleId(u)
+if LoadBoolean(HH,idu,StringHash("RyoCambioTick")) then
+call TSE_DestroyTimer(t)
+set t=null
+set u=null
+set p=null
+return
+endif
+call SaveBoolean(HH,idu,StringHash("RyoCambioTick"),true)
 set txt=CreateTextTag()
+call SetTextTagPermanent(txt,true)
 set s="•"
 loop
 exitwhen i>=11
@@ -97348,9 +97535,7 @@ set s=s+"•"
 set i=i+1
 endloop
 call SetTextTagVisibility(txt,false)
-if GetLocalPlayer()==p then
-call SetTextTagVisibility(txt,true)
-endif
+
 call SetTextTagPosUnit(txt,u,(10.5*0.08)/10)
 call SetTextTagColor(txt,255,255,255,255)
 call SaveUnitHandle(HH,id,0,u)
@@ -140479,6 +140664,7 @@ call SaveStr(HH,SH_ShnChanO,'IcW2',"channel")
 call SaveInteger(HH,SH_ShnChanT,'IcW2',1)
 call SaveStr(HH,SH_ShnChanO,'IcW3',"cripple")
 call SaveInteger(HH,SH_ShnChanT,'IcW3',1)
+call SaveStr(HH,SH_ShnChanO,'IsQc',"berserk")
 call SaveStr(HH,SH_ShnChanO,'JAE2',"cripple")
 call SaveStr(HH,SH_ShnChanO,'JAG1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'JAG1',2)
@@ -140591,6 +140777,8 @@ call SaveInteger(HH,SH_ShnChanT,'MaR2',2)
 call SaveStr(HH,SH_ShnChanO,'MaT1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'MaT1',2)
 call SaveStr(HH,SH_ShnChanO,'MaT2',"cyclone")
+call SaveStr(HH,SH_ShnChanO,'MaTc',"farsight")
+call SaveInteger(HH,SH_ShnChanT,'MaTc',2)
 call SaveStr(HH,SH_ShnChanO,'MadD',"chainlightning")
 call SaveStr(HH,SH_ShnChanO,'MadR',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'MadR',2)
@@ -142718,6 +142906,7 @@ call SaveStr(HH,SH_AbOrd,'IcW2',"channel")
 call SaveStr(HH,SH_AbOrd,'IcW3',"cripple")
 call SaveStr(HH,SH_AbOrd,'IcW4',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'InE1',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'IsQc',"berserk")
 call SaveStr(HH,SH_AbOrd,'JAE2',"cripple")
 call SaveStr(HH,SH_AbOrd,'JAG1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'JND1',"blackarrow")
@@ -142792,6 +142981,7 @@ call SaveStr(HH,SH_AbOrd,'MaQ1',"channel")
 call SaveStr(HH,SH_AbOrd,'MaR2',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'MaT1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'MaT2',"cyclone")
+call SaveStr(HH,SH_AbOrd,'MaTc',"farsight")
 call SaveStr(HH,SH_AbOrd,'MadD',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'MadR',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'MadW',"charm")
@@ -288755,6 +288945,9 @@ call TriggerAddAction(t,function RokuoganCast)
 call TriggerAddCondition(t,Condition(function RokuoganCond))
 elseif ty=='H018' then
 set t=CreateTrigger()
+call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_CHANNEL,null)
+call TriggerAddAction(t,function ISH_QSpell)
+set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddCondition(t,Condition(function Trig_LaserStrike_Conditions))
 call TriggerAddAction(t,function Trig_LaserStrike_Actions)
@@ -295707,13 +295900,13 @@ call LANG_A('A083',0,1,"Rain-Storm Shot, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A083',0,2,"Rain-Storm Shot, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('A083',0,3,"Rain-Storm Shot, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A083',0,4,"Rain-Storm Shot, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A083',1,0,"Gokudera fires hurricane flames and rainflames, dealing damage and slowing for 6 seconds.|n|n|cFF00A5FF|nDamage: 50 + 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500")
-call LANG_A('A083',1,1,"Gokudera fires hurricane flames and rainflames, dealing damage and slowing for 6 seconds.|n|n|cFF00A5FF|nDamage: 50 + 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500")
-call LANG_A('A083',1,2,"Gokudera fires hurricane flames and rainflames, dealing damage and slowing for 6 seconds.|n|n|cFF00A5FF|nDamage: 50 + 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500")
-call LANG_A('A083',1,3,"Gokudera fires hurricane flames and rainflames, dealing damage and slowing for 6 seconds.|n|n|cFF00A5FF|nDamage: 50 + 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500")
-call LANG_A('A083',1,4,"Gokudera fires hurricane flames and rainflames, dealing damage and slowing for 6 seconds.|n|n|cFF00A5FF|nDamage: 50 + 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500")
+call LANG_A('A083',1,0,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 2*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 sec.|r")
+call LANG_A('A083',1,1,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 3*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 sec.|r")
+call LANG_A('A083',1,2,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 4*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 sec.|r")
+call LANG_A('A083',1,3,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 5*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 sec.|r")
+call LANG_A('A083',1,4,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 6*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 sec.|r")
 call LANG_A('A083',2,0,"Storm Shot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A083',3,0,"Gokudera fires hurricane flames and rain flames, dealing damage and slowing for 6 seconds|n|n|cFF00A5FFDamage: 50+3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1500|nCooldown: 20 seconds|r")
+call LANG_A('A083',3,0,"|nGokudera fires two homing projectiles at the target. They deal one combined hit and slow movement.|n|n|cFF00A5FF|nDamage: 50 + 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF|nMS slow: 50% for 6 sec.|nRange: 1600|nCooldown: 20 s"+"ec.|r")
 call LANG_A('A084',0,0,"Storm Rocket, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A084',0,1,"Storm Rocket, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A084',0,2,"Storm Rocket, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -295938,17 +296131,21 @@ call LANG_A('A08W',0,1,"Licht Regen, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,2,"Licht Regen, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,3,"Licht Regen, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,4,"Licht Regen, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',1,0,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 4% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
-call LANG_A('A08W',1,1,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 8% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
-call LANG_A('A08W',1,2,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 12% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
-call LANG_A('A08W',1,3,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 16% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
-call LANG_A('A08W',1,4,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 20% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
+call LANG_A('A08W',1,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 3%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
+call LANG_A('A08W',1,1,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 6%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
+call LANG_A('A08W',1,2,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 9%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
+call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 12"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 15"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('IsQc',0,0,"Cancel Licht Regen (|cffffcc00Q|r)")
+call LANG_A('IsQc',1,0,"Stops firing and restores normal Q. Its cooldown continues from the start of the barrage.")
+call LANG_B('IsQb',0,"Licht Regen")
+call LANG_B('IsQb',1,"Movement speed is reduced by 30% while firing.")
 call LANG_A('A08W',2,0,"Licht Regen, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',3,0,"Ishida quickly fires multiple arrows at the enemy, each dealing moderate damage.|n|n|cFFFF0000Channeling|r|n|n|cFF00A5FF|nDamage: 5% autoattack + 4%\\8%\\12%\\16%\\20% of |c0077FFFFINT|r|cFF00A5FF. for every arrow|nMana cost: 0.5% per shot.|nDuration: 4 sec.|nCooldown: 20 seconds|r")
+call LANG_A('A08W',3,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 3\\"+"6\\9\\12\\15% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown:"+" 20 sec.|r")
 call LANG_A('A08X',0,0,"Hierenhiayko, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
-call LANG_A('A08X',1,0,"Teleportation over a short distance, allowing you to instantly approach the enemy or leave the battlefield.|n|n|n|cFF00A5FF|nCooldown: 10s |r")
+call LANG_A('A08X',1,0,"|nIshida teleports a short distance. Does not interrupt Licht Regen (Q) if the target remains within the break distance after teleporting.|n|n|cFF00A5FF|nCooldown: 10 sec.|r")
 call LANG_A('A08X',2,0,"Shunpo, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
-call LANG_A('A08X',3,0,"Teleportation over a short distance, allowing you to instantly approach the enemy or leave the battlefield.")
+call LANG_A('A08X',3,0,"|nIshida teleports a short distance. Does not interrupt Licht Regen (Q) if the target remains within the break distance after teleporting.|n|n|cFF00A5FF|nCooldown: 10 sec.|r")
 call LANG_A('A08Y',0,0,"Seele Schneider, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A08Y',0,1,"Seele Schneider, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A08Y',0,2,"Seele Schneider, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -296753,21 +296950,23 @@ call LANG_A('A0CU',0,0,"Nikushibuki, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('A0CU',1,0,"Kurotsuchi Mayuri becomes invisible and creates a doppelganger of himself, which creates the effect of the death of the hero.|n|nAlso: passively poisons all enemies within a 400 radius when the hero dies, dealing damage to them.|n|n|cFF00A5FFDuration: 10 sec.|nDamage: |c00FFFF66AllStat|r|cFF00A5FF*5"+"|nCooldown: 30 seconds|r")
 call LANG_A('A0CU',2,0,"Nikushibuki, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CU',3,0,"Itachi creates a clone that cannot be distinguished from him, and he himself becomes invisible to opponents.|nThe clone explodes after 5 seconds and deals damage, if the clone is killed prematurely, it will not explode.|n|n|cFF00A5FFDuration: 5 sec.|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF"+"|nCooldown: 20\\17\\15\\12\\10 sec|r")
-call LANG_A('A0CV',1,0,"Kurotsuchi Mayuri transforms into a Bankai, summoning his Zanpakutō, which poisons all enemies in the target area with a powerful poison.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per second.|nDuration: 10 sec.|nSlow: 70%.|nCooldown: 25 seconds|r")
+call LANG_A('A0CV',1,0,"|nMayuri summons his zanpakuto for 10 sec. It moves toward the chosen point and sprays poison ahead.|n• While active, T becomes T2: use it again to change the destination without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nSummon movement speed: 350|nPoison area center: 600 ahead of the summon|nAoE: 600|nSummon range: 1300|nDuration: 1"+"0 sec.|nMana cost: 700 / 0 for T2|nCooldown: 25 sec.|r")
+call LANG_A('MaTc',0,0,"Direct zanpakuto (|cffffcc00T|r)")
+call LANG_A('MaTc',1,0,"The zanpakuto moves to the chosen point and sprays poison ahead. Does not extend its duration or spend MP.")
 call LANG_A('A0CV',2,0,"Konjiki Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0CV',3,0,"Kurotsuchi Mayuri transforms into a Bankai, summoning his Zanpakutō, which poisons all enemies in the target area with a powerful poison.|n|n|cFF00A5FF|nDamage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF per second.|nDuration: 10 sec.|nSlow: 70%.|nCooldown: 25 seconds|r")
+call LANG_A('A0CV',3,0,"|nMayuri summons his zanpakuto for 10 sec. It moves toward the chosen point and sprays poison ahead.|n• While active, T becomes T2: use it again to change the destination without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nSummon movement speed: 350|nPoison area center: 600 ahead of the summon|nAoE: 600|nSummon range: 1300|nDuration: 1"+"0 sec.|nMana cost: 700 / 0 for T2|nCooldown: 25 sec.|r")
 call LANG_A('A0CX',0,0,"Mini Bomb, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,1,"Mini Bomb, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,2,"Mini Bomb, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,3,"Mini Bomb, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,4,"Mini Bomb, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('A0CX',1,0,"Kurotsuchi Mayuri throws a bomb at the specified area, the bomb, in addition to damage, has a random effect: 1) Infects the enemy with poison that deals 10% of Max HP. 2) Infects the enemy with poison that absorbs the enemy's mana by 12%. 3) Infects the enemy with paralyzing poison for 3 sec. 4)The "+"bomb explodes 3 times, dealing 1*|r|c0077FFFFINT|r 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
-call LANG_A('A0CX',1,1,"Kurotsuchi Mayuri throws a bomb at the specified area, the bomb, in addition to damage, has a random effect: 1) Infects the enemy with poison that deals 13% of Max HP. 2) Infects the enemy with poison that absorbs the enemy's mana by 18%. 3) Infects the enemy with paralyzing poison for 3 sec. 4)The "+"bomb explodes 4 times, dealing 1*|r|c0077FFFFINT|r 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
-call LANG_A('A0CX',1,2,"Kurotsuchi Mayuri throws a bomb at the specified area, the bomb, in addition to damage, has a random effect: 1) Infects the enemy with poison that deals 16% of Max HP. 2) Infects the enemy with poison that absorbs the enemy's mana by 24%. 3) Infects the enemy with paralyzing poison for 3 sec. 4)The "+"bomb explodes 5 times, dealing 1*|r|c0077FFFFINT|r 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
-call LANG_A('A0CX',1,3,"Kurotsuchi Mayuri throws a bomb at the specified area, the bomb, in addition to damage, has a random effect: 1) Infects the enemy with poison that deals 19% of Max HP. 2) Infects the enemy with poison that absorbs the enemy's mana by 30%. 3) Infects the enemy with paralyzing poison for 3 sec. 4)The "+"bomb explodes 6 times, dealing 1*|r|c0077FFFFINT|r 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
-call LANG_A('A0CX',1,4,"Kurotsuchi Mayuri throws a bomb at the specified area, the bomb, in addition to damage, has a random effect: 1) Infects the enemy with poison that deals 22% of Max HP. 2) Infects the enemy with poison that absorbs the enemy's mana by 36%. 3) Infects the enemy with paralyzing poison for 3 sec. 4)The "+"bomb explodes 7 times, dealing 1*|r|c0077FFFFINT|r 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
+call LANG_A('A0CX',1,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 10% of maximum HP over 5 sec.|nMana drain: 12% of maximum MP|nFragments: 5, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 100|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,1,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 4*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 13% of maximum HP over 5 sec.|nMana drain: 18% of maximum MP|nFragments: 6, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 115|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,2,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 16% of maximum HP over 5 sec.|nMana drain: 24% of maximum MP|nFragments: 7, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 130|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,3,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 6*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 19% of maximum HP over 5 sec.|nMana drain: 30% of maximum MP|nFragments: 8, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 145|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,4,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 7*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 22% of maximum HP over 5 sec.|nMana drain: 36% of maximum MP|nFragments: 9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 160|n"+"Cooldown: 25 sec.|r")
 call LANG_A('A0CX',2,0,"Mini Bomb, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('A0CX',3,0,"Kurotsuchi Mayuri throws a bomb at the target area, the bomb has a random effect: 1) Infects the enemy with poison that deals 10%\\13%\\16%\\19%\\22% of Max HP. 2)Infects the enemy with a poison that absorbs the enemy's mana by 12%\\18%\\24%\\30%\\36%. 3) Infects the enemy with paralyzing poison for"+" 3 sec. 4)The bomb explodes 3\\4\\5\\6\\7 times, dealing 1*|r|c0077FFFFINT|r|cFF00A5FF 5)All effects at once 5%.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1250|nAoE: 500|nCooldown: 25 seconds|r")
+call LANG_A('A0CX',3,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3\\4\\5\\6\\7*|r|c0077FFFF"+"INT|r|cFF00A5FF|nPoison damage: 10\\13\\16\\19\\22% of maximum HP over 5 sec.|nMana drain: 12\\18\\24\\30\\36% of maximum MP|nFragments: 5\\6\\7\\8\\9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|"+"nRange: 1250|nAoE: 500|nMana cost: 100\\115\\130\\145\\160|nCooldown: 25 sec.|r")
 call LANG_A('A0CZ',0,0,"Change Weapon, (|cffffcc00F|r)")
 call LANG_A('A0CZ',1,0,"Dante changes weapons")
 call LANG_A('A0CZ',4,0,"Change Weapon, (|cffffcc00F|r)")
@@ -299978,9 +300177,9 @@ call LANG_A('A0T6',3,0,"Due to the fact that Yuji is able to absorb the energy o
 call LANG_A('A0TB',1,0,"Yuji creates a space within which time has stopped. Yuji is invulnerable while in space.|n|n|cFF00A5FF|nDuration: 4 sec.|nAoE: 1200|nCooldown: 40 sec.")
 call LANG_A('A0TB',2,0,"Time Seal, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A0TB',3,0,"Yuji creates a space within which time has stopped. Yuji is invulnerable while in space.|n|n|cFF00A5FF|nDuration: 4 sec.|nAoE: 1200|nCooldown: 40 sec.")
-call LANG_A('A0TF',1,0,"Isis takes off her Quincy Glove to enhance her own abilities. In this state, he becomes stronger.|n|n|cFF00A5FFBonus |c00FFFF66AllStat|r|cFF00A5FF: 40 points.|nMP Regeneration: 3% per second|nAS/MS Bonus: +100%|nDuration: 25 sec.|nCooldown: 55 sec. |r")
+call LANG_A('A0TF',1,0,"Isis takes off her Quincy Glove to enhance her own abilities. In this state, he becomes stronger.|n• During Q, removes the movement penalty and increases break distance from 1400 to 1700.|n|n|cFF00A5FFBonus |c00FFFF66A"+"llStat|r|cFF00A5FF: 40 points.|nMP Regeneration: 3% per second|nAS/MS Bonus: +100%|nDuration: 25 sec.|nCooldown: 55 sec. |r")
 call LANG_A('A0TF',2,0,"Quincy: Letzt Stil, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0TF',3,0,"Isis takes off her Quincy Glove to enhance her own abilities. In this state, he becomes stronger.|n|n|cFF00A5FFBonus |c00FFFF66AllStat|r|cFF00A5FF: 40 points.|nMP Regeneration: 3% per second|nAS/MS Bonus: +100%|nDuration: 25 sec.|nCooldown: 55 sec. |r")
+call LANG_A('A0TF',3,0,"Isis takes off her Quincy Glove to enhance her own abilities. In this state, he becomes stronger.|n• During Q, removes the movement penalty and increases break distance from 1400 to 1700.|n|n|cFF00A5FFBonus |c00FFFF66A"+"llStat|r|cFF00A5FF: 40 points.|nMP Regeneration: 3% per second|nAS/MS Bonus: +100%|nDuration: 25 sec.|nCooldown: 55 sec. |r")
 call LANG_A('A0TN',1,0,"Transform to the specified form.|nIf MP is not enough to maintain, or HP is less than 15%, then a transition to the base form will occur.|n|nIntermediate forms:|n|c0080FFFFRestricted Super Saiyan - available from level 5.|r|n|c00FFFFC4Super Saiyan - available upon collecting 10 strength, replaces Re"+"stricted Super Saiyan.|r|nFinal forms:|n|c00A0F468Legendary Super Saiyan - available upon collecting 10 strength|r")
 call LANG_A('A0TN',2,0,"Eraser Cannon, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
 call LANG_A('A0TN',3,0,"Broly fires green blasts of ki energy that deal damage and slow.|n|n|cFF00A5FF|nDamage: 1.0\\1.3\\1.6\\1.9\\2.2*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 30 seconds|r")
@@ -307474,91 +307673,91 @@ call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
-call LANG_A('DMD1',1,0,"Throws into the area for 10 sec.: burns enemies and restores allied HP/MP using energy. From level 20 her abilities leave poison for 5 sec., consuming energy.|nA fallen enemy hero of level 20 or higher leaves a soul: pic"+"kup grants 1 soul and 7000 energy. Every 7000 energy gained grants a soul without consuming energy and restores 5% HP/MP.|nPermanent soul milestones: 5 - F roots for 1.5 sec.; 10 - W +150 range; 15 - third skull; 20 - R "+"+100 radius. Spending souls never removes unlocked improvements.|n|n|cFF00A5FFDamage: 0.5*|c0077FFFFINT|r every 0.5 sec.|nRestoration: 1.5% HP/MP every 0.5 sec.|nPoison: 0.1*|c0077FFFFINT|r every 0.2 sec.|nAoE: 600|nRang"+"e: 2000|nCooldown: 20 sec.|r")
+call LANG_A('DMD1',1,0,"|nDead Master throws a skull that creates an area, damaging enemies and restoring allied HP/MP using energy.|n• From hero level 1, every 7000 energy gained grants 1 soul without consuming energy, and restores 5% of her"+" maximum HP/MP.|n• From hero level 20, fallen enemy heroes leave souls. Picking one up grants 7000 energy and 1 soul. Her abilities also leave poison.|n• Reaching 5/10/15/20 souls permanently unlocks F root / +150 W "+"range / third Q skull / +100 R radius. Spending souls does not remove these bonuses.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec.|nHP/MP restoration: 1.5% of maximum every 0.5 sec.|nPoison: 0.1*|"+"r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. for 5 sec.|nDuration: 10 sec.|nRange: 2000|nAoE: 600|nMana cost: 350|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 40 sec. after the effect ends|r")
-call LANG_A('DME1',1,1,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 35 sec. after the effect ends|r")
-call LANG_A('DME1',1,2,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 30 sec. after the effect ends|r")
-call LANG_A('DME1',1,3,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 25 sec. after the effect ends|r")
-call LANG_A('DME1',1,4,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 20 sec. after the effect ends|r")
+call LANG_A('DME1',1,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100|nCast time: +0.1 sec.|nCooldown: 40 sec. after the effect ends|r")
+call LANG_A('DME1',1,1,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 150|nCast time: +0.1 sec.|nCooldown: 35 sec. after the effect ends|r")
+call LANG_A('DME1',1,2,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 200|nCast time: +0.1 sec.|nCooldown: 30 sec. after the effect ends|r")
+call LANG_A('DME1',1,3,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 250|nCast time: +0.1 sec.|nCooldown: 25 sec. after the effect ends|r")
+call LANG_A('DME1',1,4,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 300|nCast time: +0.1 sec.|nCooldown: 20 sec. after the effect ends|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"Empowers for 15 sec. (dispellable): attacks deal 0.5*|c0077FFFFINT|r, ensnare for 1 sec. and collect 500 extra energy.|nDuring E: Q roots for 3 sec.; W and F pull enemies with chains; R adds 2*|c0077FFFFINT|r and a 2 sec"+". root; G holds the enemy. Roots break on teleports farther than 600.|nFrom hero level 20, Ctrl+E toggles soul spending. Each enhanced Q/W/F/R/G spends 1 soul. Q also adds barriers; W adds knockback.|nSouls come from fal"+"len heroes and every 7000 energy gained. Gaining a soul does not consume energy.|n|n|cFF00A5FFCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
+call LANG_A('DME1',3,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100\\150\\200\\250\\300|nCast time: +0.1 sec.|nCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,3,"Zugaikotsu/Kyushu, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,4,"Zugaikotsu/Kyushu, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
-call LANG_A('DMF1',1,0,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1200|nCooldown: 6 sec.|r")
-call LANG_A('DMF1',1,1,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1400|nCooldown: 5 sec.|r")
-call LANG_A('DMF1',1,2,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1600|nCooldown: 4 sec.|r")
-call LANG_A('DMF1',1,3,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 1800|nCooldown: 3 sec.|r")
-call LANG_A('DMF1',1,4,"Attaches a skull for 5 sec. Consumes 2 skulls immediately against an enemy; insufficient skulls cancel the cast and refund mana and cooldown.|nThe enemy loses 1.5% maximum HP/MP and is stunned for 0.1 sec. every second. "+"After reaching 5 souls, attachment also roots for 1.5 sec.|nAn ally costs 1 skull and recovers 1.5% HP/MP every second using energy. During E, chains pull other enemies toward the target without spending a soul.|n|n|cFF0"+"0A5FFRange: 2000|nCooldown: 2 sec.|r")
+call LANG_A('DMF1',1,0,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1200|nMana cost: 100|nCast time: +0.15 sec.|n"+"Cooldown: 6 sec.|r")
+call LANG_A('DMF1',1,1,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1400|nMana cost: 120|nCast time: +0.15 sec.|n"+"Cooldown: 5 sec.|r")
+call LANG_A('DMF1',1,2,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1600|nMana cost: 140|nCast time: +0.15 sec.|n"+"Cooldown: 4 sec.|r")
+call LANG_A('DMF1',1,3,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1800|nMana cost: 160|nCast time: +0.15 sec.|n"+"Cooldown: 3 sec.|r")
+call LANG_A('DMF1',1,4,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 2000|nMana cost: 180|nCast time: +0.15 sec.|n"+"Cooldown: 2 sec.|r")
 call LANG_A('DMG1',0,0,"Hikiwatasu/Torinozoku, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
-call LANG_A('DMG1',1,0,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 50 sec.|r")
-call LANG_A('DMG1',1,1,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 45 sec.|r")
-call LANG_A('DMG1',1,2,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 40 sec.|r")
-call LANG_A('DMG1',1,3,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 35 sec.|r")
-call LANG_A('DMG1',1,4,"Over 1.5 sec., drains 15% of the enemy maximum HP/MP, replenishing her energy. Drained HP is also transferred to herself (nonlethal). Excess healing becomes a 12 sec. shield. Recovery respects healing effectiveness.|nOn "+"an ally or herself, retains HP/MP recovery using energy. During E, holds the enemy for the transfer without spending a soul.|n|n|cFF00A5FFRange: 300|nCooldown: 30 sec.|r")
+call LANG_A('DMG1',1,0,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 150|nCast time: +0.25 sec.|nCooldown: 50 sec.|r")
+call LANG_A('DMG1',1,1,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 200|nCast time: +0.25 sec.|nCooldown: 45 sec.|r")
+call LANG_A('DMG1',1,2,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 250|nCast time: +0.25 sec.|nCooldown: 40 sec.|r")
+call LANG_A('DMG1',1,3,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 300|nCast time: +0.25 sec.|nCooldown: 35 sec.|r")
+call LANG_A('DMG1',1,4,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 350|nCast time: +0.25 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,1,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1400|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,2,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1600|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,3,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1800|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,4,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,1,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1400|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,2,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1600|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,3,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1800|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,4,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"Throws an available skull and pulls enemies. The second skull unlocks at Q level 4, the third after reaching 15 souls. Q and F consume skulls; each orbiting skull reduces incoming damage by 10%.|nDuring E: a 3 sec. root."+" Spending 1 soul also adds barriers between ground skulls within 600. Barriers obstruct enemies and expire with their skulls.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r on impact + 0.05*|c0077FFFFINT|r every 0.2 sec. (2 sec."+")|nAoE: 400|nRange: 1200\\1400\\1600\\1800\\2000|nSkull recovery: 8 sec.|nShared Q cooldown: 18 sec.|r")
+call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,3,"Kyojin no senshi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,4,"Kyojin no senshi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',1,0,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 2*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,1,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 3*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,2,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 4*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,3,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 5*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,4,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 6*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 170|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,1,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 190|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,2,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 210|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,3,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 230|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,4,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 250|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',3,0,"A summoned monster strikes and stuns the area. A ground Q skull adds 2*|c0077FFFFINT|r. Enemies in the impact area have 80% reduced MS/AS for the following 2.5 sec.|nReaching 20 souls permanently adds 100 radius. During "+"E, adds another 2*|c0077FFFFINT|r and a 2 sec. root 1 sec. after impact.|n|n|cFF00A5FFDamage: 2\\3\\4\\5\\6*|c0077FFFFINT|r|nStun: 2 sec.|nAoE: 600 (+100 soul milestone)|nRange: 1500|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',3,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 170\\190\\210\\230\\250|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',1,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nMana cost: 600|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"After 1 sec., creates her world; crossing its boundary is slowed.|nInside: +100% AS, +1000% MS and +30% HP/MP recovery for herself.|nEnemies inside: -30% HP/MP recovery and +25% received control duration.|n|n|cFF00A5FFAoE: 1500|nDuration: 15 sec.|nCooldown: 75 sec.|r")
+call LANG_A('DMT1',3,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nMana cost: 600|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,3,"Desusaizu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,4,"Desusaizu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',1,0,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 1*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1100 (+150 soul milestone)|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,1,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 2*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1200 (+150 soul milestone)|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,2,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 3*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1300 (+150 soul milestone)|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,3,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 4*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1400 (+150 soul milestone)|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,4,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 5*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1500 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100 (+150 at 10 souls)|nAoE: 400|nMana cost: 120|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,1,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1200 (+150 at 10 souls)|nAoE: 400|nMana cost: 140|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,2,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1300 (+150 at 10 souls)|nAoE: 400|nMana cost: 160|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,3,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1400 (+150 at 10 souls)|nAoE: 400|nMana cost: 180|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,4,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1500 (+150 at 10 souls)|nAoE: 400|nMana cost: 200|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('DMW1',2,0,"Desusaizu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',3,0,"Dashes to a point, damaging and stunning enemies. Reaching 10 souls permanently adds 150 range.|nDuring E, chains pull enemies. Spending 1 soul also lets the impact launch them away, stunning for 1 sec. after landing. Kn"+"ockback itself deals no damage.|n|n|cFF00A5FFDamage: 1\\2\\3\\4\\5*|c0077FFFFINT|r|nNormal stun: 2 sec.|nAoE: 400|nRange: 1100\\1200\\1300\\1400\\1500 (+150 soul milestone)|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',3,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100\\1200\\1300\\1400\\1500 (+150 at 10 souls)|nAoE: 400|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('HtQ1',0,0,"Flash Fist Crush, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
