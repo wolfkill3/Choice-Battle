@@ -45762,6 +45762,9 @@ local integer idu=GetHandleId(u)
 local integer pid=PId(OwnerOf(u))
 local integer i=0
 local timer cjlocgn_00000000
+if GetUnitAbilityLevel(u,'HaF0')>0 then
+call ExecuteFunc("Haku_FLevelEvent")
+endif
 call DestroyEffect(AddSpecialEffect("war3mapImported\\LevelUp!.mdx",GetUnitX(u),GetUnitY(u)))
 if GetHeroLevel(u)>=5 and lvl5[pid]!=1 then
 call CreateUnit(OwnerOf(u),'h146',RX,RY,0)
@@ -73889,7 +73892,7 @@ endif
             call SetUnitFacingInstant( c ,Angle2(GetUnitX( c ),GetUnitY( c ),GetUnitX( u ),GetUnitY( u )))
         endif
 
-        if GetUnitAbilityLevel(c,'HaF0')>=1 and nb>0 then
+        if GetUnitAbilityLevel(c,'HaF0')>=1 and GetHeroLevel(c)>=6 and nb>0 then
             if LoadInteger(HH,cid,SH_HakuF) == 6 then
                 set r=GetRandomReal(0,7)
                 set x1=x+400*Cos(r)
@@ -95416,8 +95419,369 @@ set t=null
 endfunction
 function HissatsuHyosoInit takes nothing returns nothing
 endfunction
+function Haku_FRank takes unit mirrorCaster returns integer
+if GetHeroLevel(mirrorCaster)>=18 then
+return 3
+elseif GetHeroLevel(mirrorCaster)>=12 then
+return 2
+endif
+return 1
+endfunction
+function Haku_FRefresh takes unit mirrorCaster returns nothing
+if GetUnitAbilityLevel(mirrorCaster,'HaF0')>0 then
+call SetUnitAbilityLevel(mirrorCaster,'HaF0',Haku_FRank(mirrorCaster))
+if LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))==null then
+if GetHeroLevel(mirrorCaster)<6 then
+call DisableUnitAbility(mirrorCaster,'HaF0',false,true)
+else
+call EnableUnitAbility(mirrorCaster,'HaF0',true,true)
+endif
+endif
+endif
+endfunction
+function Haku_FLevelEvent takes nothing returns nothing
+call Haku_FRefresh(GetTriggerUnit())
+endfunction
+function Haku_FColour takes unit mirrorCaster,integer mirrorColour,integer mirrorAlpha returns nothing
+call SetUnitVertexColor(mirrorCaster,BitwiseAND(BitwiseShiftRightLogical(mirrorColour,16),255),BitwiseAND(BitwiseShiftRightLogical(mirrorColour,8),255),BitwiseAND(mirrorColour,255),mirrorAlpha)
+endfunction
+function Haku_FOrderLock takes unit mirrorCaster,integer mirrorId,integer mirrorAbility,boolean mirrorLock returns nothing
+local ability mirrorAb=GetUnitAbility(mirrorCaster,mirrorAbility)
+if mirrorAb!=null then
+if mirrorLock then
+call SaveBoolean(h,mirrorId,mirrorAbility,IsAbilityOrderEnabled(mirrorAb))
+call SetAbilityOrderEnabled(mirrorAb,false)
+else
+call SetAbilityOrderEnabled(mirrorAb,LoadBoolean(h,mirrorId,mirrorAbility))
+endif
+endif
+set mirrorAb=null
+endfunction
+function Haku_FButtons takes unit mirrorCaster,integer mirrorId,boolean mirrorLock returns nothing
+call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GG',mirrorLock)
+call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GH',mirrorLock)
+call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GP',mirrorLock)
+call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GL',mirrorLock)
+call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GM',mirrorLock)
+call Haku_FOrderLock(mirrorCaster,mirrorId,'AInv',mirrorLock)
+endfunction
+function Haku_FEnd takes timer mirrorTimer returns nothing
+local integer mirrorId=GetHandleId(mirrorTimer)
+local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
+local integer mirrorIndex=0
+local unit mirrorUnit
+if mirrorCaster!=null then
+call RemoveSavedHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
+call UnitEnableMovement(mirrorCaster,LoadBoolean(h,mirrorId,9),false)
+call UnitEnableAttack(mirrorCaster,LoadBoolean(h,mirrorId,10),false)
+call SetUnitInvulnerable(mirrorCaster,LoadBoolean(h,mirrorId,11))
+call Haku_FColour(mirrorCaster,LoadInteger(h,mirrorId,12),BitwiseShiftRightLogical(LoadInteger(h,mirrorId,12),24))
+call Haku_FButtons(mirrorCaster,mirrorId,false)
+call DisableUnitAbility(mirrorCaster,'HaF2',true,true)
+call EnableUnitAbility(mirrorCaster,'HaF0',true,true)
+if not LoadBoolean(h,mirrorId,16) and GetUnitAbility(mirrorCaster,'HaF0')!=null then
+call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
+endif
+call Haku_FRefresh(mirrorCaster)
+endif
+loop
+exitwhen mirrorIndex>=3
+set mirrorUnit=LoadUnitHandle(h,mirrorId,20+mirrorIndex)
+if mirrorUnit!=null then
+call MyRemoveUnit(mirrorUnit,2.)
+endif
+set mirrorIndex=mirrorIndex+1
+endloop
+call DestroyGroup(LoadGroupHandle(h,mirrorId,13))
+call DestroyGroup(LoadGroupHandle(h,mirrorId,14))
+call FlushChildHashtable(h,mirrorId)
+call TSE_DestroyTimer(mirrorTimer)
+set mirrorCaster=null
+set mirrorUnit=null
+endfunction
+function Haku_FDestination takes real mirrorX,real mirrorY returns boolean
+return mirrorX>=GetRectMinX(bj_mapInitialPlayableArea)+32 and mirrorX<=GetRectMaxX(bj_mapInitialPlayableArea)-32 and mirrorY>=GetRectMinY(bj_mapInitialPlayableArea)+32 and mirrorY<=GetRectMaxY(bj_mapInitialPlayableArea)-32 and not IsTerrainPathable(mirrorX,mirrorY,PATHING_TYPE_WALKABILITY)
+endfunction
+function Haku_FJumpFx takes unit mirrorCaster,real mirrorAngle,boolean mirrorArrival returns nothing
+local real mirrorDegrees=mirrorAngle*bj_RADTODEG
+call EffectCreateAndMove(true,"BlackGoku\\WindCircleFaster.mdl",mirrorDegrees,1.5,1,1.25,100,100,100,0,0,mirrorCaster,0,mirrorDegrees)
+call EffectCreateAndMove(true,"Others\\HakkeStart2.mdl",mirrorDegrees,1.5,0.5,0.5,100,100,100,60,0,mirrorCaster,0,mirrorDegrees)
+if not mirrorArrival then
+call EffectCreateAndMove(true,"Aizen\\File0000 (644).mdl",mirrorDegrees,1.5,1,0.85,100,100,100,0,0,mirrorCaster,0,mirrorDegrees)
+call EffectCreateAndMove90(true,"Others\\wind4.mdl",mirrorDegrees+180,1,0.75,1.5,100,100,100,0,50,mirrorCaster,0,mirrorDegrees)
+call EffectCreateAndMove(true,"Others\\BlackBlink1.mdl",mirrorDegrees,1,1,1,100,100,100,0,0,mirrorCaster,0,mirrorDegrees)
+endif
+endfunction
+function Haku_FJump takes integer mirrorId,real mirrorX,real mirrorY,boolean mirrorExit returns nothing
+local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
+local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
+local integer mirrorCount=LoadInteger(h,mirrorId,2)
+local unit mirrorUnit
+if mirrorCount>0 then
+set mirrorUnit=LoadUnitHandle(h,mirrorId,20+mirrorCount-1)
+if mirrorUnit!=null then
+call MyRemoveUnit(mirrorUnit,2.)
+call RemoveSavedHandle(h,mirrorId,20+mirrorCount-1)
+endif
+endif
+call Haku_FJumpFx(mirrorCaster,mirrorAngle,false)
+call GroupClear(LoadGroupHandle(h,mirrorId,14))
+call SaveReal(h,mirrorId,18,0.)
+call SaveReal(h,mirrorId,4,mirrorX)
+call SaveReal(h,mirrorId,5,mirrorY)
+call SaveReal(h,mirrorId,6,mirrorAngle)
+call SaveReal(h,mirrorId,8,1.5*GetHeroAgi(mirrorCaster,true))
+call SetUnitFacingInstant(mirrorCaster,mirrorAngle*bj_RADTODEG)
+call Haku_FColour(mirrorCaster,LoadInteger(h,mirrorId,12),BitwiseShiftRightLogical(LoadInteger(h,mirrorId,12),24))
+call SetUnitInvulnerable(mirrorCaster,LoadBoolean(h,mirrorId,11))
+call DisableUnitAbility(mirrorCaster,'HaF2',true,true)
+if mirrorExit then
+call SaveInteger(h,mirrorId,1,2)
+else
+set mirrorUnit=CreateUnit(OwnerOf(mirrorCaster),'e09V',mirrorX,mirrorY,mirrorAngle*bj_RADTODEG+180)
+call SetUnitInvulnerable(mirrorUnit,true)
+call SetUnitRealField(mirrorUnit,UNIT_RF_SIGHT_RADIUS_DAY,0.)
+call SetUnitRealField(mirrorUnit,UNIT_RF_SIGHT_RADIUS_NIGHT,0.)
+call SetUnitCurrentSight(mirrorUnit,0.)
+call SaveUnitHandle(h,mirrorId,20+mirrorCount,mirrorUnit)
+call SaveInteger(h,mirrorId,2,mirrorCount+1)
+call SaveInteger(h,mirrorId,1,0)
+endif
+set mirrorCaster=null
+set mirrorUnit=null
+endfunction
+function Haku_FExit takes integer mirrorId,real mirrorAngle returns nothing
+local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
+local real mirrorDistance=200
+local real mirrorX=GetUnitX(mirrorCaster)
+local real mirrorY=GetUnitY(mirrorCaster)
+loop
+exitwhen mirrorDistance<=0 or Haku_FDestination(mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle))
+set mirrorDistance=mirrorDistance-20
+endloop
+call Haku_FJump(mirrorId,mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle),true)
+set mirrorCaster=null
+endfunction
+function Haku_FTick takes nothing returns nothing
+local timer mirrorTimer=GetExpiredTimer()
+local integer mirrorId=GetHandleId(mirrorTimer)
+local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
+local integer mirrorState=LoadInteger(h,mirrorId,1)
+local real mirrorX
+local real mirrorY
+local real mirrorDX
+local real mirrorDY
+local real mirrorDistance
+local real mirrorStep
+local real mirrorIdle
+local group mirrorScan=LoadGroupHandle(h,mirrorId,13)
+local group mirrorHits=LoadGroupHandle(h,mirrorId,14)
+local unit mirrorTarget
+if not UnitIsAlive(mirrorCaster) or GetUnitAbilityLevel(mirrorCaster,'HaF0')==0 or GetHeroLevel(mirrorCaster)<6 or not udg_B or not DU2 or IsUnitPaused(mirrorCaster) or IsUnitStunned(mirrorCaster) then
+call Haku_FEnd(mirrorTimer)
+elseif mirrorState==1 then
+set mirrorIdle=LoadReal(h,mirrorId,7)+.02
+call SaveReal(h,mirrorId,7,mirrorIdle)
+if mirrorIdle>=2 then
+call Haku_FExit(mirrorId,LoadReal(h,mirrorId,6))
+endif
+elseif LoadReal(h,mirrorId,18)>=.6 then
+call Haku_FEnd(mirrorTimer)
+else
+call SaveReal(h,mirrorId,18,LoadReal(h,mirrorId,18)+.02)
+if not LoadBoolean(h,mirrorId,16) then
+call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),0.)
+endif
+set mirrorX=GetUnitX(mirrorCaster)
+set mirrorY=GetUnitY(mirrorCaster)
+set mirrorDX=LoadReal(h,mirrorId,4)-mirrorX
+set mirrorDY=LoadReal(h,mirrorId,5)-mirrorY
+set mirrorDistance=SquareRoot(mirrorDX*mirrorDX+mirrorDY*mirrorDY)
+set mirrorStep=RMinBJ(40.,mirrorDistance)
+if mirrorDistance>0 then
+set mirrorX=mirrorX+mirrorDX*mirrorStep/mirrorDistance
+set mirrorY=mirrorY+mirrorDY*mirrorStep/mirrorDistance
+endif
+call SetUnitX(mirrorCaster,mirrorX)
+call SetUnitY(mirrorCaster,mirrorY)
+call GroupEnumUnitsInRange(mirrorScan,mirrorX,mirrorY,150.,null)
+loop
+set mirrorTarget=FirstOfGroup(mirrorScan)
+exitwhen mirrorTarget==null
+call GroupRemoveUnit(mirrorScan,mirrorTarget)
+if Condition_Base(OwnerOf(mirrorCaster),mirrorTarget) and not IsUnitInGroup(mirrorTarget,mirrorHits) then
+call GroupAddUnit(mirrorHits,mirrorTarget)
+call myCustomDamage(mirrorCaster,mirrorTarget,LoadReal(h,mirrorId,8),false,false,null,null,null)
+endif
+endloop
+if mirrorDistance<=40 then
+call Haku_FJumpFx(mirrorCaster,LoadReal(h,mirrorId,6),true)
+if not LoadBoolean(h,mirrorId,16) then
+call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
+call SaveBoolean(h,mirrorId,16,true)
+endif
+if mirrorState==2 then
+call Haku_FEnd(mirrorTimer)
+else
+call SaveInteger(h,mirrorId,1,1)
+call SaveReal(h,mirrorId,7,0.)
+call SetUnitInvulnerable(mirrorCaster,true)
+call Haku_FColour(mirrorCaster,LoadInteger(h,mirrorId,12),0)
+call EnableUnitAbility(mirrorCaster,'HaF2',true,true)
+endif
+endif
+endif
+set mirrorTarget=null
+set mirrorScan=null
+set mirrorHits=null
+set mirrorCaster=null
+set mirrorTimer=null
+endfunction
+function Haku_FCast takes nothing returns nothing
+local unit mirrorCaster=GetTriggerUnit()
+local integer mirrorSpell=GetSpellAbilityId()
+local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
+local integer mirrorId=GetHandleId(mirrorTimer)
+local real mirrorX=GetSpellTargetX()
+local real mirrorY=GetSpellTargetY()
+local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
+local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
+if mirrorSpell=='HaF2' and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 then
+call Haku_FExit(mirrorId,mirrorAngle)
+elseif mirrorSpell=='HaF0' and mirrorTimer==null and GetHeroLevel(mirrorCaster)>=6 and UnitIsAlive(mirrorCaster) then
+if mirrorDistance>500 then
+set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
+set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
+endif
+if Haku_FDestination(mirrorX,mirrorY) then
+set mirrorTimer=CreateTimer()
+set mirrorId=GetHandleId(mirrorTimer)
+call SaveTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"),mirrorTimer)
+call SaveUnitHandle(h,mirrorId,0,mirrorCaster)
+call SaveInteger(h,mirrorId,3,Haku_FRank(mirrorCaster))
+call SaveBoolean(h,mirrorId,9,IsUnitMovementEnabled(mirrorCaster))
+call SaveBoolean(h,mirrorId,10,IsUnitAttackEnabled(mirrorCaster))
+call SaveBoolean(h,mirrorId,11,IsUnitInvulnerable(mirrorCaster))
+call SaveInteger(h,mirrorId,12,GetUnitVertexColour(mirrorCaster))
+call SaveGroupHandle(h,mirrorId,13,CreateGroup())
+call SaveGroupHandle(h,mirrorId,14,CreateGroup())
+call Haku_FButtons(mirrorCaster,mirrorId,true)
+call UnitEnableMovement(mirrorCaster,false,false)
+call UnitEnableAttack(mirrorCaster,false,false)
+call DisableUnitAbility(mirrorCaster,'HaF0',true,true)
+call UnitAddAbility(mirrorCaster,'HaF2')
+call UnitMakeAbilityPermanent(mirrorCaster,true,'HaF2')
+call Haku_FJump(mirrorId,mirrorX,mirrorY,false)
+call TSE_TimerStart(mirrorTimer,.02,true,function Haku_FTick)
+endif
+endif
+set mirrorCaster=null
+set mirrorTimer=null
+endfunction
+function Haku_FOrder takes nothing returns nothing
+local unit mirrorCaster=GetTriggerUnit()
+local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
+local integer mirrorId=GetHandleId(mirrorTimer)
+local real mirrorX=GetOrderPointX()
+local real mirrorY=GetOrderPointY()
+local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
+local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
+if GetIssuedOrderId()==OrderId("smart") and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and LoadInteger(h,mirrorId,2)<LoadInteger(h,mirrorId,3) and not IsUnitPaused(mirrorCaster) then
+if mirrorDistance>500 then
+set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
+set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
+endif
+if Haku_FDestination(mirrorX,mirrorY) then
+call Haku_FJump(mirrorId,mirrorX,mirrorY,false)
+endif
+endif
+set mirrorCaster=null
+set mirrorTimer=null
+endfunction
 function MakyoHyoshoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0GM'
+endfunction
+function Haku_TBoundaryStop takes timer bt returns nothing
+local integer bid=GetHandleId(bt)
+call DestroyGroup(LoadGroupHandle(h,bid,1))
+call DestroyGroup(LoadGroupHandle(h,bid,2))
+call FlushChildHashtable(h,bid)
+call TSE_DestroyTimer(bt)
+endfunction
+function Haku_TBoundaryUnit takes nothing returns nothing
+local integer bid=GetHandleId(GetExpiredTimer())
+local integer parentId=LoadInteger(h,bid,0)
+local unit trapped=GetEnumUnit()
+local integer trappedId=GetHandleId(trapped)
+local unit caster=LoadUnitHandle(h,parentId,0)
+local real cx=LoadReal(h,parentId,2)
+local real cy=LoadReal(h,parentId,3)
+local real ux=GetUnitX(trapped)
+local real uy=GetUnitY(trapped)
+local real dx=ux-cx
+local real dy=uy-cy
+local real radius=SquareRoot(dx*dx+dy*dy)
+local real stepX=ux-LoadReal(h,bid,trappedId)
+local real stepY=uy-LoadReal(h,bid,-trappedId)
+if not Condition_Base(OwnerOf(caster),trapped) or GetUnitAbilityLevel(trapped,'Aloc')>0 then
+call GroupRemoveUnit(LoadGroupHandle(h,bid,1),trapped)
+elseif radius>500 then
+// Large discontinuities are teleports; ordinary movement stays inside.
+if stepX*stepX+stepY*stepY>16384 then
+call GroupRemoveUnit(LoadGroupHandle(h,bid,1),trapped)
+else
+set ux=cx+dx*495/radius
+set uy=cy+dy*495/radius
+call SetUnitX(trapped,ux)
+call SetUnitY(trapped,uy)
+endif
+endif
+call SaveReal(h,bid,trappedId,ux)
+call SaveReal(h,bid,-trappedId,uy)
+set trapped=null
+set caster=null
+endfunction
+function Haku_TBoundaryTick takes nothing returns nothing
+local timer bt=GetExpiredTimer()
+local integer bid=GetHandleId(bt)
+local integer parentId=LoadInteger(h,bid,0)
+local unit caster=LoadUnitHandle(h,parentId,0)
+local group tracked=LoadGroupHandle(h,bid,1)
+local group scan=LoadGroupHandle(h,bid,2)
+local unit candidate
+local integer candidateId
+if caster==null or GetUnitTypeId(caster)==0 then
+call Haku_TBoundaryStop(bt)
+else
+call GroupEnumUnitsInRange(scan,LoadReal(h,parentId,2),LoadReal(h,parentId,3),500,null)
+loop
+set candidate=FirstOfGroup(scan)
+exitwhen candidate==null
+call GroupRemoveUnit(scan,candidate)
+if Condition_Base(OwnerOf(caster),candidate) and GetUnitAbilityLevel(candidate,'Aloc')==0 and not IsUnitInGroup(candidate,tracked) then
+set candidateId=GetHandleId(candidate)
+call GroupAddUnit(tracked,candidate)
+call SaveReal(h,bid,candidateId,GetUnitX(candidate))
+call SaveReal(h,bid,-candidateId,GetUnitY(candidate))
+endif
+endloop
+call ForGroup(tracked,function Haku_TBoundaryUnit)
+endif
+set caster=null
+set tracked=null
+set scan=null
+set candidate=null
+set bt=null
+endfunction
+function Haku_TBoundaryStart takes integer parentId returns nothing
+local timer bt=CreateTimer()
+local integer bid=GetHandleId(bt)
+call SaveTimerHandle(h,parentId,101,bt)
+call SaveInteger(h,bid,0,parentId)
+call SaveGroupHandle(h,bid,1,CreateGroup())
+call SaveGroupHandle(h,bid,2,CreateGroup())
+call TSE_TimerStart(bt,.03,true,function Haku_TBoundaryTick)
+set bt=null
 endfunction
 function MakyoHyoshoCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -95449,6 +95813,7 @@ endif
 call GroupRemoveUnit(G,E)
 endloop
 if dist>=5.0 then
+call Haku_TBoundaryStop(LoadTimerHandle(h,id,101))
 call ForGroup(g,function KillGroup)
 loop
 exitwhen i>=19
@@ -95535,6 +95900,7 @@ call SaveGroupHandle(h,id,1,g)
 set soundplay=SndN(1223) // Sound\Music\mp3Music\MakyoHyosho.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call Haku_TBoundaryStart(id)
 call TSE_TimerStart(t,.15,true,function MakyoHyoshoCast2)
 set p=null
 set u=null
@@ -95550,7 +95916,7 @@ local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(h,id,1)
 local integer i=LoadInteger(h,id,3)
-if i<4+4*GetUnitAbilityLevel(u,'A0GH') then
+if i<6+2*GetUnitAbilityLevel(u,'A0GH') then
 if GetUnitAbilityLevel(u,'A0GI')>0 then
 call UnitRemoveAbility(u,'A0GI')
 call UnitRemoveAbility(u,'A0GJ')
@@ -95591,7 +95957,7 @@ endfunction
 function ShunshinNoJustsuInit takes nothing returns nothing
 endfunction
 function ShunshinJumpCond takes nothing returns boolean
-return OrderId2String(GetIssuedOrderId())=="smart"and udg_B==true and GetUnitAbilityLevel(GetOrderedUnit(),'A0GI')>0
+return OrderId2String(GetIssuedOrderId())=="smart"and udg_B==true and LoadTimerHandle(HH,GetHandleId(GetOrderedUnit()),StringHash("HakuFMirror"))==null and GetUnitAbilityLevel(GetOrderedUnit(),'A0GI')>0
 endfunction
 function ShunshinJumpCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -95623,6 +95989,9 @@ function Slash_IceSenbon2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit l__d=LoadUnitHandle(h,id,0)
+local unit needleCaster=LoadUnitHandle(h,id,11)
+local group needleScan=LoadGroupHandle(h,id,12)
+local unit needleTarget
 local player p=OwnerOf(l__d)
 local integer idu=PId(p)
 local real speed=LoadReal(h,id,1)
@@ -95634,7 +96003,8 @@ local real f=GetUnitFacing(l__d)
 local real a=LoadReal(h,id,2)
 local real dmg=LoadReal(h,id,6)
 local real Range=LoadReal(h,id,9)
-if Range>=0 and UnitIsAlive(l__d) then
+if Range>0 and UnitIsAlive(l__d) and udg_B and DU2 then
+set speed=RMinBJ(speed,Range)
 if IsTerrainPathable(x1,y1,PATHING_TYPE_FLYABILITY)==false then
 set x1=x1+speed*Cos(a)
 set y1=y1+speed*Sin(a)
@@ -95646,31 +96016,39 @@ call SaveReal(h,id,9,Range-(speed*1.2))
 endif
 call SetUnitXY_1(l__d,x1,y1, false)
 call SetUnitFacing(l__d,a*bj_RADTODEG)
-call GroupEnumUnitsInRange(G,x1,y1,LoadReal(h,id,10),Base)
+call GroupEnumUnitsInRange(needleScan,x1,y1,LoadReal(h,id,10),Base)
 loop
-set E=FirstOfGroup(G)
-exitwhen E==null
-if Condition_Base(p,E)then
-call myCustomDamage(Hero[idu],E,dmg,false,false,null,null,null)
-call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",E,"chest"))
+set needleTarget=FirstOfGroup(needleScan)
+exitwhen needleTarget==null
+if Condition_Base(p,needleTarget)then
+call SaveReal(h,id,9,-1)
+call myCustomDamage(needleCaster,needleTarget,dmg,false,false,null,null,null)
+call DestroyEffect(AddSpecialEffectTarget("war3mapImported\\BloodEX.mdx",needleTarget,"chest"))
 call UnitApplyTimedLife(l__d,'BTLF',0.01)
+exitwhen true
 endif
-call GroupRemoveUnit(G,E)
+call GroupRemoveUnit(needleScan,needleTarget)
 endloop
 else
 call UnitApplyTimedLife(l__d,'BTLF',0.01)
+call DestroyGroup(needleScan)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 endif
+set needleCaster=null
+set needleTarget=null
+set needleScan=null
 set p=null
 set t=null
 set l__d=null
 endfunction
-function Slash_IceSenbon takes unit l__d,real speed,real dmg,real angle,real range,real mas returns nothing
+function Slash_IceSenbon takes unit l__d,real speed,real dmg,real angle,real range,real mas,unit needleCaster returns nothing
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 call SaveUnitHandle(h,id,0,l__d)
+call SaveUnitHandle(h,id,11,needleCaster)
+call SaveGroupHandle(h,id,12,CreateGroup())
 call SaveReal(h,id,1,speed)
 call SaveReal(h,id,2,angle)
 call SaveReal(h,id,3,GetUnitX(l__d))
@@ -95684,34 +96062,47 @@ endfunction
 function CondIceSenbon takes nothing returns boolean
 return GetSpellAbilityId()=='A0GG'
 endfunction
-function CastIceSenbon takes nothing returns nothing
-local unit u=GetTriggerUnit()
-local player p=OwnerOf(u)
-local real x=GetSpellTargetX()
-local real y=GetSpellTargetY()
-local real x1=0
-local real y1=0
-local real r=0
-local real a=0
-local real a1=0
-local integer i=0
-local real dmg=(0.05+(0.05*GetUnitAbilityLevel(u,'A0GG')))*GetHeroAgi(u,true)+5
+function Haku_QVolley takes nothing returns nothing
+local timer volleyTimer=GetExpiredTimer()
+local integer volleyId=GetHandleId(volleyTimer)
+local unit caster=LoadUnitHandle(h,volleyId,0)
+local integer volleyCount=LoadInteger(h,volleyId,1)
+local real angle=LoadReal(h,volleyId,2)
+local real needleDamage=LoadReal(h,volleyId,3)
+local integer needleIndex=0
+local real offset
+local unit needle
+if volleyCount<6 and UnitIsAlive(caster) and not IsUnitPaused(caster) and udg_B and DU2 then
 loop
-exitwhen i>=24
-set a=15*i*bj_DEGTORAD
-set r=GetRandomReal(500,700)
-set x1=x+r*Cos(a)
-set y1=y+r*Sin(a)
-set a1=Atan2(y-y1,x-x1)
-set n=CreateUnit(p,0x65303951,x1,y1,a1*bj_RADTODEG)
-call Slash_IceSenbon(n,GetRandomReal(35,45),dmg,a1,1200,55)
-set i=i+1
+exitwhen needleIndex>=4
+set offset=(I2R(needleIndex)-1.5)*32
+set needle=CreateUnit(OwnerOf(caster),'e09Q',GetUnitX(caster)+offset*Cos(angle+bj_PI/2),GetUnitY(caster)+offset*Sin(angle+bj_PI/2),angle*bj_RADTODEG)
+call Slash_IceSenbon(needle,45,needleDamage,angle,1000,55,caster)
+set needleIndex=needleIndex+1
 endloop
-set soundplay=SndN(1227) // Sound\Music\mp3Music\IceSenbons.mp3
+set volleyCount=volleyCount+1
+call SaveInteger(h,volleyId,1,volleyCount)
+endif
+if volleyCount>=6 or not UnitIsAlive(caster) or IsUnitPaused(caster) or not udg_B or not DU2 then
+call FlushChildHashtable(h,volleyId)
+call TSE_DestroyTimer(volleyTimer)
+endif
+set needle=null
+set caster=null
+set volleyTimer=null
+endfunction
+function CastIceSenbon takes nothing returns nothing
+local unit caster=GetTriggerUnit()
+local timer volleyTimer=CreateTimer()
+local integer volleyId=GetHandleId(volleyTimer)
+call SaveUnitHandle(h,volleyId,0,caster)
+call SaveReal(h,volleyId,2,Atan2(GetSpellTargetY()-GetUnitY(caster),GetSpellTargetX()-GetUnitX(caster)))
+call SaveReal(h,volleyId,3,(0.05+0.05*GetUnitAbilityLevel(caster,'A0GG'))*GetHeroAgi(caster,true)+5)
+call TSE_TimerStart(volleyTimer,.15,true,function Haku_QVolley)
+set soundplay=SndN(1227)
 call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-set p=null
-set u=null
+set caster=null
+set volleyTimer=null
 endfunction
 function IceSenbonInit takes nothing returns nothing
 endfunction
@@ -140600,6 +140991,10 @@ call SaveStr(HH,SH_ShnChanO,'HSW1',"channel")
 call SaveInteger(HH,SH_ShnChanT,'HSW1',2)
 call SaveStr(HH,SH_ShnChanO,'HSW2',"channel")
 call SaveInteger(HH,SH_ShnChanT,'HSW2',2)
+call SaveStr(HH,SH_ShnChanO,'HaF0',"cripple")
+call SaveInteger(HH,SH_ShnChanT,'HaF0',2)
+call SaveStr(HH,SH_ShnChanO,'HaF2',"faeriefire")
+call SaveInteger(HH,SH_ShnChanT,'HaF2',2)
 call SaveStr(HH,SH_ShnChanO,'HerF',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'HerG',"charm")
 call SaveInteger(HH,SH_ShnChanT,'HerG',2)
@@ -142856,6 +143251,8 @@ call SaveStr(HH,SH_AbOrd,'HST3',"tornado")
 call SaveStr(HH,SH_AbOrd,'HST4',"bearform")
 call SaveStr(HH,SH_AbOrd,'HSW1',"channel")
 call SaveStr(HH,SH_AbOrd,'HSW2',"channel")
+call SaveStr(HH,SH_AbOrd,'HaF0',"cripple")
+call SaveStr(HH,SH_AbOrd,'HaF2',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'HerF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'HerG',"charm")
 call SaveStr(HH,SH_AbOrd,'HerT',"tornado")
@@ -288764,6 +289161,13 @@ call TriggerAddCondition(t,Condition(function PlasmaShotCond))
 // call TriggerAddCondition(t,Condition(function Trig_Bone_Wawe_Conditions))
 // call TriggerAddAction(t,function Trig_Bone_Wawe_Actions)
 elseif ty=='H02D' then
+call Haku_FRefresh(u)
+set t=CreateTrigger()
+call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
+call TriggerAddAction(t,function Haku_FCast)
+set t=CreateTrigger()
+call TRPUE(t,p,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
+call TriggerAddAction(t,function Haku_FOrder)
 set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function IceStrikeCast)
@@ -290017,13 +290421,25 @@ endfunction
 function HitIceGlowEnd takes effect hige returns nothing
 local effect higf=LoadEffectHandle(HH,GetHandleId(hige),StringHash("HitIceGlow"))
 if higf!=null then
+call SetSpecialEffectVisible(higf,false)
+call RemoveSavedBoolean(HH,GetHandleId(higf),StringHash("HitOwnFx"))
 call DestroyEffect(higf)
 call RemoveSavedHandle(HH,GetHandleId(hige),StringHash("HitIceGlow"))
 endif
 set higf=null
 endfunction
 function HitIceGlow takes effect higg returns nothing
-return
+local effect softIceGlow=LoadEffectHandle(HH,GetHandleId(higg),StringHash("HitIceGlow"))
+if softIceGlow==null then
+set softIceGlow=AddSpecialEffect("Hit\\TimeIceGlowSoft.mdx",GetSpecialEffectX(higg),GetSpecialEffectY(higg))
+call SetSpecialEffectZ(softIceGlow,GetSpecialEffectZ(higg)-2.)
+call SetSpecialEffectScale(softIceGlow,0.75)
+call SetSpecialEffectVertexColour(softIceGlow,125,175,255,55)
+call SetSpecialEffectAnimationByIndex(softIceGlow,0)
+call SaveBoolean(HH,GetHandleId(softIceGlow),StringHash("HitOwnFx"),true)
+call SaveEffectHandle(HH,GetHandleId(higg),StringHash("HitIceGlow"),softIceGlow)
+endif
+set softIceGlow=null
 endfunction
 
 function HitIceAt takes real hix,real hiy,real hia,real his,real hid,boolean hif returns effect
@@ -290466,7 +290882,6 @@ call QueueSpecialEffectAnimationByIndex(hsif,1)
 call SaveBoolean(HH,GetHandleId(hsif),StringHash("HitOwnFx"),true)
 call RemoveLocation(hsil)
 set hsil=null
-call HitIceGlow(hsif)
 return hsif
 endfunction
 function HitFQBeam takes unit hfqu,real hfqa returns nothing
@@ -291278,10 +291693,10 @@ call DestroyEffect(hbaf)
 call RemoveSavedHandle(HH,GetHandleId(hbau),StringHash(hbak))
 endif
 if hbon then
-set hbaf=AddSpecialEffectTarget("Hit\\TimeBlueAura.mdx",hbau,"origin")
+set hbaf=AddSpecialEffectTarget("Hit\\TimeBlueAuraSoft.mdx",hbau,"origin")
 call SaveBoolean(HH,GetHandleId(hbaf),StringHash("HitOwnFx"),true)
-call SetSpecialEffectScale(hbaf,0.3)
-call SetSpecialEffectVertexColour(hbaf,35,95,255,65)
+call SetSpecialEffectMatrixScale(hbaf,0.3,0.3,0.12)
+call SetSpecialEffectVertexColour(hbaf,35,95,255,35)
 call SetSpecialEffectAnimationByIndex(hbaf,0)
 call SaveEffectHandle(HH,GetHandleId(hbau),StringHash(hbak),hbaf)
 endif
@@ -292366,6 +292781,7 @@ local timer htvc=CreateTimer()
 local timer htmeasure=CreateTimer()
 local effect htice
 local real htia=Atan2(GetUnitY(hte)-GetUnitY(htu),GetUnitX(hte)-GetUnitX(htu))
+call HitBlueAura(htu,true,"HitTAura")
 call SaveBoolean(h,GetHandleId(htt),14,IsUnitInvulnerable(htu))
 call SaveBoolean(h,GetHandleId(htt),15,IsUnitInvulnerable(hte))
 call SaveBoolean(h,GetHandleId(htt),16,IsUnitPaused(htu))
@@ -297505,25 +297921,25 @@ call LANG_A('A0GG',0,1,"Sensatsu Suisho, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A0GG',0,2,"Sensatsu Suisho, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A0GG',0,3,"Sensatsu Suisho, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A0GG',0,4,"Sensatsu Suisho, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('A0GG',1,0,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.1*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
-call LANG_A('A0GG',1,1,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.15*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
-call LANG_A('A0GG',1,2,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.2*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
-call LANG_A('A0GG',1,3,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
-call LANG_A('A0GG',1,4,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.3*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',1,0,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.1*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',1,1,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.15*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',1,2,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.2*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',1,3,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.25*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',1,4,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.3*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
 call LANG_A('A0GG',2,0,"Sensatsu Suisho, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A0GG',3,0,"Haku creates many ice needles that fly to the center of the target area, attacking enemies.|n|n|cFF00A5FF|nDamage: 0.1\\0.15\\0.2\\0.25\\0.3*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nAoE: 400|nCooldown: 15 seconds|r")
+call LANG_A('A0GG',3,0,"Haku fires 6 consecutive volleys of 4 ice needles in the chosen direction. Each needle hits the first enemy in its path.|n|n|cFF00A5FF|nDamage: 0.1\\0.15\\0.2\\0.25\\0.3*|r|c003CFF3CAGI|r|cFF00A5FF + 5 (per needle)|nNumber of needles: 24|nRange: 1000|nVolley interval: 0.15 sec.|nCooldown: 15 seconds|r")
 call LANG_A('A0GH',0,0,"Shunshin no Jutsu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A0GH',0,1,"Shunshin no Jutsu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A0GH',0,2,"Shunshin no Jutsu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('A0GH',0,3,"Shunshin no Jutsu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A0GH',0,4,"Shunshin no Jutsu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('A0GH',1,0,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 4 sec.|nMa"+"x Jump Distance: 250|nCooldown: 25 sec.")
-call LANG_A('A0GH',1,1,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 6 sec.|nMa"+"x Jump Distance: 250|nCooldown: 25 sec.")
-call LANG_A('A0GH',1,2,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 8 sec.|nMa"+"x Jump Distance: 250|nCooldown: 25 sec.")
-call LANG_A('A0GH',1,3,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 10 sec.|nM"+"ax Jump Distance: 250|nCooldown: 25 sec.")
-call LANG_A('A0GH',1,4,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 12 sec.|nM"+"ax Jump Distance: 250|nCooldown: 25 sec.")
+call LANG_A('A0GH',1,1,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 5 sec.|nMa"+"x Jump Distance: 250|nCooldown: 25 sec.")
+call LANG_A('A0GH',1,2,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 6 sec.|nMa"+"x Jump Distance: 250|nCooldown: 25 sec.")
+call LANG_A('A0GH',1,3,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 7 sec.|nM"+"ax Jump Distance: 250|nCooldown: 25 sec.")
+call LANG_A('A0GH',1,4,"Haku begins to quickly move every 0.5 seconds, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 8 sec.|nM"+"ax Jump Distance: 250|nCooldown: 25 sec.")
 call LANG_A('A0GH',2,0,"Shunshin no Jutsu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0GH',3,0,"Haku starts 0.5 seconds to quickly move, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 4\\6\\8\\10\\12 "+"sec.|nMax Jump Distance: 250|nCooldown: 25 sec.")
+call LANG_A('A0GH',3,0,"Haku starts 0.5 seconds to quickly move, disappear and appear, during the disappearance, Haku can teleport short distances, but no more than 2 times per disappearance.|nThe ability temporarily does not work if the target is in a movement-restricting control.|n|n|cFF00A5FF|nDuration: 4\\5\\6\\7\\8 "+"sec.|nMax Jump Distance: 250|nCooldown: 25 sec.")
 call LANG_A('A0GK',0,0,"Electric Shield, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A0GK',0,1,"Electric Shield, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('A0GK',0,2,"Electric Shield, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -304973,7 +305389,14 @@ call LANG_A('GinW',1,3,"Gin dashes in the indicated direction. If it hits an ene
 call LANG_A('GinW',1,4,"Gin dashes in the indicated direction. If it hits an enemy, it performs a combination of attacks and bounces off it, if there is no enemy, the ability recharge is reduced by 40%.|n|n|cFF00A5FFDamage: 150+5*|r|c003CFF3CAGI|r|cFF00A5FF.|nStun: 1.0 sec|nRange: 1000|nCooldown: 20 seconds|r")
 call LANG_A('GinW',2,0,"Shunpo: Flickering Attack, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('GinW',3,0,"Gin dashes in the indicated direction. If it hits an enemy, it performs a combination of attacks and bounces off it, if there is no enemy, the ability recharge is reduced by 40%.|n|n|cFF00A5FFDamage: 50+1/2/3/4/5*|r|c003CFF3CAGI|r|cFF00A5FF.|nStun: 1.0 sec|nRange: 1000|nCooldown: 20 seconds|r")
-call LANG_A('HaF0',1,0,"Every 7th attack summons a demonic mirror at a random point around the target, from which Haku's clone attacks, dealing full damage based on items and their passive abilities. The mirror is immediately destroyed after the attack.")
+call LANG_A('HaF0',0,0,"Demonic Mirror (|cffffcc00F|r)")
+call LANG_A('HaF0',1,0,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direct"+"ion.|n• Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at leve"+"l 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5FF|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF0',0,1,"Demonic Mirror (|cffffcc00F|r)")
+call LANG_A('HaF0',1,1,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direct"+"ion.|n• Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at leve"+"l 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5FF|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF0',0,2,"Demonic Mirror (|cffffcc00F|r)")
+call LANG_A('HaF0',1,2,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direct"+"ion.|n• Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at leve"+"l 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5FF|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF2',0,0,"Leave Mirror (|cffffcc00F|r)")
+call LANG_A('HaF2',1,0,"Haku dashes 200 out of the mirror in the chosen direction, dealing 1.5x AGI damage to enemies within 150 along the path.")
 call LANG_A('HiW1',0,0,"Cloud Influence, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('HiW1',0,1,"Cloud Influence, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('HiW1',0,2,"Cloud Influence, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
