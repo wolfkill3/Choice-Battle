@@ -4659,6 +4659,9 @@ call SaveReal(HH,HLid,0,dmg*(1-LoadReal(HH,bid,MinusDmgHash)))
 set buf=null
 endfunction
 
+function HitTImmediateDamage takes unit finalTarget,unit finalSource returns boolean
+return finalSource!=null and LoadUnitHandle(HH,GetHandleId(finalTarget),StringHash("HitTGuard"))==finalSource and LoadBoolean(HH,GetHandleId(finalTarget),StringHash("HitTOwnDamage"))
+endfunction
 function myCustomDamage takes unit whichUnit, unit target, real amount, boolean attack, boolean ranged, attacktype attackType, damagetype damageType, weapontype weaponType returns nothing
     local real currentDmg = amount
     local real classic_res = 0.0
@@ -6591,9 +6594,18 @@ function MUIHandle takes nothing returns integer
         return 1.+bonus
     endfunction
 
+function Mayuri_EPower takes unit toxinTarget,real toxinAmount returns real
+if toxinAmount>0 and GetUnitBuff(toxinTarget,'MaEc')!=null then
+return RMinBJ(1.,toxinAmount*1.25)
+endif
+return toxinAmount
+endfunction
     function CalculateControlResist takes unit target, real newTime returns real
         local real time=newTime
         set time=time*DM_ControlMultiplier(target)
+        if GetUnitBuff(target,'MaEc')!=null then
+            set time=time*1.25
+        endif
         if GetUnitAbilityLevel(target,'A1GA')>0 then //Quincy set
             set time=time*1.5
         endif
@@ -6926,6 +6938,12 @@ function MUIHandle takes nothing returns integer
             if ((c_type=="shortsight" or c_type=="blind") and GetUnitAbilityLevel(target,'Blnd')>0) or (c_type=="shortsight" and GetUnitTypeId(target)=='H116') then
                 set time=0
             endif
+        endif
+        if c_type=="slow" then
+            set slowMS=Mayuri_EPower(target,slowMS)
+            set slowAS=Mayuri_EPower(target,slowAS)
+        elseif c_type=="miss" or c_type=="weakness" then
+            set percent=Mayuri_EPower(target,percent)
         endif
         if order!="combo" then
             // frostbite (Эссенция льда) накладывается и на неуязвимых; защита A151 и блок dmb+ по-прежнему действуют
@@ -7296,49 +7314,6 @@ call SaveInteger(HH,idt,1,id)
 call SaveInteger(HH,idt,2,ip)
 //call TimerStart(t,time,false,function RemoveSaveBoolTimed2)
 call TSE_TimerStart(t,time,false,function RemoveSaveBoolTimed2) // 29 окт
-set t=null
-endfunction
-function MissleMove2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit c=LoadUnitHandle(h,id,1)
-local unit l__d=LoadUnitHandle(h,id,2)
-local real speed=LoadReal(h,id,4)
-local real x=GetUnitX(l__d)
-local real y=GetUnitY(l__d)
-local real x1=GetUnitX(c)
-local real y1=GetUnitY(c)
-local real a=Atan2(y1-y,x1-x)+LoadReal(h,id,3)
-if SRS(x,y,x1,y1)>speed+5 then
-call SetUnitXY_1(l__d,x+speed*Cos(a),y+speed*Sin(a), false)
-call SetUnitFacing(l__d,a*bj_RADTODEG)
-else
-call DestroyEffect(AddSpecialEffect(LoadStr(h,id,6),x1,y1))
-call myCustomDamage(u,c,LoadReal(h,id,5),false,false,null,null,null)
-call FlushChildHashtable(h,id)
-//call DestroyTimer(t)
-call TSE_DestroyTimer(t)
-call KillUnit(l__d)
-endif
-set l__d=null
-set c=null
-set t=null
-set u=null
-endfunction
-function MissleMove takes unit u,unit c,real speed,real angle,real dmg,integer ab,string l__s returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local real f=GetUnitFacing(u)
-call SaveUnitHandle(h,id,0,u)
-call SaveUnitHandle(h,id,1,c)
-call SaveUnitHandle(h,id,2,CreateUnit(OwnerOf(u),ab,GetUnitX(u)+75*Cos(f*bj_DEGTORAD),GetUnitY(u)+75*Sin(f*bj_DEGTORAD),f))
-call SaveReal(h,id,3,angle)
-call SaveReal(h,id,4,speed)
-call SaveReal(h,id,5,dmg)
-call SaveStr(h,id,6,l__s)
-//call TimerStart(t,0.03,true,function MissleMove2)
-call TSE_TimerStart(t,0.03,true,function MissleMove2) // 29 окт
 set t=null
 endfunction
 function GetWidgetMana takes unit u returns real
@@ -70416,6 +70391,229 @@ call SaveReal(HH,uid,StringHash("HitCbt"),now)
 endif
 return nb
 endfunction
+function Mayuri_EPoisonTick takes nothing returns nothing
+local timer poisonTimer=GetExpiredTimer()
+local integer poisonId=GetHandleId(poisonTimer)
+local unit poisonSource=LoadUnitHandle(h,poisonId,0)
+local unit poisonTarget=LoadUnitHandle(h,poisonId,1)
+local integer poisonTick=LoadInteger(h,poisonId,2)+1
+local boolean poisonGuard=LoadBoolean(HH,GetHandleId(poisonSource),StringHash("MayuriPoisonTick"))
+if UnitIsAlive(poisonTarget) and GetUnitTypeId(poisonSource)!=0 and udg_B and DU2 then
+call SaveBoolean(HH,GetHandleId(poisonSource),StringHash("MayuriPoisonTick"),true)
+call myCustomDamage(poisonSource,poisonTarget,LoadReal(h,poisonId,3),false,false,null,null,null)
+call SaveBoolean(HH,GetHandleId(poisonSource),StringHash("MayuriPoisonTick"),poisonGuard)
+call SaveInteger(h,poisonId,2,poisonTick)
+else
+set poisonTick=10
+endif
+if poisonTick>=10 then
+call DestroyEffect(LoadEffectHandle(h,poisonId,4))
+call FlushChildHashtable(h,poisonId)
+call TSE_DestroyTimer(poisonTimer)
+endif
+set poisonSource=null
+set poisonTarget=null
+set poisonTimer=null
+endfunction
+function Mayuri_EPoison takes unit poisonSource,unit poisonTarget returns nothing
+local timer poisonTimer=CreateTimer()
+local integer poisonId=GetHandleId(poisonTimer)
+call SaveUnitHandle(h,poisonId,0,poisonSource)
+call SaveUnitHandle(h,poisonId,1,poisonTarget)
+call SaveReal(h,poisonId,3,GetUnitAbilityLevel(poisonSource,'A0CT')*GetHeroInt(poisonSource,true)*.025)
+call SaveEffectHandle(h,poisonId,4,AddSpecialEffectTarget("Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl",poisonTarget,"chest"))
+call TSE_TimerStart(poisonTimer,.5,true,function Mayuri_EPoisonTick)
+set poisonTimer=null
+endfunction
+function Mayuri_EBuff takes unit toxinTarget,integer toxinType,real toxinDuration returns nothing
+local buff toxinBuff=GetUnitBuff(toxinTarget,toxinType)
+if toxinBuff==null then
+set toxinBuff=CreateBuff(toxinType)
+call SetBuffRealField(toxinBuff,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,0.)
+call SetBuffRealField(toxinBuff,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,0.)
+call SetBuffDispellable(toxinBuff,true)
+call SetBuffOwner(toxinBuff,toxinTarget)
+endif
+call SetBuffRemainingDuration(toxinBuff,toxinDuration)
+set toxinBuff=null
+endfunction
+function Mayuri_EMarkStop takes timer markTimer returns nothing
+local integer markId=GetHandleId(markTimer)
+local unit markTarget=LoadUnitHandle(h,markId,0)
+local buff markBuff
+if LoadTimerHandle(HH,GetHandleId(markTarget),StringHash("MayuriEMark"))==markTimer then
+call RemoveSavedHandle(HH,GetHandleId(markTarget),StringHash("MayuriEMark"))
+set markBuff=GetUnitBuff(markTarget,'MaEm')
+if markBuff!=null then
+call RemoveBuff(markBuff)
+endif
+endif
+call FlushChildHashtable(h,markId)
+call TSE_DestroyTimer(markTimer)
+set markBuff=null
+set markTarget=null
+endfunction
+function Mayuri_EActivate takes nothing returns nothing
+local timer markTimer=GetExpiredTimer()
+local integer markId=GetHandleId(markTimer)
+local unit markTarget=LoadUnitHandle(h,markId,0)
+local unit markSource=LoadUnitHandle(h,markId,1)
+local boolean markValid=LoadTimerHandle(HH,GetHandleId(markTarget),StringHash("MayuriEMark"))==markTimer and GetUnitBuff(markTarget,'MaEm')!=null and UnitIsAlive(markTarget) and GetUnitTypeId(markSource)!=0 and udg_B and DU2
+call Mayuri_EMarkStop(markTimer)
+if markValid then
+// Defer to after all spell-effect handlers; this toxin does not extend its own initial silence.
+call SetControlToUnit(markSource,markTarget,2.,"silence")
+call Mayuri_EBuff(markTarget,'MaEc',5.)
+endif
+set markTarget=null
+set markSource=null
+set markTimer=null
+endfunction
+function Mayuri_EMarkTick takes nothing returns nothing
+local timer markTimer=GetExpiredTimer()
+local integer markId=GetHandleId(markTimer)
+local unit markTarget=LoadUnitHandle(h,markId,0)
+if not UnitIsAlive(markTarget) or GetUnitBuff(markTarget,'MaEm')==null or not udg_B or not DU2 then
+call Mayuri_EMarkStop(markTimer)
+endif
+set markTarget=null
+set markTimer=null
+endfunction
+function Mayuri_EMark takes unit markSource,unit markTarget returns nothing
+local timer markTimer=LoadTimerHandle(HH,GetHandleId(markTarget),StringHash("MayuriEMark"))
+local integer markId
+if markTimer!=null then
+call Mayuri_EMarkStop(markTimer)
+endif
+set markTimer=CreateTimer()
+set markId=GetHandleId(markTimer)
+call SaveUnitHandle(h,markId,0,markTarget)
+call SaveUnitHandle(h,markId,1,markSource)
+call SaveTimerHandle(HH,GetHandleId(markTarget),StringHash("MayuriEMark"),markTimer)
+call Mayuri_EBuff(markTarget,'MaEm',7.)
+call TSE_TimerStart(markTimer,.05,true,function Mayuri_EMarkTick)
+set markTimer=null
+endfunction
+function Mayuri_ETarget takes unit needleCaster,unit needleTarget returns boolean
+return needleTarget!=null and needleTarget!=needleCaster and UnitIsAlive(needleTarget) and IsUnitEnemy(needleTarget,OwnerOf(needleCaster)) and not IsUnitType(needleTarget,UNIT_TYPE_MECHANICAL) and not IsUnitType(needleTarget,UNIT_TYPE_STRUCTURE) and not IsUnitInvulnerable(needleTarget) and GetUnitAbilityLevel(needleTarget,'Aloc')==0
+endfunction
+function Mayuri_EStabFx takes unit needleCaster,unit needleTarget returns nothing
+local real needleAngle=Atan2(GetUnitY(needleTarget)-GetUnitY(needleCaster),GetUnitX(needleTarget)-GetUnitX(needleCaster))
+local effect needleFx=AddSpecialEffect("Hit\\TPunchBeam.mdx",GetUnitX(needleTarget),GetUnitY(needleTarget))
+call SetSpecialEffectZ(needleFx,GetUnitZ(needleTarget)+65.)
+call SetSpecialEffectOrientation(needleFx,needleAngle*bj_RADTODEG,0.,0.)
+call SetSpecialEffectMatrixScale(needleFx,1.44,0.585,0.585)
+call SetSpecialEffectVertexColour(needleFx,215,170,255,200)
+call SetSpecialEffectAnimationByIndex(needleFx,0)
+call RemoveEffect(needleFx,.42,false,CreateTimer())
+set needleFx=null
+endfunction
+function Mayuri_EDashEnd takes timer needleTimer,boolean needleHit returns nothing
+local integer needleId=GetHandleId(needleTimer)
+local unit needleCaster=LoadUnitHandle(h,needleId,0)
+local unit needleTarget=LoadUnitHandle(h,needleId,1)
+local integer needleRank=LoadInteger(h,needleId,2)
+local real needleDX=GetUnitX(needleTarget)-GetUnitX(needleCaster)
+local real needleDY=GetUnitY(needleTarget)-GetUnitY(needleCaster)
+call RemoveSavedHandle(HH,GetHandleId(needleCaster),StringHash("MayuriEDash"))
+call UnitEnableMovement(needleCaster,LoadBoolean(h,needleId,4),false)
+call UnitEnableAttack(needleCaster,LoadBoolean(h,needleId,5),false)
+call FlushChildHashtable(h,needleId)
+call TSE_DestroyTimer(needleTimer)
+if needleHit and Mayuri_ETarget(needleCaster,needleTarget) and needleDX*needleDX+needleDY*needleDY<=32400 then
+call Mayuri_EStabFx(needleCaster,needleTarget)
+call myCustomDamage(needleCaster,needleTarget,(1.5+.5*needleRank)*GetHeroInt(needleCaster,true),false,false,null,null,null)
+if Mayuri_ETarget(needleCaster,needleTarget) then
+call Mayuri_EMark(needleCaster,needleTarget)
+endif
+endif
+set needleCaster=null
+set needleTarget=null
+endfunction
+function Mayuri_EDashTick takes nothing returns nothing
+local timer needleTimer=GetExpiredTimer()
+local integer needleId=GetHandleId(needleTimer)
+local unit needleCaster=LoadUnitHandle(h,needleId,0)
+local unit needleTarget=LoadUnitHandle(h,needleId,1)
+local real needleTravel=LoadReal(h,needleId,3)
+local real needleDX=GetUnitX(needleTarget)-GetUnitX(needleCaster)
+local real needleDY=GetUnitY(needleTarget)-GetUnitY(needleCaster)
+local real needleDistance=SquareRoot(needleDX*needleDX+needleDY*needleDY)
+local real needleStep
+local real needleX
+local real needleY
+if not UnitIsAlive(needleCaster) or not Mayuri_ETarget(needleCaster,needleTarget) or not udg_B or not DU2 or IsUnitPaused(needleCaster) or IsUnitStunned(needleCaster) or GetUnitAbilityLevel(needleCaster,'cbc3')>0 or GetUnitAbilityLevel(needleCaster,'cbc5')>0 or GetUnitAbilityLevel(needleCaster,'A0CT')==0 then
+call Mayuri_EDashEnd(needleTimer,false)
+elseif needleDistance<=90 or needleTravel>=400 then
+call Mayuri_EDashEnd(needleTimer,true)
+else
+set needleStep=RMinBJ(75.,RMinBJ(400.-needleTravel,needleDistance-90.))
+set needleX=GetUnitX(needleCaster)+needleStep*needleDX/needleDistance
+set needleY=GetUnitY(needleCaster)+needleStep*needleDY/needleDistance
+if IsTerrainPathable(needleX,needleY,PATHING_TYPE_WALKABILITY) or RAbsBJ(GetTerrainHeightAt(needleX,needleY)-GetTerrainHeightAt(GetUnitX(needleCaster),GetUnitY(needleCaster)))>80 then
+call Mayuri_EDashEnd(needleTimer,false)
+else
+call SetUnitFacingInstant(needleCaster,Atan2(needleDY,needleDX)*bj_RADTODEG)
+call SetUnitX(needleCaster,needleX)
+call SetUnitY(needleCaster,needleY)
+call SaveReal(h,needleId,3,needleTravel+needleStep)
+endif
+endif
+set needleCaster=null
+set needleTarget=null
+set needleTimer=null
+endfunction
+function Mayuri_ECast takes nothing returns nothing
+local unit needleCaster=GetTriggerUnit()
+local unit needleTarget=GetSpellTargetUnit()
+local timer needleTimer
+local integer needleId
+if GetSpellAbilityId()=='A0CT' and Mayuri_ETarget(needleCaster,needleTarget) and LoadTimerHandle(HH,GetHandleId(needleCaster),StringHash("MayuriEDash"))==null then
+set needleTimer=CreateTimer()
+set needleId=GetHandleId(needleTimer)
+call SaveTimerHandle(HH,GetHandleId(needleCaster),StringHash("MayuriEDash"),needleTimer)
+call SaveUnitHandle(h,needleId,0,needleCaster)
+call SaveUnitHandle(h,needleId,1,needleTarget)
+call SaveInteger(h,needleId,2,GetUnitAbilityLevel(needleCaster,'A0CT'))
+call SaveBoolean(h,needleId,4,IsUnitMovementEnabled(needleCaster))
+call SaveBoolean(h,needleId,5,IsUnitAttackEnabled(needleCaster))
+call UnitEnableMovement(needleCaster,false,false)
+call UnitEnableAttack(needleCaster,false,false)
+call SetUnitFacingInstant(needleCaster,Atan2(GetUnitY(needleTarget)-GetUnitY(needleCaster),GetUnitX(needleTarget)-GetUnitX(needleCaster))*bj_RADTODEG)
+call TSE_TimerStart(needleTimer,.02,true,function Mayuri_EDashTick)
+endif
+set needleCaster=null
+set needleTarget=null
+set needleTimer=null
+endfunction
+function Mayuri_EEvent takes nothing returns nothing
+local unit markedCaster=GetTriggerUnit()
+local timer markTimer=LoadTimerHandle(HH,GetHandleId(markedCaster),StringHash("MayuriEMark"))
+local integer markId=GetHandleId(markTimer)
+call Mayuri_ECast()
+if markTimer!=null and GetUnitBuff(markedCaster,'MaEm')!=null and not LoadBoolean(h,markId,2) then
+call SaveBoolean(h,markId,2,true)
+call TSE_TimerStart(markTimer,0.,false,function Mayuri_EActivate)
+endif
+set markTimer=null
+set markedCaster=null
+endfunction
+function Mayuri_EDashInterrupt takes nothing returns nothing
+local timer needleTimer=LoadTimerHandle(HH,GetHandleId(GetTriggerUnit()),StringHash("MayuriEDash"))
+if needleTimer!=null and GetSpellAbilityId()!='A0CT' then
+call Mayuri_EDashEnd(needleTimer,false)
+endif
+set needleTimer=null
+endfunction
+function Mayuri_EInit takes nothing returns nothing
+local trigger needleTrigger=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(needleTrigger,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+call TriggerAddAction(needleTrigger,function Mayuri_EEvent)
+set needleTrigger=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(needleTrigger,EVENT_PLAYER_UNIT_SPELL_CHANNEL)
+call TriggerAddAction(needleTrigger,function Mayuri_EDashInterrupt)
+set needleTrigger=null
+endfunction
 function Trig_Text_Damage_Actions takes nothing returns nothing
 local real b=GetEventDamage()
 local timer t
@@ -73911,11 +74109,9 @@ endif
             endif
         endif
 
-        if GetUnitAbilityLevel(c,'A0CT')>0 and nb>0 and udg_B==true and DU2==true then
-            if(1)<5.0*GetUnitAbilityLevel(c,'A0CT')then
-                call PoisonDamage(c,u,(GetUnitAbilityLevel(c,'A0CT'))*GetHeroInt(c,true)*.5,10,"Abilities\\Weapons\\PoisonSting\\PoisonStingTarget.mdl")
-                call SlowUnit(c,u,GetUnitAbilityLevel(c,'A0CT')*0.1,GetUnitAbilityLevel(c,'A0CT')*0.1,6,1,false)
-            endif
+        if GetUnitAbilityLevel(c,'A0CT')>0 and nb>0 and udg_B and DU2 and not LoadBoolean(HH,cid,StringHash("MayuriPoisonTick")) then
+            call Mayuri_EPoison(c,u)
+            call SlowUnit(c,u,GetUnitAbilityLevel(c,'A0CT')*0.1,GetUnitAbilityLevel(c,'A0CT')*0.1,6,1,false)
         endif
         if (GetUnitAbilityLevel(c,'A2FK'))>0 and nb>0 and udg_B==true and DU2==true then
             if GetHeroLevel(c)<12 then
@@ -74327,7 +74523,7 @@ if nb>0 then
         call SetEventDamage(nb)
     endif
     // 29 окт: остановка времени — урон по замороженному копится и придёт при возобновлении (TSE_ReleaseDmg)
-    if TSE_On and IsUnitInGroup(u,TSE_G) then
+    if TSE_On and IsUnitInGroup(u,TSE_G) and not HitTImmediateDamage(u,c) then
         call TSE_HoldDmg(u,c,nb)
         call SetEventDamage(0)
         set nb=0
@@ -75580,7 +75776,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
+return GetSpellAbilityId()!='MaTc' and GetSpellAbilityId()!='IsQc' and GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
 endfunction
 // 28 окт (3.8.2): стаки "Мастерства" (+8 INT на 10 с) — зарядами на Комплекте Акацки; d — изменение числа стаков
 function AkatsukiSetStk takes unit u,integer scope_AkatsukiSetStk_d returns nothing
@@ -85933,11 +86129,73 @@ call SetBuffRemainingDuration(iqBuff,0.15)
 endif
 set iqBuff=null
 endfunction
+function ISH_QArrowTick takes nothing returns nothing
+local timer arrowTimer=GetExpiredTimer()
+local integer arrowId=GetHandleId(arrowTimer)
+local unit caster=LoadUnitHandle(h,arrowId,0)
+local unit target=LoadUnitHandle(h,arrowId,1)
+local unit arrow=LoadUnitHandle(h,arrowId,2)
+local real heading=LoadReal(h,arrowId,3)
+local integer ticks=LoadInteger(h,arrowId,5)
+local real x=GetUnitX(arrow)
+local real y=GetUnitY(arrow)
+local real dx=GetUnitX(target)-x
+local real dy=GetUnitY(target)-y
+local real turn
+if udg_B and UnitIsAlive(caster) and UnitIsAlive(target) and UnitIsAlive(arrow) and ticks<80 then
+    if ticks>=3 and dx*dx+dy*dy<=45.*45. then
+        call myCustomDamage(caster,target,LoadReal(h,arrowId,4),false,false,null,null,null)
+        set ticks=80
+    else
+        if ticks>=3 then
+            set turn=Atan2(dy,dx)-heading
+            set turn=Atan2(Sin(turn),Cos(turn))
+            set heading=heading+RMaxBJ(-0.29,RMinBJ(0.29,turn))
+            if ticks>=15 then
+                set heading=Atan2(dy,dx)
+            endif
+            call SaveReal(h,arrowId,3,heading)
+        endif
+        call SetUnitXY(arrow,x+40.*Cos(heading),y+40.*Sin(heading))
+        call SetUnitFacingInstant(arrow,heading*bj_RADTODEG)
+        set ticks=ticks+1
+        call SaveInteger(h,arrowId,5,ticks)
+    endif
+else
+    set ticks=80
+endif
+if ticks>=80 then
+    call RemoveUnit(arrow)
+    call FlushChildHashtable(h,arrowId)
+    call TSE_DestroyTimer(arrowTimer)
+endif
+set caster=null
+set target=null
+set arrow=null
+set arrowTimer=null
+endfunction
+function ISH_QArrow takes unit caster,unit target,real damage returns nothing
+local timer arrowTimer=CreateTimer()
+local integer arrowId=GetHandleId(arrowTimer)
+local real facing=GetUnitFacing(caster)*bj_DEGTORAD
+local real heading=facing+GetRandomReal(-0.48,0.48)
+call SaveUnitHandle(h,arrowId,0,caster)
+call SaveUnitHandle(h,arrowId,1,target)
+call SaveUnitHandle(h,arrowId,2,CreateUnit(OwnerOf(caster),'e03L',GetUnitX(caster)+75.*Cos(facing),GetUnitY(caster)+75.*Sin(facing),heading*bj_RADTODEG))
+call SaveReal(h,arrowId,3,heading)
+call SaveReal(h,arrowId,4,damage)
+call TSE_TimerStart(arrowTimer,0.03,true,function ISH_QArrowTick)
+set arrowTimer=null
+endfunction
 function ISH_QStop takes unit iqU returns nothing
 local timer iqT=LoadTimerHandle(HH,GetHandleId(iqU),StringHash("ISH_QTimer"))
 local integer iqId
 local buff iqBuff
 if iqT==null then
+if GetUnitAbilityLevel(iqU,'IsQc')>0 then
+call UnitRemoveAbility(iqU,'IsQc')
+call BlzUnitDisableAbility(iqU,'A08W',false,false)
+endif
 return
 endif
 set iqId=GetHandleId(iqT)
@@ -85950,9 +86208,9 @@ endif
 if LoadBoolean(h,iqId,4) then
 call UnitEnableAttack(iqU,true,false)
 endif
-call DisableUnitAbility(iqU,'IsQc',true,true)
+call UnitRemoveAbility(iqU,'IsQc')
 if GetUnitAbilityLevel(iqU,'A08W')>0 then
-call EnableUnitAbility(iqU,'A08W',true,true)
+call BlzUnitDisableAbility(iqU,'A08W',false,false)
 endif
 call FlushChildHashtable(h,iqId)
 call TSE_DestroyTimer(iqT)
@@ -85987,7 +86245,7 @@ call ISH_QStop(iqU)
 else
 call ISH_QSlow(iqU)
 set iqDamage=GetHeroInt(iqU,true)*LoadInteger(h,iqId,3)*0.03+GetUnitTotalDamage(iqU)*0.0375
-call MissleMove(iqU,iqTarget,40,GetRandomReal(-0.6,0.6),iqDamage,'e03L',"")
+call ISH_QArrow(iqU,iqTarget,iqDamage)
 call SetUnitState(iqU,UNIT_STATE_MANA,iqMana-iqCost)
 set iqShots=iqShots+1
 call SaveInteger(h,iqId,2,iqShots)
@@ -86020,12 +86278,8 @@ call SaveInteger(h,iqId,3,GetUnitAbilityLevel(iqU,'A08W'))
 call SaveBoolean(h,iqId,4,IsUnitAttackEnabled(iqU))
 call UnitAttackCancel(iqU)
 call UnitEnableAttack(iqU,false,false)
-call DisableUnitAbility(iqU,'A08W',true,true)
-if GetUnitAbilityLevel(iqU,'IsQc')==0 then
+call BlzUnitDisableAbility(iqU,'A08W',true,true)
 call UnitAddAbility(iqU,'IsQc')
-call UnitMakeAbilityPermanent(iqU,true,'IsQc')
-endif
-call EnableUnitAbility(iqU,'IsQc',true,true)
 call ISH_QSlow(iqU)
 set soundplay=SndN(969)
 call StartSound(soundplay)
@@ -95476,8 +95730,10 @@ call UnitEnableMovement(mirrorCaster,LoadBoolean(h,mirrorId,9),false)
 call UnitEnableAttack(mirrorCaster,LoadBoolean(h,mirrorId,10),false)
 call SetUnitInvulnerable(mirrorCaster,LoadBoolean(h,mirrorId,11))
 call Haku_FColour(mirrorCaster,LoadInteger(h,mirrorId,12),BitwiseShiftRightLogical(LoadInteger(h,mirrorId,12),24))
+call UpdateUnitInvisibilityAlpha(mirrorCaster)
 call Haku_FButtons(mirrorCaster,mirrorId,false)
-call DisableUnitAbility(mirrorCaster,'HaF2',true,true)
+call UnitMakeAbilityPermanent(mirrorCaster,false,'HaF2')
+call UnitRemoveAbility(mirrorCaster,'HaF2')
 call EnableUnitAbility(mirrorCaster,'HaF0',true,true)
 if not LoadBoolean(h,mirrorId,16) and GetUnitAbility(mirrorCaster,'HaF0')!=null then
 call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
@@ -95524,6 +95780,7 @@ call MyRemoveUnit(mirrorUnit,2.)
 call RemoveSavedHandle(h,mirrorId,20+mirrorCount-1)
 endif
 endif
+call UnitEnableMovement(mirrorCaster,false,false)
 call Haku_FJumpFx(mirrorCaster,mirrorAngle,false)
 call GroupClear(LoadGroupHandle(h,mirrorId,14))
 call SaveReal(h,mirrorId,18,0.)
@@ -95580,6 +95837,7 @@ local unit mirrorTarget
 if not UnitIsAlive(mirrorCaster) or GetUnitAbilityLevel(mirrorCaster,'HaF0')==0 or GetHeroLevel(mirrorCaster)<6 or not udg_B or not DU2 or IsUnitPaused(mirrorCaster) or IsUnitStunned(mirrorCaster) then
 call Haku_FEnd(mirrorTimer)
 elseif mirrorState==1 then
+call SetUnitXY(mirrorCaster,LoadReal(h,mirrorId,4),LoadReal(h,mirrorId,5))
 set mirrorIdle=LoadReal(h,mirrorId,7)+.02
 call SaveReal(h,mirrorId,7,mirrorIdle)
 if mirrorIdle>=2 then
@@ -95624,6 +95882,7 @@ if mirrorState==2 then
 call Haku_FEnd(mirrorTimer)
 else
 call SaveInteger(h,mirrorId,1,1)
+call UnitEnableMovement(mirrorCaster,true,false)
 call SaveReal(h,mirrorId,7,0.)
 call SetUnitInvulnerable(mirrorCaster,true)
 call Haku_FColour(mirrorCaster,LoadInteger(h,mirrorId,12),0)
@@ -95639,6 +95898,7 @@ set mirrorTimer=null
 endfunction
 function Haku_FCast takes nothing returns nothing
 local unit mirrorCaster=GetTriggerUnit()
+local integer mirrorOriginalColour=GetUnitVertexColour(mirrorCaster)
 local integer mirrorSpell=GetSpellAbilityId()
 local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
 local integer mirrorId=GetHandleId(mirrorTimer)
@@ -95662,7 +95922,12 @@ call SaveInteger(h,mirrorId,3,Haku_FRank(mirrorCaster))
 call SaveBoolean(h,mirrorId,9,IsUnitMovementEnabled(mirrorCaster))
 call SaveBoolean(h,mirrorId,10,IsUnitAttackEnabled(mirrorCaster))
 call SaveBoolean(h,mirrorId,11,IsUnitInvulnerable(mirrorCaster))
-call SaveInteger(h,mirrorId,12,GetUnitVertexColour(mirrorCaster))
+if mirrorOriginalColour==0 then
+set mirrorOriginalColour=-1
+elseif BitwiseShiftRightLogical(mirrorOriginalColour,24)==0 then
+set mirrorOriginalColour=BitwiseOR(mirrorOriginalColour,0xFF000000)
+endif
+call SaveInteger(h,mirrorId,12,mirrorOriginalColour)
 call SaveGroupHandle(h,mirrorId,13,CreateGroup())
 call SaveGroupHandle(h,mirrorId,14,CreateGroup())
 call Haku_FButtons(mirrorCaster,mirrorId,true)
@@ -95679,20 +95944,24 @@ set mirrorCaster=null
 set mirrorTimer=null
 endfunction
 function Haku_FOrder takes nothing returns nothing
-local unit mirrorCaster=GetTriggerUnit()
+local unit mirrorCaster=GetOrderedUnit()
+local integer mirrorOrder=GetIssuedOrderId()
 local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
 local integer mirrorId=GetHandleId(mirrorTimer)
 local real mirrorX=GetOrderPointX()
 local real mirrorY=GetOrderPointY()
 local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
 local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
-if GetIssuedOrderId()==OrderId("smart") and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and LoadInteger(h,mirrorId,2)<LoadInteger(h,mirrorId,3) and not IsUnitPaused(mirrorCaster) then
+if (mirrorOrder==OrderId("smart") or mirrorOrder==OrderId("move")) and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and not IsUnitPaused(mirrorCaster) then
+call IssueImmediateOrder(mirrorCaster,"stop")
+if LoadInteger(h,mirrorId,2)<Haku_FRank(mirrorCaster) and mirrorDistance>1. then
 if mirrorDistance>500 then
 set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
 set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
 endif
 if Haku_FDestination(mirrorX,mirrorY) then
 call Haku_FJump(mirrorId,mirrorX,mirrorY,false)
+endif
 endif
 endif
 set mirrorCaster=null
@@ -96071,13 +96340,15 @@ local real angle=LoadReal(h,volleyId,2)
 local real needleDamage=LoadReal(h,volleyId,3)
 local integer needleIndex=0
 local real offset
+local real needleHeading
 local unit needle
 if volleyCount<6 and UnitIsAlive(caster) and not IsUnitPaused(caster) and udg_B and DU2 then
 loop
 exitwhen needleIndex>=4
-set offset=(I2R(needleIndex)-1.5)*32
-set needle=CreateUnit(OwnerOf(caster),'e09Q',GetUnitX(caster)+offset*Cos(angle+bj_PI/2),GetUnitY(caster)+offset*Sin(angle+bj_PI/2),angle*bj_RADTODEG)
-call Slash_IceSenbon(needle,45,needleDamage,angle,1000,55,caster)
+set offset=(I2R(needleIndex)-1.5)*32+GetRandomReal(-8.,8.)
+set needleHeading=angle+GetRandomReal(-0.085,0.085)
+set needle=CreateUnit(OwnerOf(caster),'e09Q',GetUnitX(caster)+offset*Cos(angle+bj_PI/2),GetUnitY(caster)+offset*Sin(angle+bj_PI/2),needleHeading*bj_RADTODEG)
+call Slash_IceSenbon(needle,GetRandomReal(42.,48.),needleDamage,needleHeading,1000,55,caster)
 set needleIndex=needleIndex+1
 endloop
 set volleyCount=volleyCount+1
@@ -139529,6 +139800,8 @@ call SaveStr(HH,SH_ShnChanO,'A0CR',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0CR',1)
 call SaveStr(HH,SH_ShnChanO,'A0CS',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'A0CS',1)
+call SaveStr(HH,SH_ShnChanO,'A0CT',"cripple")
+call SaveInteger(HH,SH_ShnChanT,'A0CT',1)
 call SaveStr(HH,SH_ShnChanO,'A0CV',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'A0CV',2)
 call SaveStr(HH,SH_ShnChanO,'A0CX',"shockwave")
@@ -141059,7 +141332,7 @@ call SaveStr(HH,SH_ShnChanO,'IcW2',"channel")
 call SaveInteger(HH,SH_ShnChanT,'IcW2',1)
 call SaveStr(HH,SH_ShnChanO,'IcW3',"cripple")
 call SaveInteger(HH,SH_ShnChanT,'IcW3',1)
-call SaveStr(HH,SH_ShnChanO,'IsQc',"berserk")
+call SaveStr(HH,SH_ShnChanO,'IsQc',"roar")
 call SaveStr(HH,SH_ShnChanO,'JAE2',"cripple")
 call SaveStr(HH,SH_ShnChanO,'JAG1',"carrionswarm")
 call SaveInteger(HH,SH_ShnChanT,'JAG1',2)
@@ -141734,6 +142007,7 @@ call SaveStr(HH,SH_AbOrd,'A0CP',"sleep")
 call SaveStr(HH,SH_AbOrd,'A0CQ',"cripple")
 call SaveStr(HH,SH_AbOrd,'A0CR',"acidbomb")
 call SaveStr(HH,SH_AbOrd,'A0CS',"ancestralspirit")
+call SaveStr(HH,SH_AbOrd,'A0CT',"cripple")
 call SaveStr(HH,SH_AbOrd,'A0CU',"windwalk")
 call SaveStr(HH,SH_AbOrd,'A0CV',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'A0CW',"cripple")
@@ -143303,7 +143577,7 @@ call SaveStr(HH,SH_AbOrd,'IcW2',"channel")
 call SaveStr(HH,SH_AbOrd,'IcW3',"cripple")
 call SaveStr(HH,SH_AbOrd,'IcW4',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'InE1',"attributemodskill")
-call SaveStr(HH,SH_AbOrd,'IsQc',"berserk")
+call SaveStr(HH,SH_AbOrd,'IsQc',"roar")
 call SaveStr(HH,SH_AbOrd,'JAE2',"cripple")
 call SaveStr(HH,SH_AbOrd,'JAG1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'JND1',"blackarrow")
@@ -209844,6 +210118,7 @@ if time > 0 and time2!=0 and GetWidgetLife(u) > 0.405 and udg_B==true and DU2==t
             call SaveInteger(HH,id,SH_ID, 22)
         endif
         if GetUnitTypeId(u)=='H018' then
+            call ISH_QStop(u)
             set soundplay=SndN(3173) // Sound\Music\mp3Music\IshidaT.mp3
             call StartSound(soundplay)
             //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -274403,7 +274678,7 @@ exitwhen dmSlot>3
 set dmB=LoadUnitHandle(HH,GetHandleId(dmC),StringHash("DMQ_Ground_"+I2S(dmSlot)))
 if dmB!=null and dmB!=dmA and GetUnitTypeId(dmB)!=0 and LoadBoolean(HH,GetHandleId(dmA),StringHash("DMQPaidSoul")) and LoadBoolean(HH,GetHandleId(dmB),StringHash("DMQPaidSoul")) then
 set dmLen=SR(GetUnitX(dmA),GetUnitY(dmA),GetUnitX(dmB),GetUnitY(dmB))
-if dmLen>=1. and dmLen<=600. then
+if dmLen>=1. and dmLen<=700. then
 if not dmPaid then
 set dmPaid=true
 endif
@@ -290306,7 +290581,7 @@ function HitPanelUpdate takes unit hbu returns nothing
 if hbu==null or not IsUnitSelected(hbu,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(hbu)) then
 return
 endif
-call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cffc78cff"+GetObjectName('HtD1')+"|r: "+I2S(HitCh(hbu))+"/5")
+call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cffc78cff"+GetObjectName('HtD1')+"|r: "+I2S(HitCh(hbu))+"/10")
 call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
 call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
 call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
@@ -290357,6 +290632,7 @@ local real hips=LoadReal(HH,GetHandleId(hio),StringHash("HitIceScale"))
 local string hipm="Hit\\TimeIceShatter.mdx"
 local effect hipf
 local timer hipt
+call RemoveSavedReal(HH,GetHandleId(hio),StringHash("HitIceTop"))
 if hips<=0. then
 return false
 endif
@@ -290420,6 +290696,8 @@ set hft=null
 endfunction
 function HitIceGlowEnd takes effect hige returns nothing
 local effect higf=LoadEffectHandle(HH,GetHandleId(hige),StringHash("HitIceGlow"))
+call RemoveSavedReal(HH,GetHandleId(hige),StringHash("HitIceTop"))
+call RemoveSavedReal(HH,GetHandleId(hige),StringHash("HitIceAuraWidth"))
 if higf!=null then
 call SetSpecialEffectVisible(higf,false)
 call RemoveSavedBoolean(HH,GetHandleId(higf),StringHash("HitOwnFx"))
@@ -290429,13 +290707,18 @@ endif
 set higf=null
 endfunction
 function HitIceGlow takes effect higg returns nothing
+local real iceAuraWidth=LoadReal(HH,GetHandleId(higg),StringHash("HitIceAuraWidth"))
 local effect softIceGlow=LoadEffectHandle(HH,GetHandleId(higg),StringHash("HitIceGlow"))
+if iceAuraWidth<=0 then
+set iceAuraWidth=1.3
+endif
 if softIceGlow==null then
 set softIceGlow=AddSpecialEffect("Hit\\TimeIceGlowSoft.mdx",GetSpecialEffectX(higg),GetSpecialEffectY(higg))
-call SetSpecialEffectZ(softIceGlow,GetSpecialEffectZ(higg)-2.)
-call SetSpecialEffectScale(softIceGlow,0.75)
-call SetSpecialEffectVertexColour(softIceGlow,125,175,255,55)
+call SetSpecialEffectZ(softIceGlow,GetSpecialEffectZ(higg)+LoadReal(HH,GetHandleId(higg),StringHash("HitIceTop"))+6.)
+call SetSpecialEffectMatrixScale(softIceGlow,iceAuraWidth*GetSpecialEffectScale(higg),iceAuraWidth*GetSpecialEffectScale(higg),0.25)
+call SetSpecialEffectVertexColour(softIceGlow,190,230,255,245)
 call SetSpecialEffectAnimationByIndex(softIceGlow,0)
+call SetSpecialEffectTimeScale(softIceGlow,1.3)
 call SaveBoolean(HH,GetHandleId(softIceGlow),StringHash("HitOwnFx"),true)
 call SaveEffectHandle(HH,GetHandleId(higg),StringHash("HitIceGlow"),softIceGlow)
 endif
@@ -290452,6 +290735,7 @@ endif
 set hifx=AddSpecialEffect(him,hix,hiy)
 call SetSpecialEffectZ(hifx,GetLocationZ(hil)+4.)
 call SetSpecialEffectScale(hifx,his)
+call SaveReal(HH,GetHandleId(hifx),StringHash("HitIceTop"),56.*his)
 call HitIceShade(hifx,0)
 call SetSpecialEffectYaw(hifx,hia*bj_RADTODEG)
 call SetSpecialEffectAnimationByIndex(hifx,0)
@@ -290577,6 +290861,8 @@ function HitFreezeEnd takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit e=LoadUnitHandle(h,GetHandleId(t),0)
 local integer eid=GetHandleId(e)
+local integer forcedPauseCount
+local boolean forcedPauseWanted
 local integer hitFreezeCount=LoadInteger(HH,eid,HitK("Fz"))-1
 call SaveInteger(HH,eid,HitK("Fz"),hitFreezeCount)
 if hitFreezeCount<=0 then
@@ -290587,6 +290873,16 @@ call SetUnitTimeScale(e,LoadReal(HH,eid,HitK("FzTs")))
 else
 call SetUnitTimeScale(e,1.)
 endif
+endif
+endif
+if LoadBoolean(h,GetHandleId(t),1) then
+set forcedPauseCount=IMaxBJ(0,LoadInteger(HH,eid,StringHash("HitTPauseCount"))-1)
+call SaveInteger(HH,eid,StringHash("HitTPauseCount"),forcedPauseCount)
+if forcedPauseCount==0 then
+set forcedPauseWanted=LoadBoolean(HH,eid,StringHash("HitTPauseWanted"))
+call RemoveSavedInteger(HH,eid,StringHash("HitTPauseCount"))
+call RemoveSavedBoolean(HH,eid,StringHash("HitTPauseWanted"))
+call MapPauseUnit(e,forcedPauseWanted)
 endif
 endif
 call TSE_HoldCooldowns()
@@ -290608,7 +290904,19 @@ if TSE_PlayerResistant(OwnerOf(e)) and not frc then
 call TSE_SoftTimed(e,dur)
 return true
 endif
+if frc then
+if LoadInteger(HH,eid,StringHash("HitTPauseCount"))==0 then
+if LoadInteger(TSE_HT,eid,104)>0 then
+call SaveBoolean(HH,eid,StringHash("HitTPauseWanted"),LoadBoolean(TSE_HT,eid,105))
+else
+call SaveBoolean(HH,eid,StringHash("HitTPauseWanted"),IsUnitPaused(e))
+endif
+endif
+call SaveInteger(HH,eid,StringHash("HitTPauseCount"),LoadInteger(HH,eid,StringHash("HitTPauseCount"))+1)
+call PauseUnit(e,true)
+else
 call SetControlToUnit(c,e,dur,"stun")
+endif
 if LoadInteger(HH,eid,HitK("Fz"))<=0 then
 if IsUnitInGroup(e,TSE_G) then
 call SaveReal(HH,eid,HitK("FzTs"),LoadReal(TSE_HT,eid,0))
@@ -290624,6 +290932,7 @@ call TSE_HoldCooldowns()
 call SetUnitTimeScale(e,0.001)
 set t=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(t),0,e)
+call SaveBoolean(h,GetHandleId(t),1,frc)
 call TSE_TimerStart(t,dur,false,function HitFreezeEnd)
 set t=null
 return true
@@ -290733,6 +291042,35 @@ function HitEnemyTarget takes unit hetU,unit hetE returns boolean
 return hetE!=null and hetE!=hetU and UnitIsAlive(hetE) and IsUnitEnemy(hetE,OwnerOf(hetU)) and not IsUnitType(hetE,UNIT_TYPE_MECHANICAL) and not IsUnitType(hetE,UNIT_TYPE_STRUCTURE) and not IsUnitInvulnerable(hetE)
 endfunction
 
+function HitSetCh takes unit u,integer scope_HitSetCh_n returns nothing
+local integer uid=GetHandleId(u)
+local integer add
+if scope_HitSetCh_n<0 then
+set scope_HitSetCh_n=0
+endif
+if scope_HitSetCh_n>10 then
+set scope_HitSetCh_n=10
+endif
+set add=4*scope_HitSetCh_n-LoadInteger(HH,uid,HitK("ChAgi"))
+if add!=0 then
+call SetHeroAgi(u,GetHeroAgi(u,false)+add,true)
+call SaveInteger(HH,uid,HitK("ChAgi"),4*scope_HitSetCh_n)
+endif
+if scope_HitSetCh_n>LoadInteger(HH,uid,HitK("Ch")) then
+call HitFxU("war3mapimported\\VioletPulse.mdx",u,"origin",0.9,0.8)
+endif
+call SaveInteger(HH,uid,HitK("Ch"),scope_HitSetCh_n)
+call HitPanelUpdate(u)
+endfunction
+function HitProgress takes unit progressCaster,unit progressTarget,integer progressSpell returns nothing
+local integer progressId=GetHandleId(progressCaster)
+local integer progressKey=StringHash("HitProgress"+I2S(progressSpell))
+if progressTarget!=null and IsUnitEnemy(progressTarget,OwnerOf(progressCaster)) and (IsUnitType(progressTarget,UNIT_TYPE_HERO) or GetUnitTypeId(progressTarget)=='ogru') and GetUnitAbilityLevel(progressCaster,'HtD1')>0 and not LoadBoolean(HH,progressId,progressKey) then
+call SaveBoolean(HH,progressId,progressKey,true)
+call SaveReal(HH,progressId,HitK("Cbt"),HitNow())
+call HitSetCh(progressCaster,HitCh(progressCaster)+1)
+endif
+endfunction
 function HitQCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtQ1' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
@@ -290820,6 +291158,7 @@ call HitFx("az_hitheavy.mdx",GetUnitX(hqe),GetUnitY(hqe),GetUnitFlyHeight(hqe)+6
 call HitStrikeFx(hqe,0,hqa,0.9)
 call HitContactWind(hqe,hqa,0.55)
 call HitImpactSound(0)
+call HitProgress(hqu,hqe,'HtQ1')
 call myCustomDamage(hqu,hqe,LoadReal(h,hqi,4),false,false,null,null,null)
 if UnitIsAlive(hqe) then
 if hqm>=3 then
@@ -290876,6 +291215,7 @@ local location hsil=Location(hsix,hsiy)
 call SetSpecialEffectZ(hsif,GetLocationZ(hsil)+5.)
 call SetSpecialEffectYaw(hsif,hsia*bj_RADTODEG)
 call SetSpecialEffectScale(hsif,hsis)
+call SaveReal(HH,GetHandleId(hsif),StringHash("HitIceTop"),19.*hsis)
 call HitIceShade(hsif,0)
 call SetSpecialEffectAnimationByIndex(hsif,0)
 call QueueSpecialEffectAnimationByIndex(hsif,1)
@@ -290896,7 +291236,8 @@ endfunction
 function HitWKeep takes group hwkg,effect hwke returns nothing
 local integer hwki=GetHandleId(hwkg)
 local integer hwkn=LoadInteger(h,hwki,99)
-if LoadEffectHandle(HH,GetHandleId(hwke),StringHash("HitIceGlow"))==null then
+if LoadReal(HH,GetHandleId(hwke),StringHash("HitIceTop"))>0 and LoadEffectHandle(HH,GetHandleId(hwke),StringHash("HitIceGlow"))==null then
+call SaveReal(HH,GetHandleId(hwke),StringHash("HitIceAuraWidth"),1.8)
 call HitIceGlow(hwke)
 endif
 call SaveEffectHandle(h,hwki,100+hwkn,hwke)
@@ -290953,6 +291294,7 @@ call SetSpecialEffectScale(hwhit,0.65)
 call HitOwnFxKeep(hwhit,0.35,false)
 call HitStrikeFx(hwtarget,1,hwa,0.45)
 call HitStrikeFx(hwtarget,4,hwa,0.65)
+call HitProgress(hwcu,hwtarget,'HtW1')
 call myCustomDamage(hwcu,hwtarget,75.*hwlv+hwlv*HitAgi(hwcu),false,false,null,null,null)
 if UnitIsAlive(hwtarget) then
 if HitFreeze(hwcu,hwtarget,hwfreeze) then
@@ -291265,6 +291607,7 @@ set hce=AddSpecialEffect(hcm,hcx,hcy)
 call SetSpecialEffectZ(hce,GetLocationZ(hcl)+65.)
 call SetSpecialEffectScale(hce,hcs)
 call HitIceShade(hce,0)
+call SetSpecialEffectVertexColour(hce,255,255,255,204)
 call SetSpecialEffectAnimationByIndex(hce,0)
 call QueueSpecialEffectAnimationByIndex(hce,1)
 call SaveReal(HH,GetHandleId(hce),StringHash("HitIceScale"),hcs)
@@ -291337,6 +291680,7 @@ call HitAnim(u,55,1.6,0.4)
 call HitFxU("Aizen\\[A]hit-white-guangxiao.mdx",c,"chest",1.,1.)
 call HitFxU("az_hitheavy.mdx",c,"chest",0.8,1.)
 call HitPunchRay(u,c,0.65)
+call HitProgress(u,c,'HtE1')
 call myCustomDamage(u,c,75.*l+l*HitAgi(u),false,false,null,null,null)
 call HitImpactSound(0)
 call HitSnd("HitE1-sfx-2")
@@ -291352,13 +291696,16 @@ return GetSpellAbilityId()=='HtE1' and udg_B==true
 endfunction
 function HitECast takes nothing returns nothing
 local unit u=GetTriggerUnit()
+local real originX=GetUnitX(u)
+local real originY=GetUnitY(u)
+local real facing=GetUnitFacing(u)
 local unit im=CreateIllusionFromUnit(u)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local trigger tr=CreateTrigger()
 call UnitCancelTimedLife(im)
-call SetUnitXY_1(im,GetUnitX(u),GetUnitY(u),false)
-call SetUnitFacingInstant(im,GetUnitFacing(u))
+call SetUnitPathing(im,false)
+call SetUnitFacingInstant(im,facing)
 call SetUnitStringField(im,UNIT_SF_NAME,GetUnitName(u))
 call SetUnitStringField(im,UNIT_SF_PROPER_NAMES,GetHeroProperName(u))
 call SetHeroLevel(im,GetHeroLevel(u),false)
@@ -291387,8 +291734,8 @@ call SaveTriggerHandle(h,id,2,tr)
 call SaveBoolean(h,id,3,false)
 call HitInvis(u,2.)
 call SaveReal(HH,GetHandleId(u),HitK("EStep"),HitNow()+2.)
-call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(u),GetUnitY(u),0.,1.,1.)
-call HitSnd("HitE1-sfx-1")
+call SetUnitXY(u,originX-50.*Cos(facing*bj_DEGTORAD),originY-50.*Sin(facing*bj_DEGTORAD))
+call SetUnitPositionEx(im,true,false,originX,originY,GetUnitZ(im))
 call TSE_TimerStart(t,1.2,false,function HitEImgEnd)
 set tr=null
 set t=null
@@ -291443,6 +291790,7 @@ endif
 call SaveUnitHandle(HH,GetHandleId(e),StringHash("HitCage"),u)
 call SaveReal(HH,GetHandleId(e),StringHash("HitCageD"),0.)
 call HitFreezeEx(u,e,dur,true)
+call HitProgress(u,e,'HtR1')
 call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,e)
 call SaveReal(h,id,2,0.05+0.05*l)
@@ -291576,26 +291924,6 @@ set hrcf=null
 endfunction
 
 // ===== D — Pure Progress: заряды (тик HitTick), активно — сбросить Q, W, E, F =====
-function HitSetCh takes unit u,integer scope_HitSetCh_n returns nothing
-local integer uid=GetHandleId(u)
-local integer add
-if scope_HitSetCh_n<0 then
-set scope_HitSetCh_n=0
-endif
-if scope_HitSetCh_n>5 then
-set scope_HitSetCh_n=5
-endif
-set add=6*scope_HitSetCh_n-LoadInteger(HH,uid,HitK("ChAgi"))
-if add!=0 then
-call SetHeroAgi(u,GetHeroAgi(u,false)+add,true)
-call SaveInteger(HH,uid,HitK("ChAgi"),6*scope_HitSetCh_n)
-endif
-if scope_HitSetCh_n>LoadInteger(HH,uid,HitK("Ch")) then
-call HitFxU("war3mapimported\\VioletPulse.mdx",u,"origin",0.9,0.8)
-endif
-call SaveInteger(HH,uid,HitK("Ch"),scope_HitSetCh_n)
-call HitPanelUpdate(u)
-endfunction
 function HitCdReset takes unit u,integer abil returns nothing
 local ability ab=GetUnitAbility(u,abil)
 if ab!=null then
@@ -291615,7 +291943,7 @@ set hdcb=null
 endfunction
 function HitDCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
-local real hdcs=I2R(HitCh(u))
+local real hdcs=RMinBJ(5.,I2R(HitCh(u)))
 if HitCh(u)<=0 then
 call DisplayTextToPlayer(OwnerOf(u),0,0,Lng("|cffff8080Нет зарядов «Я становлюсь сильнее».|r","|cffff8080No Pure Progress charges.|n|r"))
 call HitCdReset(u,'HtD1')
@@ -291695,9 +292023,10 @@ endif
 if hbon then
 set hbaf=AddSpecialEffectTarget("Hit\\TimeBlueAuraSoft.mdx",hbau,"origin")
 call SaveBoolean(HH,GetHandleId(hbaf),StringHash("HitOwnFx"),true)
-call SetSpecialEffectMatrixScale(hbaf,0.3,0.3,0.12)
-call SetSpecialEffectVertexColour(hbaf,35,95,255,35)
+call SetSpecialEffectMatrixScale(hbaf,0.3,0.3,0.55)
+call SetSpecialEffectVertexColour(hbaf,35,95,255,115)
 call SetSpecialEffectAnimationByIndex(hbaf,0)
+call SetSpecialEffectTimeScale(hbaf,1.3)
 call SaveEffectHandle(HH,GetHandleId(hbau),StringHash(hbak),hbaf)
 endif
 set hbaf=null
@@ -291914,6 +292243,7 @@ if hit!=null then
 call HitPunchImpact(hit,a,0.,0.75)
 call HitContactWind(hit,a,0.6)
 call HitImpactSound(1)
+call HitProgress(u,hit,'HtF2')
 call myCustomDamage(u,hit,(2.+I2R(GetUnitAbilityLevel(u,'HtF2')))*HitAgi(u),false,false,null,null,null)
 endif
 set g=null
@@ -291990,6 +292320,7 @@ endif
 if k<3 then
 call HitFWStrike(u,e,k,hfwda)
 call HitPunchImpact(u,hfwda,0.,0.4)
+call HitProgress(u,e,'HtF3')
 call myCustomDamage(u,e,((2.+I2R(GetUnitAbilityLevel(u,'HtF3')))/3.)*HitAgi(u),false,false,null,null,null)
 if UnitIsAlive(e) then
 call SetUnitXY_1(e,GetUnitX(e)+22.*Cos(hfwda),GetUnitY(e)+22.*Sin(hfwda),false)
@@ -292005,6 +292336,7 @@ else
 call TSE_TimerStart(t,0.4,true,function HitF3Tick)
 endif
 else
+call HitProgress(u,e,'HtF3')
 call myCustomDamage(u,e,((2.+I2R(GetUnitAbilityLevel(u,'HtF3')))/3.)*HitAgi(u),false,false,null,null,null)
 
 if UnitIsAlive(e) then
@@ -292132,6 +292464,7 @@ if not LoadBoolean(h,hfpi,9) and hfpu!=null and UnitIsAlive(hfpe) then
 call HitStrikeFx(hfpe,4,LoadReal(h,hfpi,1),0.65)
 call HitContactWind(hfpe,LoadReal(h,hfpi,1),0.6)
 call HitSnd("HitColdEyeHit")
+call HitProgress(hfpu,hfpe,'HtF4')
 call myCustomDamage(hfpu,hfpe,(3.+I2R(GetUnitAbilityLevel(hfpu,'HtF4')))*HitAgi(hfpu),false,false,null,null,null)
 set hfpv=CreateTimer()
 call SaveUnitHandle(h,GetHandleId(hfpv),0,hfpe)
@@ -292197,6 +292530,7 @@ call SetSpecialEffectPositionWithZ(hfff,hfdx+45.*Cos(hfda),hfdy+45.*Sin(hfda),Ge
 call SetSpecialEffectOrientation(hfff,hfda*bj_RADTODEG+180.,0.,0.)
 endif
 set hfdf=HitStepIce(hfdx+26.*Sin(hfdd*0.071)*Cos(hfda+bj_PI/2.),hfdy+26.*Sin(hfdd*0.071)*Sin(hfda+bj_PI/2.),hfda+0.55*Sin(hfdd*0.043),1.05+0.25*Cos(hfdd*0.037))
+call HitIceGlow(hfdf)
 call SaveEffectHandle(h,hfdi,100+hfdn,hfdf)
 call SaveInteger(h,hfdi,20,hfdn+1)
 if ModuloInteger(R2I(hfdd),150)==0 then
@@ -292284,7 +292618,21 @@ return GetSpellAbilityId()=='HtG1' and udg_B==true
 endfunction
 function HitGCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
+local group progressScan=CreateGroup()
+local unit progressEnemy
 local real hgdur=RMinBJ(1.,0.5+HitStopAdd(u))
+call GroupEnumUnitsInRange(progressScan,GetUnitX(u),GetUnitY(u),1200.,null)
+loop
+set progressEnemy=FirstOfGroup(progressScan)
+exitwhen progressEnemy==null
+call GroupRemoveUnit(progressScan,progressEnemy)
+if HitEnemy(u,progressEnemy) and not HitIsTS(progressEnemy) then
+call HitProgress(u,progressEnemy,'HtG1')
+endif
+endloop
+call DestroyGroup(progressScan)
+set progressScan=null
+set progressEnemy=null
 call HitSnd("HitT")
 call HitVo("HitG1")
 call HitFacingIce(GetUnitX(u),GetUnitY(u),3.2,hgdur,true)
@@ -292360,8 +292708,28 @@ call TSE_DestroyTimer(htft)
 set htff=null
 set htft=null
 endfunction
+function HitTOpeningShift takes real pace returns real
+return RMaxBJ(0.,0.3+(2.592-0.26/12.)*pace*(3.3-2.6/30.)/16.-0.3)
+endfunction
+function HitTFinalWindow takes real pace returns real
+return 0.32*36./35.
+endfunction
 function HitTBeat takes integer htbk,real htbm returns real
-return 0.3+(2.592-0.26/12.)*htbm*(1.65*I2R(htbk)-1.3*I2R(htbk*(htbk-1))/30.)/16.
+local integer baseBeat=IMinBJ(htbk,16)
+local real beatTime=0.3+(2.592-0.26/12.)*htbm*(1.65*I2R(baseBeat)-1.3*I2R(baseBeat*(baseBeat-1))/30.)/16.
+if htbk<=1 then
+return 0.01*I2R(htbk)
+endif
+if htbk>3 then
+set beatTime=beatTime+0.4
+endif
+if htbk>6 then
+set beatTime=beatTime+0.4
+endif
+if htbk>16 then
+set beatTime=beatTime+I2R(htbk-16)*0.1
+endif
+return beatTime-HitTOpeningShift(htbm)*I2R(22-htbk)/20.
 endfunction
 
 function HitTHeldFx takes integer htci,unit htcu,unit htce,real htca returns nothing
@@ -292373,7 +292741,7 @@ local real htcz=65.
 local real htcp=0.
 local real htcr=0.
 local string htcm="Hit\\TPunchImpact.mdx"
-if LoadInteger(h,htci,12)<16 then
+if LoadInteger(h,htci,12)<22 then
 set htcz=GetRandomReal(40.,95.)
 set htcp=GetRandomReal(-12.,12.)
 set htcr=GetRandomReal(-18.,18.)
@@ -292476,28 +292844,19 @@ endfunction
 function HitTApplyDamage takes integer htai,real htad returns nothing
 local unit htau=LoadUnitHandle(h,htai,0)
 local unit htae=LoadUnitHandle(h,htai,1)
-call HitTTargetRelease(htai)
-if TSE_On and TSE_Src==htau then
-call TSE_Stop()
-endif
-if htau!=null then
-call MapPauseUnit(htau,LoadBoolean(h,htai,16))
-if LoadUnitHandle(HH,GetHandleId(htau),StringHash("HitTGuard"))==htau then
-call RemoveSavedHandle(HH,GetHandleId(htau),StringHash("HitTGuard"))
-call SetUnitInvulnerable(htau,LoadBoolean(h,htai,14))
-endif
-endif
-if htae!=null and LoadUnitHandle(HH,GetHandleId(htae),StringHash("HitTGuard"))==htau then
-call RemoveSavedHandle(HH,GetHandleId(htae),StringHash("HitTGuard"))
-call SetUnitInvulnerable(htae,LoadBoolean(h,htai,15))
-endif
 if htau!=null and htae!=null and not LoadBoolean(h,htai,15) then
+// Keep the time stop and both guards until the retreat and pose have completed.
 call SaveBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"),true)
+call PauseUnit(htae,false)
 call SetUnitInvulnerable(htae,false)
 call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))+1)
 call myCustomDamage(htau,htae,htad,false,false,null,null,null)
 call SaveInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"),IMaxBJ(0,LoadInteger(HH,GetHandleId(htae),StringHash("TSEReverseIgnore"))-1))
 call RemoveSavedBoolean(HH,GetHandleId(htae),StringHash("HitTOwnDamage"))
+if UnitIsAlive(htae) then
+call SetUnitInvulnerable(htae,true)
+call PauseUnit(htae,true)
+endif
 endif
 set htau=null
 set htae=null
@@ -292511,7 +292870,15 @@ local boolean htf=LoadBoolean(h,hti,5)
 local sound htsnd=LoadSoundHandle(h,hti,13)
 local timer htvet=LoadTimerHandle(h,hti,21)
 local effect htice=LoadEffectHandle(h,hti,8)
+local timer htwatch=LoadTimerHandle(h,hti,43)
 local timer htmeasure=LoadTimerHandle(h,hti,25)
+if htwatch!=null then
+call PauseTimer(htwatch)
+call FlushChildHashtable(h,GetHandleId(htwatch))
+call DestroyTimer(htwatch)
+call RemoveSavedHandle(h,hti,43)
+endif
+set htwatch=null
 if htvet!=null then
 call RemoveSavedHandle(h,hti,21)
 call PauseTimer(htvet)
@@ -292554,7 +292921,7 @@ call SetUnitTimeScale(htu,1.)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),false)
 call HitFRefresh(htu)
 if UnitIsAlive(htu) then
-call HitSetCh(htu,5)
+call HitSetCh(htu,10)
 call SaveReal(HH,GetHandleId(htu),HitK("ChLock"),HitNow()+15.)
 endif
 endif
@@ -292579,15 +292946,34 @@ function HitTRebound takes nothing returns nothing
 local timer htrt=GetExpiredTimer()
 local integer htri=GetHandleId(htrt)
 local unit htru=LoadUnitHandle(h,htri,0)
-local integer htrk=LoadInteger(h,htri,18)+1
 local real htra=LoadReal(h,htri,17)+bj_PI
-if htru!=null and UnitIsAlive(htru) and htrk<=10 then
-call SetUnitXY_1(htru,GetUnitX(htru)+16.*Cos(htra),GetUnitY(htru)+16.*Sin(htra),false)
-call SetUnitFacingInstant(htru,htra*bj_RADTODEG)
-endif
-call SaveInteger(h,htri,18,htrk)
-if htrk>=25 or htru==null or not UnitIsAlive(htru) or not TSE_On or TSE_Src!=htru then
+local real htrnow=TimerGetElapsed(LoadTimerHandle(h,htri,25))
+local real htrdt
+local real retreatFraction
+if htru==null or not UnitIsAlive(htru) or not TSE_On or TSE_Src!=htru then
 call HitTEnd()
+elseif htrnow>=LoadReal(h,htri,33) then
+if not LoadBoolean(h,htri,34) then
+call SaveBoolean(h,htri,34,true)
+call SaveReal(h,htri,35,LoadReal(h,htri,33))
+call SetUnitAnimationByIndex(htru,22)
+call SetUnitTimeScale(htru,7.34*0.1/0.22)
+call SetUnitFacingInstant(htru,(htra+bj_PI)*bj_RADTODEG)
+endif
+set htrdt=htrnow-LoadReal(h,htri,35)
+set retreatFraction=RMinBJ(1.,RMaxBJ(0.,(htrdt+0.0001)/0.22))
+call SetUnitX(htru,LoadReal(h,htri,38)+160.*retreatFraction*Cos(htra))
+call SetUnitY(htru,LoadReal(h,htri,39)+160.*retreatFraction*Sin(htra))
+if retreatFraction>=1. and not LoadBoolean(h,htri,36) then
+call SaveBoolean(h,htri,36,true)
+call SetUnitFacingInstant(htru,htra*bj_RADTODEG)
+call SetUnitAnimationByIndex(htru,9)
+call SetUnitTimeScale(htru,1.)
+call SaveReal(h,htri,37,htrnow+0.3)
+call TSE_TimerStart(htrt,0.3,false,function HitTEnd)
+elseif LoadBoolean(h,htri,36) and htrnow>=LoadReal(h,htri,37) then
+call HitTEnd()
+endif
 endif
 set htru=null
 set htrt=null
@@ -292606,10 +292992,17 @@ local real htr
 local real htsr=LoadReal(h,hti,22)
 local real htv
 local effect htbf=LoadEffectHandle(h,hti,8)
-if htj==16 then
+if htj==1 then
+set hta=hta+0.45
+elseif htj==3 then
+set hta=hta+0.9
+elseif htj==6 then
+set hta=hta-0.9
+endif
+if htj==22 then
 set hta=LoadReal(h,hti,3)+12.*137.5*bj_DEGTORAD
 set htn=36
-set htm=25
+set htm=2
 endif
 if htu==null or hte==null or not UnitIsAlive(htu) or not UnitIsAlive(hte) or not udg_B or not TSE_On or TSE_Src!=htu then
 call HitTEnd()
@@ -292623,7 +293016,7 @@ if htp==0 then
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
 set htr=300.+40.*I2R(ModuloInteger(htj,3))
-if htj==16 then
+if htj==22 then
 set htr=300.
 elseif ModuloInteger(htj,4)==1 then
 set htr=260.
@@ -292633,14 +293026,24 @@ call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
-if htj==16 then
-call SetUnitAnimationByIndex(htu,14)
-call SetUnitAnimationOffsetPercent(htu,6167./7934.)
-call SetUnitTimeScale(htu,1.767/(0.936*LoadReal(h,hti,11)*35./36.))
+if htj==22 then
+call SetUnitAnimationOffsetPercent(htu,3269./7934.)
+call SetUnitTimeScale(htu,2.0)
 endif
 if htj==0 then
 call SaveReal(h,hti,24,0.22*0.12101381042059008*LoadReal(h,hti,11))
 call SaveReal(h,hti,23,LoadReal(h,hti,23)+LoadReal(h,hti,24))
+endif
+elseif htj==22 and htp<htn-1 then
+if htp<htn-1-htm then
+set htv=I2R(htp)/I2R(htn-1-htm)
+set htr=300.-65.*htv
+call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
+else
+set htv=I2R(htp-(htn-1-htm)+1)/I2R(htm)
+set htr=115.+(235.-115.)*(1.-htv)
+call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false)
+call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
 endif
 elseif htp<=htm then
 set htv=I2R(htp)/I2R(htm)
@@ -292655,19 +293058,29 @@ set htbf=HitTFacingIce(GetUnitX(hte),GetUnitY(hte),6.3,6.+HitStopAdd(htu),true)
 call SetSpecialEffectZ(htbf,GetUnitZ(hte)+65.)
 call SaveEffectHandle(h,hti,8,htbf)
 endif
-if htj==16 then
+if htj==22 then
 call HitTFxCancel(hti)
+endif
+if htj==21 then
+if not LoadBoolean(h,hti,45) then
+call SetUnitAnimationByIndex(htu,14)
+call SetUnitTimeScale(htu,0.01)
+call SaveBoolean(h,hti,45,true)
+endif
+elseif htj<21 then
+call SetUnitAnimationByIndex(htu,27+ModuloInteger(htj,25))
+call SetUnitTimeScale(htu,2.5)
 endif
 call HitTHeldFx(hti,htu,hte,hta+bj_PI)
 call HitTPunchRay(htu,hte,0.45)
-if htj==16 then
-call HitTTargetRelease(hti)
+if htj==22 then
+call HitSnd("HitTFinalImpact")
 call HitTApplyDamage(hti,11.*HitAgi(htu))
 call SaveBoolean(h,hti,5,true)
 call SaveReal(h,hti,17,hta+bj_PI)
-call SetUnitFacingInstant(htu,hta*bj_RADTODEG)
-call SetUnitAnimationByIndex(htu,9)
-call SetUnitTimeScale(htu,1.)
+call SaveReal(h,hti,33,TimerGetElapsed(LoadTimerHandle(h,hti,25)))
+call SaveReal(h,hti,38,GetUnitX(htu))
+call SaveReal(h,hti,39,GetUnitY(htu))
 call TSE_TimerStart(htt,0.02,true,function HitTRebound)
 elseif not UnitIsAlive(hte) then
 call HitTEnd()
@@ -292682,8 +293095,8 @@ else
 set htj=htj+1
 call SaveInteger(h,hti,12,htj)
 call SaveInteger(h,hti,2,0)
-if htj==16 then
-set htr=0.936/36.
+if htj==22 then
+set htr=HitTFinalWindow(LoadReal(h,hti,11))/(36.*LoadReal(h,hti,11))
 else
 set htr=(0.22-0.0025*I2R(htj))*0.12101381042059008
 endif
@@ -292709,23 +293122,85 @@ local unit htme=LoadUnitHandle(h,htmid,1)
 local integer htmj=LoadInteger(h,htmid,12)
 local real htmd=HitTBeat(htmj+1,LoadReal(h,htmid,11))-HitTBeat(htmj,LoadReal(h,htmid,11))
 local real htmt
+local real htmphase
+local real htmnative
+local real htmdelay
+local real htmfactor=1.
+local real htmhold
+local real htmback=80.
+local real htmlead=30.
 local real htma
-local real htmr=115.
+local real htmr
+local real htmside=0.9
 local real htmouter=300.+40.*I2R(ModuloInteger(htmj,3))
-if htmj<16 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
+if htmj==1 then
+set htmouter=180.
+set htmback=24.
+set htmlead=8.
+set htmside=0.45
+endif
+if htmj>=16 then
+set htmouter=180.
+endif
+if htmj<22 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
 set htmt=(TimerGetElapsed(LoadTimerHandle(h,htmid,25))-HitTBeat(htmj,LoadReal(h,htmid,11)))/htmd
-if htmt>=0. then
-set htmt=RMinBJ(1.,htmt)
-set htmt=htmt*htmt*(3.-2.*htmt)
 if htmj==0 then
-set htma=LoadReal(h,htmid,3)
-set htmr=115.+(htmouter-115.)*(1.-htmt)
-else
-set htmr=115.+(htmouter-115.)*(1.-htmt)
+set htmu=null
+set htme=null
+return
+elseif htmt>=0. then
+set htmt=RMinBJ(1.,htmt)
+set htmnative=htmt
+if htmj==1 then
+set htmfactor=1.3
+elseif htmj==3 then
+set htmfactor=1.6445
+elseif htmj==6 then
+set htmfactor=1.859
+endif
 set htma=LoadReal(h,htmid,3)+I2R(htmj)*137.5*bj_DEGTORAD
+if htmj==1 or htmj==3 or htmj==6 then
+if htmj==6 then
+set htmside=-0.9
+endif
+set htmdelay=1.-1./htmfactor
+if htmnative<htmdelay then
+set htmt=htmnative/htmdelay
+set htmr=htmouter+htmlead*htmt
+else
+set htmt=(htmnative-htmdelay)*htmfactor
+set htmouter=htmouter+htmlead
+if htmt<0.2 then
+set htmr=htmouter+htmback*htmt/0.2
+elseif htmt<0.75 then
+set htmr=htmouter+htmback
+set htma=htma+htmside*(htmt-0.2)/0.55
+else
+set htmphase=(htmt-0.75)/0.25
+set htmphase=htmphase*htmphase*(3.-2.*htmphase)
+set htmr=115.+(htmouter+htmback-115.)*(1.-htmphase)
+set htma=htma+htmside
+endif
+endif
+else
+set htmhold=RMinBJ(210.,htmouter-25.)
+if htmt<0.6 then
+set htmr=htmouter+(htmhold-htmouter)*htmt/0.6
+else
+set htmphase=(htmt-0.6)/0.4
+set htmr=115.+(htmhold-115.)*(1.-htmphase)
+endif
 endif
 if LoadInteger(h,htmid,30)!=htmj+1 then
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htmu),GetUnitY(htmu),0.,0.5,0.25)
+if htmj==21 then
+call SetUnitAnimationByIndex(htmu,14)
+call SetUnitTimeScale(htmu,0.01)
+call SaveBoolean(h,htmid,45,true)
+elseif htmj==1 then
+call SetUnitAnimationByIndex(htmu,21)
+call SetUnitTimeScale(htmu,0.734/htmd)
+endif
 call SaveInteger(h,htmid,30,htmj+1)
 endif
 call SetUnitXY_1(htmu,GetUnitX(htme)+htmr*Cos(htma),GetUnitY(htme)+htmr*Sin(htma),false)
@@ -292742,6 +293217,11 @@ local integer htki=GetHandleId(htkt)
 local integer htloops=0
 local integer htindex
 local real htstep=LoadReal(h,htki,11)
+if TimerGetElapsed(LoadTimerHandle(h,htki,25))>=6.0 then
+call HitTEnd()
+set htkt=null
+return
+endif
 if LoadBoolean(h,htki,32) then
 call PauseUnit(LoadUnitHandle(h,htki,1),true)
 endif
@@ -292750,15 +293230,15 @@ loop
 exitwhen htloops>=8 or LoadUnitHandle(h,htki,0)==null or LoadBoolean(h,htki,5)
 exitwhen TimerGetElapsed(LoadTimerHandle(h,htki,25))+0.0001<LoadReal(h,htki,23)
 set htindex=LoadInteger(h,htki,12)
-if htindex<16 then
+if htindex<22 then
 call SaveInteger(h,htki,2,3)
 call HitTHit()
 if LoadUnitHandle(h,htki,0)!=null then
-if LoadInteger(h,htki,12)<16 then
+if LoadInteger(h,htki,12)<22 then
 call SaveReal(h,htki,23,HitTBeat(LoadInteger(h,htki,12)+1,htstep))
 else
-call SaveReal(h,htki,24,0.936*htstep/36.)
-call SaveReal(h,htki,23,0.3+(2.592-0.26/12.)*htstep+LoadReal(h,htki,24))
+call SaveReal(h,htki,24,HitTFinalWindow(htstep)/36.)
+call SaveReal(h,htki,23,HitTBeat(22,htstep)+LoadReal(h,htki,24))
 endif
 endif
 else
@@ -292773,12 +293253,27 @@ endfunction
 function HitTCond takes nothing returns boolean
 return GetSpellAbilityId()=='HtT1' and udg_B==true and HitEnemyTarget(GetTriggerUnit(),GetSpellTargetUnit())
 endfunction
+function HitTWatchdog takes nothing returns nothing
+local timer guardTimer=GetExpiredTimer()
+local integer guardId=GetHandleId(guardTimer)
+local integer mainId=LoadInteger(h,guardId,0)
+local timer mainTimer=LoadTimerHandle(h,mainId,44)
+if mainTimer!=null and LoadUnitHandle(h,mainId,0)!=null then
+call RemoveSavedHandle(h,mainId,43)
+call TimerStart(mainTimer,0.,false,function HitTEnd)
+endif
+call FlushChildHashtable(h,guardId)
+call DestroyTimer(guardTimer)
+set guardTimer=null
+set mainTimer=null
+endfunction
 function HitTBegin takes unit htu,unit hte returns nothing
-local real htd=4.2+HitStopAdd(htu)
-local real htseries=(htd-0.3)/3.528
+local real htd=6.0
+local real htseries=(6.0-0.42-(0.32*36./35.)*37./36.-0.6-1.2)/(2.592-0.26/12.)
 local timer htt=CreateTimer()
 local timer htvc=CreateTimer()
 local timer htmeasure=CreateTimer()
+local timer htwatch=CreateTimer()
 local effect htice
 local real htia=Atan2(GetUnitY(hte)-GetUnitY(htu),GetUnitX(hte)-GetUnitX(htu))
 call HitBlueAura(htu,true,"HitTAura")
@@ -292792,7 +293287,14 @@ call SetUnitInvulnerable(hte,true)
 call HitSnd("HitSeichoAttack")
 call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
 call HitVo("HitT1")
-call TSE_StartEx(htu,htd+0.8,false,GetUnitX(htu),GetUnitY(htu),0.)
+call TSE_StartEx(htu,htd,false,GetUnitX(htu),GetUnitY(htu),0.)
+if TSE_On and TSE_Src==htu then
+call PauseTimer(TSE_End)
+endif
+call SaveTimerHandle(h,GetHandleId(htt),44,htt)
+call SaveTimerHandle(h,GetHandleId(htt),43,htwatch)
+call SaveInteger(h,GetHandleId(htwatch),0,GetHandleId(htt))
+call TimerStart(htwatch,htd+1.,false,function HitTWatchdog)
 if LoadInteger(HH,GetHandleId(hte),StringHash("HitTPauseCount"))==0 then
 if LoadInteger(TSE_HT,GetHandleId(hte),104)>0 then
 call SaveBoolean(HH,GetHandleId(hte),StringHash("HitTPauseWanted"),LoadBoolean(TSE_HT,GetHandleId(hte),105))
@@ -292806,9 +293308,9 @@ call TSE_HoldCooldowns()
 call SaveBoolean(h,GetHandleId(htt),32,true)
 call PauseUnit(hte,true)
 call SaveInteger(HH,GetHandleId(htu),HitK("AnN"),LoadInteger(HH,GetHandleId(htu),HitK("AnN"))+1)
-call SetUnitAnimationByIndex(htu,14)
+call SetUnitAnimationByIndex(htu,27)
 call SetUnitAnimationOffsetPercent(htu,0.)
-call SetUnitTimeScale(htu,6.167/(0.3+(2.592-0.26/12.)*htseries+0.936*htseries/36.))
+call SetUnitTimeScale(htu,2.5)
 call MapPauseUnit(htu,true)
 call SetUnitInvulnerable(htu,true)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),true)
@@ -292830,6 +293332,7 @@ call SaveTimerHandle(h,GetHandleId(htt),25,htmeasure)
 call TimerStart(htmeasure,999999.,false,null)
 call SaveReal(h,GetHandleId(htt),23,HitTBeat(1,htseries))
 call TimerStart(htt,0.01,true,function HitTClock)
+set htwatch=null
 set htmeasure=null
 set htice=null
 set htvc=null
@@ -292977,18 +293480,9 @@ call HitFRefresh(u)
 call HitWMana(u)
 call HitPanelUpdate(u)
 if UnitIsAlive(u) and not IsUnitInGroup(u,TSE_G) then
-// D: 5 с боя с героем — заряд; 10 с вне боя — сброс (после T заряды держатся 15 с)
-if now-LoadReal(HH,uid,HitK("Cbt"))<=1.5 and LoadReal(HH,uid,HitK("Cbt"))>0 then
-call SaveReal(HH,uid,HitK("CbtAcc"),LoadReal(HH,uid,HitK("CbtAcc"))+0.1)
-if LoadReal(HH,uid,HitK("CbtAcc"))>=5. then
-call SaveReal(HH,uid,HitK("CbtAcc"),0.)
-if GetUnitAbilityLevel(u,'HtD1')>0 and HitCh(u)<5 then
-call HitSetCh(u,HitCh(u)+1)
-endif
-endif
-elseif now-LoadReal(HH,uid,HitK("Cbt"))>10. and HitCh(u)>0 and now>LoadReal(HH,uid,HitK("ChLock")) then
+// D: stacks are earned by ability contacts; only the out-of-combat reset is timed.
+if now-LoadReal(HH,uid,HitK("Cbt"))>10. and HitCh(u)>0 and now>LoadReal(HH,uid,HitK("ChLock")) then
 call HitSetCh(u,0)
-call SaveReal(HH,uid,HitK("CbtAcc"),0.)
 endif
 // E: пока Хит невидим от E — шаг сквозь время на ходу (раз в 0.5 с)
 if LoadReal(HH,uid,HitK("EStep"))>now and LoadReal(HH,uid,HitK("StepT"))<=now and IsUnitMoving(u) and not IsUnitStunned(u) and not IsUnitPaused(u) and LoadInteger(HH,uid,HitK("Fz"))<=0 then
@@ -293004,7 +293498,10 @@ endfunction
 function HitCastRing takes nothing returns nothing
 local unit hcru=GetTriggerUnit()
 if GetUnitTypeId(hcru)=='HHit' then
+call SaveBoolean(HH,GetHandleId(hcru),StringHash("HitProgress"+I2S(GetSpellAbilityId())),false)
+if GetSpellAbilityId()!='HtFc' and GetSpellAbilityId()!='HtE1' then
 call RemoveEffect(AddSpecialEffect(EffectID[20],GetUnitX(hcru),GetUnitY(hcru)),1.,false,CreateTimer())
+endif
 endif
 set hcru=null
 endfunction
@@ -296554,6 +297051,10 @@ call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the sele
 call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 3.75% attack + 15"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
 call LANG_A('IsQc',0,0,"Cancel Licht Regen (|cffffcc00Q|r)")
 call LANG_A('IsQc',1,0,"Stops firing and restores normal Q. Its cooldown continues from the start of the barrage.")
+call LANG_B('MaEm',0,"Ashisogi Jizo Mark")
+call LANG_B('MaEm',1,"Using an ability within 7 seconds triggers a 2-second silence and increased vulnerability to control for 5 seconds.")
+call LANG_B('MaEc',0,"Neurotoxin")
+call LANG_B('MaEc',1,"Incoming control duration and the magnitude of MS/AS slows, miss chance and outgoing damage reduction are increased by 25%.")
 call LANG_B('IsQb',0,"Licht Regen")
 call LANG_B('IsQb',1,"Movement speed is reduced by 30% while firing.")
 call LANG_A('A08W',2,0,"Licht Regen, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
@@ -297350,18 +297851,18 @@ call LANG_A('A0CS',1,3,"Kurotsuchi Mayuri heals himself or an ally for a certain
 call LANG_A('A0CS',1,4,"Kurotsuchi Mayuri heals himself or an ally for a certain amount of time. At level 35, you gain an additional 4 Instant Heal*|r|c0077FFFFINT|r|cFF00A5FF|n|n|cFF00A5FF|nHealing: 6*|r|c0077FFFFINT|r|cFF00A5FF +100 HP|nDuration: 30 sec.|nCooldown: 20 seconds|r")
 call LANG_A('A0CS',2,0,"Regenerative Serum, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CS',3,0,"Kurotsuchi Mayuri heals himself or an ally for a certain amount of time. At level 35, you gain an additional 4 Instant Heal*|r|c0077FFFFINT|r|cFF00A5FF|n|n|cFF00A5FF|nHealing: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF +100 HP|nDuration: 30 sec.|nCooldown: 20 seconds|r")
-call LANG_A('A0CT',0,0,"Ashisogi Jizo, [|cffffcc00Level 1|r]")
-call LANG_A('A0CT',0,1,"Ashisogi Jizo, [|cffffcc00Level 2|r]")
-call LANG_A('A0CT',0,2,"Ashisogi Jizo, [|cffffcc00Level 3|r]")
-call LANG_A('A0CT',0,3,"Ashisogi Jizo, [|cffffcc00Level 4|r]")
-call LANG_A('A0CT',0,4,"Ashisogi Jizo, [|cffffcc00Level 5|r]")
-call LANG_A('A0CT',1,0,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 10%|nDuration: 5 sec.|n|r")
-call LANG_A('A0CT',1,1,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 1*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 20%|nDuration: 5 sec.|n|r")
-call LANG_A('A0CT',1,2,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 1.5*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 30%|nDuration: 5 sec.|n|r")
-call LANG_A('A0CT',1,3,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 2*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 40%|nDuration: 5 sec.|n|r")
-call LANG_A('A0CT',1,4,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 2.5*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 50%|nDuration: 5 sec.|n|r")
+call LANG_A('A0CT',0,0,"Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
+call LANG_A('A0CT',1,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 10%|nRange: 500|nCooldown"+": 28 seconds|nMana: 90|r")
+call LANG_A('A0CT',0,1,"Ashisogi Jizo, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('A0CT',1,1,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.5×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 20%|nRange: 500|nCooldow"+"n: 26 seconds|nMana: 105|r")
+call LANG_A('A0CT',0,2,"Ashisogi Jizo, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('A0CT',1,2,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.75×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 30%|nRange: 500|nCooldown"+": 24 seconds|nMana: 120|r")
+call LANG_A('A0CT',0,3,"Ashisogi Jizo, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
+call LANG_A('A0CT',1,3,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 40%|nRange: 500|nCooldown:"+" 22 seconds|nMana: 135|r")
+call LANG_A('A0CT',0,4,"Ashisogi Jizo, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('A0CT',1,4,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 50%|nRange: 500|nCooldown"+": 20 seconds|nMana: 150|r")
 call LANG_A('A0CT',2,0,"Ashisogi Jizo, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',3,0,"With each attack, Kurotsuchi Mayuri poisons the enemy, the poison deals damage, with each subsequent blow, the strength of the poison increases.|n|n|cFF00A5FF|nDamage Increase: 0.5\\1\\1.5\\2\\2.5*|r|c0077FFFFINT|r|cFF00A5FF|nSlow: 10%\\20%\\30%\\40%\\50%|nDuration: 5 sec.|n|r")
+call LANG_A('A0CT',3,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2\\2.5\\3\\3.5\\4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25\\0.5\\0.75\\1\\1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slo"+"w: 10\\20\\30\\40\\50%|nRange: 500|nCooldown: 28\\26\\24\\22\\20 seconds|nMana: 90\\105\\120\\135\\150|r")
 call LANG_A('A0CU',0,0,"Nikushibuki, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('A0CU',1,0,"Kurotsuchi Mayuri becomes invisible and creates a doppelganger of himself, which creates the effect of the death of the hero.|n|nAlso: passively poisons all enemies within a 400 radius when the hero dies, dealing damage to them.|n|n|cFF00A5FFDuration: 10 sec.|nDamage: |c00FFFF66AllStat|r|cFF00A5FF*5"+"|nCooldown: 30 seconds|r")
 call LANG_A('A0CU',2,0,"Nikushibuki, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
@@ -308102,13 +308603,13 @@ call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100|nCast time: +0.1 sec.|nCooldown: 40 sec. after the effect ends|r")
-call LANG_A('DME1',1,1,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 150|nCast time: +0.1 sec.|nCooldown: 35 sec. after the effect ends|r")
-call LANG_A('DME1',1,2,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 200|nCast time: +0.1 sec.|nCooldown: 30 sec. after the effect ends|r")
-call LANG_A('DME1',1,3,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 250|nCast time: +0.1 sec.|nCooldown: 25 sec. after the effect ends|r")
-call LANG_A('DME1',1,4,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 300|nCast time: +0.1 sec.|nCooldown: 20 sec. after the effect ends|r")
+call LANG_A('DME1',1,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100|nCast time: +0.1 sec.|nCooldown: 40 sec. after the effect ends|r")
+call LANG_A('DME1',1,1,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 150|nCast time: +0.1 sec.|nCooldown: 35 sec. after the effect ends|r")
+call LANG_A('DME1',1,2,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 200|nCast time: +0.1 sec.|nCooldown: 30 sec. after the effect ends|r")
+call LANG_A('DME1',1,3,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 250|nCast time: +0.1 sec.|nCooldown: 25 sec. after the effect ends|r")
+call LANG_A('DME1',1,4,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 300|nCast time: +0.1 sec.|nCooldown: 20 sec. after the effect ends|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 600.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100\\150\\200\\250\\300|nCast time: +0.1 sec.|nCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
+call LANG_A('DME1',3,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100\\150\\200\\250\\300|nCast time: +0.1 sec.|nCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
@@ -308134,25 +308635,25 @@ call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 600 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -308229,10 +308730,10 @@ call LANG_A('HtR1',1,3,"Hit closes in and traps his opponent in time. Only Hit c
 call LANG_A('HtR1',1,4,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',3,0,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored damage on release: +10\\15\\20\\25\\30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange"+": 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 4.2 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 80 sec.|r")
-call LANG_A('HtD1',1,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
-call LANG_A('HtD1',3,0,"Hit gains charges by dealing and receiving damage. Activation reduces Q, W, E and F cooldowns by one second per charge without consuming charges.|n|n|cFF00A5FF|nCharge: every 5 sec. of fighting a hero, up to 5|nPer charge: +6 |r|c003CFF3CAGI|r|cFF00A5FF, +0.1 sec. to every time stop|nCharges reset a"+"fter 10 sec. out of combat|nCooldown: 30 sec.|r")
+call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 50 sec.|r")
+call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 50 sec.|r")
+call LANG_A('HtD1',1,0,"• Hitting an enemy hero or training dummy with an ability grants a charge, at most one per cast. Maximum: 10 charges.|n• Each charge grants +4 AGI and +0.1 seconds to Hit's time stops, except T.|n• Activating reduces Q/W/E/F cooldow"+"ns by 1 second per charge, up to 5 seconds, without consuming charges.|n• Charges reset after 10 seconds out of combat.|n|cFF00A5FFCooldown: 30 seconds|r")
+call LANG_A('HtD1',3,0,"• Hitting an enemy hero or training dummy with an ability grants a charge, at most one per cast. Maximum: 10 charges.|n• Each charge grants +4 AGI and +0.1 seconds to Hit's time stops, except T.|n• Activating reduces Q/W/E/F cooldow"+"ns by 1 second per charge, up to 5 seconds, without consuming charges.|n• Charges reset after 10 seconds out of combat.|n|cFF00A5FFCooldown: 30 seconds|r")
 call LANG_A('HtF1',1,0,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
 call LANG_A('HtF1',1,1,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
 call LANG_A('HtF1',1,2,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
@@ -310242,6 +310743,7 @@ call InitTrig_Ruby()
 call InitTrig_ExcSlash()
 call InitTrig_QuincySet()
 call InitTrig_QuincySet2()
+call Mayuri_EInit()
 call InitTrig_Saphire()
 call InitTrig_RainMare()
 call InitTrig_StunStop()
