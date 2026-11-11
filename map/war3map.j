@@ -13457,6 +13457,12 @@ call SND_Add(4955,2,"Sound\\Hit\\HitSeichoAttack.mp3",8592)
 call SND_Add(4941,2,"Voice\\HitSummon-jap.mp3",1524)
 call SND_Add(4933,2,"Voice\\HitSummon.mp3",1299)
 call SND_Add(4931,2,"Sound\\DeadMaster\\DeadMaster_W.mp3",12700)
+call SND_Add(4957,2,"Sound\\Music\\mp3Music\\MayuriE.mp3",12700)
+call SND_Add(4959,2,"Sound\\Music\\mp3Music\\MayuriT2.mp3",12700)
+call SND_Add(4961,2,"Sound\\Music\\mp3Music\\HakuW.mp3",12700)
+call SND_Add(4963,2,"Sound\\Music\\mp3Music\\HakuFEnter.mp3",12700)
+call SND_Add(4965,2,"Sound\\Music\\mp3Music\\HakuFExit.mp3",12700)
+call SND_Add(4967,2,"Sound\\Music\\mp3Music\\HakuG.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -70820,6 +70826,7 @@ local unit needleTarget=GetSpellTargetUnit()
 local timer needleTimer
 local integer needleId
 if GetSpellAbilityId()=='A0CT' and Mayuri_ETarget(needleCaster,needleTarget) and LoadTimerHandle(HH,GetHandleId(needleCaster),StringHash("MayuriEDash"))==null then
+call StartSound(SndN(4957))
 set needleTimer=CreateTimer()
 set needleId=GetHandleId(needleTimer)
 call SaveTimerHandle(HH,GetHandleId(needleCaster),StringHash("MayuriEDash"),needleTimer)
@@ -91927,6 +91934,7 @@ local timer mtT
 local integer mtId
 local unit mtBody
 if GetSpellAbilityId()=='MaTc' then
+call StartSound(SndN(4959))
 call Mayuri_TAim(mtCaster,mtTX,mtTY)
 set mtCaster=null
 return
@@ -95885,7 +95893,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
 call SaveReal(h,id,2,GetUnitX(u))
 call SaveReal(h,id,3,GetUnitY(u))
-set soundplay=SndN(1219) // Sound\Music\mp3Music\HakuE.mp3
+set soundplay=SndN(4961) // Sound\Music\mp3Music\HakuW.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TSE_TimerStart(t,0.03,true,function IceStrikeCast2)
@@ -96167,6 +96175,7 @@ local real startX
 local real startY
 local effect needle
 if GetSpellAbilityId()=='HaG1' and GetHeroLevel(caster)>=12 and udg_B and DU2 then
+    call StartSound(SndN(1219))
     set z=GetTerrainHeightAt(x,y)
     set rainTimer=CreateTimer()
     set rainId=GetHandleId(rainTimer)
@@ -96384,6 +96393,7 @@ loop
 exitwhen mirrorDistance<=0 or Haku_FDestination(mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle))
 set mirrorDistance=mirrorDistance-20
 endloop
+call StartSound(SndN(4965))
 call Haku_FJump(mirrorId,mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle),true,null)
 set mirrorCaster=null
 endfunction
@@ -96445,6 +96455,7 @@ call Haku_FJumpFx(mirrorCaster,LoadReal(h,mirrorId,6),true)
 if mirrorState==2 then
 call Haku_FEnd(mirrorTimer)
 else
+call StartSound(SndN(4963))
 call SaveInteger(h,mirrorId,1,1)
 call SaveReal(h,mirrorId,7,0.)
 call SetUnitInvulnerable(mirrorCaster,true)
@@ -96861,6 +96872,7 @@ set id=GetHandleId(t)
 call SaveUnitHandle(h,id,1,u)
 call SaveInteger(HH,unitId,SH_HakuW,0)
 call SaveInteger(h,id,3,0)
+call StartSound(SndN(4967))
 call TSE_TimerStart(t,0.5,true,function ShunshinNoJustsuCast2)
 set t=null
 set u=null
