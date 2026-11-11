@@ -292709,7 +292709,7 @@ set htff=null
 set htft=null
 endfunction
 function HitTOpeningShift takes real pace returns real
-return RMaxBJ(0.,0.3+(2.592-0.26/12.)*pace*(3.3-2.6/30.)/16.-0.3)
+return RMaxBJ(0.,0.3+(2.592-0.26/12.)*pace*(3.3-2.6/30.)/16.-0.4)
 endfunction
 function HitTFinalWindow takes real pace returns real
 return 0.32*36./35.
@@ -292726,10 +292726,10 @@ endif
 if htbk>6 then
 set beatTime=beatTime+0.4
 endif
-if htbk>16 then
+if htbk>14 then
 set beatTime=beatTime+I2R(htbk-16)*0.1
 endif
-return beatTime-HitTOpeningShift(htbm)*I2R(22-htbk)/20.
+return beatTime-HitTOpeningShift(htbm)*I2R(20-htbk)/22.
 endfunction
 
 function HitTHeldFx takes integer htci,unit htcu,unit htce,real htca returns nothing
@@ -292921,8 +292921,7 @@ call SetUnitTimeScale(htu,1.)
 call SaveBoolean(HH,GetHandleId(htu),HitK("TAct"),false)
 call HitFRefresh(htu)
 if UnitIsAlive(htu) then
-call HitSetCh(htu,10)
-call SaveReal(HH,GetHandleId(htu),HitK("ChLock"),HitNow()+15.)
+call HitProgress(htu,hte,'HtT1')
 endif
 endif
 if htf and hte!=null and UnitIsAlive(hte) and htu!=null and UnitIsAlive(htu) then
@@ -292999,7 +292998,7 @@ set hta=hta+0.9
 elseif htj==6 then
 set hta=hta-0.9
 endif
-if htj==22 then
+if htj==20 then
 set hta=LoadReal(h,hti,3)+12.*137.5*bj_DEGTORAD
 set htn=36
 set htm=2
@@ -293016,7 +293015,7 @@ if htp==0 then
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
 set htr=300.+40.*I2R(ModuloInteger(htj,3))
-if htj==22 then
+if htj==20 then
 set htr=300.
 elseif ModuloInteger(htj,4)==1 then
 set htr=260.
@@ -293026,7 +293025,7 @@ call SetUnitXY_1(htu,GetUnitX(hte)+htr*Cos(hta),GetUnitY(hte)+htr*Sin(hta),false
 call SetUnitFacingInstant(htu,hta*bj_RADTODEG+180.)
 call HitFx("BlackGoku\\BlackBlink1.mdx",GetUnitX(htu),GetUnitY(htu),0.,0.65,0.4)
 call HitFx("Hit\\JumpDust.mdx",GetUnitX(htu),GetUnitY(htu),3.,0.45,0.35)
-if htj==22 then
+if htj==20 then
 call SetUnitAnimationOffsetPercent(htu,3269./7934.)
 call SetUnitTimeScale(htu,2.0)
 endif
@@ -293034,7 +293033,7 @@ if htj==0 then
 call SaveReal(h,hti,24,0.22*0.12101381042059008*LoadReal(h,hti,11))
 call SaveReal(h,hti,23,LoadReal(h,hti,23)+LoadReal(h,hti,24))
 endif
-elseif htj==22 and htp<htn-1 then
+elseif htj==20 and htp<htn-1 then
 if htp<htn-1-htm then
 set htv=I2R(htp)/I2R(htn-1-htm)
 set htr=300.-65.*htv
@@ -293058,22 +293057,22 @@ set htbf=HitTFacingIce(GetUnitX(hte),GetUnitY(hte),6.3,6.+HitStopAdd(htu),true)
 call SetSpecialEffectZ(htbf,GetUnitZ(hte)+65.)
 call SaveEffectHandle(h,hti,8,htbf)
 endif
-if htj==22 then
+if htj==20 then
 call HitTFxCancel(hti)
 endif
-if htj==21 then
+if htj==19 then
 if not LoadBoolean(h,hti,45) then
 call SetUnitAnimationByIndex(htu,14)
 call SetUnitTimeScale(htu,0.01)
 call SaveBoolean(h,hti,45,true)
 endif
-elseif htj<21 then
-call SetUnitAnimationByIndex(htu,27+ModuloInteger(htj,25))
-call SetUnitTimeScale(htu,2.5)
+elseif htj<19 then
+call SetUnitAnimationByIndex(htu,27)
+call SetUnitTimeScale(htu,1.5+htj*0.1)
 endif
 call HitTHeldFx(hti,htu,hte,hta+bj_PI)
 call HitTPunchRay(htu,hte,0.45)
-if htj==22 then
+if htj==20 then
 call HitSnd("HitTFinalImpact")
 call HitTApplyDamage(hti,11.*HitAgi(htu))
 call SaveBoolean(h,hti,5,true)
@@ -293093,12 +293092,12 @@ if not UnitIsAlive(hte) then
 call HitTEnd()
 else
 set htj=htj+1
-call SaveInteger(h,hti,12,htj)
+call SaveInteger(h,hti,12,htj) 
 call SaveInteger(h,hti,2,0)
-if htj==22 then
+if htj==20 then
 set htr=HitTFinalWindow(LoadReal(h,hti,11))/(36.*LoadReal(h,hti,11))
 else
-set htr=(0.22-0.0025*I2R(htj))*0.12101381042059008
+set htr=(0.28-0.0025*I2R(htj))*0.15
 endif
 call SaveReal(h,hti,24,htr*LoadReal(h,hti,11))
 call SaveReal(h,hti,23,LoadReal(h,hti,23)+LoadReal(h,hti,24))
@@ -293142,7 +293141,7 @@ endif
 if htmj>=16 then
 set htmouter=180.
 endif
-if htmj<22 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
+if htmj<20 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
 set htmt=(TimerGetElapsed(LoadTimerHandle(h,htmid,25))-HitTBeat(htmj,LoadReal(h,htmid,11)))/htmd
 if htmj==0 then
 set htmu=null
@@ -293154,9 +293153,9 @@ set htmnative=htmt
 if htmj==1 then
 set htmfactor=1.3
 elseif htmj==3 then
-set htmfactor=1.6445
+set htmfactor=1.7
 elseif htmj==6 then
-set htmfactor=1.859
+set htmfactor=1.95
 endif
 set htma=LoadReal(h,htmid,3)+I2R(htmj)*137.5*bj_DEGTORAD
 if htmj==1 or htmj==3 or htmj==6 then
@@ -293230,15 +293229,15 @@ loop
 exitwhen htloops>=8 or LoadUnitHandle(h,htki,0)==null or LoadBoolean(h,htki,5)
 exitwhen TimerGetElapsed(LoadTimerHandle(h,htki,25))+0.0001<LoadReal(h,htki,23)
 set htindex=LoadInteger(h,htki,12)
-if htindex<22 then
+if htindex<20 then
 call SaveInteger(h,htki,2,3)
 call HitTHit()
 if LoadUnitHandle(h,htki,0)!=null then
-if LoadInteger(h,htki,12)<22 then
+if LoadInteger(h,htki,12)<20 then
 call SaveReal(h,htki,23,HitTBeat(LoadInteger(h,htki,12)+1,htstep))
 else
 call SaveReal(h,htki,24,HitTFinalWindow(htstep)/36.)
-call SaveReal(h,htki,23,HitTBeat(22,htstep)+LoadReal(h,htki,24))
+call SaveReal(h,htki,23,HitTBeat(20,htstep)+LoadReal(h,htki,24))
 endif
 endif
 else
