@@ -70854,6 +70854,8 @@ set needleTrigger=null
 endfunction
 function Trig_Text_Damage_Actions takes nothing returns nothing
 local unit hakuCloneMirror
+local real hakuCloneRange
+local real hakuCloneDistance
 local real b=GetEventDamage()
 local timer t
 local timer tres
@@ -74353,8 +74355,14 @@ endif
         if GetUnitAbilityLevel(c,'HaF0')>=1 and GetHeroLevel(c)>=6 and nb>0 then
             if LoadInteger(HH,cid,SH_HakuF) == 6 then
                 set r=GetRandomReal(0,7)
-                set x1=x+400*Cos(r)
-                set y1=y+400*Sin(r)
+                set x1=RMaxBJ(GetRectMinX(bj_mapInitialPlayableArea)+32.,RMinBJ(GetRectMaxX(bj_mapInitialPlayableArea)-32.,GetUnitX(c)+150.*Cos(r)))
+                set y1=RMaxBJ(GetRectMinY(bj_mapInitialPlayableArea)+32.,RMinBJ(GetRectMaxY(bj_mapInitialPlayableArea)-32.,GetUnitY(c)+150.*Sin(r)))
+                set hakuCloneRange=RMaxBJ(0.,GetUnitBaseWeaponRealFieldById('H15O',UNIT_WEAPON_RF_ATTACK_RANGE,0)-25.)
+                set hakuCloneDistance=SR(x,y,x1,y1)
+                if hakuCloneDistance>hakuCloneRange then
+                    set x1=x+(x1-x)*hakuCloneRange/hakuCloneDistance
+                    set y1=y+(y1-y)*hakuCloneRange/hakuCloneDistance
+                endif
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\icestomp.mdl",x1,y1))
                 set hakuCloneMirror=Haku_FMakeMirror(c,x1,y1,Atan2(y-y1,x-x1)*bj_RADTODEG)
                 call Haku_FMirrorLinger(hakuCloneMirror,3.)
@@ -95972,6 +95980,71 @@ return 2
 endif
 return 1
 endfunction
+function Haku_FPanelTick takes nothing returns nothing
+local timer panelTimer=GetExpiredTimer()
+local integer panelId=GetHandleId(panelTimer)
+local unit caster=LoadUnitHandle(h,panelId,0)
+local integer casterId=GetHandleId(caster)
+local ability mirrorAbility
+local timer flight
+local real cooldown=0.
+local integer capacity
+local integer left
+local string value
+if GetUnitTypeId(caster)!='H02D' or Hero[PId(OwnerOf(caster))]!=caster then
+    call RemoveSavedHandle(HH,casterId,StringHash("HakuFPanelTimer"))
+    call FlushChildHashtable(h,panelId)
+    call TSE_DestroyTimer(panelTimer)
+else
+    set mirrorAbility=GetUnitAbility(caster,'HaF0')
+    if mirrorAbility!=null then
+        set cooldown=GetAbilityRemainingCooldown(mirrorAbility)
+    endif
+    if IsUnitSelected(caster,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(caster)) then
+        if GetHeroLevel(caster)<6 then
+            set value=Lng("F доступна с 6 уровня","F unlocks at level 6")
+        else
+            set capacity=Haku_FRank(caster)
+            set left=capacity
+            set flight=LoadTimerHandle(HH,casterId,StringHash("HakuFMirror"))
+            if flight!=null then
+                if LoadBoolean(h,GetHandleId(flight),19) then
+                    set left=IMaxBJ(0,capacity-LoadInteger(h,GetHandleId(flight),2))
+                else
+                    set left=0
+                endif
+            elseif cooldown>0. then
+                set left=0
+            endif
+            set value=Lng("Новые зеркала","New mirrors")+" "+I2S(left)+"/"+I2S(capacity)
+            if cooldown>0. then
+                set value=value+" |nF: "+I2S(R2I(cooldown+.99))+Lng(" сек."," sec.")
+            elseif flight==null then
+                set value=value+Lng("|nF готова","|nF ready")
+            endif
+        endif
+        call SetFrameText(GetFrameByName("CustomLeaderboardText",0),value)
+        call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+.016)
+        call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
+        call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
+    endif
+endif
+set flight=null
+set mirrorAbility=null
+set caster=null
+set panelTimer=null
+endfunction
+function Haku_FPanelStart takes unit caster returns nothing
+local integer key=StringHash("HakuFPanelTimer")
+local timer panelTimer=LoadTimerHandle(HH,GetHandleId(caster),key)
+if panelTimer==null then
+    set panelTimer=CreateTimer()
+    call SaveTimerHandle(HH,GetHandleId(caster),key,panelTimer)
+    call SaveUnitHandle(h,GetHandleId(panelTimer),0,caster)
+    call TimerStart(panelTimer,.2,true,function Haku_FPanelTick)
+endif
+set panelTimer=null
+endfunction
 function Haku_ERainTick takes nothing returns nothing
 local timer rainTimer=GetExpiredTimer()
 local integer rainId=GetHandleId(rainTimer)
@@ -95984,6 +96057,9 @@ local integer step=LoadInteger(h,rainId,4)+1
 local real remaining=1.-I2R(IMaxBJ(0,step-7))/21.
 local integer index=0
 local real angle
+local real sideX
+local real sideY
+local integer side=0
 local effect needle
 local group targets
 local unit target
@@ -96032,6 +96108,25 @@ else
             call SetSpecialEffectVertexColour(needle,145,210,255,210)
             call RemoveEffect(needle,.85,false,CreateTimer())
         endif
+        // Четыре дополнительных кластера вокруг центрального льда. Только визуал.
+        set angle=Atan2(y-GetUnitY(caster),x-GetUnitX(caster))+bj_PI/2.
+        loop
+            exitwhen side>=4
+            set sideX=x+150.*Cos(angle)
+            set sideY=y+150.*Sin(angle)
+            if RectContainsCoords(bj_mapInitialPlayableArea,sideX,sideY) then
+                set needle=AddSpecialEffect("Haku\\IceRainBurst.mdx",sideX,sideY)
+                if needle!=null then
+                    call SetSpecialEffectPositionWithZ(needle,sideX,sideY,GetTerrainHeightAt(sideX,sideY)+8.)
+                    call SetSpecialEffectFacing(needle,angle*bj_RADTODEG)
+                    call SetSpecialEffectScale(needle,.65)
+                    call SetSpecialEffectAnimationByIndex(needle,0)
+                    call RemoveEffect(needle,.7,true,CreateTimer())
+                endif
+            endif
+            set angle=angle+bj_PI/2.
+            set side=side+1
+        endloop
         set targets=CreateGroup()
         // Радиус урона — 250. При изменении обнови Area в [HaG1], чтобы круг прицеливания совпадал с уроном.
         call GroupEnumUnitsInRange(targets,x,y,250.,Base)
@@ -96100,7 +96195,8 @@ if GetSpellAbilityId()=='HaG1' and GetHeroLevel(caster)>=12 and udg_B and DU2 th
         call SetSpecialEffectZ(needle,z+650.)
         call SetSpecialEffectScale(needle,1.35)
         call SetSpecialEffectAnimationByIndex(needle,0)
-        call SetSpecialEffectOrientationEx(needle,angle*bj_RADTODEG+180.,Atan2(650.,300.)*bj_RADTODEG,0.,3)
+        // Острие модели смотрит вдоль +X. Сначала наклоняем его по Y вниз, затем поворачиваем вокруг Z к точке удара (порядок XYZ).
+        call SetSpecialEffectOrientationEx(needle,Atan2(y-startY,x-startX)*bj_RADTODEG,Atan2(650.,300.)*bj_RADTODEG,0.,0)
         call SaveEffectHandle(h,rainId,10+index,needle)
         set index=index+1
     endloop
@@ -96188,6 +96284,15 @@ call TriggerAddCondition(deathTrigger,Condition(function Haku_FMirrorDeathCond))
 call TriggerAddAction(deathTrigger,function Haku_FMirrorBroken)
 set deathTrigger=null
 endfunction
+function Haku_FStartCooldown takes unit caster,integer flightId returns nothing
+local ability mirrorAbility=GetUnitAbility(caster,'HaF0')
+if mirrorAbility!=null and LoadBoolean(h,flightId,19) and not LoadBoolean(h,flightId,16) then
+call SaveBoolean(h,flightId,16,true)
+call StartAbilityCooldown(mirrorAbility,30.)
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
+endif
+set mirrorAbility=null
+endfunction
 function Haku_FEnd takes timer mirrorTimer returns nothing
 local integer mirrorId=GetHandleId(mirrorTimer)
 local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
@@ -96200,10 +96305,7 @@ call SetUnitVertexColor(mirrorCaster,255,255,255,255)
 call Haku_FButtons(mirrorCaster,mirrorId,false)
 call UnitMakeAbilityPermanent(mirrorCaster,false,'HaF2')
 call UnitRemoveAbility(mirrorCaster,'HaF2')
-if not LoadBoolean(h,mirrorId,16) and GetUnitAbility(mirrorCaster,'HaF0')!=null then
-call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
-call CreateModeIndicatorWithPauseForm(mirrorCaster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
-endif
+call Haku_FStartCooldown(mirrorCaster,mirrorId)
 call Haku_FRefresh(mirrorCaster)
 endif
 if mirrorUnit!=null then
@@ -96260,6 +96362,9 @@ else
 if existingMirror==null then
 set mirrorUnit=Haku_FMakeMirror(mirrorCaster,mirrorX,mirrorY,mirrorAngle*bj_RADTODEG+180.)
 call SaveInteger(h,mirrorId,2,mirrorCount+1)
+if mirrorCount+1>=Haku_FRank(mirrorCaster) then
+call Haku_FStartCooldown(mirrorCaster,mirrorId)
+endif
 else
 set mirrorUnit=existingMirror
 call Haku_FMirrorCancelExpiry(mirrorUnit)
@@ -96313,9 +96418,6 @@ call Haku_FEnd(mirrorTimer)
 else
 call SaveReal(h,mirrorId,18,LoadReal(h,mirrorId,18)+.02)
 call SetUnitVertexColor(mirrorCaster,255,255,255,255)
-if not LoadBoolean(h,mirrorId,16) then
-call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),0.)
-endif
 set mirrorX=GetUnitX(mirrorCaster)
 set mirrorY=GetUnitY(mirrorCaster)
 set mirrorDX=LoadReal(h,mirrorId,4)-mirrorX
@@ -96340,11 +96442,6 @@ endif
 endloop
 if mirrorDistance<=40 then
 call Haku_FJumpFx(mirrorCaster,LoadReal(h,mirrorId,6),true)
-if not LoadBoolean(h,mirrorId,16) then
-call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
-call CreateModeIndicatorWithPauseForm(mirrorCaster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
-call SaveBoolean(h,mirrorId,16,true)
-endif
 if mirrorState==2 then
 call Haku_FEnd(mirrorTimer)
 else
@@ -290013,6 +290110,7 @@ call TriggerAddCondition(t,Condition(function PlasmaShotCond))
 // call TriggerAddAction(t,function Trig_Bone_Wawe_Actions)
 elseif ty=='H02D' then
 call Haku_FRefresh(u)
+call Haku_FPanelStart(u)
 set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function Haku_FCast)
@@ -306479,11 +306577,11 @@ call LANG_A('GinW',1,4,"Gin dashes in the indicated direction. If it hits an ene
 call LANG_A('GinW',2,0,"Shunpo: Flickering Attack, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('GinW',3,0,"Gin dashes in the indicated direction. If it hits an enemy, it performs a combination of attacks and bounces off it, if there is no enemy, the ability recharge is reduced by 40%.|n|n|cFF00A5FFDamage: 50+1/2/3/4/5*|r|c003CFF3CAGI|r|cFF00A5FF.|nStun: 1.0 sec|nRange: 1000|nCooldown: 20 seconds|r")
 call LANG_A('HaF0',0,0,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,0,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF0',1,0,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
 call LANG_A('HaF0',0,1,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,1,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF0',1,1,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
 call LANG_A('HaF0',0,2,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,2,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the first flight|r")
+call LANG_A('HaF0',1,2,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
 call LANG_A('HaG1',0,0,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,1,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,2,"Ice Senbon Rain (|cffffcc00E|r)")

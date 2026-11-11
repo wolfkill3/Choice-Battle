@@ -89,7 +89,7 @@ F
 - Flights deal 1.5× AGI within 150. Range: 500. Press F again to dash 200 out. Automatic exit after 2 sec. of inactivity.
 - Mirrors have 2× total AGI as HP. Breaking the occupied mirror stuns Haku for 0.5 sec.
 - Right-click near an existing mirror to enter it without spending a charge. Mirrors linger 2 sec. after leaving or after the clone attack.
-- Mana: 50. Cooldown: 30 sec. after the first flight.
+- Mana: 50. Cooldown: 30 sec. after the final charge is spent or the mirror chain ends.
 R
 - Damage: 5–9× → 4–8× AGI.
 G
