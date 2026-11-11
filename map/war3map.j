@@ -13459,7 +13459,7 @@ call SND_Add(4933,2,"Voice\\HitSummon.mp3",1299)
 call SND_Add(4931,2,"Sound\\DeadMaster\\DeadMaster_W.mp3",12700)
 call SND_Add(4957,2,"Sound\\Music\\mp3Music\\MayuriE.mp3",12700)
 call SND_Add(4959,2,"Sound\\Music\\mp3Music\\MayuriT2.mp3",12700)
-call SND_Add(4961,2,"Sound\\Music\\mp3Music\\HakuW.mp3",12700)
+call SND_Add(4961,2,"Sound\\Music\\mp3Music\\HakuSenbonRain.mp3",12700)
 call SND_Add(4963,2,"Sound\\Music\\mp3Music\\HakuFEnter.mp3",12700)
 call SND_Add(4965,2,"Sound\\Music\\mp3Music\\HakuFExit.mp3",12700)
 call SND_Add(4967,2,"Sound\\Music\\mp3Music\\HakuG.mp3",12700)
@@ -95893,7 +95893,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
 call SaveReal(h,id,2,GetUnitX(u))
 call SaveReal(h,id,3,GetUnitY(u))
-set soundplay=SndN(4961) // Sound\Music\mp3Music\HakuW.mp3
+set soundplay=SndN(1219) // Sound\Music\mp3Music\HakuE.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call TSE_TimerStart(t,0.03,true,function IceStrikeCast2)
@@ -96175,7 +96175,7 @@ local real startX
 local real startY
 local effect needle
 if GetSpellAbilityId()=='HaG1' and GetHeroLevel(caster)>=12 and udg_B and DU2 then
-    call StartSound(SndN(1219))
+    call StartSound(SndN(4961))
     set z=GetTerrainHeightAt(x,y)
     set rainTimer=CreateTimer()
     set rainId=GetHandleId(rainTimer)
