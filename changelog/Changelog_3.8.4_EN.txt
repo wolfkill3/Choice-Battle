@@ -23,7 +23,7 @@ D
 Q
 - Damage halved
 - Cooldown: 18 sec. from the last skull thrown; each throw allows 5 sec. for a follow-up
-- Skull recovery: 8 sec.
+- Skull recovery: 8 sec. Ground skull lifetime: 4 sec., or 8 sec. with a soul.
 - With Ctrl+E: two skulls empowered by spending a soul create a barrier between them if no farther than 700 apart. No additional soul cost
 - Reaching 15 souls unlocks a third skull
 W
@@ -50,10 +50,10 @@ Q
 - Can move while firing; normal attacks are disabled
 - F preserves the barrage; other abilities and Q again cancel it
 - Damage per arrow reduced by 10%
-- MS penalty: 30%; break distance: 1400
+- MS penalty: 50%. Break distance: 1400.
 T
 - Removes the Q movement penalty and increases break distance to 1700
-- Attack jumps apply to normal attacks while T is active
+- Normal attack hits blink Ishida around the target.
 
 **Gokudera Hayato**
 W
@@ -88,6 +88,7 @@ F
 - Unlocked at level 6. Fly between mirrors with right-click. Available mirrors: 1/2/3 at levels 6/12/18.
 - Flights deal 1.5× AGI within 150. Range: 500. Press F again to dash 200 out. Automatic exit after 2 sec. of inactivity.
 - Mirrors have 2× total AGI as HP. Breaking the occupied mirror stuns Haku for 0.5 sec.
+- Right-click near an existing mirror to enter it without spending a charge. Mirrors linger 2 sec. after leaving or after the clone attack.
 - Mana: 50. Cooldown: 30 sec. after the first flight.
 R
 - Damage: 5–9× → 4–8× AGI.

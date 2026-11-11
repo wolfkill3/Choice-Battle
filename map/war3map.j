@@ -31265,7 +31265,6 @@ function Haku_QToggle takes player controller returns nothing
 local integer slot=0
 local integer rank
 local integer targetType
-local integer options
 local boolean facingMode
 local unit caster
 local ability senbon
@@ -31278,16 +31277,13 @@ loop
             set facingMode=not LoadBoolean(HH,GetHandleId(caster),StringHash("HakuQFacing"))
             call SaveBoolean(HH,GetHandleId(caster),StringHash("HakuQFacing"),facingMode)
             set targetType=2
-            set options=3
             if facingMode then
                 set targetType=0
-                set options=1
             endif
             set rank=0
             loop
                 exitwhen rank>=5
                 call CBS_SetTT(senbon,rank,targetType)
-                call SetAbilityIntegerLevelField(senbon,ABILITY_ILF_OPTIONS,rank,options)
                 set rank=rank+1
             endloop
         endif
@@ -42939,7 +42935,6 @@ local integer sisi=GetHandleId(sisu)
 local integer sisk=0
 local item sisit
 local boolean sist=GetUnitAbilityLevel(sisu,'KIK0')>0
-local boolean siss=false
 local boolean sisold=GetUnitAbilityLevel(sisu,'TSrs')>0
 local integer sistt=0
 local ability sisa
@@ -42953,7 +42948,13 @@ if sisit!=null and (ItemP(sisit)==PlayerV(15) or ItemP(sisit)==OwnerOf(sisu)) th
 if GetItemTypeId(sisit)=='I03P' then
 set sist=true
 elseif GetItemTypeId(sisit)=='I03Q' then
-set siss=true
+set sisa=GetItemAbilityById(sisit,'A0VT')
+if spheresc[PId(OwnerOf(sisu))] then
+set sistt=1
+endif
+if sisa!=null and (GetAbilityIntegerLevelField(sisa,ABILITY_ILF_TARGET_TYPE,0)!=sistt or LoadInteger(HH,StringHash("QcTT"),GetHandleId(sisa))!=sistt) then
+call CBS_SetTT(sisa,0,sistt)
+endif
 endif
 endif
 set sisk=sisk+1
@@ -42971,15 +42972,6 @@ call UnitRemoveAbility(sisu,'TSrs')
 endif
 if sisold!=(GetUnitAbilityLevel(sisu,'TSrs')>0) then
 call UpdateClassBar(sisu)
-endif
-if siss then
-set sisa=GetUnitAbility(sisu,'A0VT')
-if spheresc[PId(OwnerOf(sisu))] then
-set sistt=1
-endif
-if sisa!=null and (GetAbilityIntegerLevelField(sisa,ABILITY_ILF_TARGET_TYPE,0)!=sistt or LoadInteger(HH,StringHash("QcTT"),GetHandleId(sisa))!=sistt) then
-call CBS_SetTT(sisa,0,sistt)
-endif
 endif
 set sisa=null
 set sisit=null
@@ -60600,9 +60592,6 @@ endfunction
 function CBS_BoundSlot takes integer cbsCode returns integer
 local integer cbsI=6
 local integer cbsKey
-if cbsCode>=0x30 and cbsCode<0x60 then
-return -1
-endif
 loop
 exitwhen cbsI>=18
 set cbsKey=CBS_Bind[cbsI]
@@ -60977,9 +60966,6 @@ endif
 // не во время набора в чате или в поиске магазина, не с Ctrl / Shift, не с открытым окном настроек
 //set cbP=HPB_MOpen or IsWindowActive()==false or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
 set cbP=HPB_MOpen or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
-if CBS_QC or CBS_SC then
-call CBS_QcTick(cbP)
-endif
 if ModuloInteger(CBS_KT,2)==0 then
 call CBS_MmTick()
 endif
@@ -61013,8 +60999,8 @@ elseif cbS<6 then
 set cbF=CBS_SlotFr[cbS]
 //endif
 //elseif (cbS-6)/12==cbA then
-// способности с буквой / цифрой — хоткей самой способности (CBS_AbScan); нажимать кнопку — только NumPad и кнопки мыши
-elseif (cbS-6)/12==cbA and (CBS_KeyCode[cbK]>=0x60 or CBS_KeyCode[cbK]<0x30) then
+// Custom keys activate their command-card slot.
+elseif (cbS-6)/12==cbA and (cbA==0 or CBS_KeyCode[cbK]>=0x60 or CBS_KeyCode[cbK]<0x30) then
 set cbF=CBS_SlotFr[6+ModuloInteger(cbS-6,12)]
 endif
 if HPB_Debug then
@@ -61029,6 +61015,9 @@ endif
 endif
 set cbS=cbS+1
 endloop
+if CBS_QC or CBS_SC then
+call CBS_QcTick(cbP)
+endif
 set cbK=0
 loop
 exitwhen cbK>=CBS_KeyN
@@ -61693,8 +61682,8 @@ set cbB=0
 if cbSlot>=0 and cbSlot<12 then
 set cbB=CBS_Bind[6+cbPg*12+cbSlot]
 endif
-if cbB>0 and CBS_KeyCode[cbB-1]>=0x30 and CBS_KeyCode[cbB-1]<0x60 then
-set cbV=CBS_KeyCode[cbB-1]
+if cbB>0 then
+set cbV=0
 elseif cbO>0 and CBS_KeyTaken(cbO,cbPg) then
 set cbV=0
 endif
@@ -62031,7 +62020,7 @@ loop
 set cbT=FirstOfGroup(CBS_QcG)
 exitwhen cbT==null
 call GroupRemoveUnit(CBS_QcG,cbT)
-if IsUnitType(cbT,UNIT_TYPE_DEAD)==false and (not cbEnemyOnly or (IsUnitEnemy(cbT,OwnerOf(cbU)) and not IsUnitInvulnerable(cbT) and GetUnitAbilityLevel(cbT,'Aloc')==0 and not IsUnitType(cbT,UNIT_TYPE_STRUCTURE) and (cbId!='A0CT' or not IsUnitType(cbT,UNIT_TYPE_MECHANICAL)))) and (GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)<=cbR then
+if IsUnitType(cbT,UNIT_TYPE_DEAD)==false and (cbId!='DMG1' or (not IsUnitType(cbT,UNIT_TYPE_MECHANICAL) and (not IsUnitEnemy(cbT,OwnerOf(cbU)) or not IsUnitInvulnerable(cbT)))) and (not cbEnemyOnly or (IsUnitEnemy(cbT,OwnerOf(cbU)) and not IsUnitInvulnerable(cbT) and GetUnitAbilityLevel(cbT,'Aloc')==0 and not IsUnitType(cbT,UNIT_TYPE_STRUCTURE) and (cbId!='A0CT' or not IsUnitType(cbT,UNIT_TYPE_MECHANICAL)))) and (GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)<=cbR then
 set cbR=(GetUnitX(cbT)-cbX)*(GetUnitX(cbT)-cbX)+(GetUnitY(cbT)-cbY)*(GetUnitY(cbT)-cbY)
 set cbB=cbT
 endif
@@ -62187,6 +62176,7 @@ local real cbY=S2R(CBS_Tok(cbD,2))
 local unit cbU
 local ability cbA
 local integer cbO
+local integer cbLv
 local unit cbT
 local unit cbB=null
 local real cbR=100.*100.
@@ -62210,7 +62200,21 @@ endif
 if cbA!=null then
 // код приказа (Channel — поле Ncl6 из таблицы способности): CBS_QcOrd
 set cbO=CBS_QcOrd(cbU,cbId)
-if cbId=='HaG1' or cbId=='HaF0' or cbId=='HaF2' or cbId=='MaTc' then
+// E Хаку: после проверки готовности отдаём приказ в координаты курсора. Резервный каст срабатывает только внутри дальности 1000.
+if cbId=='HaG1' then
+set cbLv=GetUnitAbilityLevel(cbU,cbId)
+if GetUnitTypeId(cbU)=='H02D' and GetHeroLevel(cbU)>=12 and udg_B and DU2 and not IsUnitPaused(cbU) and UnitIsAlive(cbU) and IsAbilityEnabled(cbA) and IsAbilityOrderEnabled(cbA) and GetAbilityRemainingCooldown(cbA)<=0. and GetUnitState(cbU,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_MANA_COST,cbLv-1) and RectContainsCoords(bj_mapInitialPlayableArea,cbX,cbY) then
+if cbO==0 or not IssuePointOrderById(cbU,cbO,cbX,cbY) then
+if SR(GetUnitX(cbU),GetUnitY(cbU),cbX,cbY)<=1000. then
+call CastAbilityGround(cbA,cbX,cbY)
+endif
+endif
+endif
+set cbU=null
+set cbA=null
+return
+endif
+if cbId=='HaF0' or cbId=='HaF2' or cbId=='MaTc' then
 if cbO!=0 then
 call IssuePointOrderById(cbU,cbO,cbX,cbY)
 endif
@@ -62222,6 +62226,20 @@ if HPB_Debug then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,"QC "+GetObjectName(cbId)+" order "+I2S(cbO)+" "+OrderId2String(cbO)+" self "+CBS_Tok(cbD,3))
 endif
 // на себя (курсор на портрете): по герою, иначе в точку под ним
+if cbId=='DMG1' then
+if CBS_Tok(cbD,3)=="1" then
+set cbT=cbU
+else
+set cbT=CBS_QcCursorUnit(cbD,cbU,cbId)
+endif
+if cbO!=0 and cbT!=null then
+call IssueTargetOrderById(cbU,cbO,cbT)
+endif
+set cbU=null
+set cbA=null
+set cbT=null
+return
+endif
 if cbId=='A08W' or cbId=='A0CT' or cbId=='A0GP' then
 if cbO!=0 and CBS_Tok(cbD,3)!="1" then
 set cbT=CBS_QcCursorUnit(cbD,cbU,cbId)
@@ -65320,14 +65338,46 @@ call SetUnitBaseDamageByIndex(CU,0,GetUnitBaseDamageByIndex(u,0))
 call SetUnitBonusDamageByIndex(CU,0,GetUnitBonusDamageByIndex(u,0))
 return CU
 endfunction
-function Haku_PassiveMirrorFx takes real x,real y,real facing returns nothing
-local effect mirror=AddSpecialEffect("war3mapImported\\haku mirror.mdl",x,y)
-if mirror!=null then
-call SetSpecialEffectScale(mirror,1.15)
-call SetSpecialEffectOrientation(mirror,facing,0.,0.)
-call RemoveEffect(mirror,1.,false,CreateTimer())
+function Haku_FMirrorCancelExpiry takes unit mirror returns nothing
+local integer id=GetHandleId(mirror)
+local timer expiry=LoadTimerHandle(HH,id,StringHash("HakuFMirrorExpiry"))
+if expiry!=null then
+call RemoveSavedHandle(HH,id,StringHash("HakuFMirrorExpiry"))
+call FlushChildHashtable(h,GetHandleId(expiry))
+call TSE_DestroyTimer(expiry)
 endif
+set expiry=null
+endfunction
+function Haku_FMirrorExpire takes nothing returns nothing
+local timer expiry=GetExpiredTimer()
+local integer expiryId=GetHandleId(expiry)
+local unit mirror=LoadUnitHandle(h,expiryId,0)
+call RemoveSavedHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorExpiry"))
+call RemoveSavedHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorCaster"))
+call RemoveUnit(mirror)
+call FlushChildHashtable(h,expiryId)
+call TSE_DestroyTimer(expiry)
 set mirror=null
+set expiry=null
+endfunction
+function Haku_FMirrorLinger takes unit mirror,real duration returns nothing
+local timer expiry
+call Haku_FMirrorCancelExpiry(mirror)
+set expiry=CreateTimer()
+call SaveTimerHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorExpiry"),expiry)
+call SaveUnitHandle(h,GetHandleId(expiry),0,mirror)
+call TSE_TimerStart(expiry,duration,false,function Haku_FMirrorExpire)
+set expiry=null
+endfunction
+function Haku_FMakeMirror takes unit caster,real x,real y,real facing returns unit
+local unit mirror=CreateUnit(OwnerOf(caster),'hAFm',x,y,facing)
+local real hp=RMaxBJ(1.,2.*I2R(GetHeroAgi(caster,true)))
+call SetUnitScale(mirror,1.15,1.15,1.15)
+call SaveUnitHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorCaster"),caster)
+call SetUnitMaxLife(mirror,hp)
+call SetUnitState(mirror,UNIT_STATE_LIFE,hp)
+call SetUnitCurrentSight(mirror,0.)
+return mirror
 endfunction
 function CopyHero2 takes unit u,real x,real y,real facing returns unit
 local unit clone=CreateUnit(OwnerOf(u),'H15O',x,y,facing)
@@ -70803,6 +70853,7 @@ call TriggerAddAction(needleTrigger,function Mayuri_EEvent)
 set needleTrigger=null
 endfunction
 function Trig_Text_Damage_Actions takes nothing returns nothing
+local unit hakuCloneMirror
 local real b=GetEventDamage()
 local timer t
 local timer tres
@@ -73517,6 +73568,14 @@ endif
         call myCustomDamage(Hero[idc],u,GetHeroInt(Hero[idc],true)*0.1,false,false,null,null,null)
     endif
     if GetUnitAbilityLevel(c,'A14Y')>0 then
+        if suid=='H15O' then
+            set n0=LoadUnitHandle(HH,cid,StringHash("HakuCloneMirror"))
+            call RemoveSavedHandle(HH,cid,StringHash("HakuCloneMirror"))
+            if UnitIsAlive(n0) and LoadTimerHandle(HH,GetHandleId(n0),StringHash("HakuFMirrorExpiry"))!=null then
+                call Haku_FMirrorLinger(n0,2.)
+            endif
+            set n0=null
+        endif
         call RemoveUnit(c)
     endif
     if suid=='u000' and nb>0 then
@@ -74203,6 +74262,19 @@ endif
         endif
 
 
+        if CurrentEventAttack and nb>0 and GetUnitAbilityLevel(c,'B04L')>0 and LoadTimerHandle(HH,cid,StringHash("ISH_QTimer"))==null then
+            set r=GetRandomReal(0,6.28)
+            set newdmg=SR(GetUnitX(u),GetUnitY(u),GetUnitX(c),GetUnitY(c))
+            set x1=GetUnitX(u)+newdmg*Cos(r)
+            set y1=GetUnitY(u)+newdmg*Sin(r)
+            if RectContainsCoords(bj_mapInitialPlayableArea,x1,y1) and not IsTerrainPathable(x1,y1,PATHING_TYPE_WALKABILITY) then
+                call SetUnitX(c,x1)
+                call SetUnitY(c,y1)
+                call SetUnitFacingInstant(c,Atan2(GetUnitY(u)-y1,GetUnitX(u)-x1)*bj_RADTODEG)
+                call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x1,y1))
+            endif
+        endif
+
         if GetUnitAbilityLevel(c,'AlbE')>=1 and nb>0 and nb<GetWidgetLife(u) then
             //call SetUnitOwner(UltimateDamage,Player(idc),false)
             //set lkp=idc
@@ -74284,8 +74356,11 @@ endif
                 set x1=x+400*Cos(r)
                 set y1=y+400*Sin(r)
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\icestomp.mdl",x1,y1))
-                call Haku_PassiveMirrorFx(x1,y1,Atan2(y-y1,x-x1)*bj_RADTODEG)
+                set hakuCloneMirror=Haku_FMakeMirror(c,x1,y1,Atan2(y-y1,x-x1)*bj_RADTODEG)
+                call Haku_FMirrorLinger(hakuCloneMirror,3.)
                 set n3=CopyHero2(c,x1,y1,Atan2(y-y1,x-x1)*bj_RADTODEG)
+                call SaveUnitHandle(HH,GetHandleId(n3),StringHash("HakuCloneMirror"),hakuCloneMirror)
+                set hakuCloneMirror=null
                 call IssueTargetOrder(n3,"attack",u)
                 call UnitApplyTimedLife(n3,'BTLF',1)
                 call SaveInteger(HH,cid,SH_HakuF,0)
@@ -86305,7 +86380,7 @@ endif
 else
 if iqBuff==null then
 set iqBuff=CreateBuff('IsQb')
-call SetBuffRealField(iqBuff,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,0.3)
+call SetBuffRealField(iqBuff,ABILITY_RLF_MOVEMENT_SPEED_FACTOR_SLO1,0.5)
 call SetBuffRealField(iqBuff,ABILITY_RLF_ATTACK_SPEED_FACTOR_SLO2,0.)
 call SetBuffDispellable(iqBuff,false)
 call SetBuffOwner(iqBuff,iqU)
@@ -86449,61 +86524,9 @@ set iqT=null
 set iqU=null
 set iqTarget=null
 endfunction
-function ISH_TAttackJumpEnd takes timer jumpTimer returns nothing
-local integer jumpId=GetHandleId(jumpTimer)
-local unit jumper=LoadUnitHandle(h,jumpId,0)
-if jumper!=null then
-    call SetUnitFlyHeight(jumper,LoadReal(h,jumpId,2),0.)
-    call RemoveSavedHandle(HH,GetHandleId(jumper),StringHash("ISH_TAttackJump"))
-endif
-call FlushChildHashtable(h,jumpId)
-call TSE_DestroyTimer(jumpTimer)
-set jumper=null
-endfunction
-function ISH_TAttackJumpTick takes nothing returns nothing
-local timer jumpTimer=GetExpiredTimer()
-local integer jumpId=GetHandleId(jumpTimer)
-local unit jumper=LoadUnitHandle(h,jumpId,0)
-local integer step=LoadInteger(h,jumpId,1)+1
-if step>=14 or not UnitIsAlive(jumper) or GetUnitAbilityLevel(jumper,'IsiT')==0 or LoadTimerHandle(HH,GetHandleId(jumper),StringHash("ISH_QTimer"))!=null then
-    call ISH_TAttackJumpEnd(jumpTimer)
-else
-    call SaveInteger(h,jumpId,1,step)
-    call SetUnitFlyHeight(jumper,LoadReal(h,jumpId,2)+42.*Sin(bj_PI*I2R(step)/14.),0.)
-endif
-set jumpTimer=null
-set jumper=null
-endfunction
-function ISH_TAttackJump takes nothing returns nothing
-local unit jumper=GetAttacker()
-local integer casterId=GetHandleId(jumper)
-local timer jumpTimer
-local integer jumpId
-if udg_B and DU2 and GetUnitAbilityLevel(jumper,'IsiT')>0 and LoadTimerHandle(HH,casterId,StringHash("ISH_QTimer"))==null and LoadTimerHandle(HH,casterId,StringHash("ISH_TAttackJump"))==null then
-    if GetUnitAbilityLevel(jumper,'Amrf')==0 then
-        call UnitAddAbility(jumper,'Amrf')
-        call UnitRemoveAbility(jumper,'Amrf')
-    endif
-    set jumpTimer=CreateTimer()
-    set jumpId=GetHandleId(jumpTimer)
-    call SaveTimerHandle(HH,casterId,StringHash("ISH_TAttackJump"),jumpTimer)
-    call SaveUnitHandle(h,jumpId,0,jumper)
-    call SaveReal(h,jumpId,2,GetUnitFlyHeight(jumper))
-    call TSE_TimerStart(jumpTimer,.02,true,function ISH_TAttackJumpTick)
-endif
-set jumpTimer=null
-set jumper=null
-endfunction
-function InitTrig_IshidaAttack takes nothing returns nothing
-local trigger jumpTrigger=CreateTrigger()
-call TriggerRegisterAnyUnitEventBJ(jumpTrigger,EVENT_PLAYER_UNIT_ATTACKED)
-call TriggerAddAction(jumpTrigger,function ISH_TAttackJump)
-set jumpTrigger=null
-endfunction
 function Trig_LaserStrike_Actions takes nothing returns nothing
 local unit iqU=GetTriggerUnit()
 local unit iqTarget=GetSpellTargetUnit()
-local timer jumpTimer=LoadTimerHandle(HH,GetHandleId(iqU),StringHash("ISH_TAttackJump"))
 local timer iqT
 local integer iqId
 call ISH_QStop(iqU)
@@ -86511,9 +86534,6 @@ if not ISH_QCanContinue(iqU,iqTarget) then
 set iqU=null
 set iqTarget=null
 return
-endif
-if jumpTimer!=null then
-call ISH_TAttackJumpEnd(jumpTimer)
 endif
 set iqT=CreateTimer()
 set iqId=GetHandleId(iqT)
@@ -86532,7 +86552,6 @@ call ISH_QSlow(iqU)
 set soundplay=SndN(969)
 call StartSound(soundplay)
 call TSE_TimerStart(iqT,0.05,true,function Trig_LaserStrike_Actions2)
-set jumpTimer=null
 set iqT=null
 set iqU=null
 set iqTarget=null
@@ -95961,6 +95980,7 @@ local real x=LoadReal(h,rainId,1)
 local real y=LoadReal(h,rainId,2)
 local real z=LoadReal(h,rainId,3)
 local integer step=LoadInteger(h,rainId,4)+1
+// Тик каждые 0.02 сек. Первые 7 тиков сенбоны стоят на старте, затем за 21 тик сходятся в центре. Удар на тике 28.
 local real remaining=1.-I2R(IMaxBJ(0,step-7))/21.
 local integer index=0
 local real angle
@@ -95988,6 +96008,7 @@ else
         set index=index+1
     endloop
     if step>=28 and UnitIsAlive(caster) and udg_B and DU2 then
+        // Слои ледяного взрыва. У каждого отдельно настраиваются модель, масштаб, высота и время до удаления.
         set needle=AddSpecialEffect("war3mapImported\\IceNova.mdx",x,y)
         call SetSpecialEffectScale(needle,2.6)
         call SetSpecialEffectAnimationByIndex(needle,0)
@@ -96005,7 +96026,14 @@ else
         call SetSpecialEffectScale(needle,1.4)
         call SetSpecialEffectAnimationByIndex(needle,0)
         call RemoveEffect(needle,0.7,true,CreateTimer())
+        set needle=AddSpecialEffect("Abilities\\Spells\\Undead\\FrostNova\\FrostNovaTarget.mdl",x,y)
+        if needle!=null then
+            call SetSpecialEffectScale(needle,1.55)
+            call SetSpecialEffectVertexColour(needle,145,210,255,210)
+            call RemoveEffect(needle,.85,false,CreateTimer())
+        endif
         set targets=CreateGroup()
+        // Радиус урона — 250. При изменении обнови Area в [HaG1], чтобы круг прицеливания совпадал с уроном.
         call GroupEnumUnitsInRange(targets,x,y,250.,Base)
         loop
             set target=FirstOfGroup(targets)
@@ -96014,6 +96042,7 @@ else
             if Condition_Base(OwnerOf(caster),target) then
                 call myCustomDamage(caster,target,LoadReal(h,rainId,5),false,false,null,null,null)
                 if UnitIsAlive(target) then
+                    // Сетка на 2 сек. накладывается после урона, если цель осталась жива.
                     call SetControlToUnit(caster,target,2.,"ensnare")
                 endif
             endif
@@ -96029,6 +96058,7 @@ set needle=null
 set caster=null
 set rainTimer=null
 endfunction
+// E Хаку: Ice Senbon Rain, ID HaG1. Мана, дальность и перезарядка — table/ability.ini, секция [HaG1].
 function Haku_ECast takes nothing returns nothing
 local unit caster=GetTriggerUnit()
 local timer rainTimer
@@ -96049,18 +96079,23 @@ if GetSpellAbilityId()=='HaG1' and GetHeroLevel(caster)>=12 and udg_B and DU2 th
     call SaveReal(h,rainId,1,x)
     call SaveReal(h,rainId,2,y)
     call SaveReal(h,rainId,3,z)
+    // Урон за попадание по одной цели: (2 + ранг R) × полная ловкость. Минимальный ранг R здесь считается за 1.
     call SaveReal(h,rainId,5,(2.+I2R(IMaxBJ(1,GetUnitAbilityLevel(caster,'A0GL'))))*GetHeroAgi(caster,true))
     loop
+        // Число сенбонов и угловой шаг. При изменении количества поменяй делитель угла и оба цикла в Haku_ERainTick.
         exitwhen index>=6
         set angle=I2R(index)*bj_PI/3.
+        // 300 — радиус стартового кольца, 650 — высота над землёй в центре удара. Те же числа использованы в тике полёта и расчёте наклона.
         set startX=x+300.*Cos(angle)
         set startY=y+300.*Sin(angle)
+        // Маленькая вспышка рождения: масштаб 0.22, RGBA 110/155/205/90, длительность 0.16 сек.
         set needle=AddSpecialEffect("war3mapImported\\IceSparks.mdx",startX,startY)
         call SetSpecialEffectZ(needle,z+650.)
         call SetSpecialEffectScale(needle,0.22)
         call SetSpecialEffectVertexColour(needle,110,155,205,90)
         call SetSpecialEffectAnimationByIndex(needle,0)
         call RemoveEffect(needle,0.16,false,CreateTimer())
+        // Модель сенбона: масштаб 1.35, анимация 0 — Birth. Разворот направляет острие к центру, угол падения считается из высоты и радиуса кольца.
         set needle=AddSpecialEffect("Haku\\IceSenbon.mdx",startX,startY)
         call SetSpecialEffectZ(needle,z+650.)
         call SetSpecialEffectScale(needle,1.35)
@@ -96076,6 +96111,7 @@ set needle=null
 set rainTimer=null
 endfunction
 function Haku_FRefresh takes unit mirrorCaster returns nothing
+// E открывается с 12 уровня героя. Ранг HaG1 повторяет ранг R (A0GL), минимум 1.
 if GetHeroLevel(mirrorCaster)>=12 and GetUnitAbilityLevel(mirrorCaster,'HaG1')==0 and LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))==null then
 call UnitAddAbility(mirrorCaster,'HaG1')
 call UnitMakeAbilityPermanent(mirrorCaster,true,'HaG1')
@@ -96124,25 +96160,6 @@ call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GM',mirrorLock)
 call Haku_FOrderLock(mirrorCaster,mirrorId,'HaG1',mirrorLock)
 call Haku_FOrderLock(mirrorCaster,mirrorId,'AInv',mirrorLock)
 endfunction
-function Haku_FMirrorExpire takes nothing returns nothing
-local timer expiry=GetExpiredTimer()
-local integer expiryId=GetHandleId(expiry)
-local unit mirror=LoadUnitHandle(h,expiryId,0)
-call RemoveSavedHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorCaster"))
-if GetUnitTypeId(mirror)!=0 then
-    call RemoveUnit(mirror)
-endif
-call FlushChildHashtable(h,expiryId)
-call TSE_DestroyTimer(expiry)
-set mirror=null
-set expiry=null
-endfunction
-function Haku_FMirrorLinger takes unit mirror returns nothing
-local timer expiry=CreateTimer()
-call SaveUnitHandle(h,GetHandleId(expiry),0,mirror)
-call TSE_TimerStart(expiry,2.,false,function Haku_FMirrorExpire)
-set expiry=null
-endfunction
 function Haku_FMirrorBroken takes nothing returns nothing
 local unit mirror=GetTriggerUnit()
 local unit caster=LoadUnitHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorCaster"))
@@ -96150,7 +96167,7 @@ local unit breaker=GetKillingUnit()
 local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
 local integer mirrorId=GetHandleId(mirrorTimer)
 call RemoveSavedHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorCaster"))
-if UnitIsAlive(caster) and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and LoadUnitHandle(h,mirrorId,19+LoadInteger(h,mirrorId,2))==mirror then
+if UnitIsAlive(caster) and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and LoadUnitHandle(h,mirrorId,17)==mirror then
     if breaker==null then
         set breaker=caster
     endif
@@ -96174,8 +96191,7 @@ endfunction
 function Haku_FEnd takes timer mirrorTimer returns nothing
 local integer mirrorId=GetHandleId(mirrorTimer)
 local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
-local integer mirrorIndex=0
-local unit mirrorUnit
+local unit mirrorUnit=LoadUnitHandle(h,mirrorId,17)
 if mirrorCaster!=null then
 call RemoveSavedHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
 call UnitEnableAttack(mirrorCaster,LoadBoolean(h,mirrorId,10),false)
@@ -96186,21 +96202,17 @@ call UnitMakeAbilityPermanent(mirrorCaster,false,'HaF2')
 call UnitRemoveAbility(mirrorCaster,'HaF2')
 if not LoadBoolean(h,mirrorId,16) and GetUnitAbility(mirrorCaster,'HaF0')!=null then
 call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
+call CreateModeIndicatorWithPauseForm(mirrorCaster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
 endif
 call Haku_FRefresh(mirrorCaster)
 endif
-loop
-exitwhen mirrorIndex>=3
-set mirrorUnit=LoadUnitHandle(h,mirrorId,20+mirrorIndex)
 if mirrorUnit!=null then
 if UnitIsAlive(mirrorUnit) then
-call Haku_FMirrorLinger(mirrorUnit)
+call Haku_FMirrorLinger(mirrorUnit,2.)
 else
 call RemoveUnit(mirrorUnit)
 endif
 endif
-set mirrorIndex=mirrorIndex+1
-endloop
 call DestroyGroup(LoadGroupHandle(h,mirrorId,13))
 call DestroyGroup(LoadGroupHandle(h,mirrorId,14))
 call FlushChildHashtable(h,mirrorId)
@@ -96221,19 +96233,15 @@ call EffectCreateAndMove90(true,"Others\\wind4.mdl",mirrorDegrees+180,1,0.75,1.5
 call EffectCreateAndMove(true,"Others\\BlackBlink1.mdl",mirrorDegrees,1,1,1,100,100,100,0,0,mirrorCaster,0,mirrorDegrees)
 endif
 endfunction
-function Haku_FJump takes integer mirrorId,real mirrorX,real mirrorY,boolean mirrorExit returns nothing
+function Haku_FJump takes integer mirrorId,real mirrorX,real mirrorY,boolean mirrorExit,unit existingMirror returns nothing
 local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
 local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
 local integer mirrorCount=LoadInteger(h,mirrorId,2)
-local unit mirrorUnit
-local real mirrorHp
-if mirrorCount>0 then
-set mirrorUnit=LoadUnitHandle(h,mirrorId,20+mirrorCount-1)
-if mirrorUnit!=null then
-call Haku_FMirrorLinger(mirrorUnit)
-call RemoveSavedHandle(h,mirrorId,20+mirrorCount-1)
+local unit mirrorUnit=LoadUnitHandle(h,mirrorId,17)
+if UnitIsAlive(mirrorUnit) then
+call Haku_FMirrorLinger(mirrorUnit,2.)
 endif
-endif
+call RemoveSavedHandle(h,mirrorId,17)
 call IssueImmediateOrder(mirrorCaster,"stop")
 call Haku_FJumpFx(mirrorCaster,mirrorAngle,false)
 call GroupClear(LoadGroupHandle(h,mirrorId,14))
@@ -96249,17 +96257,14 @@ call DisableUnitAbility(mirrorCaster,'HaF2',true,true)
 if mirrorExit then
 call SaveInteger(h,mirrorId,1,2)
 else
-set mirrorUnit=CreateUnit(OwnerOf(mirrorCaster),'hAFm',mirrorX,mirrorY,mirrorAngle*bj_RADTODEG+180)
-call SetUnitScale(mirrorUnit,1.15,1.15,1.15)
-set mirrorHp=RMaxBJ(1.,2.*I2R(GetHeroAgi(mirrorCaster,true)))
-call SaveUnitHandle(HH,GetHandleId(mirrorUnit),StringHash("HakuFMirrorCaster"),mirrorCaster)
-call SetUnitMaxLife(mirrorUnit,mirrorHp)
-call SetUnitState(mirrorUnit,UNIT_STATE_LIFE,mirrorHp)
-call SetUnitRealField(mirrorUnit,UNIT_RF_SIGHT_RADIUS_DAY,0.)
-call SetUnitRealField(mirrorUnit,UNIT_RF_SIGHT_RADIUS_NIGHT,0.)
-call SetUnitCurrentSight(mirrorUnit,0.)
-call SaveUnitHandle(h,mirrorId,20+mirrorCount,mirrorUnit)
+if existingMirror==null then
+set mirrorUnit=Haku_FMakeMirror(mirrorCaster,mirrorX,mirrorY,mirrorAngle*bj_RADTODEG+180.)
 call SaveInteger(h,mirrorId,2,mirrorCount+1)
+else
+set mirrorUnit=existingMirror
+call Haku_FMirrorCancelExpiry(mirrorUnit)
+endif
+call SaveUnitHandle(h,mirrorId,17,mirrorUnit)
 call SaveInteger(h,mirrorId,1,0)
 endif
 set mirrorCaster=null
@@ -96274,7 +96279,7 @@ loop
 exitwhen mirrorDistance<=0 or Haku_FDestination(mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle))
 set mirrorDistance=mirrorDistance-20
 endloop
-call Haku_FJump(mirrorId,mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle),true)
+call Haku_FJump(mirrorId,mirrorX+mirrorDistance*Cos(mirrorAngle),mirrorY+mirrorDistance*Sin(mirrorAngle),true,null)
 set mirrorCaster=null
 endfunction
 function Haku_FTick takes nothing returns nothing
@@ -96294,7 +96299,7 @@ local group mirrorHits=LoadGroupHandle(h,mirrorId,14)
 local unit mirrorTarget
 if not UnitIsAlive(mirrorCaster) or GetUnitAbilityLevel(mirrorCaster,'HaF0')==0 or GetHeroLevel(mirrorCaster)<6 or not udg_B or not DU2 or IsUnitPaused(mirrorCaster) or IsUnitStunned(mirrorCaster) then
 call Haku_FEnd(mirrorTimer)
-elseif mirrorState!=2 and not UnitIsAlive(LoadUnitHandle(h,mirrorId,19+LoadInteger(h,mirrorId,2))) then
+elseif mirrorState!=2 and not UnitIsAlive(LoadUnitHandle(h,mirrorId,17)) then
 call Haku_FEnd(mirrorTimer)
 elseif mirrorState==1 then
 call SetUnitXY(mirrorCaster,LoadReal(h,mirrorId,4),LoadReal(h,mirrorId,5))
@@ -96337,6 +96342,7 @@ if mirrorDistance<=40 then
 call Haku_FJumpFx(mirrorCaster,LoadReal(h,mirrorId,6),true)
 if not LoadBoolean(h,mirrorId,16) then
 call SetAbilityRemainingCooldown(GetUnitAbility(mirrorCaster,'HaF0'),30.)
+call CreateModeIndicatorWithPauseForm(mirrorCaster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
 call SaveBoolean(h,mirrorId,16,true)
 endif
 if mirrorState==2 then
@@ -96356,25 +96362,9 @@ set mirrorHits=null
 set mirrorCaster=null
 set mirrorTimer=null
 endfunction
-function Haku_FCast takes nothing returns nothing
-local unit mirrorCaster=GetTriggerUnit()
-local integer mirrorSpell=GetSpellAbilityId()
-local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
+function Haku_FBegin takes unit mirrorCaster,real mirrorX,real mirrorY,unit existingMirror returns nothing
+local timer mirrorTimer=CreateTimer()
 local integer mirrorId=GetHandleId(mirrorTimer)
-local real mirrorX=GetSpellTargetX()
-local real mirrorY=GetSpellTargetY()
-local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
-local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
-if mirrorSpell=='HaF2' and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and UnitIsAlive(LoadUnitHandle(h,mirrorId,19+LoadInteger(h,mirrorId,2))) then
-call Haku_FExit(mirrorId,mirrorAngle)
-elseif mirrorSpell=='HaF0' and mirrorTimer==null and GetHeroLevel(mirrorCaster)>=6 and UnitIsAlive(mirrorCaster) then
-if mirrorDistance>500 then
-set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
-set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
-endif
-if Haku_FDestination(mirrorX,mirrorY) then
-set mirrorTimer=CreateTimer()
-set mirrorId=GetHandleId(mirrorTimer)
 call SaveTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"),mirrorTimer)
 call SaveUnitHandle(h,mirrorId,0,mirrorCaster)
 call SaveBoolean(h,mirrorId,10,IsUnitAttackEnabled(mirrorCaster))
@@ -96387,43 +96377,96 @@ call ShowAbility(GetUnitAbility(mirrorCaster,'HaF0'),false)
 call SetAbilityOrderEnabled(GetUnitAbility(mirrorCaster,'HaF0'),false)
 call UnitAddAbility(mirrorCaster,'HaF2')
 call UnitMakeAbilityPermanent(mirrorCaster,true,'HaF2')
-call Haku_FJump(mirrorId,mirrorX,mirrorY,false)
+call SaveBoolean(h,mirrorId,16,existingMirror!=null)
+call SaveBoolean(h,mirrorId,19,existingMirror==null)
+call Haku_FJump(mirrorId,mirrorX,mirrorY,false,existingMirror)
 call TSE_TimerStart(mirrorTimer,.02,true,function Haku_FTick)
+set mirrorTimer=null
+endfunction
+function Haku_FCast takes nothing returns nothing
+local unit mirrorCaster=GetTriggerUnit()
+local integer mirrorSpell=GetSpellAbilityId()
+local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
+local integer mirrorId=GetHandleId(mirrorTimer)
+local real mirrorX=GetSpellTargetX()
+local real mirrorY=GetSpellTargetY()
+local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
+local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
+if mirrorSpell=='HaF2' and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and UnitIsAlive(LoadUnitHandle(h,mirrorId,17)) then
+call Haku_FExit(mirrorId,mirrorAngle)
+elseif mirrorSpell=='HaF0' and mirrorTimer==null and GetHeroLevel(mirrorCaster)>=6 and UnitIsAlive(mirrorCaster) then
+if mirrorDistance>500 then
+set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
+set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
+endif
+if Haku_FDestination(mirrorX,mirrorY) then
+call Haku_FBegin(mirrorCaster,mirrorX,mirrorY,null)
 endif
 endif
 set mirrorCaster=null
 set mirrorTimer=null
 endfunction
 function Haku_FOrder takes nothing returns nothing
-local unit mirrorCaster=GetOrderedUnit()
-local integer mirrorOrder=GetIssuedOrderId()
-local timer mirrorTimer=LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))
-local integer mirrorId=GetHandleId(mirrorTimer)
-local real mirrorX=GetOrderPointX()
-local real mirrorY=GetOrderPointY()
-local unit mirrorTarget=GetOrderTargetUnit()
-local real mirrorAngle
-local real mirrorDistance
-if (mirrorOrder==OrderId("smart") or mirrorOrder==OrderId("move")) and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and UnitIsAlive(LoadUnitHandle(h,mirrorId,19+LoadInteger(h,mirrorId,2))) and not IsUnitPaused(mirrorCaster) then
-if mirrorTarget!=null then
-set mirrorX=GetUnitX(mirrorTarget)
-set mirrorY=GetUnitY(mirrorTarget)
+local unit caster=GetOrderedUnit()
+local integer orderId=GetIssuedOrderId()
+local timer active=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
+local integer id=GetHandleId(active)
+local real x=GetOrderPointX()
+local real y=GetOrderPointY()
+local real distance
+local real angle
+local real candidateDistance
+local real nearestDistance=150.
+local unit clicked=GetOrderTargetUnit()
+local unit current=LoadUnitHandle(h,id,17)
+local unit candidate
+local unit nearest
+local group mirrors
+if GetUnitTypeId(caster)=='H02D' and GetHeroLevel(caster)>=6 and udg_B and DU2 and UnitIsAlive(caster) and not IsUnitPaused(caster) and not IsUnitStunned(caster) and (orderId==OrderId("smart") or orderId==OrderId("move")) and (active==null or (LoadInteger(h,id,1)==1 and UnitIsAlive(current))) then
+if clicked!=null then
+set x=GetUnitX(clicked)
+set y=GetUnitY(clicked)
 endif
-set mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
-set mirrorDistance=SR(GetUnitX(mirrorCaster),GetUnitY(mirrorCaster),mirrorX,mirrorY)
-if LoadInteger(h,mirrorId,2)<Haku_FRank(mirrorCaster) and mirrorDistance>1. then
-if mirrorDistance>500 then
-set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
-set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
+set mirrors=CreateGroup()
+call GroupEnumUnitsInRange(mirrors,x,y,150.,null)
+loop
+set candidate=FirstOfGroup(mirrors)
+exitwhen candidate==null
+call GroupRemoveUnit(mirrors,candidate)
+if candidate!=current and GetUnitTypeId(candidate)=='hAFm' and UnitIsAlive(candidate) and LoadUnitHandle(HH,GetHandleId(candidate),StringHash("HakuFMirrorCaster"))==caster and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(candidate),GetUnitY(candidate))<=500. then
+set candidateDistance=SR(x,y,GetUnitX(candidate),GetUnitY(candidate))
+if candidateDistance<=nearestDistance then
+set nearest=candidate
+set nearestDistance=candidateDistance
 endif
-if Haku_FDestination(mirrorX,mirrorY) then
-call Haku_FJump(mirrorId,mirrorX,mirrorY,false)
+endif
+endloop
+call DestroyGroup(mirrors)
+if nearest!=null then
+if active==null then
+call Haku_FBegin(caster,GetUnitX(nearest),GetUnitY(nearest),nearest)
+else
+call Haku_FJump(id,GetUnitX(nearest),GetUnitY(nearest),false,nearest)
+endif
+elseif active!=null and clicked!=current and LoadBoolean(h,id,19) and LoadInteger(h,id,2)<Haku_FRank(caster) then
+set distance=SR(GetUnitX(caster),GetUnitY(caster),x,y)
+if distance>500. then
+set angle=Atan2(y-GetUnitY(caster),x-GetUnitX(caster))
+set x=GetUnitX(caster)+500.*Cos(angle)
+set y=GetUnitY(caster)+500.*Sin(angle)
+endif
+if distance>1. and Haku_FDestination(x,y) then
+call Haku_FJump(id,x,y,false,null)
 endif
 endif
 endif
-set mirrorTarget=null
-set mirrorCaster=null
-set mirrorTimer=null
+set caster=null
+set active=null
+set clicked=null
+set current=null
+set candidate=null
+set nearest=null
+set mirrors=null
 endfunction
 function MakyoHyoshoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0GM'
@@ -96876,7 +96919,7 @@ else
 set needleHeading=Atan2(targetY+GetRandomReal(-45.,45.)*approach-startY,targetX+GetRandomReal(-45.,45.)*approach-startX)
 endif
 set needle=CreateUnit(OwnerOf(caster),'e09Q',startX,startY,needleHeading*bj_RADTODEG)
-call Slash_IceSenbon(needle,GetRandomReal(42.,48.),needleDamage,needleHeading,1000,55,caster)
+call Slash_IceSenbon(needle,GetRandomReal(42.,48.),needleDamage,needleHeading,1000,63.25,caster)
 set needleIndex=needleIndex+1
 endloop
 set volleyCount=volleyCount+1
@@ -141622,7 +141665,7 @@ call SaveStr(HH,SH_ShnChanO,'CelG',"charm")
 call SaveInteger(HH,SH_ShnChanT,'CelG',2)
 call SaveStr(HH,SH_ShnChanO,'CelT',"tornado")
 call SaveStr(HH,SH_ShnChanO,'DMD1',"curse")
-call SaveInteger(HH,SH_ShnChanT,'DMD1',3)
+call SaveInteger(HH,SH_ShnChanT,'DMD1',2)
 call SaveStr(HH,SH_ShnChanO,'DME1',"blizzard")
 call SaveStr(HH,SH_ShnChanO,'DMF1',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'DMF1',1)
@@ -141981,7 +142024,7 @@ call SaveInteger(HH,SH_ShnChanT,'MaR2',2)
 call SaveStr(HH,SH_ShnChanO,'MaT1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'MaT1',2)
 call SaveStr(HH,SH_ShnChanO,'MaT2',"cyclone")
-call SaveStr(HH,SH_ShnChanO,'MaTc',"farsight")
+call SaveStr(HH,SH_ShnChanO,'MaTc',"impale")
 call SaveInteger(HH,SH_ShnChanT,'MaTc',2)
 call SaveStr(HH,SH_ShnChanO,'MadD',"chainlightning")
 call SaveStr(HH,SH_ShnChanO,'MadR',"clusterrockets")
@@ -144189,7 +144232,7 @@ call SaveStr(HH,SH_AbOrd,'MaQ1',"channel")
 call SaveStr(HH,SH_AbOrd,'MaR2',"coupleinstant")
 call SaveStr(HH,SH_AbOrd,'MaT1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'MaT2',"cyclone")
-call SaveStr(HH,SH_AbOrd,'MaTc',"farsight")
+call SaveStr(HH,SH_AbOrd,'MaTc',"impale")
 call SaveStr(HH,SH_AbOrd,'MadD',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'MadR',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'MadW',"charm")
@@ -274846,8 +274889,8 @@ set target=null
 set Dummy=null
 endfunction
 function Death_Master_G_Act takes unit caster,unit target returns nothing
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
+local timer t
+local integer id
 local real x0=GetUnitX(caster)
 local real y0=GetUnitY(caster)
 local real x1=GetUnitX(target)
@@ -274855,6 +274898,12 @@ local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
 local real damage=GetUnitState(target,UNIT_STATE_MAX_LIFE)*0.015
 
+if target==null or not UnitIsAlive(target) or IsUnitType(target,UNIT_TYPE_MECHANICAL) or (IsUnitEnemy(target,OwnerOf(caster)) and IsUnitInvulnerable(target)) then
+call DM_Refund(caster,'DMG1')
+return
+endif
+set t=CreateTimer()
+set id=GetHandleId(t)
 call SaveBoolean(HH,id,30,DM_Empower(caster))
 call SaveUnitHandle(HH,id,1,caster)
 call SaveUnitHandle(HH,id,2,target)
@@ -275185,7 +275234,6 @@ else
 set dmSide=1.
 endif
 call SetUnitXY_1(dmU,dmX+dmAlong*dmDx/dmLen-dmSide*85.*dmDy/dmLen,dmY+dmAlong*dmDy/dmLen+dmSide*85.*dmDx/dmLen,false)
-call SetControlToUnit(dmC,dmU,0.15,"stun")
 endif
 endif
 endloop
@@ -275306,11 +275354,6 @@ call SaveReal(HH,dmId,3,dmElapsed)
 call SaveInteger(HH,dmId,4,dmMask)
 if dmLeft<=0.001 or dmElapsed>=17.999 or DM_QNextSkull(dmU)==0 or not udg_B or GetUnitTypeId(dmU)==0 then
 call DM_QChainClose(dmU)
-else
-call BlzEndUnitAbilityCooldown(dmU,'DMQ1')
-if GetUnitAbilityLevel(dmU,'DMQ2')>0 then
-call BlzEndUnitAbilityCooldown(dmU,'DMQ2')
-endif
 endif
 set dmT=null
 set dmU=null
@@ -275343,10 +275386,6 @@ call DM_QChainClose(dmU)
 else
 // Each actual throw restarts both the follow-up window and its cooldown clock.
 call SaveReal(HH,GetHandleId(dmT),2,5.)
-call BlzEndUnitAbilityCooldown(dmU,'DMQ1')
-if GetUnitAbilityLevel(dmU,'DMQ2')>0 then
-call BlzEndUnitAbilityCooldown(dmU,'DMQ2')
-endif
 endif
 set dmT=null
 endfunction
@@ -275366,7 +275405,7 @@ local real facing=LoadReal(HH,id,3)
 local integer id_Q=LoadInteger(HH,id,19)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if time>18 then
+if time>18. or (time>14. and not LoadBoolean(HH,id,30)) then
 if LoadUnitHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(id_Q)))==Dummy then
 call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("DMQ_Ground_"+I2S(id_Q)))
 endif
@@ -291120,10 +291159,18 @@ return LoadInteger(HH,GetHandleId(u),HitK("Ch"))
 endfunction
 // +0.1 с за заряд D ко всем остановкам времени Хита
 function HitPanelUpdate takes unit hbu returns nothing
+local integer hitId=GetHandleId(hbu)
+local real hitLeft
+local string hitText
 if hbu==null or not IsUnitSelected(hbu,GetLocalPlayer()) or not IsPlayerAlly(GetLocalPlayer(),OwnerOf(hbu)) then
 return
 endif
-call SetFrameText(GetFrameByName("CustomLeaderboardText",0),"|cffc78cff"+GetObjectName('HtD1')+"|r: "+I2S(HitCh(hbu))+"/10")
+set hitText="|cffc78cff"+GetObjectName('HtD1')+"|r: "+I2S(HitCh(hbu))+"/10"
+if HitCh(hbu)>0 then
+set hitLeft=RMaxBJ(0.,RMaxBJ(LoadReal(HH,hitId,HitK("Cbt"))+10.,LoadReal(HH,hitId,HitK("ChLock")))-HitNow())
+set hitText=hitText+"  |cffffcc00"+I2S(R2I(hitLeft+.99))+"s|r"
+endif
+call SetFrameText(GetFrameByName("CustomLeaderboardText",0),hitText)
 call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
 call SetFrameSize(GetFrameByName("CustomLeaderboard",0),.1775,GetFrameHeight(GetFrameByName("CustomLeaderboardText",0))+0.016)
 call SetFrameTextAlignment(GetFrameByName("CustomLeaderboardText",0),TEXT_JUSTIFY_LEFT,TEXT_JUSTIFY_LEFT)
@@ -297585,11 +297632,11 @@ call LANG_A('A08W',0,1,"Licht Regen, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,2,"Licht Regen, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,3,"Licht Regen, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,4,"Licht Regen, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',1,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
-call LANG_A('A08W',1,1,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 7.2"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
-call LANG_A('A08W',1,2,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 10."+"8% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
-call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 14."+"4% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
-call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 18%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
+call LANG_A('A08W',1,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('A08W',1,1,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 7.2"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('A08W',1,2,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 10."+"8% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
+call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 14."+"4% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
+call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 18%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
 call LANG_A('IsQc',0,0,"Cancel Licht Regen (|cffffcc00Q|r)")
 call LANG_A('IsQc',1,0,"Stops firing and restores normal Q. Its cooldown continues from the start of the barrage.")
 call LANG_B('MaEm',0,"Ashisogi Jizo Mark")
@@ -297599,7 +297646,7 @@ call LANG_B('MaEc',1,"Incoming control duration and the magnitude of MS/AS slows
 call LANG_B('IsQb',0,"Licht Regen")
 call LANG_B('IsQb',1,"Movement speed is reduced by 30% while firing.")
 call LANG_A('A08W',2,0,"Licht Regen, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',3,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"\\7.2\\10.8\\14.4\\18% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 30% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nC"+"ooldown: 20 sec.|r")
+call LANG_A('A08W',3,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"\\7.2\\10.8\\14.4\\18% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nC"+"ooldown: 20 sec.|r")
 call LANG_A('A08X',0,0,"Hierenhiayko, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A08X',1,0,"|nIshida teleports a short distance. Does not interrupt Licht Regen (Q) if the target remains within the break distance after teleporting.|n|n|cFF00A5FF|nCooldown: 10 sec.|r")
 call LANG_A('A08X',2,0,"Shunpo, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
@@ -309176,35 +309223,35 @@ call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00
 call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
-call LANG_A('DMG1',1,0,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 150|nCast time: +0.25 sec.|nCooldown: 50 sec.|r")
-call LANG_A('DMG1',1,1,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 200|nCast time: +0.25 sec.|nCooldown: 45 sec.|r")
-call LANG_A('DMG1',1,2,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 250|nCast time: +0.25 sec.|nCooldown: 40 sec.|r")
-call LANG_A('DMG1',1,3,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 300|nCast time: +0.25 sec.|nCooldown: 35 sec.|r")
-call LANG_A('DMG1',1,4,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|n• On an ally or herself, restores HP/MP using energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 350|nCast time: +0.25 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMG1',1,0,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 150|nCast time: +0.25 sec.|nCooldown: 50 sec.|r")
+call LANG_A('DMG1',1,1,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 200|nCast time: +0.25 sec.|nCooldown: 45 sec.|r")
+call LANG_A('DMG1',1,2,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 250|nCast time: +0.25 sec.|nCooldown: 40 sec.|r")
+call LANG_A('DMG1',1,3,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 300|nCast time: +0.25 sec.|nCooldown: 35 sec.|r")
+call LANG_A('DMG1',1,4,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 350|nCast time: +0.25 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 8 sec.|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -311243,7 +311290,6 @@ call InitTrig_SwapHeroes()
 call InitTrig_SwapOk()
 call InitTrig_Repick()
 call InitTrig_cd()
-call InitTrig_IshidaAttack()
 call InitTrig_HakuMirrorDeath()
 call InitTrig_Goddess()
 call InitTrig_height()
