@@ -36,7 +36,7 @@
 **Haku**
 - Starting AGI 25 → 23, growth 3.2 → 3.0.
 - Q. Fires 12 pairs of senbon. Ctrl+Q switches between firing at a point and turning to fire forward.
-- W. Ice Strike moved to W. Mana 80–180.
+- W. Ice Strike moved to W. Damage 3–7× → 2–6× AGI. Mana 80–180.
 - E. Ice Senbon Rain can be learned from level 6. Damage 3–7× AGI, root 2 sec., mana 125–225.
 - F. Right-click to travel between mirrors. Levels 6/12/18 allow 1/2/3 new mirrors. Entering an existing mirror preserves its remaining lifetime and costs no charge.
 - F. Flight damage 1.5× AGI, radius 150, range 500. Press F again to dash 200 out. Mirror HP is 2× total AGI. Breaking the occupied mirror stuns Haku for 0.5 sec. The panel shows charges and cooldown. Mana 50, recharge 15 sec. per mirror.

@@ -95925,7 +95925,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e054',x1,y1,0),'BTLF',3)
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call FlushChildHashtable(h,id)
-call myCustomDamage(u,c,(2+GetUnitAbilityLevel(u,'A0GP'))*GetHeroAgi(u,true),false,false,null,null,null)
+call myCustomDamage(u,c,(1+GetUnitAbilityLevel(u,'A0GP'))*GetHeroAgi(u,true),false,false,null,null,null)
 call SetControlToUnit(u,c,2, "stun")
 endif
 set p=null
@@ -269398,33 +269398,33 @@ call SaveStr(SG_DB,'H00I',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I
 call SaveStr(SG_DB,'H00I',1,"I01F I01M I01M I066 I054 I068 I04V I00K I040 I018 I06O I06Q I04T I04G IPlA")
 call SaveInteger(SG_DB,'H00I',20,7)
 call SaveInteger(SG_DB,'H00I',21,3)
-call SaveStr(SG_DB,'H00E',0,"I01F I01M I01M I054 I13R I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
-call SaveStr(SG_DB,'H00E',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
+call SaveStr(SG_DB,'H00E',0,"I01F I01M I01M I054 I13R I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
+call SaveStr(SG_DB,'H00E',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
 call SaveInteger(SG_DB,'H00E',20,6)
 call SaveInteger(SG_DB,'H00E',21,3)
-call SaveStr(SG_DB,'H00A',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
-call SaveStr(SG_DB,'H00A',1,"I01F I01M I01M I00D I054 I04V I036 I04T I048 IAoF I042 I03P I1S4 I02Y I03Q I043")
+call SaveStr(SG_DB,'H00A',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I1S4 IHnK I03Q I043")
+call SaveStr(SG_DB,'H00A',1,"I01F I01M I01M I00D I054 I04V I036 I04T I048 IAoF I042 I03P I1S4 IHnK I03Q I043")
 call SaveInteger(SG_DB,'H00A',20,6)
 call SaveInteger(SG_DB,'H00A',21,3)
-call SaveStr(SG_DB,'H00J',0,"I01F I01M I01M I046 IMDi I012 IPlA I00Q I06Q I068 I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H00J',1,"I01F I01M I01M I046 I04V I012 IPlA I00Q I06Q I068 I04T I1S4 I03A I03P I04L")
-call SaveStr(SG_DB,'H00J',3,"I01F I01M I01M I046 I020 I01E I05N I012 I00Q I06Q I04T I03P I04L")
+call SaveStr(SG_DB,'H00J',0,"I01F I01M I01M I046 IMDi IBBi I012 IPlA I00Q I06Q I068 I1S4 I04T I03A I03P I04L")
+call SaveStr(SG_DB,'H00J',1,"I01F I01M I01M I046 I04V IBBi I012 IPlA I00Q I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'H00J',3,"I01F I01M I01M I046 I020 IBBi I01E I05N I012 I00Q I06Q I04T I03P I04L")
 call SaveInteger(SG_DB,'H00J',20,9)
 call SaveInteger(SG_DB,'H00J',21,3)
-call SaveStr(SG_DB,'H016',0,"I01F I01M I01M I054 I13R I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
-call SaveStr(SG_DB,'H016',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
+call SaveStr(SG_DB,'H016',0,"I01F I01M I01M I054 I13R I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
+call SaveStr(SG_DB,'H016',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
 call SaveInteger(SG_DB,'H016',20,6)
 call SaveInteger(SG_DB,'H016',21,3)
-call SaveStr(SG_DB,'H018',0,"I01F I01M I01M I046 I04V I018 I066 I00Q I040 I00K I06Q IPRB I06J I01U IBBi")
-call SaveStr(SG_DB,'H018',1,"I01F I01M I01M I046 I04V I00K I066 I00Q I040 I018 I06Q I04T IPRB I06J I01U")
+call SaveStr(SG_DB,'H018',0,"I01F I01M I01M I046 I04V IBBi I018 I066 I00Q I040 I00K I06Q IPRB I06J I01U")
+call SaveStr(SG_DB,'H018',1,"I01F I01M I01M I046 I04V IBBi I00K I066 I00Q I040 I018 I06Q I04T IPRB I06J I01U")
 call SaveInteger(SG_DB,'H018',20,4)
 call SaveInteger(SG_DB,'H018',21,3)
 call SaveStr(SG_DB,'H01A',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
 call SaveStr(SG_DB,'H01A',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H01A',20,1)
 call SaveInteger(SG_DB,'H01A',21,3)
-call SaveStr(SG_DB,'H00M',0,"I01F I01M I01M I00D I046 IMDi I00Q I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H00M',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I06Q I1S4 IPlA I03A I03P I04L")
+call SaveStr(SG_DB,'H00M',0,"I01F I01M I01M I00D I046 IBBi IMDi I00Q I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
+call SaveStr(SG_DB,'H00M',1,"I01F I01M I01M I00D I046 IBBi I04V I04T I00Q I068 I06Q I1S4 IPlA I03A I03P I04L")
 call SaveInteger(SG_DB,'H00M',20,9)
 call SaveInteger(SG_DB,'H00M',21,3)
 call SaveStr(SG_DB,'H00H',0,"I01F I01M I01M I054 I068 IMDi I00Q IPlA I066 I06O I04G I06R I1S4 I04T I03P")
@@ -269467,12 +269467,12 @@ call SaveStr(SG_DB,'H00Z',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H00Z',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H00Z',20,9)
 call SaveInteger(SG_DB,'H00Z',21,3)
-call SaveStr(SG_DB,'H012',0,"I01F I01M I01H I046 I04V I01U I02V IBSI I03L IPlA I03F I04T I03P I03A I06Q")
-call SaveStr(SG_DB,'H012',1,"I01F I01M I01H I046 I04V I03F I01U I04T IPlA I02V IBSI I03P I03L I03A I06Q")
+call SaveStr(SG_DB,'H012',0,"I01F I01M I01H I046 I04V IBBi I01U I02V IBSI I03L IPlA I03F I04T I03P I03A I06Q")
+call SaveStr(SG_DB,'H012',1,"I01F I01M I01H I046 I04V IBBi I03F I01U I04T IPlA I02V IBSI I03P I03L I03A I06Q")
 call SaveInteger(SG_DB,'H012',20,3)
 call SaveInteger(SG_DB,'H012',21,3)
-call SaveStr(SG_DB,'H014',0,"I01F I01M I01M I00K I046 I04V I066 I040 I06Q I06R I06J I01U IBBi I00W I06E")
-call SaveStr(SG_DB,'H014',1,"I01F I01M I01M I00K I046 I04V I066 I040 I06Q I04T I06R I06J I01U IBBi I06E")
+call SaveStr(SG_DB,'H014',0,"I01F I01M I01M I00K I046 IBBi I04V I066 I040 I06Q I06R I06J I01U IGDi I06E")
+call SaveStr(SG_DB,'H014',1,"I01F I01M I01M I00K I046 IBBi I04V I066 I040 I06Q I04T I06R I06J I01U I06E")
 call SaveInteger(SG_DB,'H014',20,4)
 call SaveInteger(SG_DB,'H014',21,3)
 call SaveStr(SG_DB,'H00N',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -269494,8 +269494,8 @@ call SaveStr(SG_DB,'H01F',0,"I01F I01M I01M I00D I046 IMDi I00Q I06Q I068 I1S4 I
 call SaveStr(SG_DB,'H01F',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I06Q I1S4 IPlA I03A I03P I04L")
 call SaveInteger(SG_DB,'H01F',20,9)
 call SaveInteger(SG_DB,'H01F',21,3)
-call SaveStr(SG_DB,'H01H',0,"I01F I01M I01M I046 IPRB I04V I012 I042 I00Q IPlA I06Q I06J I01U IBBi I00W")
-call SaveStr(SG_DB,'H01H',1,"I01F I01M I01M I046 IPRB I04V I012 I042 I00Q IPlA I06Q I04T I06J I01U IBBi")
+call SaveStr(SG_DB,'H01H',0,"I01F I01M I01M I008 I04E I046 I03L IPRB I01U I00Q I04V I012 IGDi I04T I050")
+call SaveStr(SG_DB,'H01H',1,"I01F I01M I01M I008 I04E I046 I03L IPRB I01Q I00Q I04V I012 IGDi I04T I050")
 call SaveInteger(SG_DB,'H01H',20,4)
 call SaveInteger(SG_DB,'H01H',21,3)
 call SaveStr(SG_DB,'H01J',0,"I01F I01M I01M I00D I054 I066 I06Q I043 IPlA I068 I06R I06W I04T I03P I06O")
@@ -269514,8 +269514,8 @@ call SaveStr(SG_DB,'H027',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H027',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H027',20,9)
 call SaveInteger(SG_DB,'H027',21,3)
-call SaveStr(SG_DB,'H02B',0,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
-call SaveStr(SG_DB,'H02B',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
+call SaveStr(SG_DB,'H02B',0,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
+call SaveStr(SG_DB,'H02B',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
 call SaveInteger(SG_DB,'H02B',20,6)
 call SaveInteger(SG_DB,'H02B',21,3)
 call SaveStr(SG_DB,'H02D',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269526,8 +269526,8 @@ call SaveStr(SG_DB,'H01B',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I
 call SaveStr(SG_DB,'H01B',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H01B',20,0)
 call SaveInteger(SG_DB,'H01B',21,3)
-call SaveStr(SG_DB,'H02F',0,"I01F I01M I01H I00D I046 I04V I06Q I06E I1S4 I04T I03A I043 IPlA I03P IBSI")
-call SaveStr(SG_DB,'H02F',1,"I01F I01M I01H I00D I046 I04V I04T I043 I06E I06Q I1S4 I03A IPlA I03P IBSI")
+call SaveStr(SG_DB,'H02F',0,"I01F I01M I01H I00D I046 IBBi I04V I06Q I06E I1S4 I04T I03A I043 IPlA I03P IBSI")
+call SaveStr(SG_DB,'H02F',1,"I01F I01M I01H I00D I046 IBBi I04V I04T I043 I06E I06Q I1S4 I03A IPlA I03P IBSI")
 call SaveInteger(SG_DB,'H02F',20,9)
 call SaveInteger(SG_DB,'H02F',21,3)
 call SaveStr(SG_DB,'H02G',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
@@ -269558,8 +269558,8 @@ call SaveStr(SG_DB,'H02M',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'H02M',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H02M',20,1)
 call SaveInteger(SG_DB,'H02M',21,3)
-call SaveStr(SG_DB,'H02O',0,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I06E I02Y I06Q I043")
-call SaveStr(SG_DB,'H02O',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I06E I02Y I06Q I043")
+call SaveStr(SG_DB,'H02O',0,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I06E IHnK I06Q I043")
+call SaveStr(SG_DB,'H02O',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I06E IHnK I06Q I043")
 call SaveInteger(SG_DB,'H02O',20,6)
 call SaveInteger(SG_DB,'H02O',21,3)
 call SaveStr(SG_DB,'H02P',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -269657,8 +269657,8 @@ call SaveStr(SG_DB,'H047',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I
 call SaveStr(SG_DB,'H047',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H047',20,9)
 call SaveInteger(SG_DB,'H047',21,3)
-call SaveStr(SG_DB,'H048',0,"I01F I01M I01M I046 I04V I018 I066 I040 I00K I06Q IPRB I06J I01U IBBi I00W")
-call SaveStr(SG_DB,'H048',1,"I01F I01M I01M I046 I04V I00K I066 I040 I018 I06Q I04T IPRB I06J I01U IBBi")
+call SaveStr(SG_DB,'H048',0,"I01F I01M I01M I046 I04V IBBi I018 I066 I040 I00K I06Q IPRB I06J I01U IGDi")
+call SaveStr(SG_DB,'H048',1,"I01F I01M I01M I046 I04V IBBi I00K I066 I040 I018 I06Q I04T IPRB I06J I01U")
 call SaveInteger(SG_DB,'H048',20,4)
 call SaveInteger(SG_DB,'H048',21,3)
 call SaveStr(SG_DB,'HYuj',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03Q I04L")
@@ -269684,8 +269684,8 @@ call SaveStr(SG_DB,'H04F',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I
 call SaveStr(SG_DB,'H04F',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H04F',20,9)
 call SaveInteger(SG_DB,'H04F',21,3)
-call SaveStr(SG_DB,'H04H',0,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
-call SaveStr(SG_DB,'H04H',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
+call SaveStr(SG_DB,'H04H',0,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 IHnK I03Q I043")
+call SaveStr(SG_DB,'H04H',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 IHnK I03Q I043")
 call SaveInteger(SG_DB,'H04H',20,6)
 call SaveInteger(SG_DB,'H04H',21,3)
 call SaveStr(SG_DB,'H04L',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I044 I00Q IPlA I03A I06W I06R")
@@ -269696,20 +269696,20 @@ call SaveStr(SG_DB,'H04O',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I
 call SaveStr(SG_DB,'H04O',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H04O',20,0)
 call SaveInteger(SG_DB,'H04O',21,3)
-call SaveStr(SG_DB,'H04T',0,"I01F I01M I01M I046 IPRB I04V I02V I012 I03F I06J I04T I042 I00W IPlA IBBi")
-call SaveStr(SG_DB,'H04T',1,"I01F I01M I01M I02W IPRB I04V I01Q I012 I01U I03F I04T I06J I042 IPlA IBBi")
+call SaveStr(SG_DB,'H04T',0,"I01F I01M I01M I046 IPRB I02V I01Q ISDi I012 I050 I00Q I04V IGDi I04T")
+call SaveStr(SG_DB,'H04T',1,"I01F I01M I01M I046 IPRB I02V I01U ISDi I012 I050 I00Q I04V IGDi I04T")
 call SaveInteger(SG_DB,'H04T',20,4)
 call SaveInteger(SG_DB,'H04T',21,3)
-call SaveStr(SG_DB,'H052',0,"I01F I01M I01M I046 I04V I018 I066 I040 I00K I06Q IPRB I06J I01U IBBi I00W")
-call SaveStr(SG_DB,'H052',1,"I01F I01M I01M I046 I04V I00K I066 I040 I018 I06Q I04T IPRB I06J I01U IBBi")
+call SaveStr(SG_DB,'H052',0,"I01F I01M I01M I046 I04V IBBi I018 I066 I040 I00K I06Q IPRB I06J I01U IGDi")
+call SaveStr(SG_DB,'H052',1,"I01F I01M I01M I046 I04V IBBi I00K I066 I040 I018 I06Q I04T IPRB I06J I01U")
 call SaveInteger(SG_DB,'H052',20,4)
 call SaveInteger(SG_DB,'H052',21,3)
 call SaveStr(SG_DB,'H053',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
 call SaveStr(SG_DB,'H053',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H053',20,0)
 call SaveInteger(SG_DB,'H053',21,3)
-call SaveStr(SG_DB,'H054',0,"I01F I01M I01M I00D I046 IMDi I05T I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H054',1,"I01F I01M I01M I00D I046 I04V I04T I05T I048 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H054',0,"I01F I01M I01M I046 I00D I00Q I05T I06Q I04V I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'H054',1,"I01F I01M I01M I046 I00D I00Q I05T I048 I06Q I04V I1S4 IPlA I04T I03A")
 call SaveInteger(SG_DB,'H054',20,9)
 call SaveInteger(SG_DB,'H054',21,3)
 call SaveStr(SG_DB,'H057',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269771,8 +269771,8 @@ call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H069',20,9)
 call SaveInteger(SG_DB,'H069',21,3)
-call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 I04V I00Q I02V I06Q I068 I043 I04T I1S4 I03P IPlA I042")
-call SaveStr(SG_DB,'H06B',1,"I01F I01M I01M I046 IMDi I00Q I06Q I068 I02V I04T I043 I1S4 I03P IPlA I042")
+call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 I04V IBBi I00Q I02V I06Q I068 I043 I04T I1S4 I03P IPlA I042")
+call SaveStr(SG_DB,'H06B',1,"I01F I01M I01M I046 IMDi IBBi I00Q I06Q I068 I02V I04T I043 I1S4 I03P IPlA I042")
 call SaveInteger(SG_DB,'H06B',20,2)
 call SaveInteger(SG_DB,'H06B',21,3)
 call SaveStr(SG_DB,'H06F',0,"I01F I01M I01M I054 I04V I018 I066 I040 I00K I06Q I1S4 IPlA I06W I044 I04T")
@@ -269783,8 +269783,8 @@ call SaveStr(SG_DB,'H051',0,"I01F I01M I01M I066 I054 I068 IMDi I04G IPlA I06O I
 call SaveStr(SG_DB,'H051',1,"I01F I01M I01M I066 I054 I068 I04V I04T I06O I04G IPlA I00Q I03P I06R I06W")
 call SaveInteger(SG_DB,'H051',20,7)
 call SaveInteger(SG_DB,'H051',21,3)
-call SaveStr(SG_DB,'H06G',0,"I01F I01M I01M I046 IPRB I04V I012 I042 IPlA I06Q I06J I01U IBBi I00W I04T")
-call SaveStr(SG_DB,'H06G',1,"I01F I01M I01M I046 IPRB I04V I012 I042 IPlA I06Q I04T I06J I01U IBBi I00W")
+call SaveStr(SG_DB,'H06G',0,"I01F I01M I01M I046 IPRB IBBi I04V I012 I042 IPlA I06Q I06J I01U IGDi I04T")
+call SaveStr(SG_DB,'H06G',1,"I01F I01M I01M I046 IPRB IBBi I04V I012 I042 IPlA I06Q I04T I06J I01U IGDi")
 call SaveInteger(SG_DB,'H06G',20,4)
 call SaveInteger(SG_DB,'H06G',21,3)
 call SaveStr(SG_DB,'H06M',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269811,8 +269811,8 @@ call SaveStr(SG_DB,'H076',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I
 call SaveStr(SG_DB,'H076',1,"I01F I01M I01M I066 I054 I068 I04V I00K I040 I018 I06O I06Q I04T I04G IPlA")
 call SaveInteger(SG_DB,'H076',20,7)
 call SaveInteger(SG_DB,'H076',21,3)
-call SaveStr(SG_DB,'H077',0,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
-call SaveStr(SG_DB,'H077',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
+call SaveStr(SG_DB,'H077',0,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
+call SaveStr(SG_DB,'H077',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 IHnK")
 call SaveInteger(SG_DB,'H077',20,6)
 call SaveInteger(SG_DB,'H077',21,3)
 call SaveStr(SG_DB,'H112',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
@@ -269871,24 +269871,24 @@ call SaveStr(SG_DB,'Ho0O',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I
 call SaveStr(SG_DB,'Ho0O',1,"I01F I01M I01M I066 I054 I068 I04V I00K I040 I018 I06O I06Q I04T I04G IPlA")
 call SaveInteger(SG_DB,'Ho0O',20,7)
 call SaveInteger(SG_DB,'Ho0O',21,3)
-call SaveStr(SG_DB,'HAlb',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I03P I1S4 I02Y I03Q I043 I06Q")
-call SaveStr(SG_DB,'HAlb',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I03P I1S4 I02Y I03Q I043 I06Q")
+call SaveStr(SG_DB,'HAlb',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I03P I1S4 IHnK I03Q I043 I06Q")
+call SaveStr(SG_DB,'HAlb',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I03P I1S4 IHnK I03Q I043 I06Q")
 call SaveInteger(SG_DB,'HAlb',20,6)
 call SaveInteger(SG_DB,'HAlb',21,3)
-call SaveStr(SG_DB,'HRen',0,"I01F I01M I01M I046 IMDi I012 IPlA I00Q I06Q I05T I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'HRen',1,"I01F I01M I01M I046 I04V I012 IPlA I00Q I06Q I04T I05T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'HRen',0,"I01F I01M I01M I046 IMDi IBBi I012 IPlA I00Q I06Q I05T I1S4 I04T I03A I03P I04L")
+call SaveStr(SG_DB,'HRen',1,"I01F I01M I01M I046 I04V IBBi I012 IPlA I00Q I06Q I04T I05T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'HRen',20,9)
 call SaveInteger(SG_DB,'HRen',21,3)
-call SaveStr(SG_DB,'HMin',0,"I01F I01M I01M I046 IMDi I012 I03Q IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'HMin',1,"I01F I01M I01M I046 I04V I012 I03Q IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'HMin',0,"I01F I01M I01M I046 IMDi IBBi I012 I03Q IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
+call SaveStr(SG_DB,'HMin',1,"I01F I01M I01M I046 I04V IBBi I012 I03Q IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'HMin',20,9)
 call SaveInteger(SG_DB,'HMin',21,3)
 call SaveStr(SG_DB,'HMad',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
 call SaveStr(SG_DB,'HMad',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'HMad',20,1)
 call SaveInteger(SG_DB,'HMad',21,3)
-call SaveStr(SG_DB,'H10L',0,"I01F I01M I01M I02W I13R I012 IPlA I06Q I1S4 I02V I00D IAS0 I04T I03P I06E")
-call SaveStr(SG_DB,'H10L',1,"I01F I01M I01M I02W I04V I012 IPlA I06Q I04T I1S4 I02V I00D IAS0 I03P I06E")
+call SaveStr(SG_DB,'H10L',0,"I01F I01M I01M I02W I13R IBBi I012 IPlA I06Q I1S4 I02V I00D IAS0 I04T I03P I06E")
+call SaveStr(SG_DB,'H10L',1,"I01F I01M I01M I02W I04V IBBi I012 IPlA I06Q I04T I1S4 I02V I00D IAS0 I03P I06E")
 call SaveInteger(SG_DB,'H10L',20,3)
 call SaveInteger(SG_DB,'H10L',21,3)
 call SaveStr(SG_DB,'HIc1',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
@@ -269923,8 +269923,8 @@ call SaveStr(SG_DB,'HBGN',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'HBGN',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'HBGN',20,9)
 call SaveInteger(SG_DB,'HBGN',21,3)
-call SaveStr(SG_DB,'HSab',0,"I01F I01M I01M I00D I054 I04V I04T I06E I06Q IAoF I042 I03Q I1S4 I02Y I043")
-call SaveStr(SG_DB,'HSab',1,"I01F I01M I01M I00D I054 I04V I04T I06E I06Q IAoF I042 I03Q I1S4 I02Y I043")
+call SaveStr(SG_DB,'HSab',0,"I01F I01M I01M I00D I054 I04V I04T I06E I06Q IAoF I042 I03Q I1S4 IHnK I043")
+call SaveStr(SG_DB,'HSab',1,"I01F I01M I01M I00D I054 I04V I04T I06E I06Q IAoF I042 I03Q I1S4 IHnK I043")
 call SaveInteger(SG_DB,'HSab',20,6)
 call SaveInteger(SG_DB,'HSab',21,3)
 call SaveStr(SG_DB,'HJi1',0,"I01F I01M I01M I00D I046 IMDi I05T I042 I06Q I068 I1S4 I043 I04T I03A I03Q")
@@ -269978,8 +269978,8 @@ call SaveStr(SG_DB,'HDMa',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'HDMa',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'HDMa',20,1)
 call SaveInteger(SG_DB,'HDMa',21,3)
-call SaveStr(SG_DB,'HHit',0,"I01F I01M I01M I046 IMDi I012 I042 I00Q IPlA I06Q I068 I1S4 I04T I03A I03Q")
-call SaveStr(SG_DB,'HHit',1,"I01F I01M I01M I046 I04V I012 I042 I00Q IPlA I06Q I068 I04T I1S4 I03A I03Q")
+call SaveStr(SG_DB,'HHit',0,"I01F I01M I01M I046 IMDi IBBi I012 I042 I00Q IPlA I06Q I068 I1S4 I04T I03A I03Q")
+call SaveStr(SG_DB,'HHit',1,"I01F I01M I01M I046 I04V IBBi I012 I042 I00Q IPlA I06Q I068 I04T I1S4 I03A I03Q")
 call SaveInteger(SG_DB,'HHit',20,9)
 call SaveInteger(SG_DB,'HHit',21,3)
 call SaveInteger(SG_DB,-2,'H006','H006')
@@ -299360,13 +299360,13 @@ call LANG_A('A0GP',0,3,"Ice Strike, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data11 takes nothing returns nothing
 call LANG_A('A0GP',0,4,"Ice Strike, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A0GP',1,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,1,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,2,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,3,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,4,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 2*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,1,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,2,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,3,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,4,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
 call LANG_A('A0GP',2,0,"Ice Strike, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0GP',3,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7 *|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',3,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6 *|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
 call LANG_A('A0GQ',0,0,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A0GQ',0,1,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A0GQ',0,2,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -313275,7 +313275,8 @@ call SaveBoolean(BOT_DB,'HDMa',51,false)
 call SaveBoolean(BOT_DB,'HHit',51,false)
 call SaveInteger(BOT_DB,'I01W',20,24)
 call SaveInteger(BOT_DB,'I01H',20,18)
-call SaveInteger(BOT_DB,'I008',20,0)
+call SaveInteger(BOT_DB,'I008',20,20)
+call SaveInteger(BOT_DB,'I03L',20,105)
 call SaveInteger(BOT_DB,'I01F',20,51)
 call SaveBoolean(BOT_DB,'I01F',21,true)
 call SaveInteger(BOT_DB,'I00E',20,0)
@@ -313301,7 +313302,7 @@ call SaveInteger(BOT_DB,'I020',20,0)
 call SaveInteger(BOT_DB,'I04F',20,90)
 call SaveInteger(BOT_DB,'I03O',20,70)
 call SaveInteger(BOT_DB,'I031',20,75)
-call SaveInteger(BOT_DB,'ISDi',20,0)
+call SaveInteger(BOT_DB,'ISDi',20,100)
 call SaveInteger(BOT_DB,'I050',20,90)
 call SaveInteger(BOT_DB,'IBSI',20,0)
 call SaveInteger(BOT_DB,'IPRB',20,75)
@@ -313315,7 +313316,7 @@ call SaveInteger(BOT_DB,'I037',20,60)
 call SaveInteger(BOT_DB,'I048',20,85)
 call SaveInteger(BOT_DB,'I04G',20,90)
 call SaveInteger(BOT_DB,'ISHk',20,54)
-call SaveInteger(BOT_DB,'IHnK',20,0)
+call SaveInteger(BOT_DB,'IHnK',20,95)
 call SaveInteger(BOT_DB,'I046',20,90)
 call SaveBoolean(BOT_DB,'I046',21,true)
 call SaveInteger(BOT_DB,'I054',20,90)
@@ -313331,7 +313332,7 @@ call SaveInteger(BOT_DB,'I04L',20,65)
 call SaveInteger(BOT_DB,'I04T',20,105)
 call SaveInteger(BOT_DB,'I04V',20,105)
 call SaveInteger(BOT_DB,'I06W',20,70)
-call SaveInteger(BOT_DB,'IGDi',20,95)
+call SaveInteger(BOT_DB,'IGDi',20,160)
 call SaveInteger(BOT_DB,'I036',20,0)
 call SaveInteger(BOT_DB,'I13R',20,90)
 call SaveInteger(BOT_DB,'I06E',20,60)
@@ -313349,7 +313350,7 @@ call SaveInteger(BOT_DB,'I06J',20,0)
 call SaveInteger(BOT_DB,'ISTi',20,35)
 call SaveInteger(BOT_DB,'I1S4',20,0)
 call SaveInteger(BOT_DB,'IPlA',20,65)
-call SaveInteger(BOT_DB,'IBBi',20,0)
+call SaveInteger(BOT_DB,'IBBi',20,55)
 call SaveInteger(BOT_DB,'I02L',20,27)
 call SaveInteger(BOT_DB,'I02E',20,0)
 call SaveInteger(BOT_DB,'I019',20,27)
@@ -314199,7 +314200,7 @@ elseif mode==0 and hp<.75 then
 set ok=BOT_QueueItem(u,it)
 elseif mode==1 and mp<.60 then
 set ok=BOT_QueueItem(u,it)
-elseif mode==2 and e!=null and (id!='I020' or BOT_Type[bi]!='H00J' or onlyItem=='I020') and (not enemyBlocked or id=='ISTi' or (onlyItem=='I04L' and GetUnitAbilityLevel(e,'A1CE')>0)) and dist<=LoadReal(BOT_DB,id,12) and (id!='I04L' or (GetUnitAbilityLevel(e,'BNC2')==0 and GetUnitAbilityLevel(e,'GIE1')==0 and GetUnitAbilityLevel(u,'GIE1')==0)) then
+elseif mode==2 and e!=null and (id!='I020' or BOT_Type[bi]!='H00J' or onlyItem=='I020') and (not enemyBlocked or id=='ISTi' or (onlyItem=='I04L' and GetUnitAbilityLevel(e,'A1CE')>0)) and dist<=LoadReal(BOT_DB,id,12) and (id!='IGDi' or (GetUnitTypeId(u)!='H007' and GetUnitAbilityLevel(u,'GIE1')==0)) and (id!='I04L' or (GetUnitAbilityLevel(e,'BNC2')==0 and GetUnitAbilityLevel(e,'GIE1')==0 and GetUnitAbilityLevel(u,'GIE1')==0)) then
 set ok=BOT_QueueItemTarget(u,it,e)
 elseif mode==3 and id!='I044' and e!=null and not enemyBlocked and dist<=LoadReal(BOT_DB,id,12) then
 set ok=BOT_QueueItemPoint(u,it,GetUnitX(e),GetUnitY(e))
@@ -314363,6 +314364,7 @@ local integer bgType
 local integer bgIndex=0
 local integer bgCount=0
 local integer bgTry=0
+local integer bgLimit=7
 if LoadBoolean(BOT_DB,bgPlayer,221) or bgSize<=0 then
 return
 endif
@@ -314389,6 +314391,18 @@ set bgCore='I06O'
 endif
 call SaveInteger(BOT_DB,bgPlayer,200,bgBoot)
 set bgCount=1
+if bgHero!='H059' and StringFind(SubString(bgList,bgStart*4,(bgStart+3)*4),"IBBi",true)>=0 then
+    call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'IBBi')
+    set bgCount=bgCount+1
+    set bgLimit=8
+endif
+if bgHero=='H01H' then
+    set bgCore='I04E'
+elseif bgHero=='H04T' then
+    set bgCore='IPRB'
+elseif bgHero=='H054' then
+    set bgCore='I00D'
+endif
 if bgCore!=0 then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgCore)
 set bgCount=bgCount+1
@@ -314398,24 +314412,42 @@ call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgDefense)
 set bgCount=bgCount+1
 endif
 call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
-if bgCount==3 and GetRandomInt(0,1)==1 then
+if bgCount==3 and bgHero!='H01H' and bgHero!='H04T' and bgHero!='H054' and GetRandomInt(0,1)==1 then
 call SaveInteger(BOT_DB,bgPlayer,201,bgDefense)
 call SaveInteger(BOT_DB,bgPlayer,202,bgCore)
 endif
+// Keep the hero-specific core ahead of the remaining guide options.
+if bgHero=='H01H' then
+    call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I03L')
+    set bgCount=bgCount+1
+elseif bgHero=='H04T' then
+    call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I02V')
+    if StringFind(bgList,"I01Q",true)>=0 then
+        call SaveInteger(BOT_DB,bgPlayer,201+bgCount,'I01Q')
+    else
+        call SaveInteger(BOT_DB,bgPlayer,201+bgCount,'I01U')
+    endif
+    call SaveInteger(BOT_DB,bgPlayer,202+bgCount,'ISDi')
+    set bgCount=bgCount+3
+elseif bgHero=='H054' then
+    call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I00Q')
+    set bgCount=bgCount+1
+endif
+call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
 // When the selected guide includes Gungnir, keep it in the purchase plan.
-if StringFind(bgList,"I048",true)>=0 and Sh_ItemAllowed('I048') and not BOT_PlanHas(bgPlayer,'I048') then
+if bgCount<bgLimit and StringFind(bgList,"I048",true)>=0 and Sh_ItemAllowed('I048') and not BOT_PlanHas(bgPlayer,'I048') then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I048')
 set bgCount=bgCount+1
 call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
 endif
 loop
-exitwhen bgCount>=7 or bgTry>=bgSize*4
+exitwhen bgCount>=bgLimit or bgTry>=bgSize*4
 set bgIndex=GetRandomInt(0,bgSize-1)
 set bgType=String2Id(SubString(bgList,(bgStart+bgIndex)*4,(bgStart+bgIndex)*4+4))
 if bgType=='I068' and LoadBoolean(BOT_DB,BOT_Type[bgPlayer],51) then
 set bgType='I06O'
 endif
-if not BOT_IsBoot(bgType) and not BOT_PlanHas(bgPlayer,bgType) and Sh_ItemAllowed(bgType) and not (bgType=='I13R' or bgType=='IMDi' or bgType=='I04V') then
+if not BOT_IsBoot(bgType) and not BOT_PlanHas(bgPlayer,bgType) and Sh_ItemAllowed(bgType) and not (bgType=='I13R' or bgType=='IMDi' or bgType=='I04V' or bgType=='I008' or (bgType=='I068' and bgHero=='H054')) then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgType)
 set bgCount=bgCount+1
 call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
@@ -314424,12 +314456,12 @@ set bgTry=bgTry+1
 endloop
 set bgIndex=0
 loop
-exitwhen bgCount>=7 or bgIndex>=bgSize
+exitwhen bgCount>=bgLimit or bgIndex>=bgSize
 set bgType=String2Id(SubString(bgList,(bgStart+bgIndex)*4,(bgStart+bgIndex)*4+4))
 if bgType=='I068' and LoadBoolean(BOT_DB,BOT_Type[bgPlayer],51) then
 set bgType='I06O'
 endif
-if not BOT_IsBoot(bgType) and not BOT_PlanHas(bgPlayer,bgType) and Sh_ItemAllowed(bgType) and not (bgType=='I13R' or bgType=='IMDi' or bgType=='I04V') then
+if not BOT_IsBoot(bgType) and not BOT_PlanHas(bgPlayer,bgType) and Sh_ItemAllowed(bgType) and not (bgType=='I13R' or bgType=='IMDi' or bgType=='I04V' or bgType=='I008' or (bgType=='I068' and bgHero=='H054')) then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgType)
 set bgCount=bgCount+1
 call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
@@ -314863,6 +314895,20 @@ set chest=null
 set owner=null
 return desired
 endfunction
+function BOT_ReplacementItem takes integer playerId returns integer
+local string guide=BOT_Guide(playerId)
+local integer index=SG_DefaultStartCount(BOT_Type[playerId])*4
+local integer candidate
+loop
+    exitwhen index>=StringLength(guide)
+    set candidate=String2Id(SubString(guide,index,index+4))
+    if candidate!='I008' and candidate!='IBBi' and not BOT_IsBoot(candidate) and not BOT_PlanHas(playerId,candidate) and Sh_ItemAllowed(candidate) and not BOT_ConflictingDefense(playerId,candidate) and not BOT_GrailTaken(playerId,candidate) then
+        return candidate
+    endif
+    set index=index+4
+endloop
+return 0
+endfunction
 function BOT_Shop takes integer bi returns nothing
 local unit u=Hero[bi]
 local player p=PlayerV(bi)
@@ -314870,7 +314916,9 @@ local integer bgGoal=0
 local integer bgStart=SG_DefaultStartCount(BOT_Type[bi])
 local integer bgIndex=8
 local integer bgType
+local integer replacement
 local item bgItem
+local unit keyHolder
 if not Sh_InZone(u) then
 set u=null
 set p=null
@@ -314881,6 +314929,30 @@ if bgGoal==0 then
     set bgGoal=BOT_LateCounter(bi)
 endif
 call SaveInteger(BOT_DB,bi,230,bgGoal)
+// Buy the basic glove after the starting items. The final glove is a core upgrade.
+if BOT_Type[bi]=='H01H' and BOT_Buy[bi]==bgStart and BOT_ItemCount(u,'I008')+BOT_ItemCount(Chest[bi],'I008')==0 and BOT_BuyGoal(bi,'I008',0) then
+    set u=null
+    set p=null
+    return
+endif
+if bgGoal!=0 and BOT_Buy[bi]-bgStart==7 and LoadInteger(BOT_DB,bi,201)=='IBBi' then
+    set keyHolder=u
+    set bgItem=GetItemOfTypeFromUnitBJCustom(keyHolder,'IBBi')
+    if bgItem==null and Chest[bi]!=null then
+        set keyHolder=Chest[bi]
+        set bgItem=GetItemOfTypeFromUnitBJCustom(keyHolder,'IBBi')
+    endif
+    if bgItem!=null and GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+Sh_Sell('IBBi')>=Sh_Cost(bgGoal) then
+        call RemoveItem(bgItem)
+        call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD)+Sh_Sell('IBBi'))
+    elseif bgItem!=null then
+        set bgItem=null
+        set keyHolder=null
+        set u=null
+        set p=null
+        return
+    endif
+endif
 if bgGoal==0 then
 loop
 exitwhen bgIndex<0
@@ -314893,7 +314965,14 @@ endif
 set bgIndex=bgIndex-1
 endloop
 elseif not Sh_ItemAllowed(bgGoal) or BOT_ConflictingDefense(bi,bgGoal) or BOT_GrailTaken(bi,bgGoal) then
-set BOT_Buy[bi]=BOT_Buy[bi]+1
+    set replacement=BOT_ReplacementItem(bi)
+    if LoadInteger(BOT_DB,bi,233)==bgGoal then
+        call SaveInteger(BOT_DB,bi,233,0)
+    elseif replacement!=0 and BOT_Buy[bi]>=bgStart then
+        call SaveInteger(BOT_DB,bi,200+BOT_Buy[bi]-bgStart,replacement)
+    else
+        set BOT_Buy[bi]=BOT_Buy[bi]+1
+    endif
 elseif BOT_Buy[bi]<bgStart then
 if BOT_MakeRoom(bi) and Sh_Purchase(p,bi,bgGoal) then
 set BOT_Buy[bi]=BOT_Buy[bi]+1
@@ -314917,8 +314996,15 @@ call BOT_Inventory(bi,true)
 endif
 endif
 set bgItem=null
+set keyHolder=null
 set p=null
 set u=null
+endfunction
+function BOT_MeteorActive takes integer slot returns boolean
+return LoadInteger(BOT_DB,slot,258)>BOT_Clock and LoadInteger(BOT_DB,slot,259)==round
+endfunction
+function BOT_MeteorAt takes integer slot,real x,real y returns boolean
+return BOT_MeteorActive(slot) and SR(x,y,LoadReal(BOT_DB,slot,254),LoadReal(BOT_DB,slot,255))<1400.
 endfunction
 function BOT_Move takes unit u,real x,real y returns nothing
 local rect bmZone=Bof_Zone(GetUnitX(u),GetUnitY(u))
@@ -314930,13 +315016,26 @@ local integer bmDir
 local boolean bmFound
 local integer bmPlayer=PId(OwnerOf(u))
 local integer bmUnitId=GetHandleId(u)
-local real bmRequestedX=bmX
-local real bmRequestedY=bmY
-local real bmDX=bmX-BOT_MoveX[bmPlayer]
-local real bmDY=bmY-BOT_MoveY[bmPlayer]
+local real bmRequestedX
+local real bmRequestedY
+local real bmDX
+local real bmDY
 local real bmUX=GetUnitX(u)
 local real bmUY=GetUnitY(u)
 local integer bmOrder=GetUnitCurrentOrder(u)
+local real meteorX
+local real meteorY
+if BOT_MeteorAt(bmPlayer,bmX,bmY) then
+    set meteorX=LoadReal(BOT_DB,bmPlayer,254)
+    set meteorY=LoadReal(BOT_DB,bmPlayer,255)
+    set bmAngle=Atan2(bmUY-meteorY,bmUX-meteorX)
+    set bmX=Bof_X(bmZone,meteorX+1500.*Cos(bmAngle))
+    set bmY=Bof_Y(bmZone,meteorY+1500.*Sin(bmAngle))
+endif
+set bmRequestedX=bmX
+set bmRequestedY=bmY
+set bmDX=bmX-BOT_MoveX[bmPlayer]
+set bmDY=bmY-BOT_MoveY[bmPlayer]
 if BOT_MoveUnitId[bmPlayer]==bmUnitId and bmOrder==OrderId("move") and bmDX*bmDX+bmDY*bmDY<9216. then
     if BOT_Clock-BOT_MoveClock[bmPlayer]<4 then
         set bmZone=null
@@ -315468,6 +315567,7 @@ endfunction
 function BOT_Threat takes nothing returns nothing
 local unit bdCaster=GetTriggerUnit()
 local unit bdTarget=GetSpellTargetUnit()
+local boolean meteor=GetSpellAbilityId()=='A06Z' and GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_EFFECT
 local integer bdPlayer=0
 local integer bdLevel=GetUnitAbilityLevel(bdCaster,GetSpellAbilityId())
 local integer bdKind=LoadInteger(HH,SH_ShnChanT,GetSpellAbilityId())
@@ -315489,7 +315589,13 @@ if BOT_Enabled then
 loop
 exitwhen bdPlayer>=10
 set bdUnit=Hero[bdPlayer]
-if BOT_Active[bdPlayer] and bdUnit!=null and UnitIsAlive(bdUnit) and IsUnitEnemy(bdCaster,OwnerOf(bdUnit)) and IsUnitVisible(bdCaster,OwnerOf(bdUnit)) then
+if BOT_Active[bdPlayer] and bdUnit!=null and UnitIsAlive(bdUnit) and IsUnitEnemy(bdCaster,OwnerOf(bdUnit)) and (IsUnitVisible(bdCaster,OwnerOf(bdUnit)) or (meteor and IsVisibleToPlayer(bdX,bdY,OwnerOf(bdUnit)))) then
+if meteor then
+    call SaveReal(BOT_DB,bdPlayer,254,bdX)
+    call SaveReal(BOT_DB,bdPlayer,255,bdY)
+    call SaveInteger(BOT_DB,bdPlayer,258,BOT_Clock+84)
+    call SaveInteger(BOT_DB,bdPlayer,259,round)
+endif
 set bdDX=GetUnitX(bdUnit)-bdX
 set bdDY=GetUnitY(bdUnit)-bdY
 if bdTarget==bdUnit or (bdTarget==null and (bdKind==2 or bdKind==3) and bdDX*bdDX+bdDY*bdDY<=122500. and BOT_Distance(bdUnit,bdCaster)<2500.) then
@@ -315864,17 +315970,27 @@ function BOT_Dodge takes integer playerId,unit enemy returns boolean
 local unit botHero=Hero[playerId]
 local real centerX=LoadReal(BOT_DB,playerId,183)
 local real centerY=LoadReal(BOT_DB,playerId,184)
-local real dx=GetUnitX(botHero)-centerX
-local real dy=GetUnitY(botHero)-centerY
-local real distance=SquareRoot(dx*dx+dy*dy)
+local real dx
+local real dy
+local real distance
 local real radius=LoadReal(BOT_DB,playerId,185)
-local real angle=Atan2(dy,dx)
+local real angle
+local boolean meteor=BOT_MeteorAt(playerId,GetUnitX(botHero),GetUnitY(botHero))
 local real x
 local real y
 local real offset
 local integer attempt=0
 local rect zone
-if LoadInteger(BOT_DB,playerId,186)<=BOT_Clock or distance>=radius or IsUnitInvulnerable(botHero) or (enemy!=null and BOT_Distance(botHero,enemy)<400. and not BOT_BlockedTarget(botHero,enemy) and GetWidgetLife(enemy)<GetUnitTotalDamage(botHero)*2.) then
+if meteor then
+    set centerX=LoadReal(BOT_DB,playerId,254)
+    set centerY=LoadReal(BOT_DB,playerId,255)
+    set radius=1400.
+endif
+set dx=GetUnitX(botHero)-centerX
+set dy=GetUnitY(botHero)-centerY
+set distance=SquareRoot(dx*dx+dy*dy)
+set angle=Atan2(dy,dx)
+if (not meteor and LoadInteger(BOT_DB,playerId,186)<=BOT_Clock) or distance>=radius or IsUnitInvulnerable(botHero) or (enemy!=null and BOT_Distance(botHero,enemy)<400. and not BOT_BlockedTarget(botHero,enemy) and GetWidgetLife(enemy)<GetUnitTotalDamage(botHero)*2.) then
     set botHero=null
     return false
 endif
@@ -316453,7 +316569,7 @@ set u=null
 return
 endif
 endif
-if BOT_Heal(bi) or (e!=null and (BOT_Items(bi,e,'I054') or BOT_Items(bi,e,'I044'))) or ((BOT_Type[bi]!='H04T' or GetUnitAbilityLevel(u,'A17K')==0) and BOT_Items(bi,e,0)) then
+if BOT_Heal(bi) or (e!=null and (BOT_Items(bi,e,'IGDi') or BOT_Items(bi,e,'I054') or BOT_Items(bi,e,'I044'))) or ((BOT_Type[bi]!='H04T' or GetUnitAbilityLevel(u,'A17K')==0) and BOT_Items(bi,e,0)) then
 set e=null
 set u=null
 return
@@ -316541,7 +316657,9 @@ endif
 elseif BOT_Combo(bi,e) or BOT_PrioritySpell(bi,e) or BOT_GokuderaBurst(bi,e) or BOT_Lucci(bi,e) then
 // Keep the next combo cast ahead of unrelated spells and attack orders.
 elseif not BOT_Cast(bi,e) and not BOT_RolePosition(bi,u,e,positionRole) and (positionRole!=0 or not BOT_KeepDistance(bi,u,e,botTargetDistance)) then
-if BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or GetUnitCurrentOrder(u)==OrderId("move") or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
+if BOT_MeteorAt(bi,GetUnitX(e),GetUnitY(e)) and botTargetDistance>GetUnitAttackRangeByIndex(u,0) then
+    call BOT_Move(u,GetUnitX(e),GetUnitY(e))
+elseif BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or GetUnitCurrentOrder(u)==OrderId("move") or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
 call BOT_QueueTarget(u,OrderId("attack"),e)
 set BOT_Attack[bi]=e
 endif
