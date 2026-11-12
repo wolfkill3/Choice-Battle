@@ -1,0 +1,36 @@
+// A standalone backdrop: no inherited tile flag or square background size.
+Frame "BACKDROP" "ChoiceGuidePurchaseBackdrop" {
+    BackdropBackground "UI\ChoiceGuides\Fill.tga",
+    BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+    BackdropCornerSize 0.006,
+    BackdropEdgeFile "UI\Widgets\EscMenu\Human\human-options-button-border-up.blp",
+    BackdropBlendAll,
+    BackdropBackgroundInsets 0.002 0.002 0.002 0.002,
+}
+
+// Small border and explicit font: the stock editbox's border consumes this short field.
+Frame "EDITBOX" "ChoiceGuideSearch" {
+    Height 0.026,
+    EditBorderSize 0.003,
+    EditCursorColor 1.0 1.0 1.0,
+    FrameFont "Fonts\FRIZQT__.TTF", 0.008, "",
+    ControlBackdrop "ChoiceGuideSearchBackdrop",
+    Frame "BACKDROP" "ChoiceGuideSearchBackdrop" {
+        BackdropBackground "TooltipLessVisible.blp",
+        BackdropBlendAll,
+        BackdropBackgroundInsets 0.003 0.003 0.003 0.003,
+        BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+        BackdropCornerSize 0.004,
+        BackdropEdgeFile "Choice-tooltip-border.blp",
+    }
+}
+
+// A compact input field, separate from the blue/gold purchase-button skin.
+Frame "BACKDROP" "ChoiceGuideInputBackdrop" {
+    BackdropBackground "TooltipLessVisible.blp",
+    BackdropBlendAll,
+    BackdropBackgroundInsets 0.001 0.001 0.001 0.001,
+    BackdropCornerFlags "UL|UR|BL|BR|T|L|B|R",
+    BackdropCornerSize 0.003,
+    BackdropEdgeFile "Choice-tooltip-border.blp",
+}
