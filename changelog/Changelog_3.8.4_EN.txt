@@ -1,113 +1,53 @@
 @here
 3.8.4
-- Share guide folders: export one guide or all custom guides; import at startup without a helper
-- Fixed potential hero quick-cast failures
-- Fixed desync when changing the shop hotkey
-- Hotkeys no longer interfere with chat and search input
-- Added bindings for the three side backpack slots; unassigned by default
-- Item guides for all heroes: select in the shop, with stages from start to late game
-- Custom guides: shop-style search, drag-and-drop and named file saves
-- Bots for 24 heroes: host and judges can use -bots before the first round
-- Bots use more hero abilities and items, shop and retreat; emotes and pings give orders. Broly uses the forms in his spellbook.
-- Time Resistant: movement, attacks, abilities and items remain available during time stops; MS/AS -50%, cooldowns frozen
-- Time Resistant replaces Time Manipulator for Shana and Time Sphere owners; added to Jiren and Sabrac
-- Full time stops now freeze cooldowns
-- Full time stops pierce counterstances if the target has neither Time Resistant nor Time Manipulator
+- Item guides for every hero in the shop. Edit, save and export custom guides, or import them at startup.
+- Bots for 31 heroes. The host and judges can use `-bots` before round one. Bots shop, use abilities and items, and respond to emotes and pings.
+- Fixed several quick-casts and added bindings for the three side backpack slots.
+- The shop hotkey opens the window locally. Hotkeys are suspended while typing in chat or search.
+- Full time stops freeze cooldowns and pierce counterstances if the target has neither Time Resistant nor Time Manipulator.
+- Time Resistant allows actions during time stops with −50% MS/AS and frozen cooldowns. Added to Jiren and Sabrac, and replaces Time Manipulator for Shana and Time Sphere owners.
 
 **Heroes**
 **Dead Master**
-- Reaching 5/10/15/20 souls permanently unlocks a 1.5 sec. F root, +150 W range, a third Q skull and +100 R radius, respectively. Spending souls does not remove these bonuses.
-D
-- Souls from fallen heroes become available at Dead Master level 20
-- Every 7000 energy gained grants 1 soul from level 1, without consuming energy
-Q
-- Damage halved
-- Cooldown: 18 sec. from the last skull thrown; each throw allows 5 sec. for a follow-up
-- Skull recovery: 8 sec. Ground skull lifetime: 4 sec., or 8 sec. with a soul.
-- With Ctrl+E: two skulls empowered by spending a soul create a barrier between them if no farther than 700 apart. No additional soul cost
-- Reaching 15 souls unlocks a third skull
-W
-- Damage reduced by 1× INT
-- With Ctrl+E: knocks enemies back and stuns for 1 sec. after landing
-- Reaching 10 souls increases range by 150
-E
-- From level 20, Ctrl+E toggles soul spending for Q/W/F/R/G enhancements: 1 soul per cast
-- Chains, roots, extra R damage and G hold also require Ctrl+E spending and a soul
-F
-- Casting on an enemy consumes 2 skulls; cancelled if insufficient
-- Stuns for 0.1 sec. every second
-- Reaching 5 souls adds a 1.5 sec. root
-R
-- Damage reduced by 1× INT
-- Added an 80% AS/MS slow in the area
-- Reaching 20 souls increases radius by 100
-G
-- Drains HP/MP and gathers energy
-- Transfers 15% of the enemy's maximum HP to herself; excess becomes a shield for 12 sec.
+- At 5/10/15/20 souls, permanently unlocks a 1.5-sec F root, +150 W range, a third Q skull and +100 R radius, respectively.
+- D. Souls from fallen heroes unlock at level 20. From level 1, every 7,000 energy earned grants a soul without consuming energy.
+- Q. Damage halved. Cooldown is 18 sec. from the last throw, with up to 5 sec. between throws. A skull recovers in 8 sec. and lasts 4 sec., or 8 sec. with a soul. With Ctrl+E, two empowered skulls within 700 form a wall.
+- W. Damage reduced by 1× INT. With Ctrl+E, knocks enemies back and stuns for 1 sec.
+- E. From level 20, Ctrl+E toggles spending one soul per cast to enhance Q/W/F/R/G.
+- F. Casting on an enemy spends two skulls and stuns for 0.1 sec. each second.
+- R. Damage reduced by 1× INT. Added an 80% MS/AS slow.
+- G. Drains HP/MP and grants energy. Transfers 15% of the enemy's max HP, with excess forming a 12-sec shield.
 
 **Uryu Ishida**
-Q
-- Can move while firing; normal attacks are disabled
-- F preserves the barrage; other abilities and Q again cancel it
-- Damage per arrow reduced by 10%
-- MS penalty: 50%. Break distance: 1400.
-T
-- Removes the Q movement penalty and increases break distance to 1700
-- Normal attack hits blink Ishida around the target.
+- Q. Can move with a 50% MS penalty. Normal attacks are disabled and F preserves the barrage. Arrow damage reduced by 10%. Break distance is 1400.
+- T. Removes the Q movement penalty and raises break distance to 1700. Normal attack hits blink Ishida around the target.
 
 **Gokudera Hayato**
-W
-- Rain-Storm Shot: range 1500 -> 1600
+- W. Rain-Storm Shot range increased from 1500 to 1600.
 
 **Kurotsuchi Mayuri**
-E
-- Added a dash and stab: 2–4× INT
-- A 7-second mark triggers on the target using an ability: silence for 2 seconds and +25% control duration and percentage strength for 5 seconds
-- Passive poison damage halved
-- Cooldown: 28/26/24/22/20 seconds
-R
-- Ctrl+R selects HP poison, mana drain, paralysis or extra explosions instead of a random effect
-T
-- T2 sets the center of the poison cloud. The zanpakuto moves to keep that point 600 units ahead.
-- AS/MS slow: 70% -> 40%
+- E. Dash and stab for 2–4× INT and mark for 7 sec. The target's next cast triggers a 2-sec silence and increases control duration and percentage strength by 25% for 5 sec. Passive poison damage halved. Cooldown 28–20 sec.
+- R. Ctrl+R selects the bomb effect.
+- T. Press T again to set the poison cloud's center. MS/AS slow reduced from 70% to 40%.
 
 **Sasagawa Ryohei**
-T
-- Fixed charge visibility
+- T. Fixed charge visibility.
 
 **Haku**
-- Starting AGI: 25 → 23. AGI growth: 3.2 → 3.0.
-Q
-- Fires 12 pairs of senbon. Ctrl+Q switches between firing at a point and firing forward.
-W
-- Ice Strike moved to W. Mana: 80/105/130/155/180.
-E
-- Added Ice Senbon Rain at level 12. It ranks up with R, deals 3–7× AGI, and roots for 2 sec.
-- Mana: 125/150/175/200/225.
-F
-- Unlocked at level 6. Fly between mirrors with right-click. Available mirrors: 1/2/3 at levels 6/12/18.
-- Flights deal 1.5× AGI within 150. Range: 500. Press F again to dash 200 out. Automatic exit after 2 sec. of inactivity.
-- Mirrors have 2× total AGI as HP. Breaking the occupied mirror stuns Haku for 0.5 sec.
-- Right-click near an existing mirror to enter it without spending a charge. Mirrors linger 2 sec. after leaving or after the clone attack.
-- Mana: 50. Cooldown: 30 sec. after the final charge is spent or the mirror chain ends.
-R
-- Damage: 5–9× → 4–8× AGI.
-G
-- Shunshin no Jutsu moved to G. Duration: 2 sec. Cooldown: 35/30/25/20/15 sec.
-T
-- Enemies cannot leave the circle by ordinary movement.
+- Starting AGI 25 → 23, growth 3.2 → 3.0.
+- Q. Fires 12 pairs of senbon. Ctrl+Q switches between firing at a point and turning to fire forward.
+- W. Ice Strike moved to W. Mana 80–180.
+- E. Ice Senbon Rain can be learned from level 6. Damage 3–7× AGI, root 2 sec., mana 125–225.
+- F. Right-click to travel between mirrors. Levels 6/12/18 allow 1/2/3 new mirrors. Entering an existing mirror preserves its remaining lifetime and costs no charge.
+- F. Flight damage 1.5× AGI, radius 150, range 500. Press F again to dash 200 out. Mirror HP is 2× total AGI. Breaking the occupied mirror stuns Haku for 0.5 sec. The panel shows charges and cooldown. Mana 50, recharge 15 sec. per mirror.
+- R. Damage 5–9× → 4–8× AGI.
+- G. Shunshin no Jutsu moved to G. Duration 2 sec., cooldown 35–15 sec.
+- T. Enemies cannot walk out of the circle.
 
 **Hit**
-D
-- Up to 10 charges from ability hits on enemy heroes, at most one per cast
-- AGI per charge: 6 -> 4; time-stop bonus per charge: +0.1 seconds
-- Active cooldown reduction capped at 5 seconds
-T
-- Total sequence and time stop duration: 6 seconds including retreat and pose
+- D. Up to 10 charges from ability hits on heroes. Each grants +4 AGI and +0.1 sec. of time stop. Active cooldown reduction is capped at 5 sec.
+- T. The sequence and time stop last 6 sec. including the retreat and pose.
 
 **Items**
 **True Cloud Mare Ring, Stigmata Tesseract**
-- Active marks pierce counterstances, except Ryougi Shiki T
-
-**Boros Armor**
-- Locust units retain item bonuses without triggering the pickup shield.
+- Active marks pierce counterstances, except Ryougi Shiki T.

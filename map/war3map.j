@@ -72,6 +72,13 @@ boolean BOT_Locked=false
 boolean array BOT_Active
 boolean array BOT_Casting
 integer BOT_Clock=0
+timer array BOT_ThinkTimer
+timer array BOT_OrderTimer
+boolean array BOT_OrderPending
+group BOT_SearchGroup=CreateGroup()
+integer array BOT_PublicPingUntil
+real array BOT_PublicPingX
+real array BOT_PublicPingY
 integer array BOT_Type
 integer array BOT_Pool
 integer array BOT_Buy
@@ -84,6 +91,10 @@ integer array BOT_EmoteWait
 real array BOT_X
 real array BOT_Y
 unit array BOT_Attack
+integer array BOT_MoveUnitId
+integer array BOT_MoveClock
+real array BOT_MoveX
+real array BOT_MoveY
 hashtable SG_Custom=InitHashtable()
 integer SG_Total=0
 integer SG_Read=0
@@ -114,7 +125,8 @@ integer HitGlowCounter=0
 integer ShHotCode=66
 boolean ShHotWait=false
 boolean ShHotWas=false
-boolean ShHotLocal=false
+integer ShHotDiag=0
+integer ShOpenDiag=0
 framehandle ShHotText=null
 trigger gg_trg_HitCastRing=null
 location TerrainZLoc = Location(0.0, 0.0)
@@ -3314,8 +3326,7 @@ endloop
 set tm=null
 set et=null
 endfunction
-function TSE_TimerStart takes timer tm,real dur,boolean per,code f returns nothing
-local player p=TSE_Owner()
+function TSE_TimerStartOwned takes timer tm,real dur,boolean per,code f,player p returns nothing
 local integer k
 call TimerStart(tm,dur,per,f)
 if p==null then
@@ -3342,6 +3353,9 @@ call TSE_TPause(tm)
 set TSE_PT[TSE_PN]=tm
 set TSE_PN=TSE_PN+1
 endif
+endfunction
+function TSE_TimerStart takes timer tm,real dur,boolean per,code f returns nothing
+call TSE_TimerStartOwned(tm,dur,per,f,TSE_Owner())
 endfunction
 function TSE_DestroyTimer takes timer tm returns nothing
 local integer k=LoadInteger(TSE_HT,GetHandleId(tm),10)
@@ -8190,7 +8204,7 @@ call TSE_Filter()
 endif
 call TSE_ScanUnits()
 call TSE_HoldCooldowns()
-call ExecuteFunc("TSE_ScanEffects")
+call TSE_ScanEffects()
 call TSE_ScanProjectiles()
 call TSE_PauseTimers(null)
 if not area then
@@ -8203,7 +8217,7 @@ set TSE_KOH=true
 endif
 endif
 set TSE_SN=0
-call ExecuteFunc("TSE_MuteSounds")
+call TSE_MuteSounds()
 call TimerStart(TSE_Tick,0.1,true,function TSE_TickF)
 if dur>0 then
 call TimerStart(TSE_End,dur,false,function TSE_Stop)
@@ -31269,8 +31283,6 @@ return "ReplaceableTextures\\CommandButtons\\BTNHakuQPoint.blp"
 endfunction
 function Haku_QToggle takes player controller returns nothing
 local integer slot=0
-local integer rank
-local integer targetType
 local boolean facingMode
 local unit caster
 local ability senbon
@@ -31282,16 +31294,6 @@ loop
         if senbon!=null and GetUnitAbilityLevel(caster,'A0GG')>0 then
             set facingMode=not LoadBoolean(HH,GetHandleId(caster),StringHash("HakuQFacing"))
             call SaveBoolean(HH,GetHandleId(caster),StringHash("HakuQFacing"),facingMode)
-            set targetType=2
-            if facingMode then
-                set targetType=0
-            endif
-            set rank=0
-            loop
-                exitwhen rank>=5
-                call CBS_SetTT(senbon,rank,targetType)
-                set rank=rank+1
-            endloop
         endif
     endif
     set slot=slot+1
@@ -45623,26 +45625,32 @@ endif
 //if GetUnitTypeId(Hero[i])=='H01A' and GetRandomInt(1,100)<5 then
 //call PlayMusic(music[50])
 //endif
-if i==0 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,0,0,true)
-elseif i==1 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,0,0,255,true)
-elseif i==2 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,0,255,255,true)
-elseif i==3 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,127,0,128,true)
-elseif i==4 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,255,0,true)
-elseif i==5 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,255,144,15,true)
-elseif i==6 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,33,192,0,true)
-elseif i==7 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,229,91,177,true)
-elseif i==8 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,128,128,128,true)
-elseif i==9 and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
-call PingMinimapEx(GetUnitX(udg_Hero[i+1]),GetUnitY(udg_Hero[i+1]),3,175,234,239,true)
+set BOT_PublicPingUntil[i]=0
+if udg_Hero[i+1]!=null and IsUnitType(udg_Hero[i+1],UNIT_TYPE_DEAD)==false and BOT_SlotPlaying(PlayerV(i)) and GetUnitAbilityLevel(Hero[i],'A19T')==0 and GetUnitAbilityLevel(Hero[i],'A0U5')==0 then
+set BOT_PublicPingX[i]=GetUnitX(udg_Hero[i+1])
+set BOT_PublicPingY[i]=GetUnitY(udg_Hero[i+1])
+set BOT_PublicPingUntil[i]=BOT_Clock+12
+if i==0 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,255,0,0,true)
+elseif i==1 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,0,0,255,true)
+elseif i==2 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,0,255,255,true)
+elseif i==3 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,127,0,128,true)
+elseif i==4 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,255,255,0,true)
+elseif i==5 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,255,144,15,true)
+elseif i==6 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,33,192,0,true)
+elseif i==7 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,229,91,177,true)
+elseif i==8 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,128,128,128,true)
+elseif i==9 then
+call PingMinimapEx(BOT_PublicPingX[i],BOT_PublicPingY[i],3,175,234,239,true)
+endif
 endif
 if i==0 and UnitIsAlive(Lucy[i])then
 call PingMinimapEx(GetUnitX(Lucy[i]),GetUnitY(Lucy[i]),3,255,0,0,true)
@@ -45785,9 +45793,6 @@ local integer idu=GetHandleId(u)
 local integer pid=PId(OwnerOf(u))
 local integer i=0
 local timer cjlocgn_00000000
-if GetUnitAbilityLevel(u,'HaF0')>0 then
-call ExecuteFunc("Haku_FLevelEvent")
-endif
 call DestroyEffect(AddSpecialEffect("war3mapImported\\LevelUp!.mdx",GetUnitX(u),GetUnitY(u)))
 if GetHeroLevel(u)>=5 and lvl5[pid]!=1 then
 call CreateUnit(OwnerOf(u),'h146',RX,RY,0)
@@ -56670,7 +56675,7 @@ function Trig_cd_Actions takes nothing returns nothing
     local unit slotHero
     local framehandle indicator
     local ability mirrorAbility
-    local timer mirrorTimer
+    local timer mirrorRecharge
     loop
         exitwhen slot>12
         set slotHero=udg_Hero[slot]
@@ -56682,10 +56687,12 @@ function Trig_cd_Actions takes nothing returns nothing
             set mirrorAbility=GetUnitAbility(slotHero,'HaF0')
             if mirrorAbility!=null then
                 call SetAbilityRemainingCooldown(mirrorAbility,0.)
-                set mirrorTimer=LoadTimerHandle(HH,GetHandleId(slotHero),StringHash("HakuFMirror"))
-                if mirrorTimer!=null then
-                    // Prevent the active mirror sequence from reapplying this cooldown.
-                    call SaveBoolean(h,GetHandleId(mirrorTimer),16,true)
+                call RemoveSavedInteger(HH,GetHandleId(slotHero),StringHash("HakuFSpent"))
+                set mirrorRecharge=LoadTimerHandle(HH,GetHandleId(slotHero),StringHash("HakuFRecharge"))
+                if mirrorRecharge!=null then
+                    call RemoveSavedHandle(HH,GetHandleId(slotHero),StringHash("HakuFRecharge"))
+                    call FlushChildHashtable(h,GetHandleId(mirrorRecharge))
+                    call TSE_DestroyTimer(mirrorRecharge)
                 endif
             endif
             set ownerId=PH(OwnerOf(slotHero))
@@ -56717,7 +56724,7 @@ function Trig_cd_Actions takes nothing returns nothing
     set slotHero=null
     set indicator=null
     set mirrorAbility=null
-    set mirrorTimer=null
+    set mirrorRecharge=null
 endfunction
 function Trig_setmr_Actions takes nothing returns nothing
     local integer LvlS=S2I(SubString(GetEventPlayerChatString(),7,11))
@@ -60465,6 +60472,13 @@ else
 call SetFrameText(ShHotText,"Shop: "+Sh_HotName())
 endif
 endif
+if OpenShopButtonText!=null then
+if ShOpened then
+call SetFrameText(OpenShopButtonText,Lng("Закрыть","Close")+" ("+Sh_HotName()+")")
+else
+call SetFrameText(OpenShopButtonText,Lng("Магазин","Shop")+" ("+Sh_HotName()+")")
+endif
+endif
 loop
 exitwhen cbC>20
 set cbS=CBS_CellSlot(cbC)
@@ -60752,7 +60766,7 @@ local integer cbPl=CBS_Me(PId(GetLocalPlayer()))
 loop
 exitwhen cbK>=CBS_KeyN
 set cbP=IsKeyPressed(CBS_Key[cbK])
-if cbP and CBS_KAll[cbK]==false and cbE<0 then
+if cbP and CBS_KAll[cbK]==false and cbE<0 and CBS_KeyCode[cbK]!=ShHotCode then
 set cbE=cbK
 endif
 set CBS_KAll[cbK]=cbP
@@ -60889,36 +60903,26 @@ local integer cbS
 local integer cbA=0
 local boolean cbP
 local framehandle cbF
-if CBS_OffHas(64) then
-return
-endif
+local boolean cbCapturing=ShHotWait or CBS_BindWait>=0
+local boolean cbShopDown=false
+local boolean cbEnabled=not CBS_OffHas(64)
 set CBS_KT=CBS_KT+1
-if ShHotWait then
-if not HPB_MOpen or CBS_Tab!=1 or IsKeyPressed(OSKEY_ESCAPE) then
-set ShHotWait=false
-call CBS_HkRefresh()
-else
-loop
-exitwhen cbK>=CBS_KeyN
-set cbP=IsKeyPressed(CBS_Key[cbK])
-if cbP and not CBS_KeyWas[cbK] then
-set ShHotCode=CBS_KeyCode[cbK]
-set ShHotWait=false
-set ShHotWas=true
-call CBS_HkRefresh()
-endif
-set CBS_KeyWas[cbK]=cbP
-set cbK=cbK+1
-endloop
-endif
-return
-endif
-set cbP=IsKeyPressed(ConvertOsKeyType(ShHotCode))
-if ShHotCode>0 and cbP and not ShHotWas and not HPB_MOpen and not Sh_Typing() and not IsKeyPressed(OSKEY_CONTROL) and not IsKeyPressed(OSKEY_SHIFT) then
-call SendSyncData("SHHK","")
-endif
-set ShHotWas=cbP
-if CBS_BindWait>=0 then
+if cbEnabled and ShHotWait then
+    if not HPB_MOpen or CBS_Tab!=1 or IsKeyPressed(OSKEY_ESCAPE) then
+        set ShHotWait=false
+        call CBS_HkRefresh()
+    else
+        loop
+            exitwhen cbK>=CBS_KeyN or not ShHotWait
+            if IsKeyPressed(CBS_Key[cbK]) and not CBS_KeyWas[cbK] then
+                set ShHotCode=CBS_KeyCode[cbK]
+                set ShHotWait=false
+                call CBS_HkRefresh()
+            endif
+            set cbK=cbK+1
+        endloop
+    endif
+elseif cbEnabled and CBS_BindWait>=0 then
 if HPB_MOpen==false or CBS_Tab!=1 then
 set CBS_BindWait=-1
 call CBS_HkRefresh()
@@ -60947,34 +60951,41 @@ set CBS_Bind[CBS_BindWait]=cbK+1
 set CBS_BindWait=-1
 call CBS_HkRefresh()
 endif
-set CBS_KeyWas[cbK]=cbP
 set cbK=cbK+1
 endloop
 endif
-return
 endif
-// хоткей в предмет больше не пишется — опрос предметов у себя не нужен (GetUnitSelected / UnitItemInSlot у себя — рассинхрон)
-//if ModuloInteger(CBS_KT,5)==0 then
-//set CBS_HkU=GetUnitSelected(GetLocalPlayer())
-//call CBS_ItemHkUnit(Hero[GetPlayerId(GetLocalPlayer())])
-//if CBS_HkU!=Hero[GetPlayerId(GetLocalPlayer())] then
-//call CBS_ItemHkUnit(CBS_HkU)
-//endif
-//set CBS_HkU=null
-//endif
+set cbK=0
+loop
+    exitwhen cbK>=CBS_KeyN or cbShopDown
+    if CBS_KeyCode[cbK]==ShHotCode then
+        set cbShopDown=IsKeyPressed(CBS_Key[cbK])
+        exitwhen true
+    endif
+    set cbK=cbK+1
+endloop
+if cbShopDown and not ShHotWas then
+if cbEnabled and not cbCapturing and not HPB_MOpen and not Sh_Typing() and not IsKeyPressed(OSKEY_CONTROL) and not IsKeyPressed(OSKEY_SHIFT) then
+if ShHotDiag==1 then
+// Diagnostic mode 1: no message, no sync, no shop UI.
+else
+call SendSyncData("SHHK","toggle")
+endif
+endif
+endif
+set ShHotWas=cbShopDown
 if HPB_MOpen and CBS_Tab==1 and ModuloInteger(CBS_KT,12)==0 then
 call CBS_HkIcons()
 endif
-// какая страница панели сейчас на экране: открыто подменю (IsSubmenuOpen) — меню изучения (спеллбуки не используются)
 if IsSubmenuOpen() then
 set cbA=1
 endif
-// не во время набора в чате или в поиске магазина, не с Ctrl / Shift, не с открытым окном настроек
-//set cbP=HPB_MOpen or IsWindowActive()==false or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
-set cbP=HPB_MOpen or Sh_Typing() or (CBS_ChatBar!=null and IsFrameVisible(CBS_ChatBar)) or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
+set cbP=not cbEnabled or cbCapturing or cbShopDown or HPB_MOpen or Sh_Typing() or IsKeyPressed(OSKEY_CONTROL) or IsKeyPressed(OSKEY_SHIFT)
 if ModuloInteger(CBS_KT,2)==0 then
 call CBS_MmTick()
 endif
+if not cbP then
+set cbK=0
 // нажатие — по разу на клавишу (одна клавиша может стоять на разных страницах)
 loop
 exitwhen cbK>=CBS_KeyN
@@ -60986,7 +60997,7 @@ loop
 exitwhen cbS>32
 if CBS_Bind[cbS]>0 then
 set cbK=CBS_Bind[cbS]-1
-set CBS_KeyEdge[cbK]=IsKeyPressed(CBS_Key[cbK]) and CBS_KeyWas[cbK]==false
+set CBS_KeyEdge[cbK]=CBS_KeyCode[cbK]!=ShHotCode and IsKeyPressed(CBS_Key[cbK]) and CBS_KeyWas[cbK]==false
 endif
 set cbS=cbS+1
 endloop
@@ -61021,6 +61032,7 @@ endif
 endif
 set cbS=cbS+1
 endloop
+endif
 if CBS_QC or CBS_SC then
 call CBS_QcTick(cbP)
 endif
@@ -61034,6 +61046,29 @@ set cbF=null
 endfunction
 // ---- сохранение / загрузка: один файл настроек на компьютере игрока (Preload-файл, без handle и без синхронизации);
 // при старте карты подгружается сам. Данные — одна строка «CB1;режим;R,G,B ×3;иконки;полоски;коды клавиш ×18» через «;» ----
+// Diagnostic modes are selected by a synchronized chat event on every client.
+// 3: only poll the shop key. 4: do not run any keyboard polling here.
+function CBS_KeyDispatch takes nothing returns nothing
+local integer diagIndex=0
+local boolean diagDown=false
+if ShHotDiag<3 then
+call CBS_KeyTick()
+elseif ShHotDiag==3 then
+loop
+exitwhen diagIndex>=CBS_KeyN
+if CBS_KeyCode[diagIndex]==ShHotCode then
+set diagDown=IsKeyPressed(CBS_Key[diagIndex])
+exitwhen true
+endif
+set diagIndex=diagIndex+1
+endloop
+if diagDown and not ShHotWas then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"Shop diagnostic 3: isolated key detected; CBS_KeyTick disabled.")
+endif
+set ShHotWas=diagDown
+endif
+endfunction
+
 function CBS_Tok takes string cbD,integer cbN returns string
 local integer cbI=0
 local integer cbL=StringLength(cbD)
@@ -61135,11 +61170,15 @@ local string cbD
 local integer cbI=0
 local integer cbV
 local real cbR
+local integer shopKey
 call SetPlayerName(PlayerV(14),"")
 call Preloader(CBS_FILE)
 set cbD=GetPlayerName(PlayerV(14))
 call SetPlayerName(PlayerV(14),cbN)
+set ShHotCode=66
+set ShHotWait=false
 if CBS_Tok(cbD,0)!="CB1" then
+call CBS_HkRefresh()
 if cbSay then
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,5,Lng("Сохранённых настроек нет","No saved settings"))
 endif
@@ -61192,9 +61231,9 @@ exitwhen cbI>32
 set CBS_Bind[cbI]=CBS_KeyByCode(S2I(CBS_Tok(cbD,cbI+20)))
 set cbI=cbI+1
 endloop
-set ShHotCode=66
-if CBS_Tok(cbD,49)!="" and CBS_KeyByCode(S2I(CBS_Tok(cbD,49)))>0 then
-set ShHotCode=S2I(CBS_Tok(cbD,49))
+set shopKey=S2I(CBS_Tok(cbD,49))
+if CBS_KeyByCode(shopKey)>0 then
+set ShHotCode=shopKey
 endif
 // озвучка DB: флаг SOUND_LANGUAGE читается только для локального игрока (какой звук играть у себя),
 // поэтому из файла выставляем его сразу и локально, без синхронизации (через 3 с она у игрока не срабатывала)
@@ -62209,7 +62248,7 @@ set cbO=CBS_QcOrd(cbU,cbId)
 // E Хаку: после проверки готовности отдаём приказ в координаты курсора. Резервный каст срабатывает только внутри дальности 1000.
 if cbId=='HaG1' then
 set cbLv=GetUnitAbilityLevel(cbU,cbId)
-if GetUnitTypeId(cbU)=='H02D' and GetHeroLevel(cbU)>=12 and udg_B and DU2 and not IsUnitPaused(cbU) and UnitIsAlive(cbU) and IsAbilityEnabled(cbA) and IsAbilityOrderEnabled(cbA) and GetAbilityRemainingCooldown(cbA)<=0. and GetUnitState(cbU,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_MANA_COST,cbLv-1) and RectContainsCoords(bj_mapInitialPlayableArea,cbX,cbY) then
+if GetUnitTypeId(cbU)=='H02D' and cbLv>0 and LoadTimerHandle(HH,GetHandleId(cbU),StringHash("HakuFMirror"))==null and udg_B and DU2 and not IsUnitPaused(cbU) and UnitIsAlive(cbU) and IsAbilityEnabled(cbA) and IsAbilityOrderEnabled(cbA) and GetAbilityRemainingCooldown(cbA)<=0. and GetUnitState(cbU,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(cbId,ABILITY_ILF_MANA_COST,cbLv-1) and RectContainsCoords(bj_mapInitialPlayableArea,cbX,cbY) then
 if cbO==0 or not IssuePointOrderById(cbU,cbO,cbX,cbY) then
 if SR(GetUnitX(cbU),GetUnitY(cbU),cbX,cbY)<=1000. then
 call CastAbilityGround(cbA,cbX,cbY)
@@ -62313,6 +62352,9 @@ set CBS_Off=S2I(SubString(GetEventPlayerChatString(),8,StringLength(GetEventPlay
 call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"CBS off = "+I2S(CBS_Off))
 endif
 endfunction
+
+
+
 function CBS_Build takes nothing returns nothing
 local trigger cbT=CreateTrigger()
 local trigger cbS=CreateTrigger()
@@ -62789,7 +62831,7 @@ call CBS_LangRefresh()
 call HPB_MenuShow(HPB_MOpen)
 // сохранённые настройки этого игрока — сразу при старте (каждый читает свой файл, только локальные настройки)
 call CBS_Load(false)
-call TSE_TimerStart(CreateTimer(),0.02,true,function CBS_KeyTick)
+call TSE_TimerStart(CreateTimer(),0.02,true,function CBS_KeyDispatch)
 call TSE_TimerStart(CreateTimer(),0.02,true,function CBS_UiTick)
 // автопрокачка: сохранённое включение — всем через 3 с; сама прокачка — раз в 0.5 с
 // по умолчанию автопрокачка включена у всех игроков
@@ -64719,6 +64761,13 @@ endfunction
 
 
 
+function RoundStartCooldown takes unit caster,integer abilityId,real seconds returns nothing
+local ability active=GetUnitAbility(caster,abilityId)
+if active!=null then
+call StartAbilityCooldown(active,seconds)
+endif
+set active=null
+endfunction
 function Trig_Start_Actions takes nothing returns nothing
 local integer i=0
 local integer j=0
@@ -65046,11 +65095,11 @@ exitwhen i>=10
         call SaveInteger(HH,GetHandleId(Hero[i]),SH_VegetaDeath,1)
         call SaveBoolean(HH,GetHandleId(Hero[i]),DoflaTHash,false)
         call SaveInteger(HH, GetHandleId(Hero[i]), SH_GaeDeargP_CD, 1)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1FP'),25)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'BRLS'),40)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'GKG1'),40-GetHeroLevel(Hero[i]))
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'Ao60'),10)
-        call StartAbilityCooldown(GetUnitAbility(Hero[i],'A1HD'),7)
+        call RoundStartCooldown(Hero[i],'A1FP',25)
+        call RoundStartCooldown(Hero[i],'BRLS',40)
+        call RoundStartCooldown(Hero[i],'GKG1',40-GetHeroLevel(Hero[i]))
+        call RoundStartCooldown(Hero[i],'Ao60',10)
+        call RoundStartCooldown(Hero[i],'A1HD',7)
         call UnitRemoveAbility(Hero[i],'ore3')
         call UnitRemoveAbility(Hero[i],'OM17')
         call SetUnitInvulnerableTimed(Hero[i],true,0.01)
@@ -95988,47 +96037,36 @@ return 2
 endif
 return 1
 endfunction
+// Spent charges belong to Haku, so ending a dash does not discard the remaining charges.
+function Haku_FCooldown takes unit caster returns real
+local timer recharge=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFRecharge"))
+local real remaining=0.
+if recharge!=null then
+set remaining=TimerGetRemaining(recharge)
+endif
+set recharge=null
+return remaining
+endfunction
+function Haku_FChargesLeft takes unit caster returns integer
+return IMaxBJ(0,Haku_FRank(caster)-LoadInteger(HH,GetHandleId(caster),StringHash("HakuFSpent")))
+endfunction
 function Haku_FPanelTick takes nothing returns nothing
 local timer panelTimer=GetExpiredTimer()
 local integer panelId=GetHandleId(panelTimer)
-local unit caster=LoadUnitHandle(h,panelId,0)
-local integer casterId=GetHandleId(caster)
-local ability mirrorAbility
-local timer flight
+local unit caster=Hero[LoadInteger(h,panelId,0)]
 local real cooldown=0.
 local integer capacity
-local integer left
 local string value
-if GetUnitTypeId(caster)!='H02D' or Hero[PId(OwnerOf(caster))]!=caster then
-    call RemoveSavedHandle(HH,casterId,StringHash("HakuFPanelTimer"))
-    call FlushChildHashtable(h,panelId)
-    call TSE_DestroyTimer(panelTimer)
-else
-    set mirrorAbility=GetUnitAbility(caster,'HaF0')
-    if mirrorAbility!=null then
-        set cooldown=GetAbilityRemainingCooldown(mirrorAbility)
-    endif
+if GetUnitTypeId(caster)=='H02D' then
     if IsUnitSelected(caster,GetLocalPlayer()) and IsPlayerAlly(GetLocalPlayer(),OwnerOf(caster)) then
         if GetHeroLevel(caster)<6 then
             set value=Lng("F доступна с 6 уровня","F unlocks at level 6")
         else
             set capacity=Haku_FRank(caster)
-            set left=capacity
-            set flight=LoadTimerHandle(HH,casterId,StringHash("HakuFMirror"))
-            if flight!=null then
-                if LoadBoolean(h,GetHandleId(flight),19) then
-                    set left=IMaxBJ(0,capacity-LoadInteger(h,GetHandleId(flight),2))
-                else
-                    set left=0
-                endif
-            elseif cooldown>0. then
-                set left=0
-            endif
-            set value=Lng("Новые зеркала","New mirrors")+" "+I2S(left)+"/"+I2S(capacity)
+            set cooldown=Haku_FCooldown(caster)
+            set value="F: "+I2S(Haku_FChargesLeft(caster))+"/"+I2S(capacity)
             if cooldown>0. then
-                set value=value+" |nF: "+I2S(R2I(cooldown+.99))+Lng(" сек."," sec.")
-            elseif flight==null then
-                set value=value+Lng("|nF готова","|nF ready")
+                set value=value+"  ("+I2S(R2I(cooldown+.99))+Lng(" сек."," sec.")+")"
             endif
         endif
         call SetFrameText(GetFrameByName("CustomLeaderboardText",0),value)
@@ -96037,18 +96075,17 @@ else
         call ShowFrame(GetFrameByName("CustomLeaderboard",0),true)
     endif
 endif
-set flight=null
-set mirrorAbility=null
 set caster=null
 set panelTimer=null
 endfunction
 function Haku_FPanelStart takes unit caster returns nothing
 local integer key=StringHash("HakuFPanelTimer")
-local timer panelTimer=LoadTimerHandle(HH,GetHandleId(caster),key)
+local integer slot=PId(OwnerOf(caster))
+local timer panelTimer=LoadTimerHandle(HH,PH(PlayerV(slot)),key)
 if panelTimer==null then
     set panelTimer=CreateTimer()
-    call SaveTimerHandle(HH,GetHandleId(caster),key,panelTimer)
-    call SaveUnitHandle(h,GetHandleId(panelTimer),0,caster)
+    call SaveTimerHandle(HH,PH(PlayerV(slot)),key,panelTimer)
+    call SaveInteger(h,GetHandleId(panelTimer),0,slot)
     call TimerStart(panelTimer,.2,true,function Haku_FPanelTick)
 endif
 set panelTimer=null
@@ -96174,7 +96211,7 @@ local real angle
 local real startX
 local real startY
 local effect needle
-if GetSpellAbilityId()=='HaG1' and GetHeroLevel(caster)>=12 and udg_B and DU2 then
+if GetSpellAbilityId()=='HaG1' and GetUnitAbilityLevel(caster,'HaG1')>0 and udg_B and DU2 and LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))==null then
     call StartSound(SndN(4961))
     set z=GetTerrainHeightAt(x,y)
     set rainTimer=CreateTimer()
@@ -96216,32 +96253,24 @@ set needle=null
 set rainTimer=null
 endfunction
 function Haku_FRefresh takes unit mirrorCaster returns nothing
-// E открывается с 12 уровня героя. Ранг HaG1 повторяет ранг R (A0GL), минимум 1.
-if GetHeroLevel(mirrorCaster)>=12 and GetUnitAbilityLevel(mirrorCaster,'HaG1')==0 and LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))==null then
-call UnitAddAbility(mirrorCaster,'HaG1')
-call UnitMakeAbilityPermanent(mirrorCaster,true,'HaG1')
-endif
-if GetUnitAbilityLevel(mirrorCaster,'HaG1')>0 then
-call SetUnitAbilityLevel(mirrorCaster,'HaG1',IMaxBJ(1,GetUnitAbilityLevel(mirrorCaster,'A0GL')))
+local integer shunshinRank=IMinBJ(5,1+(GetHeroLevel(mirrorCaster)-1)/5)
+if GetUnitAbilityLevel(mirrorCaster,'A0GH')>0 and GetUnitAbilityLevel(mirrorCaster,'A0GH')!=shunshinRank then
+call SetUnitAbilityLevel(mirrorCaster,'A0GH',shunshinRank)
 endif
 if GetUnitAbilityLevel(mirrorCaster,'HaF0')>0 then
+if GetUnitAbilityLevel(mirrorCaster,'HaF0')!=Haku_FRank(mirrorCaster) then
 call SetUnitAbilityLevel(mirrorCaster,'HaF0',Haku_FRank(mirrorCaster))
+endif
 if LoadTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"))==null then
-if GetHeroLevel(mirrorCaster)<6 then
-call SetAbilityOrderEnabled(GetUnitAbility(mirrorCaster,'HaF0'),false)
-else
+// Availability below level six is handled by the standard h046 unit requirement.
 call ShowAbility(GetUnitAbility(mirrorCaster,'HaF0'),true)
 call SetAbilityOrderEnabled(GetUnitAbility(mirrorCaster,'HaF0'),true)
 endif
 endif
-endif
 endfunction
 function Haku_FLevelEvent takes nothing returns nothing
+if GetUnitTypeId(GetTriggerUnit())=='H02D' then
 call Haku_FRefresh(GetTriggerUnit())
-endfunction
-function Haku_ELearn takes nothing returns nothing
-if GetLearnedSkill()=='A0GL' and GetUnitAbilityLevel(GetTriggerUnit(),'HaF0')>0 then
-    call Haku_FRefresh(GetTriggerUnit())
 endif
 endfunction
 function Haku_FOrderLock takes unit mirrorCaster,integer mirrorId,integer mirrorAbility,boolean mirrorLock returns nothing
@@ -96250,11 +96279,22 @@ if mirrorAb!=null then
 if mirrorLock then
 call SaveBoolean(h,mirrorId,mirrorAbility,IsAbilityOrderEnabled(mirrorAb))
 call SetAbilityOrderEnabled(mirrorAb,false)
-else
+elseif HaveSavedBoolean(h,mirrorId,mirrorAbility) then
 call SetAbilityOrderEnabled(mirrorAb,LoadBoolean(h,mirrorId,mirrorAbility))
+call RemoveSavedBoolean(h,mirrorId,mirrorAbility)
 endif
 endif
 set mirrorAb=null
+endfunction
+function Haku_FSkillEvent takes nothing returns nothing
+local unit caster=GetTriggerUnit()
+local timer active=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
+local integer skill=GetLearnedSkill()
+if active!=null and (skill=='A0GG' or skill=='A0GP' or skill=='HaG1' or skill=='A0GL' or skill=='A0GM') and not HaveSavedBoolean(h,GetHandleId(active),skill) then
+call Haku_FOrderLock(caster,GetHandleId(active),skill,true)
+endif
+set active=null
+set caster=null
 endfunction
 function Haku_FButtons takes unit mirrorCaster,integer mirrorId,boolean mirrorLock returns nothing
 call Haku_FOrderLock(mirrorCaster,mirrorId,'A0GG',mirrorLock)
@@ -96293,14 +96333,52 @@ call TriggerAddCondition(deathTrigger,Condition(function Haku_FMirrorDeathCond))
 call TriggerAddAction(deathTrigger,function Haku_FMirrorBroken)
 set deathTrigger=null
 endfunction
-function Haku_FStartCooldown takes unit caster,integer flightId returns nothing
+function Haku_FRechargeTick takes nothing returns nothing
+local timer recharge=GetExpiredTimer()
+local integer timerId=GetHandleId(recharge)
+local unit caster=LoadUnitHandle(h,timerId,0)
+local integer casterId=GetHandleId(caster)
+local integer spentKey=StringHash("HakuFSpent")
+local integer spent=LoadInteger(HH,casterId,spentKey)-1
 local ability mirrorAbility=GetUnitAbility(caster,'HaF0')
-if mirrorAbility!=null and LoadBoolean(h,flightId,19) and not LoadBoolean(h,flightId,16) then
-call SaveBoolean(h,flightId,16,true)
-call StartAbilityCooldown(mirrorAbility,30.)
-call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNHakuF.blp",30.)
+if mirrorAbility!=null then
+call SetAbilityRemainingCooldown(mirrorAbility,0.)
+endif
+if mirrorAbility==null or spent<=0 then
+call RemoveSavedInteger(HH,casterId,spentKey)
+call RemoveSavedHandle(HH,casterId,StringHash("HakuFRecharge"))
+call FlushChildHashtable(h,timerId)
+call TSE_DestroyTimer(recharge)
+else
+call SaveInteger(HH,casterId,spentKey,spent)
 endif
 set mirrorAbility=null
+set caster=null
+set recharge=null
+endfunction
+function Haku_FSpend takes unit caster returns nothing
+local integer casterId=GetHandleId(caster)
+local integer spentKey=StringHash("HakuFSpent")
+local timer recharge=LoadTimerHandle(HH,casterId,StringHash("HakuFRecharge"))
+local ability mirrorAbility=GetUnitAbility(caster,'HaF0')
+call SaveInteger(HH,casterId,spentKey,LoadInteger(HH,casterId,spentKey)+1)
+if recharge==null then
+set recharge=CreateTimer()
+call SaveTimerHandle(HH,casterId,StringHash("HakuFRecharge"),recharge)
+call SaveUnitHandle(h,GetHandleId(recharge),0,caster)
+call TSE_TimerStart(recharge,15.,true,function Haku_FRechargeTick)
+endif
+// Keep the F button usable while a charge is available. The panel always shows recharge time.
+if mirrorAbility!=null and Haku_FChargesLeft(caster)==0 then
+call StartAbilityCooldown(mirrorAbility,TimerGetRemaining(recharge))
+endif
+set recharge=null
+set mirrorAbility=null
+endfunction
+function Haku_FMirrorLeave takes unit mirror returns nothing
+if LoadTimerHandle(HH,GetHandleId(mirror),StringHash("HakuFMirrorExpiry"))==null then
+call Haku_FMirrorLinger(mirror,2.)
+endif
 endfunction
 function Haku_FEnd takes timer mirrorTimer returns nothing
 local integer mirrorId=GetHandleId(mirrorTimer)
@@ -96314,12 +96392,11 @@ call SetUnitVertexColor(mirrorCaster,255,255,255,255)
 call Haku_FButtons(mirrorCaster,mirrorId,false)
 call UnitMakeAbilityPermanent(mirrorCaster,false,'HaF2')
 call UnitRemoveAbility(mirrorCaster,'HaF2')
-call Haku_FStartCooldown(mirrorCaster,mirrorId)
 call Haku_FRefresh(mirrorCaster)
 endif
 if mirrorUnit!=null then
 if UnitIsAlive(mirrorUnit) then
-call Haku_FMirrorLinger(mirrorUnit,2.)
+call Haku_FMirrorLeave(mirrorUnit)
 else
 call RemoveUnit(mirrorUnit)
 endif
@@ -96347,10 +96424,10 @@ endfunction
 function Haku_FJump takes integer mirrorId,real mirrorX,real mirrorY,boolean mirrorExit,unit existingMirror returns nothing
 local unit mirrorCaster=LoadUnitHandle(h,mirrorId,0)
 local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mirrorCaster))
-local integer mirrorCount=LoadInteger(h,mirrorId,2)
 local unit mirrorUnit=LoadUnitHandle(h,mirrorId,17)
+call SaveInteger(h,mirrorId,21,LoadInteger(h,mirrorId,21)+1)
 if UnitIsAlive(mirrorUnit) then
-call Haku_FMirrorLinger(mirrorUnit,2.)
+call Haku_FMirrorLeave(mirrorUnit)
 endif
 call RemoveSavedHandle(h,mirrorId,17)
 call IssueImmediateOrder(mirrorCaster,"stop")
@@ -96370,13 +96447,9 @@ call SaveInteger(h,mirrorId,1,2)
 else
 if existingMirror==null then
 set mirrorUnit=Haku_FMakeMirror(mirrorCaster,mirrorX,mirrorY,mirrorAngle*bj_RADTODEG+180.)
-call SaveInteger(h,mirrorId,2,mirrorCount+1)
-if mirrorCount+1>=Haku_FRank(mirrorCaster) then
-call Haku_FStartCooldown(mirrorCaster,mirrorId)
-endif
+call Haku_FSpend(mirrorCaster)
 else
 set mirrorUnit=existingMirror
-call Haku_FMirrorCancelExpiry(mirrorUnit)
 endif
 call SaveUnitHandle(h,mirrorId,17,mirrorUnit)
 call SaveInteger(h,mirrorId,1,0)
@@ -96474,6 +96547,7 @@ function Haku_FBegin takes unit mirrorCaster,real mirrorX,real mirrorY,unit exis
 local timer mirrorTimer=CreateTimer()
 local integer mirrorId=GetHandleId(mirrorTimer)
 call SaveTimerHandle(HH,GetHandleId(mirrorCaster),StringHash("HakuFMirror"),mirrorTimer)
+call SaveInteger(HH,GetHandleId(mirrorCaster),StringHash("HakuFSequence"),LoadInteger(HH,GetHandleId(mirrorCaster),StringHash("HakuFSequence"))+1)
 call SaveUnitHandle(h,mirrorId,0,mirrorCaster)
 call SaveBoolean(h,mirrorId,10,IsUnitAttackEnabled(mirrorCaster))
 call SaveBoolean(h,mirrorId,11,IsUnitInvulnerable(mirrorCaster))
@@ -96485,8 +96559,6 @@ call ShowAbility(GetUnitAbility(mirrorCaster,'HaF0'),false)
 call SetAbilityOrderEnabled(GetUnitAbility(mirrorCaster,'HaF0'),false)
 call UnitAddAbility(mirrorCaster,'HaF2')
 call UnitMakeAbilityPermanent(mirrorCaster,true,'HaF2')
-call SaveBoolean(h,mirrorId,16,existingMirror!=null)
-call SaveBoolean(h,mirrorId,19,existingMirror==null)
 call Haku_FJump(mirrorId,mirrorX,mirrorY,false,existingMirror)
 call TSE_TimerStart(mirrorTimer,.02,true,function Haku_FTick)
 set mirrorTimer=null
@@ -96502,7 +96574,7 @@ local real mirrorAngle=Atan2(mirrorY-GetUnitY(mirrorCaster),mirrorX-GetUnitX(mir
 local real mirrorDistance=SquareRoot((mirrorX-GetUnitX(mirrorCaster))*(mirrorX-GetUnitX(mirrorCaster))+(mirrorY-GetUnitY(mirrorCaster))*(mirrorY-GetUnitY(mirrorCaster)))
 if mirrorSpell=='HaF2' and mirrorTimer!=null and LoadInteger(h,mirrorId,1)==1 and UnitIsAlive(LoadUnitHandle(h,mirrorId,17)) then
 call Haku_FExit(mirrorId,mirrorAngle)
-elseif mirrorSpell=='HaF0' and mirrorTimer==null and GetHeroLevel(mirrorCaster)>=6 and UnitIsAlive(mirrorCaster) then
+elseif mirrorSpell=='HaF0' and mirrorTimer==null and GetHeroLevel(mirrorCaster)>=6 and UnitIsAlive(mirrorCaster) and Haku_FChargesLeft(mirrorCaster)>0 then
 if mirrorDistance>500 then
 set mirrorX=GetUnitX(mirrorCaster)+500*Cos(mirrorAngle)
 set mirrorY=GetUnitY(mirrorCaster)+500*Sin(mirrorAngle)
@@ -96514,23 +96586,18 @@ endif
 set mirrorCaster=null
 set mirrorTimer=null
 endfunction
-function Haku_FOrder takes nothing returns nothing
-local unit caster=GetOrderedUnit()
-local integer orderId=GetIssuedOrderId()
+function Haku_FClickPoint takes unit caster,real x,real y,unit clicked returns nothing
 local timer active=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
 local integer id=GetHandleId(active)
-local real x=GetOrderPointX()
-local real y=GetOrderPointY()
 local real distance
 local real angle
 local real candidateDistance
 local real nearestDistance=150.
-local unit clicked=GetOrderTargetUnit()
 local unit current=LoadUnitHandle(h,id,17)
 local unit candidate
-local unit nearest
+local unit nearest=null
 local group mirrors
-if GetUnitTypeId(caster)=='H02D' and GetHeroLevel(caster)>=6 and udg_B and DU2 and UnitIsAlive(caster) and not IsUnitPaused(caster) and not IsUnitStunned(caster) and (orderId==OrderId("smart") or orderId==OrderId("move")) and (active==null or (LoadInteger(h,id,1)==1 and UnitIsAlive(current))) then
+if GetUnitTypeId(caster)=='H02D' and GetHeroLevel(caster)>=6 and udg_B and DU2 and UnitIsAlive(caster) and not IsUnitPaused(caster) and not IsUnitStunned(caster) and (active==null or (LoadInteger(h,id,1)==1 and UnitIsAlive(current))) then
 if clicked!=null then
 set x=GetUnitX(clicked)
 set y=GetUnitY(clicked)
@@ -96543,7 +96610,7 @@ exitwhen candidate==null
 call GroupRemoveUnit(mirrors,candidate)
 if candidate!=current and GetUnitTypeId(candidate)=='hAFm' and UnitIsAlive(candidate) and LoadUnitHandle(HH,GetHandleId(candidate),StringHash("HakuFMirrorCaster"))==caster and SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(candidate),GetUnitY(candidate))<=500. then
 set candidateDistance=SR(x,y,GetUnitX(candidate),GetUnitY(candidate))
-if candidateDistance<=nearestDistance then
+if candidateDistance<nearestDistance or (candidateDistance==nearestDistance and (nearest==null or GetHandleId(candidate)<GetHandleId(nearest))) then
 set nearest=candidate
 set nearestDistance=candidateDistance
 endif
@@ -96556,16 +96623,19 @@ call Haku_FBegin(caster,GetUnitX(nearest),GetUnitY(nearest),nearest)
 else
 call Haku_FJump(id,GetUnitX(nearest),GetUnitY(nearest),false,nearest)
 endif
-elseif active!=null and clicked!=current and LoadBoolean(h,id,19) and LoadInteger(h,id,2)<Haku_FRank(caster) then
-set distance=SR(GetUnitX(caster),GetUnitY(caster),x,y)
-if distance>500. then
+elseif active!=null and clicked!=current and Haku_FChargesLeft(caster)>0 then
+set distance=RMinBJ(500.,SR(GetUnitX(caster),GetUnitY(caster),x,y))
 set angle=Atan2(y-GetUnitY(caster),x-GetUnitX(caster))
-set x=GetUnitX(caster)+500.*Cos(angle)
-set y=GetUnitY(caster)+500.*Sin(angle)
-endif
-if distance>1. and Haku_FDestination(x,y) then
+loop
+exitwhen distance<72.
+set x=GetUnitX(caster)+distance*Cos(angle)
+set y=GetUnitY(caster)+distance*Sin(angle)
+if Haku_FDestination(x,y) then
 call Haku_FJump(id,x,y,false,null)
+exitwhen true
 endif
+set distance=distance-32.
+endloop
 endif
 endif
 set caster=null
@@ -96575,6 +96645,48 @@ set current=null
 set candidate=null
 set nearest=null
 set mirrors=null
+endfunction
+function Haku_FOrder takes nothing returns nothing
+local unit caster=GetOrderedUnit()
+local integer orderId=GetIssuedOrderId()
+local unit clicked
+if GetUnitTypeId(caster)=='H02D' and LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))==null and (orderId==OrderId("smart") or orderId==OrderId("move")) then
+if GetTriggerEventId()==EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER then
+set clicked=GetOrderTargetUnit()
+endif
+call Haku_FClickPoint(caster,GetOrderPointX(),GetOrderPointY(),clicked)
+endif
+set clicked=null
+set caster=null
+endfunction
+function Haku_FMouse takes nothing returns nothing
+local player source=GetTriggerPlayer()
+local unit caster=Hero[PId(source)]
+local timer active=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
+local integer flightId=GetHandleId(active)
+// This callback only captures input. The shared sync event owns all gameplay changes.
+if source==GetLocalPlayer() and GetTriggerPlayerMouseButton()==MOUSE_BUTTON_TYPE_RIGHT and active!=null and LoadInteger(h,flightId,1)==1 and IsUnitSelected(caster,source) and not ShOpened and not Sh_Typing() then
+call SendSyncData("HKFM",I2S(LoadInteger(HH,GetHandleId(caster),StringHash("HakuFSequence")))+";"+I2S(LoadInteger(h,flightId,21))+";"+R2S(GetMouseWorldX())+";"+R2S(GetMouseWorldY()))
+endif
+set active=null
+set caster=null
+set source=null
+endfunction
+function Haku_FMouseSync takes nothing returns nothing
+local player source=GetTriggerSyncPlayer()
+local unit caster=Hero[PId(source)]
+local timer active=LoadTimerHandle(HH,GetHandleId(caster),StringHash("HakuFMirror"))
+local string data=GetTriggerSyncData()
+local integer flightId=GetHandleId(active)
+local real x=S2R(CBS_Tok(data,2))
+local real y=S2R(CBS_Tok(data,3))
+// Reject stale clicks from a previous visit or from before the last jump.
+if caster!=null and OwnerOf(caster)==source and active!=null and LoadInteger(h,flightId,1)==1 and S2I(CBS_Tok(data,0))==LoadInteger(HH,GetHandleId(caster),StringHash("HakuFSequence")) and S2I(CBS_Tok(data,1))==LoadInteger(h,flightId,21) and CBS_Tok(data,2)!="" and CBS_Tok(data,3)!="" and RectContainsCoords(bj_mapInitialPlayableArea,x,y) then
+call Haku_FClickPoint(caster,x,y,null)
+endif
+set active=null
+set caster=null
+set source=null
 endfunction
 function MakyoHyoshoCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0GM'
@@ -97007,7 +97119,7 @@ local real needleHeading
 local unit needle
 if volleyCount<12 and UnitIsAlive(caster) and not IsUnitPaused(caster) and udg_B and DU2 then
 if facingMode then
-set angle=GetUnitFacing(caster)*bj_DEGTORAD
+set angle=LoadReal(h,volleyId,6)
 set approach=0.55
 set spread=spread*approach
 else
@@ -97049,6 +97161,8 @@ local integer volleyId=GetHandleId(volleyTimer)
 call SaveUnitHandle(h,volleyId,0,caster)
 if LoadBoolean(HH,GetHandleId(caster),StringHash("HakuQFacing")) then
 call SaveBoolean(h,volleyId,5,true)
+call SaveReal(h,volleyId,6,Atan2(GetSpellTargetY()-GetUnitY(caster),GetSpellTargetX()-GetUnitX(caster)))
+call SetUnitFacingInstant(caster,LoadReal(h,volleyId,6)*bj_RADTODEG)
 else
 call SaveReal(h,volleyId,2,GetSpellTargetX())
 call SaveReal(h,volleyId,4,GetSpellTargetY())
@@ -109635,6 +109749,7 @@ function PowerDownBroly takes nothing returns nothing
             if GetUnitAbilityLevel(u,'A0TL')>0 then
                 call EnableUnitAbility2(u,'A0TN',false,true)
                 call StartAbilityCooldown(GetUnitAbility(u,'BRLS'),20)
+                call SaveReal(HH,GetHandleId(u),StringHash("BrolyLSSReady"),TimerGetElapsed(ShnClock)+20.)
             endif
             call UnitRemoveAbility(u,'A0TJ')
             call UnitRemoveAbility(u,'A0TK')
@@ -109899,29 +110014,28 @@ function PowerUpBrolyCast2 takes nothing returns nothing
     set u=null
     set t=null
 endfunction
-function PowerUpBrolyCast takes nothing returns nothing
-    local unit u=GetTriggerUnit()
+function PowerUpBrolyStart takes unit u,integer form returns nothing
     local timer t=CreateTimer()
     local integer id=GetHandleId(t)
     local player p=OwnerOf(u)
     local real x=GetUnitX(u)
     local real y=GetUnitY(u)
     call SaveUnitHandle(h,id,0,u)
-    if GetSpellAbilityId()=='BRRS' then
+    if form=='BRRS' then
         call SaveReal(h,id,1,6.975)
-    elseif GetSpellAbilityId()=='BRBS' then
+    elseif form=='BRBS' then
         call SaveReal(h,id,1,6.975)
         call SaveInteger(h,id,3,0)
-    elseif GetSpellAbilityId()=='BRLS' then
+    elseif form=='BRLS' then
         call SaveReal(h,id,1,3)
     endif
-    if GetSpellAbilityId()=='BRRS' and GetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL)=="ReplaceableTextures\\Commandbuttons\\BTNBrolyRSSJ.blp" then
+    if form=='BRRS' and GetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL)=="ReplaceableTextures\\Commandbuttons\\BTNBrolyRSSJ.blp" then
         // set soundplay=CreateSound("Sound\\Music\\mp3Music\\trunks ss1.mp3",false,false,true,12700,12700,"")
         call SaveInteger(h,id,3,1)
-    elseif GetSpellAbilityId()=='BRRS' and GetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL)=="ReplaceableTextures\\Commandbuttons\\BTNBrolySSJ.blp" then
+    elseif form=='BRRS' and GetAbilityBaseStringFieldById('BRRS',ABILITY_SF_ICON_NORMAL)=="ReplaceableTextures\\Commandbuttons\\BTNBrolySSJ.blp" then
         // set soundplay=CreateSound("Sound\\Music\\mp3Music\\trunks ss2.mp3",false,false,true,12700,12700,"")
         call SaveInteger(h,id,3,2)
-    elseif GetSpellAbilityId()=='BRLS' then
+    elseif form=='BRLS' then
         // set soundplay=CreateSound("Sound\\Music\\mp3Music\\trunks ss2.mp3",false,false,true,12700,12700,"")
         call SaveInteger(h,id,3,3)
         call UnitAddAbility(u,'A5IH')
@@ -109939,10 +110053,13 @@ function PowerUpBrolyCast takes nothing returns nothing
         endif
     endif
     call SetUnitTimeScale(u,0.9)
-    call TSE_TimerStart(t,0.025,true,function PowerUpBrolyCast2)
+    call TSE_TimerStartOwned(t,0.025,true,function PowerUpBrolyCast2,p)
     set u=null
     set p=null
     set t=null
+endfunction
+function PowerUpBrolyCast takes nothing returns nothing
+call PowerUpBrolyStart(GetTriggerUnit(),GetSpellAbilityId())
 endfunction
 function InitTrig_PowerUpBroly takes nothing returns nothing
 set gg_trg_PowerUpBroly=CreateTrigger()
@@ -195957,6 +196074,7 @@ if IsUnitAlly(u,OwnerOf(oreha))then
     set id=GetHandleId(c)
     call SetUnitInvulnerable(c,true)
     call SaveUnitHandle(h,id,0,u)
+    call SaveUnitHandle(HH,GetHandleId(u),StringHash("OrihimeResCross"),c)
     call RemoveSaveHashTimed(26,id,0)
     set n=CreateUnit(p,'e11W',x,y,315)
     call SaveUnitHandle(h,id,1,n)
@@ -196453,6 +196571,9 @@ endif
 call GroupRemoveUnit(g,E)
 endloop
 else
+if LoadTimerHandle(HH,GetHandleId(u),StringHash("OrihimeHealingZone"))==t then
+call RemoveSavedHandle(HH,GetHandleId(u),StringHash("OrihimeHealingZone"))
+endif
 call DestroyGroup(g)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,3),125,0)
 call SetUnitFlyHeight(LoadUnitHandle(h,id,4),125,0)
@@ -196515,6 +196636,7 @@ call SetUnitX(d2,x3)
 call SetUnitY(d2,y3)
 call SetUnitFlyHeight(d1,25,0)
 call SetUnitFlyHeight(d2,25,0)
+call SaveTimerHandle(HH,GetHandleId(u),StringHash("OrihimeHealingZone"),t)
 call SaveReal(h,id,10,8)
 call PauseTimer(t)
 call TSE_TimerStart(t,0.1,true,function WOrihimeCast3)
@@ -268375,68 +268497,10 @@ call Sh_DrawPrices()
 endfunction
 
 // Текст в поиске изменился (событие приходит с игроком): отбор только у него
-function Sh_SearchChanged takes nothing returns nothing
-if TrigP()!=GetLocalPlayer() then
-return
-endif
-if SG_Open and SG_ItemPicker then
-call ExecuteFunc("SG_SearchChanged")
-return
-endif
-set ShQuery=BlzGetTriggerFrameText()
-set ShPage[PId(GetLocalPlayer())]=0
-call Sh_Filter()
-call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
-if not SG_Open then
-call Sh_DrawCatalog()
-endif
-endfunction
 
 // В 1.26 событие изменения текста поля не приходит, поэтому, пока магазин открыт,
 // читаем поле сами (раз в 0.1 с). Это только локальный показ, по сети ничего не идёт.
-function SG_FilterChanged takes string sfQuery returns nothing
-local boolean sfFocused=IsFrameFocused(SG_ItemSearch)
-if sfQuery==null then
-set sfQuery=""
-endif
-if sfQuery==SG_ItemQuery then
-return
-endif
-set SG_ItemQuery=sfQuery
-set SG_ItemPage=0
-set SG_Notice=""
-// Match the shop search: redraw results, not the editbox or the whole window.
-call ExecuteFunc("SG_DrawItemPicker")
-call BlzFrameSetVisible(SG_SearchPrompt,sfQuery=="")
-if sfFocused then
-call SetFrameFocus(SG_ItemSearch,true)
-endif
-endfunction
 
-function SG_SearchPoll takes nothing returns nothing
-if not SG_Open or not ShOpened or not SG_ItemPicker or SG_ItemSearch==null then
-return
-endif
-call SG_FilterChanged(GetFrameText(SG_ItemSearch))
-endfunction
-function Sh_SearchPoll takes nothing returns nothing
-local string qtext
-call SG_SearchPoll()
-if SG_Open then
-return
-endif
-if ShOpened==false or ShSearch==null then
-return
-endif
-set qtext=BlzFrameGetText(ShSearch)
-if qtext!=ShQuery then
-set ShQuery=qtext
-set ShPage[PId(GetLocalPlayer())]=0
-call Sh_Filter()
-call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
-call Sh_DrawCatalog()
-endif
-endfunction
 
 // Сборка: сверху цепочка улучшения, снизу компоненты, справа общая цена.
 function Sh_DrawCraft takes nothing returns nothing
@@ -268623,154 +268687,9 @@ call BlzFrameSetAbsPoint(ShUseThumb,FRAMEPOINT_TOP,0.7565,0.493-(0.068-th)*I2R(S
 endif
 endfunction
 
-function Sh_Redraw takes nothing returns nothing
-// свежий снимок инвентаря и золота: иначе первый тик после открытия окна
-// видел устаревшие значения и перерисовывал всё ещё раз
-call Sh_ScanInv(PId(GetLocalPlayer()))
-set ShLastGold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
-call Sh_DrawCatalog()
-call Sh_DrawCraft()
-call Sh_DrawDesc()
-call Sh_DrawUses()
-call Sh_DrawInv()
-call ExecuteFunc("SG_Refresh")
-endfunction
-
 // Золото и предметы меняются мимо магазина. Раньше окно перерисовывалось
 // целиком каждые 0.4 с и ело кадры: теперь сверяем золото и 20 ячеек героя
 // и сундука, и трогаем только то, что от них зависит.
-function Sh_Tick takes nothing returns nothing
-local integer id
-local boolean inv
-call ExecuteFunc("SG_ExportAllTick")
-call ExecuteFunc("SG_PackageTick")
-call ExecuteFunc("SG_ImportTick")
-call Sh_Snapshot()
-if SG_Loaded and SG_Read<SG_Total then
-call ExecuteFunc("SG_ReadBatch")
-endif
-// строка итога гаснет через 5 с
-if ShMsgLeft>0.0 then
-set ShMsgLeft=ShMsgLeft-0.4
-if ShMsgLeft<=0.0 and ShMsgTxt!=null then
-call BlzFrameSetText(ShMsgTxt,"")
-endif
-endif
-if ShOpened==false then
-return
-endif
-set inv=Sh_ScanInv(PId(GetLocalPlayer()))
-if inv then
-call Sh_DrawCraft()
-call Sh_DrawInv()
-endif
-set id=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
-if inv or id!=ShLastGold then
-set ShLastGold=id
-call Sh_DrawPrices()
-endif
-endfunction
-//--------------------- клики: ЛОКАЛЬНЫЕ, игру не трогают ---------------------
-
-function Sh_Click takes nothing returns nothing
-local integer pid=PId(TrigP())
-local integer tag=Sh_TagOf(BlzGetTriggerFrame())
-local integer id
-if TrigP()!=GetLocalPlayer() then
-return
-endif
-// колесо мыши над «Собирается в» и клики по половинам полосы листают ряды
-if tag>=700 and tag<712 and (BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL or tag>=710) then
-if tag==710 or (tag<710 and BlzGetTriggerFrameValue()>0) then
-set ShUseOff[pid]=IMaxBJ(0,ShUseOff[pid]-1)
-else
-set ShUseOff[pid]=ShUseOff[pid]+1
-endif
-call Sh_DrawUses()
-return
-endif
-// колесо над каталогом и клики по половинам его полосы листают ряды
-if (tag>=200 and tag<280 and BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL) or tag==720 or tag==721 then
-if tag==720 or (tag<720 and BlzGetTriggerFrameValue()>0) then
-set ShPage[pid]=IMaxBJ(0,ShPage[pid]-1)
-else
-set ShPage[pid]=ShPage[pid]+1
-endif
-call Sh_DrawCatalog()
-return
-endif
-if tag>=100 and tag<200 then
-set ShSelSec[pid]=tag-100
-set ShPage[pid]=0
-// выбор раздела сбрасывает поиск (очистка поля сама перерисует каталог)
-if ShQuery!="" then
-set ShQuery=""
-set ShFoundN=0
-set ShLastQry=""
-// поле держит фокус и старый текст — сначала снимаем фокус, иначе опрос вернёт запрос
-call BlzFrameSetFocus(ShSearch,false)
-call BlzFrameSetText(ShSearch,"")
-call BlzFrameSetVisible(ShSearchHint,true)
-endif
-call Sh_DrawSections()
-call Sh_DrawCatalog()
-elseif tag>=200 and tag<300 then
-set id=Sh_PageItem(pid,tag-200)
-if id!=0 then
-set ShSel[pid]=id
-call Sh_Redraw()
-endif
-elseif tag>=500 and tag<600 then
-// клик по компоненту сборки проваливает выбор вглубь
-set id=Sh_RecComp(Sh_RecipeOf(ShSel[pid]),tag-500)
-if id!=0 then
-set ShSel[pid]=id
-call Sh_Redraw()
-endif
-elseif tag>=700 and tag<706 then
-// клик по «Собирается в» открывает результат сборки
-set id=Sh_UseOf(ShSel[pid],tag-700)
-if id!=0 then
-set ShSel[pid]=id
-call Sh_Redraw()
-endif
-elseif tag>=300 and tag<310 then
-set ShInvSel[pid]=tag-300
-if Hero[JudgeHid(pid)]!=null and ShInvCache[JudgeHid(pid)*20+tag-300]!=0 then
-set ShSel[pid]=ShInvCache[JudgeHid(pid)*20+tag-300]
-endif
-call Sh_Redraw()
-elseif tag==410 then
-call SendSyncData("SHB",I2S(ShSel[pid]))
-elseif tag==411 then
-call SendSyncData("SHS",I2S(ShInvSel[pid]))
-elseif tag==403 then
-// свиток улучшения: покупается тем же путём, что и всё остальное
-call SendSyncData("SHB",I2S('I00E'))
-elseif tag==401 then
-if ShPage[pid]>0 then
-set ShPage[pid]=ShPage[pid]-1
-call Sh_DrawCatalog()
-endif
-elseif tag==402 then
-if ShPage[pid]+1<Sh_PageCount(pid) then
-set ShPage[pid]=ShPage[pid]+1
-call Sh_DrawCatalog()
-endif
-endif
-endfunction
-
-//--------------------- приём: СИНХРОННО у всех ---------------------
-
-// Что можно купить: всё из каталога и все ступени их рецептов (по первому
-// рецепту — тому, что показывает окно сборки). Промежуточные ступени (ранги
-// колец, мечей, посохов, перчаток) в разделах и поиске не показываются: к ним
-// попадают кликом по компоненту в окне сборки. Их цена в таблице равна сумме
-// компонентов, так что прямая покупка стоит столько же, сколько сборка.
-// ShHT: -8 — разрешено (boolean по id), -9 — стек обхода.
-// Набор строится из одних и тех же данных у всех игроков, поэтому годится
-// для синхронной проверки в Sh_Sync. Перестраивается, если карта дописала
-// рецепты или каталог ещё не был заполнен.
 function Sh_MarkBuyable takes nothing returns nothing
 local integer sec=0
 local integer i
@@ -269484,11 +269403,12 @@ call SaveStr(SG_DB,'H00E',1,"I01F I01M I01M I054 I04V I012 I042 I043 I06Q I04T I
 call SaveInteger(SG_DB,'H00E',20,6)
 call SaveInteger(SG_DB,'H00E',21,3)
 call SaveStr(SG_DB,'H00A',0,"I01F I01M I01M I00D I054 I13R I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
-call SaveStr(SG_DB,'H00A',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
+call SaveStr(SG_DB,'H00A',1,"I01F I01M I01M I00D I054 I04V I036 I04T I048 IAoF I042 I03P I1S4 I02Y I03Q I043")
 call SaveInteger(SG_DB,'H00A',20,6)
 call SaveInteger(SG_DB,'H00A',21,3)
 call SaveStr(SG_DB,'H00J',0,"I01F I01M I01M I046 IMDi I012 IPlA I00Q I06Q I068 I1S4 I04T I03A I03P I04L")
 call SaveStr(SG_DB,'H00J',1,"I01F I01M I01M I046 I04V I012 IPlA I00Q I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'H00J',3,"I01F I01M I01M I046 I020 I01E I05N I012 I00Q I06Q I04T I03P I04L")
 call SaveInteger(SG_DB,'H00J',20,9)
 call SaveInteger(SG_DB,'H00J',21,3)
 call SaveStr(SG_DB,'H016',0,"I01F I01M I01M I054 I13R I012 I042 I043 I06Q I04T I00D IAoF I03P I1S4 I02Y")
@@ -269503,12 +269423,12 @@ call SaveStr(SG_DB,'H01A',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'H01A',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H01A',20,1)
 call SaveInteger(SG_DB,'H01A',21,3)
-call SaveStr(SG_DB,'H00M',0,"I01F I01M I01M I00D I046 IMDi I012 I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H00M',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I06Q I1S4 IPlA I03A I03P I04L")
+call SaveStr(SG_DB,'H00M',0,"I01F I01M I01M I00D I046 IMDi I00Q I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
+call SaveStr(SG_DB,'H00M',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I06Q I1S4 IPlA I03A I03P I04L")
 call SaveInteger(SG_DB,'H00M',20,9)
 call SaveInteger(SG_DB,'H00M',21,3)
-call SaveStr(SG_DB,'H00H',0,"I01F I01M I01M I054 I068 IMDi I012 IPlA I066 I06O I04G I06R I1S4 I04T I03P")
-call SaveStr(SG_DB,'H00H',1,"I01F I01M I01M I054 I068 I04V I04T I066 I06O I012 IPlA I04G I06R I1S4 I03P")
+call SaveStr(SG_DB,'H00H',0,"I01F I01M I01M I054 I068 IMDi I00Q IPlA I066 I06O I04G I06R I1S4 I04T I03P")
+call SaveStr(SG_DB,'H00H',1,"I01F I01M I01M I054 I068 I04V I04T I066 I048 I06O I00Q IPlA I04G I06R I1S4 I03P")
 call SaveInteger(SG_DB,'H00H',20,7)
 call SaveInteger(SG_DB,'H00H',21,3)
 call SaveStr(SG_DB,'H00C',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269527,12 +269447,12 @@ call SaveStr(SG_DB,'H00P',0,"I01F I01M I01M I054 I04V I018 I066 I043 I00K I06Q I
 call SaveStr(SG_DB,'H00P',1,"I01F I01M I01M I054 I04V I00K I066 I043 I018 I06Q I04T I00D IAoF I042 I03P")
 call SaveInteger(SG_DB,'H00P',20,6)
 call SaveInteger(SG_DB,'H00P',21,3)
-call SaveStr(SG_DB,'H00D',0,"I01F I01M I01M I00D I054 IMDi I06Q I03A I044 I068 IPlA I04T I06W I03P I04L")
-call SaveStr(SG_DB,'H00D',1,"I01F I01M I01M I00D I054 I04V I04T I06R I03A I044 IPlA I06Q I06W I03P I04L")
+call SaveStr(SG_DB,'H00D',0,"I01F I01M I01M I00D I054 IMDi I06Q I03A I068 IPlA I04T I03P I04L")
+call SaveStr(SG_DB,'H00D',1,"I01F I01M I01M I00D I054 I04V I04T I06R I048 I03A IPlA I06Q I03P I04L I05Z")
 call SaveInteger(SG_DB,'H00D',20,0)
 call SaveInteger(SG_DB,'H00D',21,3)
 call SaveStr(SG_DB,'H00K',0,"I01F I01M I01M I00K I054 I018 I066 I040 I06Q I03A I044 IPlA I04T I06W I06R")
-call SaveStr(SG_DB,'H00K',1,"I01F I01M I01M I00K I054 I04V I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
+call SaveStr(SG_DB,'H00K',1,"I01F I01M I01M I00K I054 I04V I066 I040 I018 I06Q I04T I06R I03A I044 IPlA I05Z")
 call SaveInteger(SG_DB,'H00K',20,0)
 call SaveInteger(SG_DB,'H00K',21,3)
 call SaveStr(SG_DB,'H00X',0,"I01F I01M I01H I046 I04V I012 I042 IPlA I06Q I03F I01O I02V IBBi I01U I04T")
@@ -269570,12 +269490,12 @@ endfunction
 function SG_Data1 takes nothing returns nothing
 call SaveInteger(SG_DB,'H01D',20,9)
 call SaveInteger(SG_DB,'H01D',21,3)
-call SaveStr(SG_DB,'H01F',0,"I01F I01M I01M I00D I046 IMDi I012 I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H01F',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I06Q I1S4 IPlA I03A I03P I04L")
+call SaveStr(SG_DB,'H01F',0,"I01F I01M I01M I00D I046 IMDi I00Q I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
+call SaveStr(SG_DB,'H01F',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I06Q I1S4 IPlA I03A I03P I04L")
 call SaveInteger(SG_DB,'H01F',20,9)
 call SaveInteger(SG_DB,'H01F',21,3)
-call SaveStr(SG_DB,'H01H',0,"I01F I01M ISPB I046 I04V I012 I042 I00Q IPlA I06Q IPRB I06J I01U IBBi I00W")
-call SaveStr(SG_DB,'H01H',1,"I01F I01M ISPB I046 I04V I012 I042 I00Q IPlA I06Q I04T IPRB I06J I01U IBBi")
+call SaveStr(SG_DB,'H01H',0,"I01F I01M I01M I046 IPRB I04V I012 I042 I00Q IPlA I06Q I06J I01U IBBi I00W")
+call SaveStr(SG_DB,'H01H',1,"I01F I01M I01M I046 IPRB I04V I012 I042 I00Q IPlA I06Q I04T I06J I01U IBBi")
 call SaveInteger(SG_DB,'H01H',20,4)
 call SaveInteger(SG_DB,'H01H',21,3)
 call SaveStr(SG_DB,'H01J',0,"I01F I01M I01M I00D I054 I066 I06Q I043 IPlA I068 I06R I06W I04T I03P I06O")
@@ -269586,8 +269506,8 @@ call SaveStr(SG_DB,'H01L',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'H01L',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H01L',20,1)
 call SaveInteger(SG_DB,'H01L',21,3)
-call SaveStr(SG_DB,'H01M',0,"I01F I01M I01M I00D I046 IMDi I012 I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H01M',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H01M',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'H01M',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H01M',20,9)
 call SaveInteger(SG_DB,'H01M',21,3)
 call SaveStr(SG_DB,'H027',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269631,7 +269551,7 @@ call SaveStr(SG_DB,'H02K',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I
 call SaveInteger(SG_DB,'H02K',20,9)
 call SaveInteger(SG_DB,'H02K',21,3)
 call SaveStr(SG_DB,'H02L',0,"I01F I01M I01M I00D I046 IMDi I05T I00Q I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H02L',1,"I01F I01M I01M I00D I046 I04V I05T I00Q I04T I068 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H02L',1,"I01F I01M I01M I00D I046 I04V I05T I00Q I048 I04T I068 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H02L',20,9)
 call SaveInteger(SG_DB,'H02L',21,3)
 call SaveStr(SG_DB,'H02M',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 IPlA I06R I06W I04T I042")
@@ -269686,7 +269606,7 @@ call SaveStr(SG_DB,'H03B',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I
 call SaveInteger(SG_DB,'H03B',20,9)
 call SaveInteger(SG_DB,'H03B',21,3)
 call SaveStr(SG_DB,'H00Y',0,"I01F I01M I01M I00D I046 IMDi I042 I06Q I068 I1S4 IPlA I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H00Y',1,"I01F I01M I01M I00D I046 I04V I04T I068 I042 I06Q I1S4 IPlA I03A I03P I04L")
+call SaveStr(SG_DB,'H00Y',1,"I01F I01M I01M I00D I046 I04V I04T I068 I048 I042 I06Q I1S4 IPlA I03A I03P I04L")
 call SaveInteger(SG_DB,'H00Y',20,9)
 call SaveInteger(SG_DB,'H00Y',21,3)
 call SaveStr(SG_DB,'H03K',0,"I01F I01M I01M I00D I046 I04V I04T I06E I06Q I05T I1S4 IPlA I03A I03P I043")
@@ -269733,8 +269653,8 @@ call SaveStr(SG_DB,'H045',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H045',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H045',20,9)
 call SaveInteger(SG_DB,'H045',21,3)
-call SaveStr(SG_DB,'H047',0,"I01F I01M I01M I00D I046 IMDi I012 I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H047',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H047',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'H047',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H047',20,9)
 call SaveInteger(SG_DB,'H047',21,3)
 call SaveStr(SG_DB,'H048',0,"I01F I01M I01M I046 I04V I018 I066 I040 I00K I06Q IPRB I06J I01U IBBi I00W")
@@ -269760,24 +269680,24 @@ call SaveStr(SG_DB,'H04E',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H04E',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H04E',20,9)
 call SaveInteger(SG_DB,'H04E',21,3)
-call SaveStr(SG_DB,'H04F',0,"I01F I01M I01M I00D I046 IMDi I012 I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H04F',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H04F',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'H04F',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H04F',20,9)
 call SaveInteger(SG_DB,'H04F',21,3)
 call SaveStr(SG_DB,'H04H',0,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
 call SaveStr(SG_DB,'H04H',1,"I01F I01M I01M I00D I054 I04V I036 I04T IAoF I042 I03P I1S4 I02Y I03Q I043")
 call SaveInteger(SG_DB,'H04H',20,6)
 call SaveInteger(SG_DB,'H04H',21,3)
-call SaveStr(SG_DB,'H04L',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
-call SaveStr(SG_DB,'H04L',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
+call SaveStr(SG_DB,'H04L',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I044 I00Q IPlA I03A I06W I06R")
+call SaveStr(SG_DB,'H04L',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I00Q I06R I04T I03A IPlA")
 call SaveInteger(SG_DB,'H04L',20,0)
 call SaveInteger(SG_DB,'H04L',21,3)
 call SaveStr(SG_DB,'H04O',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
 call SaveStr(SG_DB,'H04O',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H04O',20,0)
 call SaveInteger(SG_DB,'H04O',21,3)
-call SaveStr(SG_DB,'H04T',0,"I01F I01M ISPB I046 I04V I012 I042 IPlA I06Q IPRB I06J I01U IBBi I00W I04T")
-call SaveStr(SG_DB,'H04T',1,"I01F I01M ISPB I046 I04V I012 I042 IPlA I06Q I04T IPRB I06J I01U IBBi I00W")
+call SaveStr(SG_DB,'H04T',0,"I01F I01M I01M I046 IPRB I04V I02V I012 I03F I06J I04T I042 I00W IPlA IBBi")
+call SaveStr(SG_DB,'H04T',1,"I01F I01M I01M I02W IPRB I04V I01Q I012 I01U I03F I04T I06J I042 IPlA IBBi")
 call SaveInteger(SG_DB,'H04T',20,4)
 call SaveInteger(SG_DB,'H04T',21,3)
 call SaveStr(SG_DB,'H052',0,"I01F I01M I01M I046 I04V I018 I066 I040 I00K I06Q IPRB I06J I01U IBBi I00W")
@@ -269789,7 +269709,7 @@ call SaveStr(SG_DB,'H053',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I
 call SaveInteger(SG_DB,'H053',20,0)
 call SaveInteger(SG_DB,'H053',21,3)
 call SaveStr(SG_DB,'H054',0,"I01F I01M I01M I00D I046 IMDi I05T I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H054',1,"I01F I01M I01M I00D I046 I04V I04T I05T I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H054',1,"I01F I01M I01M I00D I046 I04V I04T I05T I048 I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H054',20,9)
 call SaveInteger(SG_DB,'H054',21,3)
 call SaveStr(SG_DB,'H057',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269808,24 +269728,24 @@ call SaveStr(SG_DB,'H05A',0,"I01F I01M I01M I054 I012 I066 I042 IPlA I068 I06Q I
 call SaveStr(SG_DB,'H05A',1,"I01F I01M I01M I054 I04V I012 I066 I042 IPlA I06Q I04T I06R I043 I06W I04L")
 call SaveInteger(SG_DB,'H05A',20,1)
 call SaveInteger(SG_DB,'H05A',21,3)
-call SaveStr(SG_DB,'H05D',0,"I01F I01M I01M I066 I054 I068 IMDi I04G IPlA I06O I012 I03P I04T I06R I06W")
-call SaveStr(SG_DB,'H05D',1,"I01F I01M I01M I066 I054 I068 I04V I04T I06O I04G IPlA I012 I03P I06R I06W")
+call SaveStr(SG_DB,'H05D',0,"I01F I01M I01M I066 I054 I068 IMDi I04G IPlA I06O I00Q I03P I04T I06R I06W")
+call SaveStr(SG_DB,'H05D',1,"I01F I01M I01M I066 I054 I068 I04V I04T I06O I04G IPlA I00Q I03P I06R I06W")
 call SaveInteger(SG_DB,'H05D',20,7)
 call SaveInteger(SG_DB,'H05D',21,3)
 call SaveStr(SG_DB,'H05N',0,"I01F I01M I01M I00D I046 IMDi I05T I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H05N',1,"I01F I01M I01M I00D I046 I04V I04T I05T I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H05N',1,"I01F I01M I01M I00D I046 I04V I04T I05T I048 I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H05N',20,9)
 call SaveInteger(SG_DB,'H05N',21,3)
 call SaveStr(SG_DB,'H05Q',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I044 IPlA I04T I06W I06R")
 call SaveStr(SG_DB,'H05Q',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H05Q',20,0)
 call SaveInteger(SG_DB,'H05Q',21,3)
-call SaveStr(SG_DB,'H05R',0,"I01F I01M I01H I054 I068 IMDi I012 IPlA I066 I06O I04G I06R I1S4 I04T I03P")
-call SaveStr(SG_DB,'H05R',1,"I01F I01M I01H I054 I068 I04V I04T I066 I06O I012 IPlA I04G I06R I1S4 I03P")
+call SaveStr(SG_DB,'H05R',0,"I01F I01M I01H I054 I068 IMDi I00Q IPlA I066 I06O I04G I06R I1S4 I04T I03P")
+call SaveStr(SG_DB,'H05R',1,"I01F I01M I01H I054 I068 I04V I04T I066 I06O I00Q IPlA I04G I06R I1S4 I03P")
 call SaveInteger(SG_DB,'H05R',20,7)
 call SaveInteger(SG_DB,'H05R',21,3)
 call SaveStr(SG_DB,'H060',0,"I01F I01M I01M I00D I046 IMDi I05T I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H060',1,"I01F I01M I01M I00D I046 I04V I04T I05T I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H060',1,"I01F I01M I01M I00D I046 I04V I04T I05T I048 I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H060',20,9)
 call SaveInteger(SG_DB,'H060',21,3)
 call SaveStr(SG_DB,'H061',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269851,20 +269771,20 @@ call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I
 call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
 call SaveInteger(SG_DB,'H069',20,9)
 call SaveInteger(SG_DB,'H069',21,3)
-call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H06B',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
-call SaveInteger(SG_DB,'H06B',20,9)
+call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 I04V I00Q I02V I06Q I068 I043 I04T I1S4 I03P IPlA I042")
+call SaveStr(SG_DB,'H06B',1,"I01F I01M I01M I046 IMDi I00Q I06Q I068 I02V I04T I043 I1S4 I03P IPlA I042")
+call SaveInteger(SG_DB,'H06B',20,2)
 call SaveInteger(SG_DB,'H06B',21,3)
 call SaveStr(SG_DB,'H06F',0,"I01F I01M I01M I054 I04V I018 I066 I040 I00K I06Q I1S4 IPlA I06W I044 I04T")
 call SaveStr(SG_DB,'H06F',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I1S4 IPlA I06W I044")
 call SaveInteger(SG_DB,'H06F',20,9)
 call SaveInteger(SG_DB,'H06F',21,3)
-call SaveStr(SG_DB,'H051',0,"I01F I01M I01M I066 I054 I068 IMDi I04G IPlA I06O I012 I03P I04T I06R I06W")
-call SaveStr(SG_DB,'H051',1,"I01F I01M I01M I066 I054 I068 I04V I04T I06O I04G IPlA I012 I03P I06R I06W")
+call SaveStr(SG_DB,'H051',0,"I01F I01M I01M I066 I054 I068 IMDi I04G IPlA I06O I00Q I03P I04T I06R I06W")
+call SaveStr(SG_DB,'H051',1,"I01F I01M I01M I066 I054 I068 I04V I04T I06O I04G IPlA I00Q I03P I06R I06W")
 call SaveInteger(SG_DB,'H051',20,7)
 call SaveInteger(SG_DB,'H051',21,3)
-call SaveStr(SG_DB,'H06G',0,"I01F I01M ISPB I046 I04V I012 I042 IPlA I06Q IPRB I06J I01U IBBi I00W I04T")
-call SaveStr(SG_DB,'H06G',1,"I01F I01M ISPB I046 I04V I012 I042 IPlA I06Q I04T IPRB I06J I01U IBBi I00W")
+call SaveStr(SG_DB,'H06G',0,"I01F I01M I01M I046 IPRB I04V I012 I042 IPlA I06Q I06J I01U IBBi I00W I04T")
+call SaveStr(SG_DB,'H06G',1,"I01F I01M I01M I046 IPRB I04V I012 I042 IPlA I06Q I04T I06J I01U IBBi I00W")
 call SaveInteger(SG_DB,'H06G',20,4)
 call SaveInteger(SG_DB,'H06G',21,3)
 call SaveStr(SG_DB,'H06M',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -269883,8 +269803,8 @@ call SaveStr(SG_DB,'H072',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I043 I
 call SaveStr(SG_DB,'H072',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I043 IPlA I042")
 call SaveInteger(SG_DB,'H072',20,1)
 call SaveInteger(SG_DB,'H072',21,3)
-call SaveStr(SG_DB,'H075',0,"I01F I01M I01M I00D I046 IMDi I012 I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'H075',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'H075',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'H075',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'H075',20,9)
 call SaveInteger(SG_DB,'H075',21,3)
 call SaveStr(SG_DB,'H076',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I06Q I04G IPlA I012 I03P")
@@ -269899,8 +269819,8 @@ call SaveStr(SG_DB,'H112',0,"I01F I01M I01M I054 I018 I066 I040 I00K I06Q I03A I
 call SaveStr(SG_DB,'H112',1,"I01F I01M I01M I054 I04V I00K I066 I040 I018 I06Q I04T I06R I03A I044 IPlA")
 call SaveInteger(SG_DB,'H112',20,0)
 call SaveInteger(SG_DB,'H112',21,3)
-call SaveStr(SG_DB,'H074',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I06Q I04G IPlA I012 I03P")
-call SaveStr(SG_DB,'H074',1,"I01F I01M I01M I066 I054 I068 I04V I00K I040 I018 I06O I06Q I04T I04G IPlA")
+call SaveStr(SG_DB,'H074',0,"I01F I01M I01M I066 I00K I054 I068 I018 I040 I05Z I06O I06Q I04G IPlA I03P")
+call SaveStr(SG_DB,'H074',1,"I01F I01M I01M I066 I00K I054 I068 I04V I05Z I040 I018 I06O I06Q I04T I04G")
 call SaveInteger(SG_DB,'H074',20,7)
 call SaveInteger(SG_DB,'H074',21,3)
 call SaveStr(SG_DB,'H05C',0,"I01F I01M I01H I00D I046 I04V I01U I00Q I042 I02V IBSI I03L IPlA I03F I04T")
@@ -269944,6 +269864,7 @@ call SaveInteger(SG_DB,'Ho11',20,0)
 call SaveInteger(SG_DB,'Ho11',21,3)
 call SaveStr(SG_DB,'H116',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
 call SaveStr(SG_DB,'H116',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'H116',3,"I01F I01M I01M I046 I042 I020 I05N IPlA I00Q I06Q I04T I03P I04L")
 call SaveInteger(SG_DB,'H116',20,9)
 call SaveInteger(SG_DB,'H116',21,3)
 call SaveStr(SG_DB,'Ho0O',0,"I01F I01M I01M I066 I054 I068 I018 I040 I00K I06O I06Q I04G IPlA I012 I03P")
@@ -269970,8 +269891,8 @@ call SaveStr(SG_DB,'H10L',0,"I01F I01M I01M I02W I13R I012 IPlA I06Q I1S4 I02V I
 call SaveStr(SG_DB,'H10L',1,"I01F I01M I01M I02W I04V I012 IPlA I06Q I04T I1S4 I02V I00D IAS0 I03P I06E")
 call SaveInteger(SG_DB,'H10L',20,3)
 call SaveInteger(SG_DB,'H10L',21,3)
-call SaveStr(SG_DB,'HIc1',0,"I01F I01M I01M I00D I046 IMDi I012 I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
-call SaveStr(SG_DB,'HIc1',1,"I01F I01M I01M I00D I046 I04V I04T I012 I068 I042 I06Q I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'HIc1',0,"I01F I01M I01M I00D I046 IMDi I00Q I042 I06Q I068 I1S4 IPlA I04T I03A I03P")
+call SaveStr(SG_DB,'HIc1',1,"I01F I01M I01M I00D I046 I04V I04T I00Q I068 I042 I06Q I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'HIc1',20,9)
 call SaveInteger(SG_DB,'HIc1',21,3)
 call SaveStr(SG_DB,'Ho14',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -270015,7 +269936,7 @@ call SaveStr(SG_DB,'HGoj',1,"I01F I01M I01M I054 I04V I012 I042 IPlA I06Q I04T I
 call SaveInteger(SG_DB,'HGoj',20,0)
 call SaveInteger(SG_DB,'HGoj',21,3)
 call SaveStr(SG_DB,'HGrp',0,"I01F I01M I01M I00D I046 I13R I04T I06E I06Q I05T I042 I1S4 IPlA I03A I03P")
-call SaveStr(SG_DB,'HGrp',1,"I01F I01M I01M I00D I046 I04V I04T I06E I06Q I05T I042 I1S4 IPlA I03A I03P")
+call SaveStr(SG_DB,'HGrp',1,"I01F I01M I01M I00D I046 I04V I04T I06E I048 I06Q I05T I042 I1S4 IPlA I03A I03P")
 call SaveInteger(SG_DB,'HGrp',20,9)
 call SaveInteger(SG_DB,'HGrp',21,3)
 call SaveStr(SG_DB,'HSig',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -271023,13 +270944,6 @@ endif
 set si=si+1
 endloop
 endfunction
-function SG_NameEnter takes nothing returns nothing
-if TrigP()!=GetLocalPlayer() then
-return
-endif
-call ExecuteFunc("SG_NameChanged")
-call SetFrameFocus(SG_NameBox,false)
-endfunction
 
 function SG_Load takes nothing returns nothing
 local string sd
@@ -271116,13 +271030,21 @@ return Lng("Основной","Main")
 elseif sm==1 then
 return Lng("Защитный","Defensive")
 endif
+if sm==3 then
+if SG_Hero=='H116' then
+return Lng("Выжигание маны","Mana burn")
+endif
+return Lng("Ситуативный","Situational")
+endif
 return LoadStr(SG_Custom,-sm,1)
 endfunction
 function SG_NextMode takes integer sm returns integer
 local integer next
 if sm==0 then
 return 1
-elseif sm==1 then
+elseif sm==1 and LoadStr(SG_DB,SG_Hero,3)!=null and LoadStr(SG_DB,SG_Hero,3)!="" then
+return 3
+elseif sm==1 or sm==3 then
 set next=LoadInteger(SG_Custom,-1,SG_Hero)
 else
 set next=LoadInteger(SG_Custom,-sm,3)
@@ -271502,101 +271424,6 @@ return ""
 endif
 return spData
 endfunction
-function SG_PackageTick takes nothing returns nothing
-local string spManifest
-local integer spBatch=0
-local integer spResult
-if SG_PackageStage==3 then
-return
-endif
-call SG_Load()
-if SG_Read<SG_Total then
-return
-endif
-if SG_PackageStage==0 then
-set spManifest=SG_FileRead("ChoiceBattle\\Guides\\Import\\Manifest.txt")
-if spManifest=="" then
-set SG_PackageStage=3
-return
-endif
-set SG_PackageTotal=S2I(CBS_Tok(spManifest,1))
-if CBS_Tok(spManifest,0)!="SGPK1" or SG_PackageTotal<0 or I2S(SG_PackageTotal)!=CBS_Tok(spManifest,1) then
-set SG_PackageStage=3
-set SG_PackageInfo=Lng("Пакет гайдов: неверный Manifest.txt.","Guide package: invalid Manifest.txt.")
-return
-endif
-set SG_PackageStage=2
-endif
-loop
-exitwhen spBatch>=8 or SG_PackageRead>=SG_PackageTotal
-set SG_PackageRead=SG_PackageRead+1
-set spResult=SG_ImportOne(SG_PackageEntry(SG_PackageRead))
-if spResult==1 then
-set SG_PackageAdded=SG_PackageAdded+1
-elseif spResult<0 then
-set SG_PackageFailed=SG_PackageFailed+1
-endif
-set spBatch=spBatch+1
-endloop
-if SG_PackageRead>=SG_PackageTotal then
-set SG_PackageStage=3
-set SG_PackageInfo=Lng("Пакет: добавлено ","Package: added ")+I2S(SG_PackageAdded)+Lng(", ошибок ",", errors ")+I2S(SG_PackageFailed)+"."
-if SG_Open and ShOpened then
-call SG_Message(SG_PackageInfo)
-call ExecuteFunc("SG_Refresh")
-endif
-endif
-endfunction
-function SG_ImportTick takes nothing returns nothing
-local string iaManifest
-local integer iaIndex=0
-local integer iaResult
-if SG_ImportStage==3 then
-return
-endif
-call SG_Load()
-if SG_Read<SG_Total then
-return
-endif
-if SG_ImportStage==0 then
-set iaManifest=SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\Manifest.pld")
-set SG_ImportGeneration=CBS_Tok(iaManifest,1)
-set SG_ImportTotal=S2I(CBS_Tok(iaManifest,2))
-if CBS_Tok(iaManifest,0)!="SGIM" or StringLength(SG_ImportGeneration)!=64 or SG_ImportTotal<0 then
-set SG_ImportStage=3
-return
-endif
-loop
-exitwhen iaIndex>=64
-if StringFind("0123456789abcdef",SubString(SG_ImportGeneration,iaIndex,iaIndex+1),true)<0 then
-set SG_ImportStage=3
-return
-endif
-set iaIndex=iaIndex+1
-endloop
-set SG_ImportStage=2
-set iaIndex=0
-endif
-loop
-exitwhen iaIndex>=8 or SG_ImportRead>=SG_ImportTotal
-set SG_ImportRead=SG_ImportRead+1
-set iaResult=SG_ImportOne(SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\"+SG_ImportGeneration+"\\"+I2S(SG_ImportRead)+".pld"))
-if iaResult==1 then
-set SG_ImportAdded=SG_ImportAdded+1
-elseif iaResult<0 then
-set SG_ImportFailed=SG_ImportFailed+1
-endif
-set iaIndex=iaIndex+1
-endloop
-if SG_ImportRead>=SG_ImportTotal then
-set SG_ImportStage=3
-set SG_ImportInfo=Lng("Автоимпорт: добавлено ","Auto import: added ")+I2S(SG_ImportAdded)+Lng(", ошибок ",", errors ")+I2S(SG_ImportFailed)+"."
-if SG_Open and ShOpened then
-call SG_Message(SG_ImportInfo)
-call ExecuteFunc("SG_Refresh")
-endif
-endif
-endfunction
 
 function SG_ButtonText takes framehandle sbtButton,string sbtText returns nothing
 local framehandle sbtLabel=LoadFrameHandle(SG_DB,-6,GetHandleId(sbtButton))
@@ -271608,6 +271435,140 @@ endif
 set sbtLabel=null
 endfunction
 
+function SG_ItemPoolInit takes nothing returns nothing
+set SG_ItemPool[0]='I01W'
+set SG_ItemPool[1]='I01H'
+set SG_ItemPool[2]='I008'
+set SG_ItemPool[3]='I01F'
+set SG_ItemPool[4]='I01M'
+set SG_ItemPool[5]='I04H'
+set SG_ItemPool[6]='I12R'
+set SG_ItemPool[7]='ISPB'
+set SG_ItemPool[8]='I02S'
+set SG_ItemPool[9]='I02R'
+set SG_ItemPool[10]='I02T'
+set SG_ItemPool[11]='IGlA'
+set SG_ItemPool[12]='ISlA'
+set SG_ItemPool[13]='ISt0'
+set SG_ItemPool[14]='IMT0'
+set SG_ItemPool[15]='INY0'
+set SG_ItemPool[16]='IMS0'
+set SG_ItemPool[17]='I01O'
+set SG_ItemPool[18]='I01Q'
+set SG_ItemPool[19]='I01S'
+set SG_ItemPool[20]='I01U'
+set SG_ItemPool[21]='I02V'
+set SG_ItemPool[22]='I020'
+set SG_ItemPool[23]='I04F'
+set SG_ItemPool[24]='I03O'
+set SG_ItemPool[25]='I031'
+set SG_ItemPool[26]='ISDi'
+set SG_ItemPool[27]='I050'
+set SG_ItemPool[28]='IBSI'
+set SG_ItemPool[29]='IPRB'
+set SG_ItemPool[30]='I02Y'
+set SG_ItemPool[31]='I040'
+set SG_ItemPool[32]='I042'
+set SG_ItemPool[33]='I03L'
+set SG_ItemPool[34]='I03F'
+set SG_ItemPool[35]='I03A'
+set SG_ItemPool[36]='I037'
+set SG_ItemPool[37]='I048'
+set SG_ItemPool[38]='I04G'
+set SG_ItemPool[39]='ISHk'
+set SG_ItemPool[40]='IHnK'
+set SG_ItemPool[41]='I046'
+set SG_ItemPool[42]='I054'
+set SG_ItemPool[43]='I02W'
+set SG_ItemPool[44]='I044'
+set SG_ItemPool[45]='I03P'
+set SG_ItemPool[46]='I03Q'
+set SG_ItemPool[47]='I03R'
+set SG_ItemPool[48]='I043'
+set SG_ItemPool[49]='I04L'
+set SG_ItemPool[50]='I04T'
+set SG_ItemPool[51]='I04V'
+set SG_ItemPool[52]='I06W'
+set SG_ItemPool[53]='IGDi'
+set SG_ItemPool[54]='I036'
+set SG_ItemPool[55]='I13R'
+set SG_ItemPool[56]='I06E'
+set SG_ItemPool[57]='I04I'
+set SG_ItemPool[58]='I066'
+set SG_ItemPool[59]='IMDi'
+set SG_ItemPool[60]='IAoF'
+set SG_ItemPool[61]='IAS0'
+set SG_ItemPool[62]='I068'
+set SG_ItemPool[63]='I06O'
+set SG_ItemPool[64]='IHYi'
+set SG_ItemPool[65]='I06Q'
+set SG_ItemPool[66]='I06R'
+set SG_ItemPool[67]='I06J'
+set SG_ItemPool[68]='ISTi'
+set SG_ItemPool[69]='I1S4'
+set SG_ItemPool[70]='IPlA'
+set SG_ItemPool[71]='IBBi'
+set SG_ItemPool[72]='I02L'
+set SG_ItemPool[73]='I02E'
+set SG_ItemPool[74]='I019'
+set SG_ItemPool[75]='I013'
+set SG_ItemPool[76]='I00X'
+set SG_ItemPool[77]='I00R'
+set SG_ItemPool[78]='I00L'
+set SG_ItemPool[79]='I00F'
+set SG_ItemPool[80]='I007'
+set SG_ItemPool[81]='I049'
+set SG_ItemPool[82]='I04M'
+set SG_ItemPool[83]='I056'
+set SG_ItemPool[84]='I05C'
+set SG_ItemPool[85]='I05I'
+set SG_ItemPool[86]='I05O'
+set SG_ItemPool[87]='I05U'
+set SG_ItemPool[88]='I060'
+set SG_ItemPool[89]='I018'
+set SG_ItemPool[90]='I012'
+set SG_ItemPool[91]='I01E'
+set SG_ItemPool[92]='I00Q'
+set SG_ItemPool[93]='I00D'
+set SG_ItemPool[94]='I00K'
+set SG_ItemPool[95]='I00W'
+set SG_ItemPool[96]='I04E'
+set SG_ItemPool[97]='I02Q'
+set SG_ItemPool[98]='I02J'
+set SG_ItemPool[99]='I04R'
+set SG_ItemPool[100]='I05B'
+set SG_ItemPool[101]='I05H'
+set SG_ItemPool[102]='I05N'
+set SG_ItemPool[103]='I05T'
+set SG_ItemPool[104]='I05Z'
+set SG_ItemPool[105]='I065'
+set SG_ItemPool[106]='I06G'
+set SG_ItemPool[107]='I06F'
+set SG_ItemPool[108]='I06H'
+set SG_ItemPool[109]='I06I'
+set SG_ItemPool[110]='I03C'
+set SG_ItemPool[111]='I03E'
+set SG_ItemPool[112]='I03B'
+set SG_ItemPool[113]='I03D'
+set SG_ItemPool[114]='I03W'
+set SG_ItemPool[115]='I03X'
+set SG_ItemPool[116]='I03Z'
+set SG_ItemPool[117]='I03Y'
+set SG_ItemPool[118]='I032'
+set SG_ItemPool[119]='I033'
+set SG_ItemPool[120]='I035'
+set SG_ItemPool[121]='I034'
+set SG_ItemPool[122]='I06K'
+set SG_ItemPool[123]='I06L'
+set SG_ItemPool[124]='I06M'
+set SG_ItemPool[125]='I06N'
+set SG_ItemPool[126]='IOS1'
+set SG_ItemPool[127]='IOS2'
+set SG_ItemPool[128]='IOS3'
+set SG_ItemPool[129]='IOS4'
+set SG_ItemPoolN=130
+endfunction
+
 function SG_DrawItemPicker takes nothing returns nothing
 local integer epIndex=0
 local integer epMatch=0
@@ -271615,9 +271576,6 @@ local integer epRow=0
 local integer epId
 local string epQuery=SG_ItemQuery
 local string epName
-if SG_ItemPoolN<=0 then
-call ExecuteFunc("SG_ItemPoolInit")
-endif
 if epQuery==null then
 set epQuery=""
 endif
@@ -271668,57 +271626,30 @@ if epMatch==0 then
 call BlzFrameSetText(SG_Hint,Lng("Ничего не найдено. Измените или очистите поиск.","No items found. Change or clear the search."))
 endif
 endfunction
+function SG_FilterChanged takes string sfQuery returns nothing
+local boolean sfFocused=IsFrameFocused(SG_ItemSearch)
+if sfQuery==null then
+set sfQuery=""
+endif
+if sfQuery==SG_ItemQuery then
+return
+endif
+set SG_ItemQuery=sfQuery
+set SG_ItemPage=0
+set SG_Notice=""
+// Match the shop search: redraw results, not the editbox or the whole window.
+call SG_DrawItemPicker()
+call BlzFrameSetVisible(SG_SearchPrompt,sfQuery=="")
+if sfFocused then
+call SetFrameFocus(SG_ItemSearch,true)
+endif
+endfunction
+
 function SG_SearchChanged takes nothing returns nothing
 if TrigP()!=GetLocalPlayer() or not SG_Open or not SG_ItemPicker then
 return
 endif
 call SG_FilterChanged(GetFrameText(SG_ItemSearch))
-endfunction
-function SG_DragStart takes nothing returns nothing
-local integer epTag=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
-if TrigP()!=GetLocalPlayer() or GetTriggerFrameMouseButton()!=MOUSE_BUTTON_TYPE_LEFT or not SG_Open or not ShOpened or SG_ItemPicker or SG_Picker or SG_HeroPicker then
-return
-endif
-if epTag>=200 and epTag<216 and epTag-200<StringLength(SG_List())/4 then
-set SG_DragFrom=epTag-200
-set SG_Select=SG_DragFrom
-set SG_EditPhase=SG_PhaseAt(SG_Select)
-set SG_Notice=""
-call ExecuteFunc("SG_Refresh")
-endif
-endfunction
-function SG_DragDrop takes nothing returns nothing
-local framehandle epFrame
-local integer epTag=0
-local integer epDepth=0
-if TrigP()!=GetLocalPlayer() or SG_DragFrom<0 then
-return
-endif
-set epFrame=GetFrameUnderCursor()
-loop
-exitwhen epFrame==null or epDepth>=8 or (epTag>=200 and epTag<224)
-set epTag=LoadInteger(SG_DB,-3,GetHandleId(epFrame))
-if not (epTag>=200 and epTag<224) then
-set epFrame=GetFrameParent(epFrame)
-endif
-set epDepth=epDepth+1
-endloop
-if SG_Open and ShOpened and not SG_ItemPicker and not SG_Picker and not SG_HeroPicker then
-if epTag>=200 and epTag<216 and epTag-200<StringLength(SG_List())/4 then
-if epTag-200!=SG_DragFrom and SG_EnsureEditable() then
-call SG_MoveItem(SG_DragFrom,epTag-200,SG_PhaseAt(epTag-200),false)
-set SG_DragSkip=SG_DragFrom
-endif
-elseif epTag>=220 and epTag<224 then
-if SG_EnsureEditable() then
-call SG_MoveItem(SG_DragFrom,0,epTag-220,true)
-set SG_DragSkip=SG_DragFrom
-endif
-endif
-endif
-set SG_DragFrom=-1
-set epFrame=null
-call ExecuteFunc("SG_Refresh")
 endfunction
 function SG_DrawAllItems takes nothing returns nothing
 local integer edItem=0
@@ -271800,6 +271731,9 @@ local integer erIndex=0
 local integer erBudget=0
 local string erList
 local boolean erPicker
+if ShOpenDiag>0 and ShOpenDiag<8 then
+return
+endif
 if SG_Panel==null then
 return
 endif
@@ -271824,7 +271758,6 @@ set SG_Hero=erHero
 set SG_Mode=0
 set SG_Select=-1
 endif
-call SG_Load()
 set erList=SG_List()
 set erPicker=SG_Picker or SG_HeroPicker or SG_ItemPicker
 call SG_ButtonText(SG_Title,GetObjectName(SG_Hero)+" — "+SG_Role())
@@ -271918,6 +271851,348 @@ elseif SG_Notice!="" then
 call BlzFrameSetText(SG_Hint,SG_Notice)
 endif
 endfunction
+function Sh_SearchChanged takes nothing returns nothing
+if TrigP()!=GetLocalPlayer() then
+return
+endif
+if SG_Open and SG_ItemPicker then
+call SG_SearchChanged()
+return
+endif
+set ShQuery=BlzGetTriggerFrameText()
+set ShPage[PId(GetLocalPlayer())]=0
+call Sh_Filter()
+call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
+if not SG_Open then
+call Sh_DrawCatalog()
+endif
+endfunction
+
+function SG_SearchPoll takes nothing returns nothing
+if not SG_Open or not ShOpened or not SG_ItemPicker or SG_ItemSearch==null then
+return
+endif
+call SG_FilterChanged(GetFrameText(SG_ItemSearch))
+endfunction
+
+function Sh_SearchPoll takes nothing returns nothing
+local string qtext
+// Opening diagnostics suppress asynchronous search redraws on every client.
+if ShOpenDiag!=0 then
+return
+endif
+call SG_SearchPoll()
+if SG_Open then
+return
+endif
+if ShOpened==false or ShSearch==null then
+return
+endif
+set qtext=BlzFrameGetText(ShSearch)
+if qtext!=ShQuery then
+set ShQuery=qtext
+set ShPage[PId(GetLocalPlayer())]=0
+call Sh_Filter()
+call BlzFrameSetVisible(ShSearchHint,ShQuery=="")
+call Sh_DrawCatalog()
+endif
+endfunction
+
+function SG_DragStart takes nothing returns nothing
+local integer epTag=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
+if TrigP()!=GetLocalPlayer() or GetTriggerFrameMouseButton()!=MOUSE_BUTTON_TYPE_LEFT or not SG_Open or not ShOpened or SG_ItemPicker or SG_Picker or SG_HeroPicker then
+return
+endif
+if epTag>=200 and epTag<216 and epTag-200<StringLength(SG_List())/4 then
+set SG_DragFrom=epTag-200
+set SG_Select=SG_DragFrom
+set SG_EditPhase=SG_PhaseAt(SG_Select)
+set SG_Notice=""
+call SG_Refresh()
+endif
+endfunction
+
+function SG_DragDrop takes nothing returns nothing
+local framehandle epFrame
+local integer epTag=0
+local integer epDepth=0
+if TrigP()!=GetLocalPlayer() or SG_DragFrom<0 then
+return
+endif
+set epFrame=GetFrameUnderCursor()
+loop
+exitwhen epFrame==null or epDepth>=8 or (epTag>=200 and epTag<224)
+set epTag=LoadInteger(SG_DB,-3,GetHandleId(epFrame))
+if not (epTag>=200 and epTag<224) then
+set epFrame=GetFrameParent(epFrame)
+endif
+set epDepth=epDepth+1
+endloop
+if SG_Open and ShOpened and not SG_ItemPicker and not SG_Picker and not SG_HeroPicker then
+if epTag>=200 and epTag<216 and epTag-200<StringLength(SG_List())/4 then
+if epTag-200!=SG_DragFrom and SG_EnsureEditable() then
+call SG_MoveItem(SG_DragFrom,epTag-200,SG_PhaseAt(epTag-200),false)
+set SG_DragSkip=SG_DragFrom
+endif
+elseif epTag>=220 and epTag<224 then
+if SG_EnsureEditable() then
+call SG_MoveItem(SG_DragFrom,0,epTag-220,true)
+set SG_DragSkip=SG_DragFrom
+endif
+endif
+endif
+set SG_DragFrom=-1
+set epFrame=null
+call SG_Refresh()
+endfunction
+
+function SG_PackageTick takes nothing returns nothing
+local string spManifest
+local integer spBatch=0
+local integer spResult
+if SG_PackageStage==3 then
+return
+endif
+call SG_Load()
+if SG_Read<SG_Total then
+return
+endif
+if SG_PackageStage==0 then
+set spManifest=SG_FileRead("ChoiceBattle\\Guides\\Import\\Manifest.txt")
+if spManifest=="" then
+set SG_PackageStage=3
+return
+endif
+set SG_PackageTotal=S2I(CBS_Tok(spManifest,1))
+if CBS_Tok(spManifest,0)!="SGPK1" or SG_PackageTotal<0 or I2S(SG_PackageTotal)!=CBS_Tok(spManifest,1) then
+set SG_PackageStage=3
+set SG_PackageInfo=Lng("Пакет гайдов: неверный Manifest.txt.","Guide package: invalid Manifest.txt.")
+return
+endif
+set SG_PackageStage=2
+endif
+loop
+exitwhen spBatch>=8 or SG_PackageRead>=SG_PackageTotal
+set SG_PackageRead=SG_PackageRead+1
+set spResult=SG_ImportOne(SG_PackageEntry(SG_PackageRead))
+if spResult==1 then
+set SG_PackageAdded=SG_PackageAdded+1
+elseif spResult<0 then
+set SG_PackageFailed=SG_PackageFailed+1
+endif
+set spBatch=spBatch+1
+endloop
+if SG_PackageRead>=SG_PackageTotal then
+set SG_PackageStage=3
+set SG_PackageInfo=Lng("Пакет: добавлено ","Package: added ")+I2S(SG_PackageAdded)+Lng(", ошибок ",", errors ")+I2S(SG_PackageFailed)+"."
+if SG_Open and ShOpened then
+call SG_Message(SG_PackageInfo)
+call SG_Refresh()
+endif
+endif
+endfunction
+
+function SG_ImportTick takes nothing returns nothing
+local string iaManifest
+local integer iaIndex=0
+local integer iaResult
+if SG_ImportStage==3 then
+return
+endif
+call SG_Load()
+if SG_Read<SG_Total then
+return
+endif
+if SG_ImportStage==0 then
+set iaManifest=SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\Manifest.pld")
+set SG_ImportGeneration=CBS_Tok(iaManifest,1)
+set SG_ImportTotal=S2I(CBS_Tok(iaManifest,2))
+if CBS_Tok(iaManifest,0)!="SGIM" or StringLength(SG_ImportGeneration)!=64 or SG_ImportTotal<0 then
+set SG_ImportStage=3
+return
+endif
+loop
+exitwhen iaIndex>=64
+if StringFind("0123456789abcdef",SubString(SG_ImportGeneration,iaIndex,iaIndex+1),true)<0 then
+set SG_ImportStage=3
+return
+endif
+set iaIndex=iaIndex+1
+endloop
+set SG_ImportStage=2
+set iaIndex=0
+endif
+loop
+exitwhen iaIndex>=8 or SG_ImportRead>=SG_ImportTotal
+set SG_ImportRead=SG_ImportRead+1
+set iaResult=SG_ImportOne(SG_FileRead("ChoiceBattle\\Guides\\AutoImport\\"+SG_ImportGeneration+"\\"+I2S(SG_ImportRead)+".pld"))
+if iaResult==1 then
+set SG_ImportAdded=SG_ImportAdded+1
+elseif iaResult<0 then
+set SG_ImportFailed=SG_ImportFailed+1
+endif
+set iaIndex=iaIndex+1
+endloop
+if SG_ImportRead>=SG_ImportTotal then
+set SG_ImportStage=3
+set SG_ImportInfo=Lng("Автоимпорт: добавлено ","Auto import: added ")+I2S(SG_ImportAdded)+Lng(", ошибок ",", errors ")+I2S(SG_ImportFailed)+"."
+if SG_Open and ShOpened then
+call SG_Message(SG_ImportInfo)
+call SG_Refresh()
+endif
+endif
+endfunction
+
+function Sh_Tick takes nothing returns nothing
+local integer id
+local boolean inv
+call SG_ExportAllTick()
+call SG_PackageTick()
+call SG_ImportTick()
+call Sh_Snapshot()
+if SG_Loaded and SG_Read<SG_Total then
+call SG_ReadBatch()
+endif
+// строка итога гаснет через 5 с
+if ShMsgLeft>0.0 then
+set ShMsgLeft=ShMsgLeft-0.4
+if ShMsgLeft<=0.0 and ShMsgTxt!=null then
+call BlzFrameSetText(ShMsgTxt,"")
+endif
+endif
+if ShOpened and ShOpenDiag==0 then
+set inv=Sh_ScanInv(PId(GetLocalPlayer()))
+if inv then
+call Sh_DrawCraft()
+call Sh_DrawInv()
+endif
+set id=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
+if inv or id!=ShLastGold then
+set ShLastGold=id
+call Sh_DrawPrices()
+endif
+endif
+endfunction
+
+function Sh_Redraw takes nothing returns nothing
+if ShOpenDiag>0 and ShOpenDiag<7 then
+return
+endif
+// свежий снимок инвентаря и золота: иначе первый тик после открытия окна
+// видел устаревшие значения и перерисовывал всё ещё раз
+call Sh_ScanInv(PId(GetLocalPlayer()))
+set ShLastGold=GetPlayerState(GetLocalPlayer(),PLAYER_STATE_RESOURCE_GOLD)
+call Sh_DrawCatalog()
+call Sh_DrawCraft()
+call Sh_DrawDesc()
+call Sh_DrawUses()
+call Sh_DrawInv()
+if ShOpenDiag==0 or ShOpenDiag>=8 then
+call SG_Refresh()
+endif
+endfunction
+
+//--------------------- клики: ЛОКАЛЬНЫЕ, игру не трогают ---------------------
+
+function Sh_Click takes nothing returns nothing
+local integer pid=PId(TrigP())
+local integer tag=Sh_TagOf(BlzGetTriggerFrame())
+local integer id
+if TrigP()!=GetLocalPlayer() then
+return
+endif
+// колесо мыши над «Собирается в» и клики по половинам полосы листают ряды
+if tag>=700 and tag<712 and (BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL or tag>=710) then
+if tag==710 or (tag<710 and BlzGetTriggerFrameValue()>0) then
+set ShUseOff[pid]=IMaxBJ(0,ShUseOff[pid]-1)
+else
+set ShUseOff[pid]=ShUseOff[pid]+1
+endif
+call Sh_DrawUses()
+return
+endif
+// колесо над каталогом и клики по половинам его полосы листают ряды
+if (tag>=200 and tag<280 and BlzGetTriggerFrameEvent()==FRAMEEVENT_MOUSE_WHEEL) or tag==720 or tag==721 then
+if tag==720 or (tag<720 and BlzGetTriggerFrameValue()>0) then
+set ShPage[pid]=IMaxBJ(0,ShPage[pid]-1)
+else
+set ShPage[pid]=ShPage[pid]+1
+endif
+call Sh_DrawCatalog()
+return
+endif
+if tag>=100 and tag<200 then
+set ShSelSec[pid]=tag-100
+set ShPage[pid]=0
+// выбор раздела сбрасывает поиск (очистка поля сама перерисует каталог)
+if ShQuery!="" then
+set ShQuery=""
+set ShFoundN=0
+set ShLastQry=""
+// поле держит фокус и старый текст — сначала снимаем фокус, иначе опрос вернёт запрос
+call BlzFrameSetFocus(ShSearch,false)
+call BlzFrameSetText(ShSearch,"")
+call BlzFrameSetVisible(ShSearchHint,true)
+endif
+call Sh_DrawSections()
+call Sh_DrawCatalog()
+elseif tag>=200 and tag<300 then
+set id=Sh_PageItem(pid,tag-200)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=500 and tag<600 then
+// клик по компоненту сборки проваливает выбор вглубь
+set id=Sh_RecComp(Sh_RecipeOf(ShSel[pid]),tag-500)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=700 and tag<706 then
+// клик по «Собирается в» открывает результат сборки
+set id=Sh_UseOf(ShSel[pid],tag-700)
+if id!=0 then
+set ShSel[pid]=id
+call Sh_Redraw()
+endif
+elseif tag>=300 and tag<310 then
+set ShInvSel[pid]=tag-300
+if Hero[JudgeHid(pid)]!=null and ShInvCache[JudgeHid(pid)*20+tag-300]!=0 then
+set ShSel[pid]=ShInvCache[JudgeHid(pid)*20+tag-300]
+endif
+call Sh_Redraw()
+elseif tag==410 then
+call SendSyncData("SHB",I2S(ShSel[pid]))
+elseif tag==411 then
+call SendSyncData("SHS",I2S(ShInvSel[pid]))
+elseif tag==403 then
+// свиток улучшения: покупается тем же путём, что и всё остальное
+call SendSyncData("SHB",I2S('I00E'))
+elseif tag==401 then
+if ShPage[pid]>0 then
+set ShPage[pid]=ShPage[pid]-1
+call Sh_DrawCatalog()
+endif
+elseif tag==402 then
+if ShPage[pid]+1<Sh_PageCount(pid) then
+set ShPage[pid]=ShPage[pid]+1
+call Sh_DrawCatalog()
+endif
+endif
+endfunction
+
+//--------------------- приём: СИНХРОННО у всех ---------------------
+
+// Что можно купить: всё из каталога и все ступени их рецептов (по первому
+// рецепту — тому, что показывает окно сборки). Промежуточные ступени (ранги
+// колец, мечей, посохов, перчаток) в разделах и поиске не показываются: к ним
+// попадают кликом по компоненту в окне сборки. Их цена в таблице равна сумме
+// компонентов, так что прямая покупка стоит столько же, сколько сборка.
+// ShHT: -8 — разрешено (boolean по id), -9 — стек обхода.
+// Набор строится из одних и тех же данных у всех игроков, поэтому годится
+// для синхронной проверки в Sh_Sync. Перестраивается, если карта дописала
+// рецепты или каталог ещё не был заполнен.
 function SG_NameChanged takes nothing returns nothing
 local string enInput
 local string enName
@@ -271940,6 +272215,14 @@ call SG_ButtonText(SG_Choose,enName+" v")
 call BlzFrameSetVisible(SG_SavePath,true)
 call BlzFrameSetText(SG_SavePath,Lng("В папке Warcraft III: ","In the Warcraft III folder: ")+SG_GuidePath(SG_Hero,enName))
 endfunction
+function SG_NameEnter takes nothing returns nothing
+if TrigP()!=GetLocalPlayer() then
+return
+endif
+call SG_NameChanged()
+call SetFrameFocus(SG_NameBox,false)
+endfunction
+
 function SG_Click takes nothing returns nothing
 local integer ecTag=LoadInteger(SG_DB,-3,GetHandleId(BlzGetTriggerFrame()))
 local integer ecPlayer=PId(TrigP())
@@ -272137,139 +272420,6 @@ set sgbBg=null
 set sgbLabel=null
 return sgb
 endfunction
-function SG_ItemPoolInit takes nothing returns nothing
-set SG_ItemPool[0]='I01W'
-set SG_ItemPool[1]='I01H'
-set SG_ItemPool[2]='I008'
-set SG_ItemPool[3]='I01F'
-set SG_ItemPool[4]='I01M'
-set SG_ItemPool[5]='I04H'
-set SG_ItemPool[6]='I12R'
-set SG_ItemPool[7]='ISPB'
-set SG_ItemPool[8]='I02S'
-set SG_ItemPool[9]='I02R'
-set SG_ItemPool[10]='I02T'
-set SG_ItemPool[11]='IGlA'
-set SG_ItemPool[12]='ISlA'
-set SG_ItemPool[13]='ISt0'
-set SG_ItemPool[14]='IMT0'
-set SG_ItemPool[15]='INY0'
-set SG_ItemPool[16]='IMS0'
-set SG_ItemPool[17]='I01O'
-set SG_ItemPool[18]='I01Q'
-set SG_ItemPool[19]='I01S'
-set SG_ItemPool[20]='I01U'
-set SG_ItemPool[21]='I02V'
-set SG_ItemPool[22]='I020'
-set SG_ItemPool[23]='I04F'
-set SG_ItemPool[24]='I03O'
-set SG_ItemPool[25]='I031'
-set SG_ItemPool[26]='ISDi'
-set SG_ItemPool[27]='I050'
-set SG_ItemPool[28]='IBSI'
-set SG_ItemPool[29]='IPRB'
-set SG_ItemPool[30]='I02Y'
-set SG_ItemPool[31]='I040'
-set SG_ItemPool[32]='I042'
-set SG_ItemPool[33]='I03L'
-set SG_ItemPool[34]='I03F'
-set SG_ItemPool[35]='I03A'
-set SG_ItemPool[36]='I037'
-set SG_ItemPool[37]='I048'
-set SG_ItemPool[38]='I04G'
-set SG_ItemPool[39]='ISHk'
-set SG_ItemPool[40]='IHnK'
-set SG_ItemPool[41]='I046'
-set SG_ItemPool[42]='I054'
-set SG_ItemPool[43]='I02W'
-set SG_ItemPool[44]='I044'
-set SG_ItemPool[45]='I03P'
-set SG_ItemPool[46]='I03Q'
-set SG_ItemPool[47]='I03R'
-set SG_ItemPool[48]='I043'
-set SG_ItemPool[49]='I04L'
-set SG_ItemPool[50]='I04T'
-set SG_ItemPool[51]='I04V'
-set SG_ItemPool[52]='I06W'
-set SG_ItemPool[53]='IGDi'
-set SG_ItemPool[54]='I036'
-set SG_ItemPool[55]='I13R'
-set SG_ItemPool[56]='I06E'
-set SG_ItemPool[57]='I04I'
-set SG_ItemPool[58]='I066'
-set SG_ItemPool[59]='IMDi'
-set SG_ItemPool[60]='IAoF'
-set SG_ItemPool[61]='IAS0'
-set SG_ItemPool[62]='I068'
-set SG_ItemPool[63]='I06O'
-set SG_ItemPool[64]='IHYi'
-set SG_ItemPool[65]='I06Q'
-set SG_ItemPool[66]='I06R'
-set SG_ItemPool[67]='I06J'
-set SG_ItemPool[68]='ISTi'
-set SG_ItemPool[69]='I1S4'
-set SG_ItemPool[70]='IPlA'
-set SG_ItemPool[71]='IBBi'
-set SG_ItemPool[72]='I02L'
-set SG_ItemPool[73]='I02E'
-set SG_ItemPool[74]='I019'
-set SG_ItemPool[75]='I013'
-set SG_ItemPool[76]='I00X'
-set SG_ItemPool[77]='I00R'
-set SG_ItemPool[78]='I00L'
-set SG_ItemPool[79]='I00F'
-set SG_ItemPool[80]='I007'
-set SG_ItemPool[81]='I049'
-set SG_ItemPool[82]='I04M'
-set SG_ItemPool[83]='I056'
-set SG_ItemPool[84]='I05C'
-set SG_ItemPool[85]='I05I'
-set SG_ItemPool[86]='I05O'
-set SG_ItemPool[87]='I05U'
-set SG_ItemPool[88]='I060'
-set SG_ItemPool[89]='I018'
-set SG_ItemPool[90]='I012'
-set SG_ItemPool[91]='I01E'
-set SG_ItemPool[92]='I00Q'
-set SG_ItemPool[93]='I00D'
-set SG_ItemPool[94]='I00K'
-set SG_ItemPool[95]='I00W'
-set SG_ItemPool[96]='I04E'
-set SG_ItemPool[97]='I02Q'
-set SG_ItemPool[98]='I02J'
-set SG_ItemPool[99]='I04R'
-set SG_ItemPool[100]='I05B'
-set SG_ItemPool[101]='I05H'
-set SG_ItemPool[102]='I05N'
-set SG_ItemPool[103]='I05T'
-set SG_ItemPool[104]='I05Z'
-set SG_ItemPool[105]='I065'
-set SG_ItemPool[106]='I06G'
-set SG_ItemPool[107]='I06F'
-set SG_ItemPool[108]='I06H'
-set SG_ItemPool[109]='I06I'
-set SG_ItemPool[110]='I03C'
-set SG_ItemPool[111]='I03E'
-set SG_ItemPool[112]='I03B'
-set SG_ItemPool[113]='I03D'
-set SG_ItemPool[114]='I03W'
-set SG_ItemPool[115]='I03X'
-set SG_ItemPool[116]='I03Z'
-set SG_ItemPool[117]='I03Y'
-set SG_ItemPool[118]='I032'
-set SG_ItemPool[119]='I033'
-set SG_ItemPool[120]='I035'
-set SG_ItemPool[121]='I034'
-set SG_ItemPool[122]='I06K'
-set SG_ItemPool[123]='I06L'
-set SG_ItemPool[124]='I06M'
-set SG_ItemPool[125]='I06N'
-set SG_ItemPool[126]='IOS1'
-set SG_ItemPool[127]='IOS2'
-set SG_ItemPool[128]='IOS3'
-set SG_ItemPool[129]='IOS4'
-set SG_ItemPoolN=130
-endfunction
 function SG_Build takes nothing returns nothing
 local integer sgbI=0
 local framehandle sgb
@@ -272280,7 +272430,7 @@ local trigger seRelease=CreateTrigger()
 local integer sePlayer=0
 call BlzLoadTOCFile("UI\\ChoiceGuides\\Buttons.toc")
 call SG_DataInit()
-call ExecuteFunc("SG_ItemPoolInit")
+call SG_ItemPoolInit()
 set SG_Roster[0]='H00I'
 set SG_Roster[1]='H00E'
 set SG_Roster[2]='H00A'
@@ -272992,35 +273142,16 @@ call TriggerAddAction(ShTrgSync,function Sh_Sync)
 
 call BlzFrameSetVisible(ShMain,false)
 call TSE_TimerStart(CreateTimer(),0.4,true,function Sh_Tick)
-call ExecuteFunc("SG_Build")
+call SG_Build()
 set gameUI=null
 endfunction
 
-function Sh_Toggle takes nothing returns nothing
-if ShBuilt==false then
-return
-endif
-// Клавиша приходит на ВСЕ машины: показываем только тому, кто нажал.
-if ShHotLocal or TrigP()==GetLocalPlayer() then
-// пока курсор в поиске, B — это буква, а не клавиша магазина
-if (ShSearch!=null and IsFrameFocused(ShSearch)) or (SG_NameBox!=null and IsFrameFocused(SG_NameBox)) then
-return
-endif
-// открыть нельзя, пока на экране крупное окно или выбор режима; закрыть — всегда
-if ShOpened==false then
-// пока открыто окно настроек карты, магазин клавишей не открывается
-if HPB_MOpen then
-return
-endif
-if ShModePick then
-return
-endif
-if (TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame)) or (EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame)) or (StatsBarFrame!=null and IsFrameVisible(StatsBarFrame)) or (IdHeroFrame!=null and IsFrameVisible(IdHeroFrame)) then
-return
-endif
-endif
+function Sh_ToggleLocal takes nothing returns nothing
+local boolean available=ShOpened or (not HPB_MOpen and not ShModePick and not ((TavernHeroFrame!=null and IsFrameVisible(TavernHeroFrame)) or (EmoteBarFrame!=null and IsFrameVisible(EmoteBarFrame)) or (StatsBarFrame!=null and IsFrameVisible(StatsBarFrame)) or (IdHeroFrame!=null and IsFrameVisible(IdHeroFrame))))
+if ShBuilt and available and not Sh_Typing() then
 set ShOpened=(ShOpened==false)
 call BlzFrameSetVisible(ShMain,ShOpened)
+if ShOpenDiag==0 or ShOpenDiag>=6 then
 // мультиборд закрывает магазин: прячем его фрейм так же, как панель эмодзи
 // (таймеры раунда — отдельный фрейм и остаются); при закрытии возвращаем, если был виден
 if GetOriginFrame(ORIGIN_FRAME_MULTIBOARD,0)!=null then
@@ -273043,20 +273174,20 @@ else
 call SetFrameText(OpenShopButtonText,Lng("Магазин","Shop")+" ("+Sh_HotName()+")")
 endif
 endif
+endif
+if ShOpenDiag==0 or ShOpenDiag>=7 then
 if ShOpened then
 call Sh_Redraw()
-else
-call ExecuteFunc("SG_Refresh")
+elseif ShOpenDiag==0 or ShOpenDiag>=8 then
+call SG_Refresh()
+endif
 endif
 endif
 endfunction
 
-function Sh_HotSync takes nothing returns nothing
-call Sh_Snapshot()
-if GetTriggerSyncPlayer()==GetLocalPlayer() then
-set ShHotLocal=true
-call Sh_Toggle()
-set ShHotLocal=false
+function Sh_Toggle takes nothing returns nothing
+if TrigP()==GetLocalPlayer() then
+call Sh_ToggleLocal()
 endif
 endfunction
 
@@ -273064,31 +273195,71 @@ function Sh_InitBuild takes nothing returns nothing
 call Sh_Build()
 endfunction
 
+
+// Input is polled locally. Only the synchronized message dispatches the UI action.
+function Sh_OnHotkey takes nothing returns nothing
+if ShHotDiag==2 then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,8,"Shop diagnostic: sync received from player "+I2S(GetPlayerId(GetTriggerPlayer())+1)+"; no shop UI.")
+elseif ShHotDiag==0 and GetTriggerPlayer()==GetLocalPlayer() then
+call Sh_ToggleLocal()
+endif
+endfunction
+
+// Chat events set the diagnostic stage identically on every client.
+function Sh_HotDiagCommand takes nothing returns nothing
+local string command=GetEventPlayerChatString()
+if command=="-shopdiag 5" or command=="-shopdiag 6" or command=="-shopdiag 7" or command=="-shopdiag 8" then
+set ShOpenDiag=S2I(SubString(command,10,11))
+set ShHotDiag=0
+set ShHotWas=false
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,15,"Shop opening diagnostic "+I2S(ShOpenDiag)+": 5=frame, 6=frame+UI, 7=+catalog, 8=+guides. Periodic UI refresh disabled.")
+else
+set ShOpenDiag=0
+if command=="-shopdiag 1" then
+set ShHotDiag=1
+elseif command=="-shopdiag 2" then
+set ShHotDiag=2
+elseif command=="-shopdiag 3" then
+set ShHotDiag=3
+elseif command=="-shopdiag 4" then
+set ShHotDiag=4
+elseif command=="-shopdiag 0" then
+set ShHotDiag=0
+endif
+set ShHotWas=false
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,12,"Shop diagnostic mode "+I2S(ShHotDiag))
+if ShHotDiag==3 then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,12,"Only shop key polling. Custom hotkeys, quickcast and CBS_KeyTick are disabled.")
+elseif ShHotDiag==4 then
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,12,"CBS_KeyTick and shop key polling disabled. Press the shop key to test other handlers.")
+else
+call DisplayTimedTextToPlayer(GetLocalPlayer(),0,0,12,"1=input only, 2=input+sync, 0=normal shop.")
+endif
+endif
+endfunction
+
+function Sh_RegisterHotkeys takes nothing returns nothing
+local trigger keyEvent=CreateTrigger()
+local trigger diagnostic=CreateTrigger()
+local integer slot=0
+loop
+exitwhen slot>=12
+call BlzTriggerRegisterPlayerSyncEvent(keyEvent,Player(slot),"SHHK",false)
+call TriggerRegisterPlayerChatEvent(diagnostic,Player(slot),"-shopdiag ",false)
+set slot=slot+1
+endloop
+call TriggerAddAction(keyEvent,function Sh_OnHotkey)
+call TriggerAddAction(diagnostic,function Sh_HotDiagCommand)
+set keyEvent=null
+set diagnostic=null
+endfunction
+
 function Sh_Init takes nothing returns nothing
-local integer i=0
-// один триггер на всех: Sh_Toggle всё равно смотрит на GetTriggerPlayer
-local trigger tk=CreateTrigger()
-local trigger shk=CreateTrigger()
-loop
-exitwhen i>=12
-call BlzTriggerRegisterPlayerSyncEvent(shk,Player(i),"SHHK",false)
-set i=i+1
-endloop
-call TriggerAddAction(shk,function Sh_HotSync)
-set shk=null
-set i=0
-loop
-exitwhen i==12
-// Shop hotkey is polled locally by CBS_KeyTick.
-set i=i+1
-endloop
-call TriggerAddAction(tk,function Sh_Toggle)
-set tk=null
-// кнопка открытия (Trig_StatusBar_Actions) — тот же Sh_Toggle, что и клавиша B
 if ShTrgOpen==null then
 set ShTrgOpen=CreateTrigger()
 endif
 call TriggerAddAction(ShTrgOpen,function Sh_Toggle)
+call Sh_RegisterHotkeys()
 call TSE_TimerStart(CreateTimer(),0.0,false,function Sh_InitBuild)
 endfunction
 // Смена языка (-en / -ru): подписи, заданные при загрузке, выставляем заново; остальное — при перерисовке
@@ -290124,16 +290295,25 @@ elseif ty=='H02D' then
 call Haku_FRefresh(u)
 call Haku_FPanelStart(u)
 set t=CreateTrigger()
+call TRPUE(t,p,EVENT_PLAYER_HERO_LEVEL,null)
+call TriggerAddAction(t,function Haku_FLevelEvent)
+set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function Haku_FCast)
 call TriggerAddAction(t,function Haku_ECast)
 set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_HERO_SKILL,null)
-call TriggerAddAction(t,function Haku_ELearn)
+call TriggerAddAction(t,function Haku_FSkillEvent)
 set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER,null)
 call TRPUE(t,p,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER,null)
 call TriggerAddAction(t,function Haku_FOrder)
+set t=CreateTrigger()
+call TriggerRegisterPlayerEvent(t,p,EVENT_PLAYER_MOUSE_DOWN)
+call TriggerAddAction(t,function Haku_FMouse)
+set t=CreateTrigger()
+call TriggerRegisterPlayerSyncEvent(t,p,"HKFM",false)
+call TriggerAddAction(t,function Haku_FMouseSync)
 set t=CreateTrigger()
 call TRPUE(t,p,EVENT_PLAYER_UNIT_SPELL_EFFECT,null)
 call TriggerAddAction(t,function IceStrikeCast)
@@ -291801,6 +291981,14 @@ call HitStrikeFx(hqmu,0,hqma,0.8)
 call HitAnim(hqmu,12,2.,0.35)
 endif
 endfunction
+// Finish a timed-out approach at melee range, without overlapping the target.
+function HitApproachBlink takes unit caster,unit target,real angle returns nothing
+call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(caster),GetUnitY(caster)))
+call SetUnitX(caster,GetUnitX(target)-100.*Cos(angle))
+call SetUnitY(caster,GetUnitY(target)-100.*Sin(angle))
+call SetUnitFacingInstant(caster,angle*bj_RADTODEG)
+call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",GetUnitX(caster),GetUnitY(caster)))
+endfunction
 function HitQMove takes nothing returns nothing
 local timer hqt=GetExpiredTimer()
 local integer hqi=GetHandleId(hqt)
@@ -291812,7 +292000,7 @@ local real hqd
 local integer hqm
 local boolean hqpush
 call SaveInteger(h,hqi,2,hqk)
-if hqu==null or hqe==null or not UnitIsAlive(hqu) or not UnitIsAlive(hqe) or not udg_B or hqk>80 then
+if hqu==null or hqe==null or not UnitIsAlive(hqu) or not UnitIsAlive(hqe) or not udg_B then
 call HitQMiss(hqu,hqa)
 call SaveBoolean(h,hqi,6,true)
 call HitQEnd()
@@ -291830,15 +292018,13 @@ call SetUnitFacingInstant(hqu,hqa*bj_RADTODEG)
 if hqk==9 then
 call HitAnim(hqu,21,2.,1.6)
 endif
-if hqd>215. and LoadReal(h,hqi,8)>=600. then
-call HitQMiss(hqu,hqa)
-call SaveBoolean(h,hqi,6,true)
-call HitQEnd()
-elseif hqd>215. then
-set hqd=RMinBJ(600.-LoadReal(h,hqi,8),RMinBJ(75.,hqd-210.))
-call SaveReal(h,hqi,8,LoadReal(h,hqi,8)+hqd)
+if hqd>215. and hqk<100 then
+set hqd=RMinBJ(70.+7.5*I2R(hqk/50),hqd-210.)
 call SetUnitXY_1(hqu,GetUnitX(hqu)+(hqd+5)*Cos(hqa),GetUnitY(hqu)+(hqd+5)*Sin(hqa),false)
 else
+if hqd>215. then
+call HitApproachBlink(hqu,hqe,hqa)
+endif
 call SaveBoolean(h,hqi,6,true)
 if HitReverse(hqu,hqe) then
 call HitQEnd()
@@ -292544,14 +292730,17 @@ local effect hraf=LoadEffectHandle(h,hrai,2)
 local real hraa=Atan2(GetUnitY(hrae)-GetUnitY(hrau),GetUnitX(hrae)-GetUnitX(hrau))
 local integer hran=LoadInteger(h,hrai,5)+1
 local boolean hraok=hrau!=null and hrae!=null and UnitIsAlive(hrau) and UnitIsAlive(hrae) and udg_B
-if hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)>125. and hran<25 then
+if hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)>125. and hran<100 then
 if ModuloInteger(hran,3)==0 then
 call HitRAfter(hrau)
 endif
 call SetUnitFacingInstant(hrau,hraa*bj_RADTODEG)
-call SetUnitXY_1(hrau,GetUnitX(hrau)+45.*Cos(hraa),GetUnitY(hrau)+45.*Sin(hraa),false)
+call SetUnitXY_1(hrau,GetUnitX(hrau)+(45.+4.5*I2R(hran/50))*Cos(hraa),GetUnitY(hrau)+(45.+4.5*I2R(hran/50))*Sin(hraa),false)
 call SaveInteger(h,hrai,5,hran)
-elseif hraok and not LoadBoolean(h,hrai,6) and SquareRootUnit(hrau,hrae)<=125. then
+elseif hraok and not LoadBoolean(h,hrai,6) then
+if SquareRootUnit(hrau,hrae)>125. then
+call HitApproachBlink(hrau,hrae,hraa)
+endif
 if hraf!=null then
 call SetSpecialEffectTimeScale(hraf,1.)
 call SetSpecialEffectAnimationByIndex(hraf,1)
@@ -292791,6 +292980,9 @@ if IsUnitAbilityVisible(hfru,'HtFc') then
 call DisableUnitAbility(hfru,'HtFc',true,true)
 endif
 elseif LoadInteger(HH,GetHandleId(hfru),HitK("Fst"))>0 then
+if IsUnitMovementEnabled(hfru) then
+call UnitEnableMovement(hfru,false,false)
+endif
 if IsUnitAbilityVisible(hfru,'HtF1') then
 call DisableUnitAbility(hfru,'HtF1',true,true)
 endif
@@ -293570,7 +293762,6 @@ local sound htsnd=LoadSoundHandle(h,hti,13)
 local timer htvet=LoadTimerHandle(h,hti,21)
 local effect htice=LoadEffectHandle(h,hti,8)
 local timer htwatch=LoadTimerHandle(h,hti,43)
-local timer htmeasure=LoadTimerHandle(h,hti,25)
 if htwatch!=null then
 call PauseTimer(htwatch)
 call FlushChildHashtable(h,GetHandleId(htwatch))
@@ -293585,11 +293776,6 @@ call FlushChildHashtable(h,GetHandleId(htvet))
 call TSE_DestroyTimer(htvet)
 endif
 set htvet=null
-if htmeasure!=null then
-call PauseTimer(htmeasure)
-call DestroyTimer(htmeasure)
-endif
-set htmeasure=null
 call HitBlueAura(htu,false,"HitTAura")
 call HitTFxRelease(hti)
 if hte!=null and LoadUnitHandle(HH,GetHandleId(hte),StringHash("HitTGuard"))==htu then
@@ -293645,7 +293831,7 @@ local timer htrt=GetExpiredTimer()
 local integer htri=GetHandleId(htrt)
 local unit htru=LoadUnitHandle(h,htri,0)
 local real htra=LoadReal(h,htri,17)+bj_PI
-local real htrnow=TimerGetElapsed(LoadTimerHandle(h,htri,25))
+local real htrnow=(.01*I2R(LoadInteger(h,htri,25)))
 local real htrdt
 local real retreatFraction
 if htru==null or not UnitIsAlive(htru) or not TSE_On or TSE_Src!=htru then
@@ -293776,7 +293962,7 @@ call HitSnd("HitTFinalImpact")
 call HitTApplyDamage(hti,11.*HitAgi(htu))
 call SaveBoolean(h,hti,5,true)
 call SaveReal(h,hti,17,hta+bj_PI)
-call SaveReal(h,hti,33,TimerGetElapsed(LoadTimerHandle(h,hti,25)))
+call SaveReal(h,hti,33,(.01*I2R(LoadInteger(h,hti,25))))
 call SaveReal(h,hti,38,GetUnitX(htu))
 call SaveReal(h,hti,39,GetUnitY(htu))
 call TSE_TimerStart(htt,0.02,true,function HitTRebound)
@@ -293841,7 +294027,7 @@ if htmj>=16 then
 set htmouter=180.
 endif
 if htmj<20 and htmu!=null and htme!=null and UnitIsAlive(htmu) and UnitIsAlive(htme) then
-set htmt=(TimerGetElapsed(LoadTimerHandle(h,htmid,25))-HitTBeat(htmj,LoadReal(h,htmid,11)))/htmd
+set htmt=((.01*I2R(LoadInteger(h,htmid,25)))-HitTBeat(htmj,LoadReal(h,htmid,11)))/htmd
 if htmj==0 then
 set htmu=null
 set htme=null
@@ -293915,7 +294101,8 @@ local integer htki=GetHandleId(htkt)
 local integer htloops=0
 local integer htindex
 local real htstep=LoadReal(h,htki,11)
-if TimerGetElapsed(LoadTimerHandle(h,htki,25))>=6.0 then
+call SaveInteger(h,htki,25,LoadInteger(h,htki,25)+1)
+if LoadInteger(h,htki,25)>=600 then
 call HitTEnd()
 set htkt=null
 return
@@ -293926,7 +294113,7 @@ endif
 call HitTMove(htki)
 loop
 exitwhen htloops>=8 or LoadUnitHandle(h,htki,0)==null or LoadBoolean(h,htki,5)
-exitwhen TimerGetElapsed(LoadTimerHandle(h,htki,25))+0.0001<LoadReal(h,htki,23)
+exitwhen (.01*I2R(LoadInteger(h,htki,25)))+0.0001<LoadReal(h,htki,23)
 set htindex=LoadInteger(h,htki,12)
 if htindex<20 then
 call SaveInteger(h,htki,2,3)
@@ -293970,7 +294157,6 @@ local real htd=6.0
 local real htseries=(6.0-0.42-(0.32*36./35.)*37./36.-0.6-1.2)/(2.592-0.26/12.)
 local timer htt=CreateTimer()
 local timer htvc=CreateTimer()
-local timer htmeasure=CreateTimer()
 local timer htwatch=CreateTimer()
 local effect htice
 local real htia=Atan2(GetUnitY(hte)-GetUnitY(htu),GetUnitX(hte)-GetUnitX(htu))
@@ -294026,12 +294212,10 @@ call SaveInteger(h,GetHandleId(htt),12,0)
 call SaveInteger(h,GetHandleId(htvc),0,GetHandleId(htt))
 call SaveTimerHandle(h,GetHandleId(htt),21,htvc)
 call TSE_TimerStart(htvc,0.3+(67./30.)*htseries,false,function HitTVoice)
-call SaveTimerHandle(h,GetHandleId(htt),25,htmeasure)
-call TimerStart(htmeasure,999999.,false,null)
+call SaveInteger(h,GetHandleId(htt),25,0)
 call SaveReal(h,GetHandleId(htt),23,HitTBeat(1,htseries))
 call TimerStart(htt,0.01,true,function HitTClock)
 set htwatch=null
-set htmeasure=null
 set htice=null
 set htvc=null
 set htt=null
@@ -294047,16 +294231,19 @@ local unit htpae=LoadUnitHandle(h,htpai,1)
 local integer htpak=LoadInteger(h,htpai,2)+1
 local real htpaa=Atan2(GetUnitY(htpae)-GetUnitY(htpau),GetUnitX(htpae)-GetUnitX(htpau))
 local boolean htpaok=htpau!=null and htpae!=null and UnitIsAlive(htpau) and UnitIsAlive(htpae) and udg_B
-if htpaok and SquareRootUnit(htpau,htpae)>125. and htpak<100 then
+if htpaok and SquareRootUnit(htpau,htpae)>125. and htpak<200 then
 call SetUnitFacingInstant(htpau,htpaa*bj_RADTODEG)
-call SetUnitXY_1(htpau,GetUnitX(htpau)+30.*Cos(htpaa),GetUnitY(htpau)+30.*Sin(htpaa),false)
+call SetUnitXY_1(htpau,GetUnitX(htpau)+(30.+3.*I2R(htpak/100))*Cos(htpaa),GetUnitY(htpau)+(30.+3.*I2R(htpak/100))*Sin(htpaa),false)
 call SaveInteger(h,htpai,2,htpak)
 else
 if htpau!=null then
 call MapPauseUnit(htpau,LoadBoolean(h,htpai,3))
 call SetUnitInvulnerable(htpau,LoadBoolean(h,htpai,4))
 endif
-if htpaok and SquareRootUnit(htpau,htpae)<=125. then
+if htpaok then
+if SquareRootUnit(htpau,htpae)>125. then
+call HitApproachBlink(htpau,htpae,htpaa)
+endif
 if not HitReverse(htpau,htpae) then
 call HitTBegin(htpau,htpae)
 endif
@@ -294183,7 +294370,7 @@ if now-LoadReal(HH,uid,HitK("Cbt"))>10. and HitCh(u)>0 and now>LoadReal(HH,uid,H
 call HitSetCh(u,0)
 endif
 // E: пока Хит невидим от E — шаг сквозь время на ходу (раз в 0.5 с)
-if LoadReal(HH,uid,HitK("EStep"))>now and LoadReal(HH,uid,HitK("StepT"))<=now and IsUnitMoving(u) and not IsUnitStunned(u) and not IsUnitPaused(u) and LoadInteger(HH,uid,HitK("Fz"))<=0 then
+if LoadReal(HH,uid,HitK("EStep"))>now and LoadReal(HH,uid,HitK("StepT"))<=now and IsUnitMoving(u) and IsUnitMovementEnabled(u) and not IsUnitStunned(u) and not IsUnitPaused(u) and GetUnitAbilityLevel(u,'cbc9')==0 and LoadInteger(HH,uid,HitK("Fst"))==0 and LoadInteger(HH,uid,HitK("Fz"))<=0 then
 call HitStep(u)
 endif
 endif
@@ -296874,12 +297061,12 @@ call LANG_A('A02A',0,2,"First Ability, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A02A',0,3,"First Ability, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A02A',0,4,"First Ability, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('A02A',1,0,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (1*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (2*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (75 + 3 seconds of stun). Path of Paradise: Mukuro creates (1) illusions for each enemy in the target area.|n|n|cFF00A5FFCooldown: 20 seconds|r")
-call LANG_A('A02A',1,1,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (2*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (3*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (150 + 3 seconds of stun). Path of Paradise: Mukuro creates (2) illusions for each enemy in the target area.|n|n|cFF00A5FFMana cost: 30.|nCooldown: 20 sec"+"onds|r")
-call LANG_A('A02A',1,2,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (3*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (4*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (225 + 3 seconds of stun). Path of Paradise: Mukuro creates (3) illusions for each enemy in the target area.|n|n|cFF00A5FFMana cost: 60.|nCooldown: 20 sec"+"onds|r")
-call LANG_A('A02A',1,3,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (4*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (5*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (300 + 3 seconds of stun). Path of Paradise: Mukuro creates (5) illusions for each enemy in the target area.|n|n|cFF00A5FFMana cost: 100.|nCooldown: 20 se"+"conds|r")
-call LANG_A('A02A',1,4,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (5*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (6*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (375 + 3 seconds of stun). Path of Paradise: Mukuro creates (5) illusions for each enemy in the target area.|n|n|cFF00A5FFMana cost: 140.|nCooldown: 20 se"+"conds|r")
+call LANG_A('A02A',1,1,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (2*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (3*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (150 + 3 seconds of stun). Path of Paradise: Mukuro creates (2) illusions for each enemy in the target area.|n|cFF00A5FF|nCooldown: 20 sec"+"onds|r")
+call LANG_A('A02A',1,2,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (3*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (4*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (225 + 3 seconds of stun). Path of Paradise: Mukuro creates (3) illusions for each enemy in the target area.|n|cFF00A5FF|nCooldown: 20 sec"+"onds|r")
+call LANG_A('A02A',1,3,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (4*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (5*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (300 + 3 seconds of stun). Path of Paradise: Mukuro creates (5) illusions for each enemy in the target area.|n|cFF00A5FF|nCooldown: 20 se"+"conds|r")
+call LANG_A('A02A',1,4,"\"Path of Hell\": Creates several pillars of fire in the target area that deal damage (5*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). \"Path of the Demon\": Mukur"+"o quickly attacks all enemies in the specified area (6*|r|c0077FFFFINT|r|cFF00A5FF). Path of the People: Causes a meteorite to hit the target AoE (375 + 3 seconds of stun). Path of Paradise: Mukuro creates (5) illusions for each enemy in the target area.|n|cFF00A5FF|nCooldown: 20 se"+"conds|r")
 call LANG_A('A02A',2,0,"First Ability, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A02A',3,0,"Path of Hell: Creates multiple pillars of fire in the target area that deal damage (1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). Demon Path: Mukuro "+"quickly attacks all enemies in the specified area (2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF). \"The Way of the People\": brings down a meteorite in the specified AoE (75\\150\\225\\300\\375 + 3 seconds of stun).|n|n|cFF00A5FFMana cost: 20\\30\\60\\100\\140 mana.|nCooldown: 20 seconds|r")
+call LANG_A('A02A',3,0,"Path of Hell: Creates multiple pillars of fire in the target area that deal damage (1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cFF00A5FF each). \"Path of the Beasts\": all enemies in the specified area will be attacked by poisonous snakes (with each level, the strength of snakes increases). Demon Path: Mukuro "+"quickly attacks all enemies in the specified area (2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF). \"The Way of the People\": brings down a meteorite in the specified AoE (75\\150\\225\\300\\375 + 3 seconds of stun).|n|cFF00A5FF|nCooldown: 20 seconds|r")
 call LANG_A('A02B',0,0,"Poison")
 call LANG_A('A02D',0,0,"Second Ability, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A02D',0,1,"Second Ability, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
@@ -297742,11 +297929,11 @@ call LANG_A('A08W',0,1,"Licht Regen, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,2,"Licht Regen, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,3,"Licht Regen, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A08W',0,4,"Licht Regen, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',1,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
-call LANG_A('A08W',1,1,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 7.2"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
-call LANG_A('A08W',1,2,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 10."+"8% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
-call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 14."+"4% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
-call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 18%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
+call LANG_A('A08W',1,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('A08W',1,1,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 7.2"+"% of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|"+"r")
+call LANG_A('A08W',1,2,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 10."+"8% of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
+call LANG_A('A08W',1,3,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 14."+"4% of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec."+"|r")
+call LANG_A('A08W',1,4,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 18%"+" of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nCooldown: 20 sec.|r")
 call LANG_A('IsQc',0,0,"Cancel Licht Regen (|cffffcc00Q|r)")
 call LANG_A('IsQc',1,0,"Stops firing and restores normal Q. Its cooldown continues from the start of the barrage.")
 call LANG_B('MaEm',0,"Ashisogi Jizo Mark")
@@ -297756,7 +297943,7 @@ call LANG_B('MaEc',1,"Incoming control duration and the magnitude of MS/AS slows
 call LANG_B('IsQb',0,"Licht Regen")
 call LANG_B('IsQb',1,"Movement speed is reduced by 30% while firing.")
 call LANG_A('A08W',2,0,"Licht Regen, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A08W',3,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"\\7.2\\10.8\\14.4\\18% of |r|c0077FFFFINT|r|cFF00A5FF|nMana cost: 0.5% of maximum per arrow|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nC"+"ooldown: 20 sec.|r")
+call LANG_A('A08W',3,0,"|nIshida fires a continuous stream of arrows at the selected enemy while moving. Normal attacks are disabled during the barrage.|n• Q becomes Cancel Licht Regen. Other abilities stop the barrage, except F.|n• The bar"+"rage ends if the target dies, is no longer visible or moves beyond the break distance.|n• With T active, removes the movement penalty and increases the break distance.|n|n|cFF00A5FF|nDamage per arrow: 4.5% attack + 3.6"+"\\7.2\\10.8\\14.4\\18% of |r|c0077FFFFINT|r|cFF00A5FF|nDuration: 4 sec.|nMovement penalty: 50% / 0% with T|nCast range: 1200|nBreak distance: 1400 / 1700 with T|nCast time: +0.01 sec.|nC"+"ooldown: 20 sec.|r")
 call LANG_A('A08X',0,0,"Hierenhiayko, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A08X',1,0,"|nIshida teleports a short distance. Does not interrupt Licht Regen (Q) if the target remains within the break distance after teleporting.|n|n|cFF00A5FF|nCooldown: 10 sec.|r")
 call LANG_A('A08X',2,0,"Shunpo, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
@@ -298550,38 +298737,38 @@ call LANG_A('A0CS',1,4,"Kurotsuchi Mayuri heals himself or an ally for a certain
 call LANG_A('A0CS',2,0,"Regenerative Serum, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CS',3,0,"Kurotsuchi Mayuri heals himself or an ally for a certain amount of time. At level 35, you gain an additional 4 Instant Heal*|r|c0077FFFFINT|r|cFF00A5FF|n|n|cFF00A5FF|nHealing: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF +100 HP|nDuration: 30 sec.|nCooldown: 20 seconds|r")
 call LANG_A('A0CT',0,0,"Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 10%|nRange: 500|nCooldown"+": 28 seconds|nMana: 90|r")
+call LANG_A('A0CT',1,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 10%|nRange: 500|nCooldown"+": 28 seconds|r")
 call LANG_A('A0CT',0,1,"Ashisogi Jizo, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,1,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.5×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 20%|nRange: 500|nCooldow"+"n: 26 seconds|nMana: 105|r")
+call LANG_A('A0CT',1,1,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.5×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 20%|nRange: 500|nCooldow"+"n: 26 seconds|r")
 call LANG_A('A0CT',0,2,"Ashisogi Jizo, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,2,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.75×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 30%|nRange: 500|nCooldown"+": 24 seconds|nMana: 120|r")
+call LANG_A('A0CT',1,2,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.75×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 30%|nRange: 500|nCooldown"+": 24 seconds|r")
 call LANG_A('A0CT',0,3,"Ashisogi Jizo, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,3,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 40%|nRange: 500|nCooldown:"+" 22 seconds|nMana: 135|r")
+call LANG_A('A0CT',1,3,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 40%|nRange: 500|nCooldown:"+" 22 seconds|r")
 call LANG_A('A0CT',0,4,"Ashisogi Jizo, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,4,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 50%|nRange: 500|nCooldown"+": 20 seconds|nMana: 150|r")
+call LANG_A('A0CT',1,4,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 50%|nRange: 500|nCooldown"+": 20 seconds|r")
 call LANG_A('A0CT',2,0,"Ashisogi Jizo, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',3,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2\\2.5\\3\\3.5\\4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25\\0.5\\0.75\\1\\1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slo"+"w: 10\\20\\30\\40\\50%|nRange: 500|nCooldown: 28\\26\\24\\22\\20 seconds|nMana: 90\\105\\120\\135\\150|r")
+call LANG_A('A0CT',3,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2\\2.5\\3\\3.5\\4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25\\0.5\\0.75\\1\\1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slo"+"w: 10\\20\\30\\40\\50%|nRange: 500|nCooldown: 28\\26\\24\\22\\20 seconds|r")
 call LANG_A('A0CU',0,0,"Nikushibuki, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('A0CU',1,0,"Kurotsuchi Mayuri becomes invisible and creates a doppelganger of himself, which creates the effect of the death of the hero.|n|nAlso: passively poisons all enemies within a 400 radius when the hero dies, dealing damage to them.|n|n|cFF00A5FFDuration: 10 sec.|nDamage: |c00FFFF66AllStat|r|cFF00A5FF*5"+"|nCooldown: 30 seconds|r")
 call LANG_A('A0CU',2,0,"Nikushibuki, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CU',3,0,"Itachi creates a clone that cannot be distinguished from him, and he himself becomes invisible to opponents.|nThe clone explodes after 5 seconds and deals damage, if the clone is killed prematurely, it will not explode.|n|n|cFF00A5FFDuration: 5 sec.|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF"+"|nCooldown: 20\\17\\15\\12\\10 sec|r")
-call LANG_A('A0CV',1,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nMana cost: 700 / 0 for T2|nCooldown: 25 sec.|r")
+call LANG_A('A0CV',1,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
 call LANG_A('MaTc',0,0,"Aim poison (|cffffcc00T|r)")
 call LANG_A('MaTc',1,0,"Choose the center of the poison spray, up to 1300 away. The zanpakuto moves into position. Does not extend its duration or spend MP.")
 call LANG_A('A0CV',2,0,"Konjiki Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0CV',3,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nMana cost: 700 / 0 for T2|nCooldown: 25 sec.|r")
+call LANG_A('A0CV',3,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
 call LANG_A('A0CX',0,0,"Mini Bomb, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,1,"Mini Bomb, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,2,"Mini Bomb, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,3,"Mini Bomb, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,4,"Mini Bomb, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('A0CX',1,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 10% of maximum HP over 5 sec.|nMana drain: 12% of maximum MP|nFragments: 5, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 100|n"+"Cooldown: 25 sec.|r")
-call LANG_A('A0CX',1,1,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 4*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 13% of maximum HP over 5 sec.|nMana drain: 18% of maximum MP|nFragments: 6, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 115|n"+"Cooldown: 25 sec.|r")
-call LANG_A('A0CX',1,2,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 16% of maximum HP over 5 sec.|nMana drain: 24% of maximum MP|nFragments: 7, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 130|n"+"Cooldown: 25 sec.|r")
-call LANG_A('A0CX',1,3,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 6*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 19% of maximum HP over 5 sec.|nMana drain: 30% of maximum MP|nFragments: 8, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 145|n"+"Cooldown: 25 sec.|r")
-call LANG_A('A0CX',1,4,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 7*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 22% of maximum HP over 5 sec.|nMana drain: 36% of maximum MP|nFragments: 9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|nMana cost: 160|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 10% of maximum HP over 5 sec.|nMana drain: 12% of maximum MP|nFragments: 5, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,1,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 4*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 13% of maximum HP over 5 sec.|nMana drain: 18% of maximum MP|nFragments: 6, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,2,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 16% of maximum HP over 5 sec.|nMana drain: 24% of maximum MP|nFragments: 7, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,3,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 6*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 19% of maximum HP over 5 sec.|nMana drain: 30% of maximum MP|nFragments: 8, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|n"+"Cooldown: 25 sec.|r")
+call LANG_A('A0CX',1,4,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 7*|r|c0077FFFFINT|r|cF"+"F00A5FF|nPoison damage: 22% of maximum HP over 5 sec.|nMana drain: 36% of maximum MP|nFragments: 9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|nRange: 1250|nAoE: 500|n"+"Cooldown: 25 sec.|r")
 call LANG_A('A0CX',2,0,"Mini Bomb, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('A0CX',3,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3\\4\\5\\6\\7*|r|c0077FFFF"+"INT|r|cFF00A5FF|nPoison damage: 10\\13\\16\\19\\22% of maximum HP over 5 sec.|nMana drain: 12\\18\\24\\30\\36% of maximum MP|nFragments: 5\\6\\7\\8\\9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|"+"nRange: 1250|nAoE: 500|nMana cost: 100\\115\\130\\145\\160|nCooldown: 25 sec.|r")
+call LANG_A('A0CX',3,0,"|nMayuri throws a bomb at the chosen area, damaging and stunning enemies.|n• Use Ctrl+R to select the bomb type:|n• HP poison — deals damage based on the enemy's maximum HP over 5 sec.|n• Mana drain — removes a"+" percentage of the enemy's maximum MP.|n• Paralysis — increases the impact stun to 3 sec.|n• Extra explosions — scatters explosive fragments around the impact.|n|n|cFF00A5FF|nImpact damage: 3\\4\\5\\6\\7*|r|c0077FFFF"+"INT|r|cFF00A5FF|nPoison damage: 10\\13\\16\\19\\22% of maximum HP over 5 sec.|nMana drain: 12\\18\\24\\30\\36% of maximum MP|nFragments: 5\\6\\7\\8\\9, 1*|r|c0077FFFFINT|r|cFF00A5FF damage each|nStun: 1 sec. / 3 sec. with Paralysis|"+"nRange: 1250|nAoE: 500|nCooldown: 25 sec.|r")
 call LANG_A('A0CZ',0,0,"Change Weapon, (|cffffcc00F|r)")
 call LANG_A('A0CZ',1,0,"Dante changes weapons")
 call LANG_A('A0CZ',4,0,"Change Weapon, (|cffffcc00F|r)")
@@ -299173,13 +299360,13 @@ call LANG_A('A0GP',0,3,"Ice Strike, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data11 takes nothing returns nothing
 call LANG_A('A0GP',0,4,"Ice Strike, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('A0GP',1,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 80|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,1,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 105|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,2,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 130|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,3,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 155|nCooldown: 25 seconds|r")
-call LANG_A('A0GP',1,4,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 180|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,1,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,2,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,3,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',1,4,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
 call LANG_A('A0GP',2,0,"Ice Strike, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('A0GP',3,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7 *|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nMana: 80/105/130/155/180|nCooldown: 25 seconds|r")
+call LANG_A('A0GP',3,0,"Haku attacks the enemy with ice spikes, stunning them for 2 seconds.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7 *|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nCooldown: 25 seconds|r")
 call LANG_A('A0GQ',0,0,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A0GQ',0,1,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A0GQ',0,2,"Katon Goukakyuu No Jutsu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
@@ -306589,21 +306776,23 @@ call LANG_A('GinW',1,4,"Gin dashes in the indicated direction. If it hits an ene
 call LANG_A('GinW',2,0,"Shunpo: Flickering Attack, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('GinW',3,0,"Gin dashes in the indicated direction. If it hits an enemy, it performs a combination of attacks and bounces off it, if there is no enemy, the ability recharge is reduced by 40%.|n|n|cFF00A5FFDamage: 50+1/2/3/4/5*|r|c003CFF3CAGI|r|cFF00A5FF.|nStun: 1.0 sec|nRange: 1000|nCooldown: 20 seconds|r")
 call LANG_A('HaF0',0,0,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,0,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
+call LANG_A('HaF0',1,0,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nRecharge: 15 sec. per mirror, starting with the first charge spent|r")
 call LANG_A('HaF0',0,1,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,1,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
+call LANG_A('HaF0',1,1,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nRecharge: 15 sec. per mirror, starting with the first charge spent|r")
 call LANG_A('HaF0',0,2,"Demonic Mirror (|cffffcc00F|r)")
-call LANG_A('HaF0',1,2,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nMana: 50|nExit dash: 200|nCooldown: 30 seconds after the final charge is spent or the mirror chain ends|r")
+call LANG_A('HaF0',1,2,"• Haku creates a mirror at the target point and flies into it, damaging enemies along the path.|n• While inside, right-click a point to create the next mirror. Press F again to dash out in the chosen direction.|n• "+"Haku exits automatically after 2 seconds of inactivity. A departed mirror remains for 2 seconds.|n• Each mirror has HP equal to 2× Haku’s total agility at creation. Breaking the current mirror ends F and stuns Haku "+"for 0.5 sec. if he is inside.|n• Passive: every 7th attack creates a mirror with an attacking clone.|n|cFF00A5FF|nAvailable at level 6|nMirrors: 1/2/3 at levels 6/12/18|nDamage per dash: 1.5×|r|c003CFF3CAGI|r|cFF00A5F"+"F|nDamage radius: 150|nTravel range: 500|nExit dash: 200|nRecharge: 15 sec. per mirror, starting with the first charge spent|r")
 call LANG_A('HaG1',0,0,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,1,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,2,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,3,"Ice Senbon Rain (|cffffcc00E|r)")
 call LANG_A('HaG1',0,4,"Ice Senbon Rain (|cffffcc00E|r)")
-call LANG_A('HaG1',1,0,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 3x AGI|nAoE: 250|nRange: 1000|nMana: 125|nCooldown: 25 sec.|nAvailable at hero level 12. R also levels up E.|r")
-call LANG_A('HaG1',1,1,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 4x AGI|nAoE: 250|nRange: 1000|nMana: 150|nCooldown: 25 sec.|nAvailable at hero level 12. R also levels up E.|r")
-call LANG_A('HaG1',1,2,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 5x AGI|nAoE: 250|nRange: 1000|nMana: 175|nCooldown: 25 sec.|nAvailable at hero level 12. R also levels up E.|r")
-call LANG_A('HaG1',1,3,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 6x AGI|nAoE: 250|nRange: 1000|nMana: 200|nCooldown: 25 sec.|nAvailable at hero level 12. R also levels up E.|r")
-call LANG_A('HaG1',1,4,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 7x AGI|nAoE: 250|nRange: 1000|nMana: 225|nCooldown: 25 sec.|nAvailable at hero level 12. R also levels up E.|r")
+call LANG_A('HaG1',1,0,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 3x AGI|nAoE: 250|nRange: 1000|nCooldown: 25 sec.|nLearnable from hero level 6, with four levels between ranks.|r")
+call LANG_A('HaG1',1,1,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 4x AGI|nAoE: 250|nRange: 1000|nCooldown: 25 sec.|nLearnable from hero level 6, with four levels between ranks.|r")
+call LANG_A('HaG1',1,2,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 5x AGI|nAoE: 250|nRange: 1000|nCooldown: 25 sec.|nLearnable from hero level 6, with four levels between ranks.|r")
+call LANG_A('HaG1',1,3,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 6x AGI|nAoE: 250|nRange: 1000|nCooldown: 25 sec.|nLearnable from hero level 6, with four levels between ranks.|r")
+call LANG_A('HaG1',1,4,"Six ice needles converge on the target point, hitting nearby enemies once and rooting them for 2 seconds.|n|n|cFF00A5FFDamage: 7x AGI|nAoE: 250|nRange: 1000|nCooldown: 25 sec.|nLearnable from hero level 6, with four levels between ranks.|r")
+call LANG_A('HaG1',2,0,"Ice Senbon Rain, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
+call LANG_A('HaG1',3,0,"Six ice senbon converge on the target point. Each enemy is hit once and rooted for 2 seconds.|n|n|cFF00A5FF|nDamage: 3/4/5/6/7*|r|c003CFF3CAGI|r|cFF00A5FF|nRoot duration: 2 sec.|nRange: 1000|nAoE: 250|nCast time: +0.1 sec.|nCooldown: 25 sec.|r")
 call LANG_A('HaF2',0,0,"Leave Mirror (|cffffcc00F|r)")
 call LANG_A('HaF2',1,0,"Haku dashes 200 out of the mirror in the chosen direction, dealing 1.5x AGI damage to enemies within 150 along the path.")
 call LANG_A('HiW1',0,0,"Cloud Influence, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
@@ -309305,91 +309494,91 @@ call LANG_A('SnF1',3,0,"An instant step to a point. From the W mist it recharges
 call LANG_A('SnG1',1,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('SnG1',3,0,"Hirako vanishes leaving his afterimage before the target, the target freezes. Strike 1: Hirako behind and the afterimage in front. Strike 2: Hirako rushes in from the opposite side, a small Sakanade mist around the target (inversion as from W). Damage grows with missing HP. Sakanade is in his hand d"+"uring the move.|n|n|cFF00A5FF|nDamage: 2 strikes of 1.5*|r|c003CFF3CAGI|r|cFF00A5FF + 7.5% of missing HP|nSmall mist: AoE 300, 2.5 sec.|nRange: 600|nCooldown: 45 sec.|r")
 call LANG_A('DMD1',0,0,"Doku/Tamashi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
-call LANG_A('DMD1',1,0,"|nDead Master throws a skull that creates an area, damaging enemies and restoring allied HP/MP using energy.|n• From hero level 1, every 7000 energy gained grants 1 soul without consuming energy, and restores 5% of her"+" maximum HP/MP.|n• From hero level 20, fallen enemy heroes leave souls. Picking one up grants 7000 energy and 1 soul. Her abilities also leave poison.|n• Reaching 5/10/15/20 souls permanently unlocks F root / +150 W "+"range / third Q skull / +100 R radius. Spending souls does not remove these bonuses.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec.|nHP/MP restoration: 1.5% of maximum every 0.5 sec.|nPoison: 0.1*|"+"r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. for 5 sec.|nDuration: 10 sec.|nRange: 2000|nAoE: 600|nMana cost: 350|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMD1',1,0,"|nDead Master throws a skull that creates an area, damaging enemies and restoring allied HP/MP using energy.|n• From hero level 1, every 7000 energy gained grants 1 soul without consuming energy, and restores 5% of her"+" maximum HP/MP.|n• From hero level 20, fallen enemy heroes leave souls. Picking one up grants 7000 energy and 1 soul. Her abilities also leave poison.|n• Reaching 5/10/15/20 souls permanently unlocks F root / +150 W "+"range / third Q skull / +100 R radius. Spending souls does not remove these bonuses.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec.|nHP/MP restoration: 1.5% of maximum every 0.5 sec.|nPoison: 0.1*|"+"r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec. for 5 sec.|nDuration: 10 sec.|nRange: 2000|nAoE: 600|nCast time: +0.1 sec.|nCooldown: 20 sec.|r")
 call LANG_A('DME1',0,0,"Chenhandoru, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,1,"Chenhandoru, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,2,"Chenhandoru, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,3,"Chenhandoru, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('DME1',0,4,"Chenhandoru, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('DME1',1,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100|nCast time: +0.1 sec.|nCooldown: 40 sec. after the effect ends|r")
-call LANG_A('DME1',1,1,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 150|nCast time: +0.1 sec.|nCooldown: 35 sec. after the effect ends|r")
-call LANG_A('DME1',1,2,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 200|nCast time: +0.1 sec.|nCooldown: 30 sec. after the effect ends|r")
-call LANG_A('DME1',1,3,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 250|nCast time: +0.1 sec.|nCooldown: 25 sec. after the effect ends|r")
-call LANG_A('DME1',1,4,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 300|nCast time: +0.1 sec.|nCooldown: 20 sec. after the effect ends|r")
+call LANG_A('DME1',1,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 40 sec. after the effect ends|r")
+call LANG_A('DME1',1,1,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 35 sec. after the effect ends|r")
+call LANG_A('DME1',1,2,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 30 sec. after the effect ends|r")
+call LANG_A('DME1',1,3,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 25 sec. after the effect ends|r")
+call LANG_A('DME1',1,4,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 20 sec. after the effect ends|r")
 call LANG_A('DME1',2,0,"Chenhandoru, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('DME1',3,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nMana cost: 100\\150\\200\\250\\300|nCast time: +0.1 sec.|nCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
+call LANG_A('DME1',3,0,"|nDead Master empowers her attacks with chains. Attacks deal additional damage, root enemies and gather 500 extra energy. The effect can be dispelled.|n• From hero level 20, use Ctrl+E to select the ability variation:|"+"n• Save souls — Q/W/F/R/G keep their normal effects.|n• Spend souls — while E is active, each Q/W/F/R/G spends 1 soul for its enhancement; without a soul, it keeps its normal effect.|nEnhancements:|n• Q — a 3"+" sec. root and barriers between two empowered skulls within 700.|n• W — pulling chains, knockback and a 1 sec. landing stun.|n• F — chains pull enemies toward the target.|n• R — an additional 2*|c0077FFFFINT|"+"r hit and a 2 sec. root.|n• G — holds the enemy during the transfer.|nRoots break on teleports farther than 600.|n|n|cFF00A5FF|nAttack bonus damage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF|nAttack root: 1 sec.|nDuration: 15 "+"sec.|nSoul cost: 0 / 1 per enhanced ability|nCast time: +0.1 sec.|nCooldown: 40\\35\\30\\25\\20 sec. after the effect ends|r")
 call LANG_A('DMF1',0,0,"Zugaikotsu/Kyushu, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,1,"Zugaikotsu/Kyushu, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,2,"Zugaikotsu/Kyushu, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,3,"Zugaikotsu/Kyushu, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
 call LANG_A('DMF1',0,4,"Zugaikotsu/Kyushu, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
-call LANG_A('DMF1',1,0,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1200|nMana cost: 100|nCast time: +0.15 sec.|n"+"Cooldown: 6 sec.|r")
-call LANG_A('DMF1',1,1,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1400|nMana cost: 120|nCast time: +0.15 sec.|n"+"Cooldown: 5 sec.|r")
-call LANG_A('DMF1',1,2,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1600|nMana cost: 140|nCast time: +0.15 sec.|n"+"Cooldown: 4 sec.|r")
-call LANG_A('DMF1',1,3,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1800|nMana cost: 160|nCast time: +0.15 sec.|n"+"Cooldown: 3 sec.|r")
-call LANG_A('DMF1',1,4,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 2000|nMana cost: 180|nCast time: +0.15 sec.|n"+"Cooldown: 2 sec.|r")
+call LANG_A('DMF1',1,0,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1200|nCast time: +0.15 sec.|n"+"Cooldown: 6 sec.|r")
+call LANG_A('DMF1',1,1,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1400|nCast time: +0.15 sec.|n"+"Cooldown: 5 sec.|r")
+call LANG_A('DMF1',1,2,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1600|nCast time: +0.15 sec.|n"+"Cooldown: 4 sec.|r")
+call LANG_A('DMF1',1,3,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 1800|nCast time: +0.15 sec.|n"+"Cooldown: 3 sec.|r")
+call LANG_A('DMF1',1,4,"|nDead Master attaches a skull to the target.|n• Enemy — consumes 2 skulls, drains maximum HP/MP and briefly stuns every second. Cancelled if fewer than 2 skulls are available.|n• Ally — consumes 1 skull and rest"+"ores HP/MP using energy.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull nearby enemies toward the target.|n• Reaching 5 souls permanently a"+"dds a 1.5 sec. root when attaching to an enemy.|n|n|cFF00A5FF|nHP/MP drain or restoration: 1.5% of maximum every second|nStun: 0.1 sec. every second|nDuration: 5 sec.|nRange: 2000|nCast time: +0.15 sec.|n"+"Cooldown: 2 sec.|r")
 call LANG_A('DMG1',0,0,"Hikiwatasu/Torinozoku, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,1,"Hikiwatasu/Torinozoku, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,2,"Hikiwatasu/Torinozoku, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,3,"Hikiwatasu/Torinozoku, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
 call LANG_A('DMG1',0,4,"Hikiwatasu/Torinozoku, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
-call LANG_A('DMG1',1,0,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 150|nCast time: +0.25 sec.|nCooldown: 50 sec.|r")
-call LANG_A('DMG1',1,1,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 200|nCast time: +0.25 sec.|nCooldown: 45 sec.|r")
-call LANG_A('DMG1',1,2,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 250|nCast time: +0.25 sec.|nCooldown: 40 sec.|r")
-call LANG_A('DMG1',1,3,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 300|nCast time: +0.25 sec.|nCooldown: 35 sec.|r")
-call LANG_A('DMG1',1,4,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nMana cost: 350|nCast time: +0.25 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMG1',1,0,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nCast time: +0.25 sec.|nCooldown: 50 sec.|r")
+call LANG_A('DMG1',1,1,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nCast time: +0.25 sec.|nCooldown: 45 sec.|r")
+call LANG_A('DMG1',1,2,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nCast time: +0.25 sec.|nCooldown: 40 sec.|r")
+call LANG_A('DMG1',1,3,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nCast time: +0.25 sec.|nCooldown: 35 sec.|r")
+call LANG_A('DMG1',1,4,"|nDead Master drains an enemy's HP/MP, gains energy and transfers the drained HP to herself. HP drain is nonlethal. Excess healing becomes a shield.|nRestores HP/MP to Dead Master or an ally using stored energy.|n• While E i"+"s active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: holds the enemy during the transfer.|n|n|cFF00A5FF|nEnemy HP/MP drain: 15% of maximum over the full duration|nDuration: "+"1.5 sec.|nShield duration: 12 sec.|nRange: 300|nCast time: +0.25 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMQ1',0,0,"Soratobu zugaikotsu 1, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,1,"Soratobu zugaikotsu 1, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,2,"Soratobu zugaikotsu 1, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,3,"Soratobu zugaikotsu 1, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ1',0,4,"Soratobu zugaikotsu 1, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ1',2,0,"Soratobu zugaikotsu 1, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ1',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',0,0,"Soratobu zugaikotsu 2, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,1,"Soratobu zugaikotsu 2, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,2,"Soratobu zugaikotsu 2, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,3,"Soratobu zugaikotsu 2, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('DMQ2',0,4,"Soratobu zugaikotsu 2, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 140|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 160|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 180|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
-call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,1,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1400|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,2,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1600|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,3,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1800|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',1,4,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMQ2',2,0,"Soratobu zugaikotsu 2, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
+call LANG_A('DMQ2',3,0,"|nDead Master throws a skull, damaging and pulling enemies.|n• The second skull unlocks at Q level 4; the third after reaching 15 souls. Each skull orbiting her reduces incoming damage by 10%. Q and F share the skulls."+"|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: roots enemies for 3 sec. Two empowered ground skulls within 700 create a barrier at no additional soul co"+"st.|n• After each throw, the remaining skulls can be thrown within 5 sec. Cooldown is counted from the last throw.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF on impact + 0.05*|r|c0077FFFFINT|r|cFF00A5FF every"+" 0.2 sec. for 2 sec.|nRange: 1200\\1400\\1600\\1800\\2000|nAoE: 400|nSkull recovery: 8 sec.|nGround skull duration: 4 sec. / 8 sec. with a soul|nCast time: +0.1 sec.|nShared cooldown: 18 sec.|r")
 call LANG_A('DMR1',0,0,"Kyojin no senshi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,1,"Kyojin no senshi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,2,"Kyojin no senshi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,3,"Kyojin no senshi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('DMR1',0,4,"Kyojin no senshi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',1,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 170|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,1,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 190|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,2,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 210|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,3,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 230|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
-call LANG_A('DMR1',1,4,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 250|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,1,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,2,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,3,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',1,4,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|"+"cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMR1',2,0,"Kyojin no senshi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
-call LANG_A('DMR1',3,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nMana cost: 170\\190\\210\\230\\250|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
+call LANG_A('DMR1',3,0,"|nDead Master summons a monster that strikes the area, stunning enemies and slowing their AS/MS.|n• A ground Q skull in the area adds 2*|c0077FFFFINT|r damage.|n• While E is active, Ctrl+E (from hero level 20) enable"+"s spending 1 soul to empower this cast.|n• Empowered: a second strike deals 2*|c0077FFFFINT|r and roots for 2 sec.|n• Reaching 20 souls permanently increases radius by 100.|n|n|cFF00A5FF|nDamage: 2\\3\\4\\5\\6*|r|c0077FF"+"FFINT|r|cFF00A5FF|nStun: 2 sec.|nAS/MS slow: 80% for 2.5 sec.|nRange: 1500|nAoE: 600 (+100 at 20 souls)|nCast time: +0.15 sec.|nCooldown: 30 sec.|r")
 call LANG_A('DMT1',0,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',1,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nMana cost: 600|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
+call LANG_A('DMT1',1,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
 call LANG_A('DMT1',2,0,"Kojin tekina sekai, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('DMT1',3,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nMana cost: 600|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
+call LANG_A('DMT1',3,0,"|nDead Master creates her own world, slowing movement across its boundary.|n• Inside, gains AS/MS and HP/MP recovery.|n• Enemies inside lose HP/MP recovery and receive longer control effects.|n|n|cFF00A5FF|nAS bonus:"+" 100%|nMS bonus: 1000%|nOwn HP/MP recovery: +30%|nEnemy HP/MP recovery: -30%|nEnemy control duration: +25%|nPreparation time: 1 sec.|nDuration: 15 sec.|nAoE: 1500|nCast time: +0.25 sec.|nCooldown: 75 sec."+"|r")
 call LANG_A('DMW1',0,0,"Desusaizu, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,1,"Desusaizu, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,2,"Desusaizu, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,3,"Desusaizu, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('DMW1',0,4,"Desusaizu, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',1,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100 (+150 at 10 souls)|nAoE: 400|nMana cost: 120|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,1,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1200 (+150 at 10 souls)|nAoE: 400|nMana cost: 140|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,2,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1300 (+150 at 10 souls)|nAoE: 400|nMana cost: 160|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,3,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1400 (+150 at 10 souls)|nAoE: 400|nMana cost: 180|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
-call LANG_A('DMW1',1,4,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1500 (+150 at 10 souls)|nAoE: 400|nMana cost: 200|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,1,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1200 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,2,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1300 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,3,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1400 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',1,4,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|"+"nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1500 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('DMW1',2,0,"Desusaizu, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
-call LANG_A('DMW1',3,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100\\1200\\1300\\1400\\1500 (+150 at 10 souls)|nAoE: 400|nMana cost: 120\\140\\160\\180\\200|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('DMW1',3,0,"|nDead Master dashes to a point, damaging and stunning enemies around the impact.|n• While E is active, Ctrl+E (from hero level 20) enables spending 1 soul to empower this cast.|n• Empowered: chains pull enemies alon"+"g the dash, then the impact knocks them back and stuns after landing. Knockback deals no additional damage.|n• Reaching 10 souls permanently increases range by 150.|n|n|cFF00A5FF|nDamage: 1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cF"+"F00A5FF|nStun: 2 sec. / 1 sec. after empowered knockback|nRange: 1100\\1200\\1300\\1400\\1500 (+150 at 10 souls)|nAoE: 400|nCast time: +0.2 sec.|nCooldown: 20 sec.|r")
 call LANG_A('HtQ1',0,0,"Flash Fist Crush, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,1,"Flash Fist Crush, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('HtQ1',0,2,"Flash Fist Crush, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
@@ -312757,6 +312946,143 @@ call SaveReal(BOT_DB,'AlbR',1,1000.)
 call SaveInteger(BOT_DB,'HAlb',4,'AlbT')
 call SaveInteger(BOT_DB,'AlbT',0,0)
 call SaveReal(BOT_DB,'AlbT',1,1000.)
+set BOT_Pool[24]='H074'
+call SaveStr(BOT_DB,'H074',30,"Orihime")
+call SaveInteger(BOT_DB,'H074',0,'A1H9')
+call SaveInteger(BOT_DB,'A1H9',0,2)
+call SaveReal(BOT_DB,'A1H9',1,1500.)
+call SaveInteger(BOT_DB,'H074',1,'A1HA')
+call SaveInteger(BOT_DB,'A1HA',0,9)
+call SaveReal(BOT_DB,'A1HA',1,1700.)
+call SaveInteger(BOT_DB,'H074',2,'A1HB')
+call SaveInteger(BOT_DB,'A1HB',0,9)
+call SaveReal(BOT_DB,'A1HB',1,1200.)
+call SaveInteger(BOT_DB,'H074',3,'A1HC')
+call SaveInteger(BOT_DB,'A1HC',0,9)
+call SaveReal(BOT_DB,'A1HC',1,2200.)
+call SaveInteger(BOT_DB,'H074',4,'A1HD')
+call SaveInteger(BOT_DB,'A1HD',0,9)
+call SaveReal(BOT_DB,'A1HD',1,300.)
+set BOT_Pool[25]='H051'
+call SaveStr(BOT_DB,'H051',30,"Shielder")
+call SaveInteger(BOT_DB,'H051',0,'A1DJ')
+call SaveInteger(BOT_DB,'A1DJ',0,4)
+call SaveReal(BOT_DB,'A1DJ',1,800.)
+call SaveInteger(BOT_DB,'H051',1,'A1DK')
+call SaveInteger(BOT_DB,'A1DK',0,2)
+call SaveReal(BOT_DB,'A1DK',1,1250.)
+call SaveInteger(BOT_DB,'H051',2,'A1DL')
+call SaveInteger(BOT_DB,'A1DL',0,9)
+call SaveReal(BOT_DB,'A1DL',1,1000.)
+call SaveInteger(BOT_DB,'H051',3,'A1DM')
+call SaveInteger(BOT_DB,'A1DM',0,0)
+call SaveReal(BOT_DB,'A1DM',1,400.)
+call SaveInteger(BOT_DB,'H051',4,'A1DN')
+call SaveInteger(BOT_DB,'A1DN',0,4)
+call SaveReal(BOT_DB,'A1DN',1,900.)
+set BOT_Pool[26]='H04C'
+call SaveStr(BOT_DB,'H04C',30,"Yuzuriha Inori")
+call SaveInteger(BOT_DB,'H04C',0,'A0UJ')
+call SaveInteger(BOT_DB,'A0UJ',0,2)
+call SaveReal(BOT_DB,'A0UJ',1,750.)
+call SaveInteger(BOT_DB,'H04C',1,'A0UK')
+call SaveInteger(BOT_DB,'A0UK',0,9)
+call SaveReal(BOT_DB,'A0UK',1,1700.)
+call SaveInteger(BOT_DB,'H04C',2,'A0UN')
+call SaveInteger(BOT_DB,'A0UN',0,0)
+call SaveReal(BOT_DB,'A0UN',1,450.)
+call SaveInteger(BOT_DB,'H04C',3,'A0UO')
+call SaveInteger(BOT_DB,'A0UO',0,1)
+call SaveReal(BOT_DB,'A0UO',1,1000.)
+call SaveInteger(BOT_DB,'H04C',4,'A0UQ')
+call SaveInteger(BOT_DB,'A0UQ',0,9)
+call SaveReal(BOT_DB,'A0UQ',1,2500.)
+set BOT_Pool[27]='H04T'
+call SaveStr(BOT_DB,'H04T',30,"Sinon")
+call SaveInteger(BOT_DB,'H04T',0,'A17G')
+call SaveInteger(BOT_DB,'A17G',0,9)
+call SaveReal(BOT_DB,'A17G',1,600.)
+call SaveInteger(BOT_DB,'H04T',1,'SNW1')
+call SaveInteger(BOT_DB,'SNW1',0,2)
+call SaveReal(BOT_DB,'SNW1',1,900.)
+call SaveInteger(BOT_DB,'H04T',2,'A17M')
+call SaveInteger(BOT_DB,'A17M',0,4)
+call SaveReal(BOT_DB,'A17M',1,400.)
+call SaveInteger(BOT_DB,'H04T',3,'A270')
+call SaveInteger(BOT_DB,'A270',0,2)
+call SaveReal(BOT_DB,'A270',1,5000.)
+call SaveInteger(BOT_DB,'H04T',4,'A2ZD')
+call SaveInteger(BOT_DB,'A2ZD',0,2)
+call SaveReal(BOT_DB,'A2ZD',1,5000.)
+call SaveInteger(BOT_DB,'H04T',5,'A17P')
+call SaveInteger(BOT_DB,'A17P',0,2)
+call SaveReal(BOT_DB,'A17P',1,1250.)
+set BOT_Pool[28]='H04L'
+call SaveStr(BOT_DB,'H04L',30,"Gray Fullbuster")
+call SaveInteger(BOT_DB,'H04L',0,'A0XN')
+call SaveInteger(BOT_DB,'A0XN',0,2)
+call SaveReal(BOT_DB,'A0XN',1,900.)
+call SaveInteger(BOT_DB,'H04L',1,'A0XM')
+call SaveInteger(BOT_DB,'A0XM',0,2)
+call SaveReal(BOT_DB,'A0XM',1,1800.)
+call SaveInteger(BOT_DB,'H04L',2,'A0XU')
+call SaveInteger(BOT_DB,'A0XU',0,1)
+call SaveReal(BOT_DB,'A0XU',1,800.)
+call SaveInteger(BOT_DB,'H04L',3,'A0XO')
+call SaveInteger(BOT_DB,'A0XO',0,1)
+call SaveReal(BOT_DB,'A0XO',1,5000.)
+call SaveInteger(BOT_DB,'H04L',4,'A0XR')
+call SaveInteger(BOT_DB,'A0XR',0,2)
+call SaveReal(BOT_DB,'A0XR',1,1000.)
+call SaveInteger(BOT_DB,'H04L',5,'A0XQ')
+call SaveInteger(BOT_DB,'A0XQ',0,2)
+call SaveReal(BOT_DB,'A0XQ',1,0.)
+call SaveInteger(BOT_DB,'H04L',6,'A1EF')
+call SaveInteger(BOT_DB,'A1EF',0,9)
+call SaveReal(BOT_DB,'A1EF',1,1600.)
+set BOT_Pool[30]='H116'
+call SaveStr(BOT_DB,'H116',30,"Neji")
+call SaveInteger(BOT_DB,'H116',0,'A24E')
+call SaveInteger(BOT_DB,'A24E',0,2)
+call SaveReal(BOT_DB,'A24E',1,1050.)
+call SaveInteger(BOT_DB,'H116',1,'A34E')
+call SaveInteger(BOT_DB,'A34E',0,4)
+call SaveReal(BOT_DB,'A34E',1,425.)
+call SaveInteger(BOT_DB,'H116',2,'A3G2')
+call SaveInteger(BOT_DB,'A3G2',0,0)
+call SaveReal(BOT_DB,'A3G2',1,390.)
+call SaveInteger(BOT_DB,'H116',3,'A1LL')
+call SaveInteger(BOT_DB,'A1LL',0,1)
+call SaveReal(BOT_DB,'A1LL',1,650.)
+call SaveInteger(BOT_DB,'H116',4,'A2LL')
+call SaveInteger(BOT_DB,'A2LL',0,1)
+call SaveReal(BOT_DB,'A2LL',1,700.)
+call SaveInteger(BOT_DB,'H116',5,'A21N')
+call SaveInteger(BOT_DB,'A21N',0,0)
+call SaveReal(BOT_DB,'A21N',1,1000.)
+call SaveInteger(BOT_DB,'A24D',0,2)
+call SaveReal(BOT_DB,'A24D',1,1050.)
+set BOT_Pool[29]='H06B'
+call SaveStr(BOT_DB,'H06B',30,"Saber Nero")
+call SaveInteger(BOT_DB,'H06B',0,'A1C9')
+call SaveInteger(BOT_DB,'A1C9',0,2)
+call SaveReal(BOT_DB,'A1C9',1,1250.)
+call SaveInteger(BOT_DB,'H06B',1,'A1CA')
+call SaveInteger(BOT_DB,'A1CA',0,0)
+call SaveReal(BOT_DB,'A1CA',1,550.)
+call SaveInteger(BOT_DB,'H06B',2,'A1CB')
+call SaveInteger(BOT_DB,'A1CB',0,0)
+call SaveReal(BOT_DB,'A1CB',1,450.)
+call SaveInteger(BOT_DB,'H06B',3,'A1CC')
+call SaveInteger(BOT_DB,'A1CC',0,9)
+call SaveReal(BOT_DB,'A1CC',1,900.)
+call SaveInteger(BOT_DB,'H06B',4,'A1CG')
+call SaveInteger(BOT_DB,'A1CG',0,1)
+call SaveReal(BOT_DB,'A1CG',1,900.)
+call SaveReal(BOT_DB,'A0XR',2,1.35)
+call SaveReal(BOT_DB,'A0JK',2,1.75)
+call SaveReal(BOT_DB,'A0LQ',2,1.10)
+call SaveReal(BOT_DB,'GrT1',2,2.20)
 call SaveInteger(BOT_DB,'H00J',41,'A0RX')
 call SaveInteger(BOT_DB,'H00J',40,'A0ZK')
 call SaveInteger(BOT_DB,'H00M',40,'A033')
@@ -312986,7 +313312,7 @@ call SaveInteger(BOT_DB,'I03L',20,105)
 call SaveInteger(BOT_DB,'I03F',20,55)
 call SaveInteger(BOT_DB,'I03A',20,105)
 call SaveInteger(BOT_DB,'I037',20,60)
-call SaveInteger(BOT_DB,'I048',20,50)
+call SaveInteger(BOT_DB,'I048',20,85)
 call SaveInteger(BOT_DB,'I04G',20,90)
 call SaveInteger(BOT_DB,'ISHk',20,54)
 call SaveInteger(BOT_DB,'IHnK',20,0)
@@ -313175,7 +313501,7 @@ call SaveInteger(BOT_DB,'I037',11,3)
 call SaveReal(BOT_DB,'I037',12,1200.)
 call SaveInteger(BOT_DB,'I048',10,'A0XX')
 call SaveInteger(BOT_DB,'I048',11,2)
-call SaveReal(BOT_DB,'I048',12,1200.)
+call SaveReal(BOT_DB,'I048',12,900.)
 call SaveInteger(BOT_DB,'I04G',10,'A0WJ')
 call SaveInteger(BOT_DB,'I04G',11,2)
 call SaveReal(BOT_DB,'I04G',12,1200.)
@@ -313270,11 +313596,165 @@ local real x=GetUnitX(a)-GetUnitX(b)
 local real y=GetUnitY(a)-GetUnitY(b)
 return SquareRoot(x*x+y*y)
 endfunction
+// Input is decided in BOT_Think. The order runs from a separate synchronized timer.
+function BOT_BrolyFormReady takes unit caster,integer form returns boolean
+local ability active=GetUnitAbility(caster,form)
+local integer slot=PId(OwnerOf(caster))
+local boolean ready=false
+if udg_B and UnitIsAlive(caster) and GetUnitTypeId(caster)=='H02L' and GetHeroLevel(caster)>=5 and GetUnitAbilityLevel(caster,'A0TN')>0 and GetUnitAbilityLevel(caster,'A5IH')==0 and GetUnitAbilityLevel(caster,'A0TL')==0 and not IsUnitPaused(caster) and not IsUnitStunned(caster) and GetUnitAbilityLevel(caster,'cbc3')==0 and GetUnitAbilityLevel(caster,'cbc5')==0 and GetUnitAbilityLevel(caster,'cbc7')==0 and GetUnitAbilityLevel(caster,'cbc9')==0 then
+if active==null or GetAbilityRemainingCooldown(active)<=0. then
+if form=='BRLS' then
+set ready=GetUnitTypeId(BrolySTRCond[slot])=='h23J' and TimerGetElapsed(TD)>=40. and TimerGetElapsed(ShnClock)>=LoadReal(HH,GetHandleId(caster),StringHash("BrolyLSSReady"))
+elseif form=='BRRS' then
+set ready=GetUnitAbilityLevel(caster,'A0TJ')==0 and GetUnitAbilityLevel(caster,'A0TK')==0
+elseif form=='BRBS' then
+set ready=GetUnitAbilityLevel(caster,'A0TJ')>0 or GetUnitAbilityLevel(caster,'A0TK')>0
+endif
+endif
+endif
+set active=null
+return ready
+endfunction
+function BOT_RunQueuedAction takes nothing returns nothing
+local timer actionTimer=GetExpiredTimer()
+local integer timerId=GetHandleId(actionTimer)
+local integer slot=LoadInteger(h,timerId,0)
+local unit actor=LoadUnitHandle(h,timerId,1)
+local integer kind=LoadInteger(h,timerId,2)
+local integer order=LoadInteger(h,timerId,3)
+local unit target=LoadUnitHandle(h,timerId,4)
+local item usedItem=LoadItemHandle(h,timerId,5)
+local real x=LoadReal(h,timerId,6)
+local real y=LoadReal(h,timerId,7)
+local integer abilityId=LoadInteger(h,timerId,8)
+local integer actionRound=LoadInteger(h,timerId,9)
+local boolean issued=false
+set BOT_OrderPending[slot]=false
+call FlushChildHashtable(h,timerId)
+if udg_B and actionRound==round and BOT_Active[slot] and actor==Hero[slot] and UnitIsAlive(actor) and not IsUnitPaused(actor) and not (TSE_On and TSE_PlayerStopped(OwnerOf(actor))) then
+if kind==1 then
+if target==null or UnitIsAlive(target) then
+if target!=null then
+call SetUnitFacingInstant(actor,Atan2(GetUnitY(target)-GetUnitY(actor),GetUnitX(target)-GetUnitX(actor))*bj_RADTODEG)
+endif
+set issued=IssueImmediateOrderById(actor,order)
+endif
+elseif kind==2 then
+set issued=IssuePointOrderById(actor,order,x,y)
+elseif kind==3 and UnitIsAlive(target) then
+set issued=IssueTargetOrderById(actor,order,target)
+elseif kind>=4 and kind<=6 and usedItem!=null and UnitHasItem(actor,usedItem) and GetItemRemainingCooldown(usedItem)<=0. then
+if kind==4 then
+set issued=UnitUseItem(actor,usedItem)
+elseif kind==5 then
+set issued=UnitUseItemPoint(actor,usedItem,x,y)
+elseif UnitIsAlive(target) then
+set issued=UnitUseItemTarget(actor,usedItem,target)
+endif
+elseif kind==7 and BOT_BrolyFormReady(actor,abilityId) then
+// The AI has its own retry interval. Leave the nested spellbook cooldown alone.
+call PowerUpBrolyStart(actor,abilityId)
+set issued=true
+endif
+endif
+if not issued and actor==Hero[slot] then
+// A rejected order should not leave the bot waiting for a cast that never started.
+set BOT_Wait[slot]=BOT_Clock
+set BOT_Attack[slot]=null
+set BOT_MoveUnitId[slot]=0
+call SaveInteger(BOT_DB,slot,50,0)
+call RemoveSavedHandle(BOT_DB,slot,52)
+call SaveInteger(BOT_DB,slot,235,0)
+call RemoveSavedHandle(BOT_DB,slot,236)
+call RemoveSavedHandle(BOT_DB,slot,242)
+endif
+set usedItem=null
+set target=null
+set actor=null
+set actionTimer=null
+endfunction
+function BOT_QueueAction takes unit actor,integer kind,integer order,unit target,item usedItem,real x,real y,integer abilityId returns boolean
+local integer slot=PId(OwnerOf(actor))
+local timer actionTimer
+local integer timerId
+if slot<0 or slot>=10 or not BOT_Active[slot] or actor!=Hero[slot] or BOT_OrderPending[slot] or (kind<=3 and order==0) then
+return false
+endif
+set actionTimer=BOT_OrderTimer[slot]
+if actionTimer==null then
+set actionTimer=CreateTimer()
+set BOT_OrderTimer[slot]=actionTimer
+endif
+set timerId=GetHandleId(actionTimer)
+call SaveInteger(h,timerId,0,slot)
+call SaveUnitHandle(h,timerId,1,actor)
+call SaveInteger(h,timerId,2,kind)
+call SaveInteger(h,timerId,3,order)
+if target!=null then
+call SaveUnitHandle(h,timerId,4,target)
+endif
+if usedItem!=null then
+call SaveItemHandle(h,timerId,5,usedItem)
+endif
+call SaveReal(h,timerId,6,x)
+call SaveReal(h,timerId,7,y)
+call SaveInteger(h,timerId,8,abilityId)
+call SaveInteger(h,timerId,9,round)
+call TimerStart(actionTimer,.010,false,function BOT_RunQueuedAction)
+set BOT_OrderPending[slot]=true
+set actionTimer=null
+return true
+endfunction
+function BOT_QueueImmediate takes unit actor,integer order returns boolean
+return BOT_QueueAction(actor,1,order,null,null,0.,0.,0)
+endfunction
+function BOT_QueuePoint takes unit actor,integer order,real x,real y returns boolean
+return BOT_QueueAction(actor,2,order,null,null,x,y,0)
+endfunction
+function BOT_QueueTarget takes unit actor,integer order,unit target returns boolean
+return BOT_QueueAction(actor,3,order,target,null,0.,0.,0)
+endfunction
+function BOT_QueueItem takes unit actor,item usedItem returns boolean
+return BOT_QueueAction(actor,4,0,null,usedItem,0.,0.,0)
+endfunction
+function BOT_QueueItemPoint takes unit actor,item usedItem,real x,real y returns boolean
+return BOT_QueueAction(actor,5,0,null,usedItem,x,y,0)
+endfunction
+function BOT_QueueItemTarget takes unit actor,item usedItem,unit target returns boolean
+return BOT_QueueAction(actor,6,0,target,usedItem,0.,0.,0)
+endfunction
 function BOT_Enemy takes unit u,unit e returns boolean
 return e!=null and e!=u and UnitIsAlive(e) and IsUnitEnemy(e,OwnerOf(u)) and IsUnitVisible(e,OwnerOf(u)) and not IsUnitInvulnerable(e) and not Sh_InZone(e) and Bof_InZone(Bof_Zone(GetUnitX(u),GetUnitY(u)),GetUnitX(e),GetUnitY(e),0.)
 endfunction
+function BOT_ActiveItemReady takes unit carrier,integer itemType,integer abilityId returns boolean
+local integer slot=0
+local item activeItem
+local ability active
+local boolean ready=false
+loop
+    exitwhen slot>=6 or ready
+    set activeItem=UnitItemInSlot(carrier,slot)
+    if GetItemTypeId(activeItem)==itemType and GetItemRemainingCooldown(activeItem)<=0. then
+        set active=GetItemAbilityById(activeItem,abilityId)
+        if active==null then
+            set active=GetUnitAbility(carrier,abilityId)
+        endif
+        set ready=active!=null and IsAbilityEnabled(active) and GetAbilityRemainingCooldown(active)<=0. and GetUnitState(carrier,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(abilityId,ABILITY_ILF_MANA_COST,0)
+    endif
+    set slot=slot+1
+endloop
+set activeItem=null
+set active=null
+return ready
+endfunction
+function BOT_IceReady takes unit attacker,unit target returns boolean
+return GetUnitAbilityLevel(attacker,'GIE1')==0 and GetUnitAbilityLevel(target,'GIE1')==0 and BOT_Distance(attacker,target)<=800. and BOT_ActiveItemReady(attacker,'I04L','A118')
+endfunction
 function BOT_BlockedTarget takes unit attacker,unit target returns boolean
 local integer targetId=GetHandleId(target)
+if GetUnitAbilityLevel(target,'A1CE')>0 and GetUnitAbilityLevel(target,'BNC2')==0 and not BOT_IceReady(attacker,target) then
+    return true
+endif
 if LoadBoolean(HH,targetId,SH_LucciTekkai) then
     return true
 endif
@@ -313282,6 +313762,38 @@ if ReverseActiveId(targetId) and not ReverseBlocked(target) and GetUnitAbilityLe
     return true
 endif
 return HeroHasShield(target) and ShieldHPTotal(target)<=0. and GetUnitAbilityLevel(attacker,'A1WT')==0 and GetUnitAbilityLevel(attacker,'A3WR')==0 and GetUnitAbilityLevel(target,'Bwul')==0 and LoadInteger(HH,GetHandleId(attacker),BlockPenetrate)==0
+endfunction
+function BOT_NearbySecondary takes integer slot,unit caster returns unit
+local unit target=LoadUnitHandle(BOT_DB,slot,238)
+local unit candidate
+local real distance=950.
+local real candidateDistance
+if not BOT_Enemy(caster,target) or BOT_Distance(caster,target)>950. or BOT_BlockedTarget(caster,target) then
+set target=null
+endif
+if LoadInteger(BOT_DB,slot,239)<=BOT_Clock then
+call SaveInteger(BOT_DB,slot,239,BOT_Clock+4)
+call GroupEnumUnitsInRange(BOT_SearchGroup,GetUnitX(caster),GetUnitY(caster),950.,null)
+loop
+set candidate=FirstOfGroup(BOT_SearchGroup)
+exitwhen candidate==null
+call GroupRemoveUnit(BOT_SearchGroup,candidate)
+if GetUnitAbilityLevel(candidate,'Aloc')==0 and not IsUnitHidden(candidate) and (IsUnitType(candidate,UNIT_TYPE_HERO) or IsUnitType(candidate,UNIT_TYPE_SUMMONED) and GetUnitTotalDamage(candidate)>0.) and BOT_Enemy(caster,candidate) and not BOT_BlockedTarget(caster,candidate) then
+set candidateDistance=BOT_Distance(caster,candidate)
+if candidateDistance<distance then
+set distance=candidateDistance
+set target=candidate
+endif
+endif
+endloop
+if target!=null then
+call SaveUnitHandle(BOT_DB,slot,238,target)
+else
+call RemoveSavedHandle(BOT_DB,slot,238)
+endif
+endif
+set candidate=null
+return target
 endfunction
 function BOT_Target takes integer bi returns unit
 local integer j=0
@@ -313292,6 +313804,17 @@ local real botTargetScore
 local real value=999999.
 local real dx
 local real dy
+local unit clone
+local unit secondary
+local real cloneScore
+if BOT_Type[bi]=='H00J' and LoadInteger(BOT_DB,bi,237)>BOT_Clock then
+set best=LoadUnitHandle(BOT_DB,bi,236)
+if BOT_Enemy(u,best) and not BOT_BlockedTarget(u,best) then
+set u=null
+return best
+endif
+set best=null
+endif
 if LoadInteger(BOT_DB,bi,181)<=BOT_Clock and HaveSavedHandle(BOT_DB,bi,180) then
     call RemoveSavedHandle(BOT_DB,bi,180)
 endif
@@ -313302,7 +313825,7 @@ if BOT_Enemy(u,e) then
 set botTargetScore=BOT_Distance(u,e)+RMinBJ(4000.,GetWidgetLife(e)+ShieldHPTotal(e))*.55
 if BOT_BlockedTarget(u,e) then
     set botTargetScore=botTargetScore+7000.
-    if BOT_Distance(u,e)<1250. and not LoadBoolean(HH,GetHandleId(e),SH_LucciTekkai) then
+    if BOT_Distance(u,e)<1250. and GetUnitAbilityLevel(e,'A1CE')==0 and not LoadBoolean(HH,GetHandleId(e),SH_LucciTekkai) then
         call SaveInteger(BOT_DB,bi,188,BOT_Clock+240)
     endif
 endif
@@ -313319,8 +313842,24 @@ set value=botTargetScore
 set best=e
 endif
 endif
+set clone=udg_DM[j+1]
+if clone!=e and BOT_Enemy(u,clone) and not BOT_BlockedTarget(u,clone) then
+set cloneScore=BOT_Distance(u,clone)+RMinBJ(4000.,GetWidgetLife(clone)+ShieldHPTotal(clone))*.55+250.
+if cloneScore<value then
+set value=cloneScore
+set best=clone
+endif
+endif
 set j=j+1
 endloop
+set clone=null
+if best==null or BOT_BlockedTarget(u,best) then
+set secondary=BOT_NearbySecondary(bi,u)
+if secondary!=null then
+set best=secondary
+endif
+set secondary=null
+endif
 if best!=null then
 call SaveReal(BOT_DB,bi,100,GetUnitX(best))
 call SaveReal(BOT_DB,bi,101,GetUnitY(best))
@@ -313354,10 +313893,19 @@ set u=null
 endfunction
 function BOT_Order takes unit boUnit,integer boAbility returns integer
 local string boName=LoadStr(HH,SH_AbOrd,boAbility)
-if boName==null or boName=="" then
-return 0
+local ability active
+local integer order=0
+if boName!=null and boName!="" then
+set order=OrderId(boName)
 endif
-return OrderId(boName)
+if order==0 and boAbility!=0 then
+set active=GetUnitAbility(boUnit,boAbility)
+if active!=null then
+set order=GetAbilityOrderId(active)
+endif
+endif
+set active=null
+return order
 endfunction
 function BOT_SpellEvent takes nothing returns nothing
 local integer bi=PId(GetOwningPlayer(GetTriggerUnit()))
@@ -313384,6 +313932,10 @@ local integer brIndex=0
 local real brEnemyHP=0.
 local real brAllyHP=0.
 local real brOwnHP=GetWidgetLife(brUnit)
+if GetUnitAbilityLevel(brUnit,'A1CE')>0 then
+set brUnit=null
+return false
+endif
 loop
 exitwhen brIndex>=10
 set brOther=Hero[brIndex]
@@ -313471,26 +314023,30 @@ if BOT_Type[bi]=='H02F' and ab=='A0H8' then
 call BOT_KiritoVariation(u,e)
 endif
 set lv=GetUnitAbilityLevel(u,ab)
-if lv>0 and IsUnitAbilityVisible(u,ab) and not BOT_ComboMember(u,ab) and not (ab=='A1M2' and GetUnitTypeId(u)!='H013') and not (ab=='A07Q' and GetUnitAbilityLevel(u,'B01A')>0) then
+if lv>0 and (ab!='A270' or LoadInteger(HH,GetHandleId(u),Sinon_Ammo)>0) and (ab!='A2ZD' or LoadInteger(HH,GetHandleId(u),Sinon_Ammo)>=2) and IsUnitAbilityVisible(u,ab) and not BOT_ComboMember(u,ab) and not (ab=='A1M2' and GetUnitTypeId(u)!='H013') and not (ab=='A07Q' and GetUnitAbilityLevel(u,'B01A')>0) and ab!='A0RW' and not (BOT_Type[bi]=='H00J' and ab=='A09M') then
 set a=GetUnitAbility(u,ab)
 if a!=null and IsAbilityEnabled(a) and IsAbilityOrderEnabled(a) and GetAbilityRemainingCooldown(a)<=0. and GetUnitState(u,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(ab,ABILITY_ILF_MANA_COST,lv-1) then
 set mode=LoadInteger(BOT_DB,ab,0)
 set r=LoadReal(BOT_DB,ab,1)
+if ab=='A0XQ' then
+set r=1000.+12.*GetHeroInt(u,true)
+endif
 set order=BOT_Order(u,ab)
 if order!=0 and distance<=r then
 if mode==0 then
-if ab=='LamF' then
-call SetUnitFacingInstant(u,Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))*bj_RADTODEG)
+if ab=='LamF' or ab=='A1CA' then
+set ok=BOT_QueueAction(u,1,order,e,null,0.,0.,0)
+else
+set ok=BOT_QueueImmediate(u,order)
 endif
-set ok=IssueImmediateOrderById(u,order)
 elseif mode==1 then
-set ok=IssueTargetOrderById(u,order,e)
+set ok=BOT_QueueTarget(u,order,e)
 elseif mode==2 then
-set ok=IssuePointOrderById(u,order,GetUnitX(e),GetUnitY(e))
+set ok=BOT_QueuePoint(u,order,GetUnitX(e),GetUnitY(e))
 elseif mode==3 then
 set ok=false
 elseif mode==4 and (hp<.85 or LoadInteger(BOT_DB,bi,60)>BOT_Clock or BOT_Type[bi]=='HAlb' or (GetUnitCurrentOrder(e)==OrderId("attack") and distance<400.)) then
-set ok=IssueImmediateOrderById(u,order)
+set ok=BOT_QueueImmediate(u,order)
 endif
 endif
 endif
@@ -313553,7 +314109,7 @@ else
 set bhTarget=BOT_HealTarget(bhCaster,600.+100.*bhLevel,.80)
 endif
 if bhTarget!=null then
-set bhResult=IssueTargetOrderById(bhCaster,BOT_Order(bhCaster,bhSpell),bhTarget)
+set bhResult=BOT_QueueTarget(bhCaster,BOT_Order(bhCaster,bhSpell),bhTarget)
 endif
 endif
 endif
@@ -313565,7 +314121,22 @@ set bhTarget=null
 set bhAbility=null
 return bhResult
 endfunction
-function BOT_Items takes integer bi,unit e returns boolean
+function BOT_GrailUseful takes unit caster returns boolean
+local integer slot=0
+local unit ally
+loop
+exitwhen slot>=10
+set ally=Hero[slot]
+if ally!=null and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and LoadInteger(h,GetHandleId(ally),SH_Grail)!=1 and GetWidgetLife(ally)<GetUnitMaxLife(ally)*.85 and BOT_Distance(caster,ally)<=1000. then
+set ally=null
+return true
+endif
+set slot=slot+1
+endloop
+set ally=null
+return false
+endfunction
+function BOT_Items takes integer bi,unit e,integer onlyItem returns boolean
 local integer j=0
 local integer id
 local integer ab
@@ -313583,64 +314154,88 @@ local real y
 local rect zone
 local boolean ok=false
 local boolean enemyBlocked=false
+local buff stun=null
 if e!=null then
 set dist=BOT_Distance(u,e)
 set enemyBlocked=BOT_BlockedTarget(u,e)
+set stun=GetUnitBuff(e,'CBC2')
 endif
 loop
 exitwhen j>=6 or ok
 set it=UnitItemInSlot(u,j)
 set id=GetItemTypeId(it)
 set ab=LoadInteger(BOT_DB,id,10)
-if ab!=0 then
+if ab!=0 and (onlyItem==0 or id==onlyItem) then
 set a=GetItemAbilityById(it,ab)
 if a==null then
 set a=GetUnitAbility(u,ab)
 endif
 set mode=LoadInteger(BOT_DB,id,11)
 if a!=null and IsAbilityEnabled(a) and GetAbilityRemainingCooldown(a)<=0. and GetItemRemainingCooldown(it)<=0. and GetUnitState(u,UNIT_STATE_MANA)>=GetAbilityBaseIntegerLevelFieldById(ab,ABILITY_ILF_MANA_COST,0) then
-if mode==9 then
-set bhAlly=BOT_HealTarget(u,1000.,.85)
-if bhAlly!=null then
-set ok=UnitUseItem(u,it)
+if id=='I044' and e!=null and dist<=1200. and not enemyBlocked and GetUnitAbilityLevel(u,'GIE1')==0 then
+set x=GetUnitX(e)
+set y=GetUnitY(e)
+if IsUnitMoving(e) and (stun==null or GetBuffRemainingDuration(stun)<1.7) then
+set angle=GetUnitFacing(e)*bj_DEGTORAD
+set x=x+RMinBJ(375.,GetUnitMoveSpeed(e)*.85)*Cos(angle)
+set y=y+RMinBJ(375.,GetUnitMoveSpeed(e)*.85)*Sin(angle)
+endif
+if not RectContainsCoords(gg_rct_AntiMh,x,y) then
+set ok=BOT_QueueItemPoint(u,it,x,y)
+endif
+elseif id=='I054' then
+if GetUnitAbilityLevel(u,'A15F')==0 and (mp<.70 or (mp<.88 and e!=null and dist<1200.)) then
+if GetAbilityIntegerLevelField(a,ABILITY_ILF_TARGET_TYPE,0)==0 then
+set ok=BOT_QueueItem(u,it)
+else
+set ok=BOT_QueueItemTarget(u,it,u)
+endif
+endif
+elseif mode==9 then
+if BOT_GrailUseful(u) then
+set ok=BOT_QueueItem(u,it)
 endif
 elseif mode==0 and hp<.75 then
-set ok=UnitUseItem(u,it)
+set ok=BOT_QueueItem(u,it)
 elseif mode==1 and mp<.60 then
-set ok=UnitUseItem(u,it)
-elseif mode==2 and e!=null and (not enemyBlocked or id=='ISTi') and dist<=LoadReal(BOT_DB,id,12) then
-set ok=UnitUseItemTarget(u,it,e)
-elseif mode==3 and e!=null and not enemyBlocked and dist<=LoadReal(BOT_DB,id,12) then
-set ok=UnitUseItemPoint(u,it,GetUnitX(e),GetUnitY(e))
-elseif mode==4 and mp<.70 then
-set ok=UnitUseItemTarget(u,it,u)
+set ok=BOT_QueueItem(u,it)
+elseif mode==2 and e!=null and (id!='I020' or BOT_Type[bi]!='H00J' or onlyItem=='I020') and (not enemyBlocked or id=='ISTi' or (onlyItem=='I04L' and GetUnitAbilityLevel(e,'A1CE')>0)) and dist<=LoadReal(BOT_DB,id,12) and (id!='I04L' or (GetUnitAbilityLevel(e,'BNC2')==0 and GetUnitAbilityLevel(e,'GIE1')==0 and GetUnitAbilityLevel(u,'GIE1')==0)) then
+set ok=BOT_QueueItemTarget(u,it,e)
+elseif mode==3 and id!='I044' and e!=null and not enemyBlocked and dist<=LoadReal(BOT_DB,id,12) then
+set ok=BOT_QueueItemPoint(u,it,GetUnitX(e),GetUnitY(e))
+elseif mode==4 and id!='I054' and mp<.70 then
+set ok=BOT_QueueItemTarget(u,it,u)
 elseif mode==10 and e!=null and dist<1500. then
-set ok=UnitUseItemPoint(u,it,GetUnitX(u),GetUnitY(u))
+set ok=BOT_QueueItemPoint(u,it,GetUnitX(u),GetUnitY(u))
+elseif id=='I00K' then
+if GetUnitAbilityLevel(u,'B00V')==0 and (onlyItem=='I00K' or LoadInteger(BOT_DB,bi,60)>BOT_Clock or BOT_ShouldRetreat(bi) or (BOT_Type[bi]!='H074' and e!=null and not enemyBlocked and dist<1100.)) then
+set ok=BOT_QueueItem(u,it)
+endif
 elseif mode==5 and e!=null and dist<1200. and (not enemyBlocked or id=='I00Q') then
-set ok=UnitUseItem(u,it)
+set ok=BOT_QueueItem(u,it)
 elseif mode==7 and (LoadInteger(BOT_DB,bi,60)>BOT_Clock or BOT_ShouldRetreat(bi) or (e!=null and dist<900. and hp<.85)) then
-set ok=UnitUseItem(u,it)
+set ok=BOT_QueueItem(u,it)
 elseif mode==8 then
 set bhAlly=BOT_HealTarget(u,LoadReal(BOT_DB,id,12),.82)
 if bhAlly!=null then
-set ok=UnitUseItemTarget(u,it,bhAlly)
+set ok=BOT_QueueItemTarget(u,it,bhAlly)
 endif
 if not ok and hp<.82 then
-set ok=UnitUseItemTarget(u,it,u)
+set ok=BOT_QueueItemTarget(u,it,u)
 endif
 elseif mode==11 and (LoadInteger(BOT_DB,bi,60)>BOT_Clock or hp<.45 or IsUnitStunned(u) or GetUnitAbilityLevel(u,'cbc3')>0 or GetUnitAbilityLevel(u,'cbc5')>0) then
-set ok=UnitUseItem(u,it)
+set ok=BOT_QueueItem(u,it)
 elseif mode==12 and ((e!=null and dist>550. and dist<2300.) or BOT_ShouldRetreat(bi) or (BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]==3)) then
-set ok=UnitUseItem(u,it)
+set ok=BOT_QueueItem(u,it)
 elseif mode==14 and e!=null and not enemyBlocked and dist<=LoadReal(BOT_DB,id,12) and not BOT_ShouldRetreat(bi) and not (BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]==3) then
-set ok=UnitUseItemTarget(u,it,e)
+set ok=BOT_QueueItemTarget(u,it,e)
 elseif mode==13 and e!=null and dist>650. and dist<1500. and not BOT_BlockedTarget(u,e) then
 set zone=Bof_Zone(GetUnitX(u),GetUnitY(u))
 set angle=Atan2(GetUnitY(e)-GetUnitY(u),GetUnitX(e)-GetUnitX(u))
 set x=Bof_X(zone,GetUnitX(u)+RMinBJ(700.,dist-250.)*Cos(angle))
 set y=Bof_Y(zone,GetUnitY(u)+RMinBJ(700.,dist-250.)*Sin(angle))
 if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
-set ok=UnitUseItemPoint(u,it,x,y)
+set ok=BOT_QueueItemPoint(u,it,x,y)
 endif
 endif
 endif
@@ -313653,6 +314248,7 @@ endif
 set u=null
 set a=null
 set bhAlly=null
+set stun=null
 set it=null
 set zone=null
 return ok
@@ -313660,6 +314256,9 @@ endfunction
 function BOT_ItemCount takes unit bgUnit,integer bgType returns integer
 local integer bgSlot=0
 local integer bgCount=0
+if bgUnit==null then
+return 0
+endif
 loop
 exitwhen bgSlot>=10
 if GetItemTypeId(UnitItemInSlot(bgUnit,bgSlot))==bgType then
@@ -313710,6 +314309,9 @@ endfunction
 function BOT_Guide takes integer playerId returns string
 local integer heroType=SG_Canonical(BOT_Type[playerId])
 local string guide=SG_Compact(LoadStr(SG_DB,heroType,ModuloInteger(playerId,2)))
+if (heroType=='H116' or heroType=='H00J') and ModuloInteger(playerId,3)==0 then
+set guide=SG_Compact(LoadStr(SG_DB,heroType,3))
+endif
 if StringLength(guide)<4 then
     return SG_Compact(LoadStr(SG_DB,heroType,0))
 endif
@@ -313799,6 +314401,12 @@ call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
 if bgCount==3 and GetRandomInt(0,1)==1 then
 call SaveInteger(BOT_DB,bgPlayer,201,bgDefense)
 call SaveInteger(BOT_DB,bgPlayer,202,bgCore)
+endif
+// When the selected guide includes Gungnir, keep it in the purchase plan.
+if StringFind(bgList,"I048",true)>=0 and Sh_ItemAllowed('I048') and not BOT_PlanHas(bgPlayer,'I048') then
+call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I048')
+set bgCount=bgCount+1
+call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
 endif
 loop
 exitwhen bgCount>=7 or bgTry>=bgSize*4
@@ -314029,6 +314637,22 @@ set beBestItem=null
 set beUnit=null
 endfunction
 
+function BOT_GrailTaken takes integer buyer,integer goal returns boolean
+local integer slot=0
+if FFAMode or (goal!='I068' and goal!='I06O') then
+return false
+endif
+loop
+exitwhen slot>=10
+if slot!=buyer and TeamOfP(slot)==TeamOfP(buyer) then
+if BOT_ItemCount(Hero[slot],'I068')+BOT_ItemCount(Hero[slot],'I06O')+BOT_ItemCount(Chest[slot],'I068')+BOT_ItemCount(Chest[slot],'I06O')>0 then
+return true
+endif
+endif
+set slot=slot+1
+endloop
+return false
+endfunction
 function BOT_BuyGoal takes integer bgPlayer,integer bgGoal,integer bgDepth returns boolean
 local unit bgUnit=Hero[bgPlayer]
 local player bgOwner=PlayerV(bgPlayer)
@@ -314043,7 +314667,7 @@ local integer bgGold
 local item bgItem
 local boolean bgReady=true
 local boolean bgDone=false
-if bgGoal==0 or bgGoal=='I00E' or bgDepth>12 or BOT_ItemCount(bgUnit,bgGoal)>0 or not Sh_ItemAllowed(bgGoal) then
+if bgGoal==0 or bgGoal=='I00E' or bgDepth>12 or BOT_ItemCount(bgUnit,bgGoal)>0 or not Sh_ItemAllowed(bgGoal) or BOT_GrailTaken(bgPlayer,bgGoal) then
 set bgUnit=null
 set bgOwner=null
 return false
@@ -314268,7 +314892,7 @@ call SetPlayerState(p,PLAYER_STATE_RESOURCE_GOLD,GetPlayerState(p,PLAYER_STATE_R
 endif
 set bgIndex=bgIndex-1
 endloop
-elseif not Sh_ItemAllowed(bgGoal) or BOT_ConflictingDefense(bi,bgGoal) then
+elseif not Sh_ItemAllowed(bgGoal) or BOT_ConflictingDefense(bi,bgGoal) or BOT_GrailTaken(bi,bgGoal) then
 set BOT_Buy[bi]=BOT_Buy[bi]+1
 elseif BOT_Buy[bi]<bgStart then
 if BOT_MakeRoom(bi) and Sh_Purchase(p,bi,bgGoal) then
@@ -314303,7 +314927,35 @@ local real bmY=Bof_Y(bmZone,y)
 local real bmAngle
 local integer bmStep=0
 local integer bmDir
-local boolean bmFound=not IsTerrainPathable(bmX,bmY,PATHING_TYPE_WALKABILITY)
+local boolean bmFound
+local integer bmPlayer=PId(OwnerOf(u))
+local integer bmUnitId=GetHandleId(u)
+local real bmRequestedX=bmX
+local real bmRequestedY=bmY
+local real bmDX=bmX-BOT_MoveX[bmPlayer]
+local real bmDY=bmY-BOT_MoveY[bmPlayer]
+local real bmUX=GetUnitX(u)
+local real bmUY=GetUnitY(u)
+local integer bmOrder=GetUnitCurrentOrder(u)
+if BOT_MoveUnitId[bmPlayer]==bmUnitId and bmOrder==OrderId("move") and bmDX*bmDX+bmDY*bmDY<9216. then
+    if BOT_Clock-BOT_MoveClock[bmPlayer]<4 then
+        set bmZone=null
+        return
+    endif
+    if SR(bmUX,bmUY,LoadReal(BOT_DB,bmPlayer,252),LoadReal(BOT_DB,bmPlayer,253))<32. and SR(bmUX,bmUY,bmX,bmY)>160. then
+        // A move order can stay active even when the unit is blocked at spawn.
+        set bmAngle=Atan2(bmY-bmUY,bmX-bmUX)+I2R(2*ModuloInteger(bmPlayer+BOT_Clock/4,2)-1)*bj_PI/3.
+        set bmX=Bof_X(bmZone,bmUX+330.*Cos(bmAngle))
+        set bmY=Bof_Y(bmZone,bmUY+330.*Sin(bmAngle))
+    else
+        set BOT_MoveClock[bmPlayer]=BOT_Clock
+        call SaveReal(BOT_DB,bmPlayer,252,bmUX)
+        call SaveReal(BOT_DB,bmPlayer,253,bmUY)
+        set bmZone=null
+        return
+    endif
+endif
+set bmFound=not IsTerrainPathable(bmX,bmY,PATHING_TYPE_WALKABILITY)
 loop
 exitwhen bmFound or bmStep>=6
 set bmStep=bmStep+1
@@ -314324,8 +314976,13 @@ if bmStep==0 then
 set x=bmX
 set y=bmY
 endif
-if bmFound then
-call IssuePointOrder(u,"move",x,y)
+if bmFound and BOT_QueuePoint(u,OrderId("move"),x,y) then
+set BOT_MoveUnitId[bmPlayer]=bmUnitId
+set BOT_MoveClock[bmPlayer]=BOT_Clock
+set BOT_MoveX[bmPlayer]=bmRequestedX
+set BOT_MoveY[bmPlayer]=bmRequestedY
+call SaveReal(BOT_DB,bmPlayer,252,bmUX)
+call SaveReal(BOT_DB,bmPlayer,253,bmUY)
 endif
 set bmZone=null
 endfunction
@@ -314344,13 +315001,21 @@ local unit bcUnit=Hero[bcPlayer]
 local integer bcMode=LoadInteger(BOT_DB,bcAbility,0)
 local integer bcOrder=BOT_Order(bcUnit,bcAbility)
 local boolean bcResult=false
-if bcTarget!=null and BOT_Ready(bcUnit,bcAbility) and bcOrder!=0 and BOT_Distance(bcUnit,bcTarget)<=LoadReal(BOT_DB,bcAbility,1) then
+local real range=LoadReal(BOT_DB,bcAbility,1)
+if bcAbility=='A0XQ' then
+set range=1000.+12.*GetHeroInt(bcUnit,true)
+endif
+if bcTarget!=null and BOT_Ready(bcUnit,bcAbility) and bcOrder!=0 and BOT_Distance(bcUnit,bcTarget)<=range then
 if bcMode==0 then
-set bcResult=IssueImmediateOrderById(bcUnit,bcOrder)
+if bcAbility=='A1CA' then
+set bcResult=BOT_QueueAction(bcUnit,1,bcOrder,bcTarget,null,0.,0.,0)
+else
+set bcResult=BOT_QueueImmediate(bcUnit,bcOrder)
+endif
 elseif bcMode==1 then
-set bcResult=IssueTargetOrderById(bcUnit,bcOrder,bcTarget)
+set bcResult=BOT_QueueTarget(bcUnit,bcOrder,bcTarget)
 elseif bcMode==2 then
-set bcResult=IssuePointOrderById(bcUnit,bcOrder,GetUnitX(bcTarget),GetUnitY(bcTarget))
+set bcResult=BOT_QueuePoint(bcUnit,bcOrder,GetUnitX(bcTarget),GetUnitY(bcTarget))
 endif
 endif
 if bcResult then
@@ -314360,6 +315025,276 @@ endif
 set bcUnit=null
 return bcResult
 endfunction
+function BOT_LuffyTactics takes integer slot,unit enemy returns boolean
+local unit caster=Hero[slot]
+local unit focus=LoadUnitHandle(BOT_DB,slot,236)
+local integer stage=LoadInteger(BOT_DB,slot,235)
+local real range=99999.
+local boolean issued=false
+local integer allySlot=0
+local unit ally
+local boolean covered=false
+local real angle
+local real x
+local real y
+if enemy!=null then
+set range=BOT_Distance(caster,enemy)
+endif
+if stage>0 and (LoadInteger(BOT_DB,slot,237)<=BOT_Clock or not BOT_Enemy(caster,focus)) then
+set stage=0
+call SaveInteger(BOT_DB,slot,235,0)
+call RemoveSavedHandle(BOT_DB,slot,236)
+endif
+if stage==1 then
+if BOT_Items(slot,focus,'I020') then
+call SaveInteger(BOT_DB,slot,235,2)
+set issued=true
+endif
+elseif stage==2 then
+if BOT_Use(slot,'A0RX',focus) then
+call SaveInteger(BOT_DB,slot,235,0)
+call RemoveSavedHandle(BOT_DB,slot,236)
+set issued=true
+endif
+elseif stage==3 then
+if BOT_Use(slot,'A0RW',focus) then
+call SaveInteger(BOT_DB,slot,235,0)
+call SaveInteger(BOT_DB,slot,237,BOT_Clock+16)
+set issued=true
+endif
+elseif enemy!=null and range<=1050. and not BOT_BlockedTarget(caster,enemy) and BOT_Ready(caster,'A0RX') and BOT_ActiveItemReady(caster,'I020','A09A') and BOT_Ready(caster,'A01O') then
+if BOT_QueueImmediate(caster,BOT_Order(caster,'A01O')) then
+call SaveInteger(BOT_DB,slot,235,1)
+call SaveUnitHandle(BOT_DB,slot,236,enemy)
+call SaveInteger(BOT_DB,slot,237,BOT_Clock+16)
+set BOT_Wait[slot]=BOT_Clock+2
+set issued=true
+endif
+endif
+if not issued and stage==0 and enemy!=null and range>440. and range<=850. and GetWidgetLife(caster)>GetUnitMaxLife(caster)*.65 and GetWidgetMana(enemy)>GetUnitState(enemy,UNIT_STATE_MAX_MANA)*.25 and not BOT_BlockedTarget(caster,enemy) and BOT_Ready(caster,'A09M') and BOT_Ready(caster,'A0RW') then
+loop
+exitwhen allySlot>=10 or covered
+set ally=Hero[allySlot]
+set covered=ally!=null and ally!=caster and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and BOT_Distance(ally,enemy)<600.
+set allySlot=allySlot+1
+endloop
+if covered or IsUnitStunned(enemy) then
+set angle=Atan2(GetUnitY(caster)-GetUnitY(enemy),GetUnitX(caster)-GetUnitX(enemy))
+set x=GetUnitX(enemy)+280.*Cos(angle)
+set y=GetUnitY(enemy)+280.*Sin(angle)
+if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) and BOT_QueuePoint(caster,BOT_Order(caster,'A09M'),x,y) then
+call SaveInteger(BOT_DB,slot,235,3)
+call SaveUnitHandle(BOT_DB,slot,236,enemy)
+call SaveInteger(BOT_DB,slot,237,BOT_Clock+8)
+set BOT_Wait[slot]=BOT_Clock+1
+set issued=true
+endif
+endif
+endif
+set ally=null
+if not issued and stage==0 and enemy!=null and range<=400. and (GetWidgetLife(caster)<GetUnitMaxLife(caster)*.55 or LoadInteger(BOT_DB,slot,60)>BOT_Clock or GetWidgetMana(enemy)>GetUnitState(enemy,UNIT_STATE_MAX_MANA)*.25) and BOT_Use(slot,'A0RW',enemy) then
+call SaveUnitHandle(BOT_DB,slot,236,enemy)
+call SaveInteger(BOT_DB,slot,237,BOT_Clock+16)
+set issued=true
+endif
+set caster=null
+set focus=null
+return issued
+endfunction
+function BOT_CastOnStun takes integer bi returns boolean
+local unit caster=Hero[bi]
+local integer heroType=BOT_Type[bi]
+local integer spellSlot=0
+local integer enemySlot
+local integer spell
+local unit enemy
+local unit best
+local buff stun
+local real windup
+local real distance
+local real closest
+local boolean result=false
+loop
+    exitwhen spellSlot>=8 or result
+    set spell=LoadInteger(BOT_DB,heroType,spellSlot)
+    set windup=LoadReal(BOT_DB,spell,2)
+    if windup>0. and BOT_Ready(caster,spell) then
+        set enemySlot=0
+        set best=null
+        set closest=LoadReal(BOT_DB,spell,1)
+        loop
+            exitwhen enemySlot>=10
+            set enemy=Hero[enemySlot]
+            if BOT_Enemy(caster,enemy) and not BOT_BlockedTarget(caster,enemy) then
+                set distance=BOT_Distance(caster,enemy)
+                if distance<=closest then
+                    set stun=GetUnitBuff(enemy,'CBC2')
+                    if stun!=null and GetBuffRemainingDuration(stun)>=windup then
+                        set best=enemy
+                        set closest=distance
+                    endif
+                endif
+            endif
+            set enemySlot=enemySlot+1
+        endloop
+        if best!=null then
+            set result=BOT_Use(bi,spell,best)
+        endif
+    endif
+    set spellSlot=spellSlot+1
+endloop
+set caster=null
+set enemy=null
+set best=null
+set stun=null
+return result
+endfunction
+function BOT_ZoroCombo takes integer bi,unit enemy returns boolean
+local unit caster=Hero[bi]
+local integer stage=LoadInteger(BOT_DB,bi,50)
+local unit target=LoadUnitHandle(BOT_DB,bi,52)
+local integer spell=0
+local boolean result=false
+if stage==0 then
+    if enemy!=null and BOT_Ready(caster,'A0LQ') and BOT_Ready(caster,'A02Y') and BOT_Ready(caster,'A030') then
+        if BOT_Distance(caster,enemy)>600. and BOT_Use(bi,'A02Z',enemy) then
+            call SaveInteger(BOT_DB,bi,50,1)
+            set result=true
+        elseif BOT_Use(bi,'A0LQ',enemy) then
+            call SaveInteger(BOT_DB,bi,50,2)
+            set result=true
+        endif
+        if result then
+            call SaveInteger(BOT_DB,bi,51,BOT_Clock+16)
+            call SaveUnitHandle(BOT_DB,bi,52,enemy)
+        endif
+    endif
+elseif BOT_Enemy(caster,target) and not BOT_BlockedTarget(caster,target) and LoadInteger(BOT_DB,bi,51)>BOT_Clock then
+    if stage==1 then
+        set spell='A0LQ'
+    elseif stage==2 then
+        set spell='A02Y'
+    elseif stage==3 then
+        set spell='A030'
+    else
+        set spell='A033'
+    endif
+    if BOT_Use(bi,spell,target) then
+        call SaveInteger(BOT_DB,bi,51,BOT_Clock+8)
+        call SaveInteger(BOT_DB,bi,50,stage+1)
+        set result=true
+    elseif stage<4 and BOT_Ready(caster,spell) and BOT_Distance(caster,target)>LoadReal(BOT_DB,spell,1) then
+        call BOT_Move(caster,GetUnitX(target),GetUnitY(target))
+        set result=true
+    endif
+endif
+if stage>0 and (not result or stage==4) then
+    call SaveInteger(BOT_DB,bi,50,0)
+    call RemoveSavedHandle(BOT_DB,bi,52)
+endif
+set caster=null
+set target=null
+return result
+endfunction
+function BOT_GrayNeroCombo takes integer bi,unit enemy returns boolean
+local unit caster=Hero[bi]
+local integer stage=LoadInteger(BOT_DB,bi,50)
+local unit target=LoadUnitHandle(BOT_DB,bi,52)
+local integer spell
+local real distance
+local buff stun=null
+local boolean gray=BOT_Type[bi]=='H04L'
+local boolean result=false
+if stage==0 then
+    set target=enemy
+endif
+if BOT_Enemy(caster,target) and not BOT_BlockedTarget(caster,target) and (stage==0 or LoadInteger(BOT_DB,bi,51)>BOT_Clock) then
+    set distance=BOT_Distance(caster,target)
+    if gray and distance<=1600. and GetUnitAbilityLevel(caster,'B06U')==0 and BOT_Ready(caster,'A1EF') then
+        set result=BOT_QueueImmediate(caster,BOT_Order(caster,'A1EF'))
+    elseif not gray and distance<=900. and GetWidgetLife(caster)<.45*GetUnitMaxLife(caster) and BOT_Ready(caster,'A1CC') then
+        set result=BOT_QueueImmediate(caster,BOT_Order(caster,'A1CC'))
+    endif
+    if result then
+        set BOT_Wait[bi]=BOT_Clock+2
+    elseif gray and BOT_Items(bi,target,'I044') then
+        set result=true
+    elseif stage==0 then
+        if gray then
+            if distance>900. and (BOT_Ready(caster,'A0XO') or BOT_Ready(caster,'A0XM')) and BOT_Use(bi,'A0XQ',target) then
+                set stage=1
+            elseif distance>900. and BOT_Use(bi,'A0XO',target) then
+                set stage=2
+            elseif BOT_Use(bi,'A0XU',target) then
+                set stage=4
+                set BOT_Wait[bi]=BOT_Clock+2
+            endif
+        elseif BOT_Use(bi,'A1C9',target) then
+            set stage=1
+        elseif BOT_Use(bi,'A1CA',target) then
+            set stage=2
+        elseif BOT_Use(bi,'A1CB',target) then
+            set stage=3
+        else
+            set result=BOT_Use(bi,'A1CG',target)
+        endif
+        if stage>0 then
+            call SaveInteger(BOT_DB,bi,51,BOT_Clock+16)
+            call SaveUnitHandle(BOT_DB,bi,52,target)
+            set result=true
+        endif
+    else
+        loop
+            exitwhen result or stage==0
+            if gray then
+                if stage==1 then
+                    set spell='A0XO'
+                elseif stage==2 then
+                    set spell='A0XM'
+                elseif stage==3 then
+                    set spell='A0XU'
+                    set stun=GetUnitBuff(target,'CBC2')
+                    if distance<=800. and BOT_Ready(caster,spell) and stun!=null and GetBuffRemainingDuration(stun)>.65 then
+                        set result=true
+                        exitwhen true
+                    endif
+                elseif stage==4 then
+                    set spell='A0XR'
+                else
+                    set spell='A0XN'
+                endif
+            elseif stage==1 then
+                set spell='A1CA'
+            elseif stage==2 then
+                set spell='A1CB'
+            else
+                set spell='A1CG'
+            endif
+            set result=BOT_Use(bi,spell,target)
+            if result then
+                call SaveInteger(BOT_DB,bi,51,BOT_Clock+16)
+                if gray and stage==3 then
+                    set BOT_Wait[bi]=BOT_Clock+2
+                endif
+            endif
+            set stage=stage+1
+            if (gray and stage>5) or (not gray and stage>3) then
+                set stage=0
+            endif
+        endloop
+    endif
+else
+    set stage=0
+endif
+call SaveInteger(BOT_DB,bi,50,stage)
+if stage==0 then
+    call RemoveSavedHandle(BOT_DB,bi,52)
+endif
+set caster=null
+set target=null
+set stun=null
+return result
+endfunction
 function BOT_Combo takes integer bcPlayer,unit bcEnemy returns boolean
 local unit bcUnit=Hero[bcPlayer]
 local unit bcTarget=LoadUnitHandle(BOT_DB,bcPlayer,52)
@@ -314367,12 +315302,27 @@ local integer bcStage=LoadInteger(BOT_DB,bcPlayer,50)
 local integer bcQ=0
 local integer bcW=0
 local integer bcE=0
+local integer bcR=0
+local integer bcT=0
+local integer bcStart=1
 local integer bcNext
 local integer bcMana
 local boolean bcResult=false
+if BOT_Type[bcPlayer]=='H04L' or BOT_Type[bcPlayer]=='H06B' then
+set bcUnit=null
+set bcTarget=null
+return BOT_GrayNeroCombo(bcPlayer,bcEnemy)
+endif
+if BOT_Type[bcPlayer]=='H00M' then
+set bcUnit=null
+set bcTarget=null
+return BOT_ZoroCombo(bcPlayer,bcEnemy)
+endif
 if BOT_Type[bcPlayer]=='H02L' then
 set bcQ='A0JD'
 set bcW='A0JF'
+set bcR='A1A4'
+set bcT='A0JK'
 elseif BOT_Type[bcPlayer]=='HRen' then
 set bcQ='RenQ'
 set bcW='RenW'
@@ -314387,12 +315337,17 @@ else
 set bcNext=bcW
 if bcStage==2 then
 set bcNext=bcE
+elseif bcStage==3 then
+set bcNext=bcQ
+elseif bcStage==5 then
+set bcNext=bcT
 endif
 if bcQ=='RenQ' and (LoadInteger(BOT_DB,bcPlayer,182)>0 or LoadBoolean(HH,GetHandleId(bcUnit),DASH_USER)) then
 set bcResult=true
 elseif BOT_Use(bcPlayer,bcNext,bcTarget) then
-if bcE!=0 and bcStage==1 then
-call SaveInteger(BOT_DB,bcPlayer,50,2)
+if (bcE!=0 and bcStage==1) or bcStage==3 or bcStage==4 then
+call SaveInteger(BOT_DB,bcPlayer,50,bcStage+1)
+call SaveInteger(BOT_DB,bcPlayer,51,BOT_Clock+16)
 else
 call SaveInteger(BOT_DB,bcPlayer,50,0)
 call RemoveSavedHandle(BOT_DB,bcPlayer,52)
@@ -314408,8 +315363,19 @@ set bcMana=GetAbilityBaseIntegerLevelFieldById(bcQ,ABILITY_ILF_MANA_COST,GetUnit
 if bcE!=0 then
 set bcMana=bcMana+GetAbilityBaseIntegerLevelFieldById(bcE,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(bcUnit,bcE)-1)
 endif
-if GetUnitState(bcUnit,UNIT_STATE_MANA)>=bcMana and BOT_Use(bcPlayer,bcQ,bcEnemy) then
-call SaveInteger(BOT_DB,bcPlayer,50,1)
+if GetUnitState(bcUnit,UNIT_STATE_MANA)>=bcMana then
+if bcR!=0 and BOT_Ready(bcUnit,bcR) and BOT_Ready(bcUnit,bcT) then
+if GetUnitState(bcUnit,UNIT_STATE_MANA)>=bcMana+GetAbilityBaseIntegerLevelFieldById(bcR,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(bcUnit,bcR)-1)+GetAbilityBaseIntegerLevelFieldById(bcT,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(bcUnit,bcT)-1) and BOT_Use(bcPlayer,bcR,bcEnemy) then
+set bcStart=3
+set bcResult=true
+endif
+endif
+if not bcResult then
+set bcResult=BOT_Use(bcPlayer,bcQ,bcEnemy)
+endif
+endif
+if bcResult then
+call SaveInteger(BOT_DB,bcPlayer,50,bcStart)
 call SaveInteger(BOT_DB,bcPlayer,51,BOT_Clock+32)
 call SaveUnitHandle(BOT_DB,bcPlayer,52,bcEnemy)
 set bcResult=true
@@ -314440,7 +315406,7 @@ if escapeDistance>250. and escapeDistance<=750. and not IsTerrainPathable(beX,be
         if GetItemTypeId(escapeItem)=='I042' and GetItemRemainingCooldown(escapeItem)<=0. then
             set escapeAbility=GetItemAbilityById(escapeItem,'A0HJ')
             if escapeAbility!=null and GetAbilityRemainingCooldown(escapeAbility)<=0. then
-                set beOK=UnitUseItemPoint(beUnit,escapeItem,beX,beY)
+                set beOK=BOT_QueueItemPoint(beUnit,escapeItem,beX,beY)
             endif
         endif
         set slot=slot+1
@@ -314459,7 +315425,7 @@ if LoadBoolean(HH,GetHandleId(beUnit),SH_LucciSoru) then
 call BOT_Move(beUnit,beX,beY)
 set beOK=true
 elseif BOT_Ready(beUnit,'LCF1') then
-set beOK=IssueImmediateOrderById(beUnit,BOT_Order(beUnit,'LCF1'))
+set beOK=BOT_QueueImmediate(beUnit,BOT_Order(beUnit,'LCF1'))
 if beOK then
 set BOT_Wait[bePlayer]=BOT_Clock+1
 endif
@@ -314480,11 +315446,15 @@ elseif BOT_Type[bePlayer]=='H012' then
 set beAbility='A07P'
 elseif BOT_Type[bePlayer]=='H00J' then
 set beAbility='A09M'
+elseif BOT_Type[bePlayer]=='H116' then
+set beAbility='A24D'
+elseif BOT_Type[bePlayer]=='H04T' then
+set beAbility='A17G'
 endif
 set beX=Bof_X(beZone,beX)
 set beY=Bof_Y(beZone,beY)
 if beAbility!=0 and BOT_Ready(beUnit,beAbility) and not IsTerrainPathable(beX,beY,PATHING_TYPE_WALKABILITY) then
-set beOK=IssuePointOrderById(beUnit,BOT_Order(beUnit,beAbility),beX,beY)
+set beOK=BOT_QueuePoint(beUnit,BOT_Order(beUnit,beAbility),beX,beY)
 if beOK then
 set BOT_Wait[bePlayer]=BOT_Clock+4
 call SaveInteger(BOT_DB,bePlayer,50,0)
@@ -314558,14 +315528,20 @@ elseif BOT_Type[bdPlayer]=='H05C' then
 set bdAbility='A14G'
 elseif BOT_Type[bdPlayer]=='H02L' then
 set bdAbility='A2DJ'
+elseif BOT_Type[bdPlayer]=='H06B' then
+if GetWidgetLife(bdUnit)<.55*GetUnitMaxLife(bdUnit) and BOT_Ready(bdUnit,'A1CC') then
+set bdAbility='A1CC'
+else
+set bdAbility='A1CB'
+endif
 elseif BOT_Type[bdPlayer]=='H02F' then
 set bdAbility='A0H9'
 endif
 if bdAbility!=0 and BOT_Ready(bdUnit,bdAbility) then
 if bdAbility=='A0KX' then
-set bdOK=IssueTargetOrderById(bdUnit,BOT_Order(bdUnit,bdAbility),bdUnit)
+set bdOK=BOT_QueueTarget(bdUnit,BOT_Order(bdUnit,bdAbility),bdUnit)
 else
-set bdOK=IssueImmediateOrderById(bdUnit,BOT_Order(bdUnit,bdAbility))
+set bdOK=BOT_QueueImmediate(bdUnit,BOT_Order(bdUnit,bdAbility))
 endif
 endif
 if bdOK then
@@ -314600,7 +315576,7 @@ if gbShot!=0 then
 if BOT_Use(gbPlayer,gbShot,gbEnemy) then
 set gbResult=true
 elseif GetAbilityRemainingCooldown(GetUnitAbility(gbUnit,gbShot))>0. and BOT_Ready(gbUnit,'A080') then
-set gbResult=IssueImmediateOrderById(gbUnit,BOT_Order(gbUnit,'A080'))
+set gbResult=BOT_QueueImmediate(gbUnit,BOT_Order(gbUnit,'A080'))
 if gbResult then
 set BOT_Wait[gbPlayer]=BOT_Clock+1
 endif
@@ -314655,7 +315631,7 @@ endif
 if LoadInteger(HH,GetHandleId(aaUnit),SH_AlbedoF_Mod)!=aaMode then
 set aaHandle=GetUnitAbility(aaUnit,aaAbility)
 if aaHandle!=null and IsAbilityEnabled(aaHandle) and GetAbilityRemainingCooldown(aaHandle)<=0. then
-set aaResult=IssueImmediateOrderById(aaUnit,BOT_Order(aaUnit,aaAbility))
+set aaResult=BOT_QueueImmediate(aaUnit,BOT_Order(aaUnit,aaAbility))
 if aaResult then
 call SaveInteger(BOT_DB,aaPlayer,84,BOT_Clock+60)
 set BOT_Wait[aaPlayer]=BOT_Clock+1
@@ -314677,11 +315653,11 @@ return false
 endif
 set blDistance=BOT_Distance(blUnit,blEnemy)
 if blDistance<=800. and LoadBoolean(HH,blId,SH_LucciShigan) and LoadBoolean(HH,blId,SH_LucciSoru) then
-set blResult=IssueTargetOrder(blUnit,"attack",blEnemy)
+set blResult=BOT_QueueTarget(blUnit,OrderId("attack"),blEnemy)
 elseif blDistance<=1000. and not LoadBoolean(HH,blId,SH_LucciShigan) and BOT_Ready(blUnit,'LCG1') then
-set blResult=IssueImmediateOrderById(blUnit,BOT_Order(blUnit,'LCG1'))
+set blResult=BOT_QueueImmediate(blUnit,BOT_Order(blUnit,'LCG1'))
 elseif blDistance>200. and blDistance<=800. and LoadBoolean(HH,blId,SH_LucciShigan) and not LoadBoolean(HH,blId,SH_LucciSoru) and BOT_Ready(blUnit,'LCF1') then
-set blResult=IssueImmediateOrderById(blUnit,BOT_Order(blUnit,'LCF1'))
+set blResult=BOT_QueueImmediate(blUnit,BOT_Order(blUnit,'LCF1'))
 elseif blDistance>800. and LoadBoolean(HH,blId,SH_LucciSoru) then
 call BOT_Move(blUnit,GetUnitX(blEnemy),GetUnitY(blEnemy))
 set blResult=true
@@ -314697,11 +315673,25 @@ local unit bxUnit=Hero[bxPlayer]
 local integer bxAbility=0
 local real bxDistance=99999.
 local boolean bxOK=false
+local boolean nejiDashE=false
+local unit nejiFocus
 if bxEnemy!=null then
 set bxDistance=BOT_Distance(bxUnit,bxEnemy)
 endif
 if bxDistance<=2200. then
 call SaveInteger(BOT_DB,bxPlayer,160,BOT_Clock)
+endif
+if BOT_Type[bxPlayer]=='H116' and HaveSavedHandle(BOT_DB,bxPlayer,242) then
+set nejiFocus=LoadUnitHandle(BOT_DB,bxPlayer,242)
+if LoadInteger(BOT_DB,bxPlayer,241)<=BOT_Clock or not BOT_Enemy(bxUnit,nejiFocus) then
+call RemoveSavedHandle(BOT_DB,bxPlayer,242)
+elseif BOT_Use(bxPlayer,'A3G2',nejiFocus) then
+call RemoveSavedHandle(BOT_DB,bxPlayer,242)
+set nejiFocus=null
+set bxUnit=null
+return true
+endif
+set nejiFocus=null
 endif
 if BOT_Type[bxPlayer]=='H01D' and bxDistance<=480. then
 set bxAbility='A0BM'
@@ -314713,8 +315703,10 @@ endif
 elseif bxDistance<=1800. and GetUnitState(bxUnit,UNIT_STATE_MANA)>GetUnitState(bxUnit,UNIT_STATE_MAX_MANA)*.25 then
 set bxAbility='A015'
 endif
-elseif BOT_Type[bxPlayer]=='H00J' and bxDistance<=1800. then
+elseif BOT_Type[bxPlayer]=='H00J' and ((bxDistance<=500. and BOT_Ready(bxUnit,'A01H')) or (bxDistance<=1200. and (BOT_Ready(bxUnit,'A0ZJ') or BOT_Ready(bxUnit,'A0RX')))) then
 set bxAbility='A01O'
+elseif BOT_Type[bxPlayer]=='H116' and bxDistance<=1000. then
+set bxAbility='A21N'
 elseif BOT_Type[bxPlayer]=='H00A' and bxDistance<=1450. and GetUnitAbilityLevel(bxUnit,'LamS')==0 then
 set bxAbility='LamG'
 elseif BOT_Type[bxPlayer]=='H054' and bxDistance<=1250. then
@@ -314723,7 +315715,17 @@ elseif BOT_Type[bxPlayer]=='H05N' and bxDistance<=1250. then
 set bxAbility='A14W'
 endif
 if bxAbility!=0 and BOT_Ready(bxUnit,bxAbility) then
-set bxOK=IssueImmediateOrderById(bxUnit,BOT_Order(bxUnit,bxAbility))
+set bxOK=BOT_QueueImmediate(bxUnit,BOT_Order(bxUnit,bxAbility))
+endif
+if not bxOK and BOT_Type[bxPlayer]=='H116' and bxEnemy!=null and bxDistance>430. and bxDistance<=1050. and GetWidgetLife(bxUnit)>GetUnitMaxLife(bxUnit)*.60 and not BOT_BlockedTarget(bxUnit,bxEnemy) and not BOT_ShouldRetreat(bxPlayer) then
+set nejiDashE=bxDistance<=850. and BOT_Ready(bxUnit,'A3G2')
+if nejiDashE or (bxDistance>700. and (BOT_Ready(bxUnit,'A1LL') or BOT_Ready(bxUnit,'A2LL'))) then
+set bxOK=BOT_Use(bxPlayer,'A24D',bxEnemy)
+if bxOK and nejiDashE then
+call SaveInteger(BOT_DB,bxPlayer,241,BOT_Clock+8)
+call SaveUnitHandle(BOT_DB,bxPlayer,242,bxEnemy)
+endif
+endif
 endif
 if bxOK then
 set BOT_Wait[bxPlayer]=BOT_Clock+2
@@ -314752,13 +315754,11 @@ endfunction
 function BOT_Form takes integer bfPlayer,unit bfEnemy returns boolean
 local unit bfUnit=Hero[bfPlayer]
 local integer bfId=0
-local ability bfAbility
-local ability bfBook=GetUnitAbility(bfUnit,'A0TN')
 local real bfMP=GetUnitState(bfUnit,UNIT_STATE_MANA)/RMaxBJ(1.,GetUnitState(bfUnit,UNIT_STATE_MAX_MANA))
 local boolean bfOK=false
 if BOT_Type[bfPlayer]=='H012' then
 if GetUnitTypeId(bfUnit)=='H012' and GetHeroLevel(bfUnit)>=25 and bfEnemy!=null and BOT_Distance(bfUnit,bfEnemy)<=1200. and BOT_Ready(bfUnit,'A07U') then
-set bfOK=IssueImmediateOrderById(bfUnit,BOT_Order(bfUnit,'A07U'))
+set bfOK=BOT_QueueImmediate(bfUnit,BOT_Order(bfUnit,'A07U'))
 if bfOK then
 set BOT_Wait[bfPlayer]=BOT_Clock+8
 endif
@@ -314774,29 +315774,19 @@ if GetUnitAbilityLevel(bfUnit,'A0TL')>0 then
 set bfUnit=null
 return false
 endif
-if bfBook!=null and IsAbilityEnabled(bfBook) and GetUnitAbilityLevel(bfUnit,'A5IH')==0 then
-if (bfMP<.20 or ((bfEnemy==null or BOT_Distance(bfUnit,bfEnemy)>2400.) and BOT_Clock-LoadInteger(BOT_DB,bfPlayer,160)>=24)) and (GetUnitAbilityLevel(bfUnit,'A0TJ')>0 or GetUnitAbilityLevel(bfUnit,'A0TK')>0) then
+if LoadInteger(BOT_DB,bfPlayer,234)<=BOT_Clock then
+if (bfMP<.20 or ((bfEnemy==null or BOT_Distance(bfUnit,bfEnemy)>2400.) and BOT_Clock-LoadInteger(BOT_DB,bfPlayer,160)>=24)) and BOT_BrolyFormReady(bfUnit,'BRBS') then
 set bfId='BRBS'
-elseif bfMP>.35 and GetWidgetLife(bfUnit)/GetUnitMaxLife(bfUnit)>.30 and GetPlayerTechCount(GetOwningPlayer(bfUnit),'h146',true)>0 then
-if GetUnitTypeId(BrolySTRCond[bfPlayer])=='h23J' then
-set bfAbility=GetUnitAbility(bfUnit,'BRLS')
-if bfAbility!=null and IsAbilityEnabled(bfAbility) and IsAbilityOrderEnabled(bfAbility) and GetAbilityRemainingCooldown(bfAbility)<=0. then
+elseif bfMP>.35 and GetWidgetLife(bfUnit)/GetUnitMaxLife(bfUnit)>.30 and bfEnemy!=null and BOT_Distance(bfUnit,bfEnemy)<=2200. then
+if BOT_BrolyFormReady(bfUnit,'BRLS') then
 set bfId='BRLS'
-endif
-endif
-if bfId==0 and bfEnemy!=null and BOT_Distance(bfUnit,bfEnemy)<=2200. and GetUnitAbilityLevel(bfUnit,'A0TJ')==0 and GetUnitAbilityLevel(bfUnit,'A0TK')==0 then
+elseif BOT_BrolyFormReady(bfUnit,'BRRS') then
 set bfId='BRRS'
 endif
 endif
 if bfId!=0 then
-set bfAbility=GetUnitAbility(bfUnit,bfId)
-if bfAbility!=null and IsAbilityEnabled(bfAbility) and IsAbilityOrderEnabled(bfAbility) and GetAbilityRemainingCooldown(bfAbility)<=0. and GetUnitState(bfUnit,UNIT_STATE_MANA)>=GetAbilityIntegerLevelField(bfAbility,ABILITY_ILF_MANA_COST,GetUnitAbilityLevel(bfUnit,bfId)-1) then
-// Spellbook entries can be cast directly without opening the local command card.
-set bfOK=CastAbility(bfAbility)
-if not bfOK then
-set bfOK=IssueImmediateOrderById(bfUnit,BOT_Order(bfUnit,bfId))
-endif
-endif
+call SaveInteger(BOT_DB,bfPlayer,234,BOT_Clock+8)
+set bfOK=BOT_QueueAction(bfUnit,7,0,null,null,0.,0.,bfId)
 endif
 endif
 if bfOK then
@@ -314807,8 +315797,6 @@ set BOT_Wait[bfPlayer]=BOT_Clock+4
 endif
 endif
 set bfUnit=null
-set bfAbility=null
-set bfBook=null
 return bfOK
 endfunction
 function BOT_RengokuRelease takes integer playerId returns boolean
@@ -314822,10 +315810,10 @@ if releaseTick>0 and releaseTick<=BOT_Clock then
             set target=BOT_Target(playerId)
         endif
         if target!=null then
-            set issued=IssueTargetOrder(caster,"smart",target)
+            set issued=BOT_QueueTarget(caster,OrderId("smart"),target)
         endif
         if not issued then
-            set issued=IssuePointOrder(caster,"move",GetUnitX(caster)+350.*Cos(GetUnitFacing(caster)*bj_DEGTORAD),GetUnitY(caster)+350.*Sin(GetUnitFacing(caster)*bj_DEGTORAD))
+            set issued=BOT_QueuePoint(caster,OrderId("move"),GetUnitX(caster)+350.*Cos(GetUnitFacing(caster)*bj_DEGTORAD),GetUnitY(caster)+350.*Sin(GetUnitFacing(caster)*bj_DEGTORAD))
         endif
         if issued then
             set BOT_Wait[playerId]=BOT_Clock+2
@@ -314839,63 +315827,38 @@ set caster=null
 set target=null
 return issued
 endfunction
-function BOT_Patrol takes integer bpPlayer returns nothing
-local unit bpUnit=Hero[bpPlayer]
-local rect bpZone=Bof_Zone(GetUnitX(bpUnit),GetUnitY(bpUnit))
-local integer bpStep=LoadInteger(BOT_DB,bpPlayer,104)
-local integer bpPoint
-local real bpX=LoadReal(BOT_DB,bpPlayer,100)
-local real bpY=LoadReal(BOT_DB,bpPlayer,101)
-local real bpDX=GetUnitX(bpUnit)-bpX
-local real bpDY=GetUnitY(bpUnit)-bpY
-local real bpWidth=GetRectMaxX(bpZone)-GetRectMinX(bpZone)
-local real bpHeight=GetRectMaxY(bpZone)-GetRectMinY(bpZone)
-set BOT_Attack[bpPlayer]=null
-if LoadInteger(BOT_DB,bpPlayer,102)>BOT_Clock and Bof_InZone(bpZone,bpX,bpY,0.) and bpDX*bpDX+bpDY*bpDY>62500. then
-call BOT_Move(bpUnit,bpX,bpY)
+function BOT_Patrol takes integer slot returns nothing
+local unit hero=Hero[slot]
+local rect zone=Bof_Zone(GetUnitX(hero),GetUnitY(hero))
+local real x=LoadReal(BOT_DB,slot,100)
+local real y=LoadReal(BOT_DB,slot,101)
+local real dx=GetUnitX(hero)-x
+local real dy=GetUnitY(hero)-y
+local real width=GetRectMaxX(zone)-GetRectMinX(zone)
+local real height=GetRectMaxY(zone)-GetRectMinY(zone)
+local integer attempts=0
+set BOT_Attack[slot]=null
+if LoadInteger(BOT_DB,slot,102)>BOT_Clock and Bof_InZone(zone,x,y,0.) and dx*dx+dy*dy>62500. then
+call BOT_Move(hero,x,y)
 else
-call SaveInteger(BOT_DB,bpPlayer,102,0)
-set bpDX=GetUnitX(bpUnit)-LoadReal(BOT_DB,bpPlayer,106)
-set bpDY=GetUnitY(bpUnit)-LoadReal(BOT_DB,bpPlayer,107)
-if not HaveSavedInteger(BOT_DB,bpPlayer,105) or bpDX*bpDX+bpDY*bpDY>4096. then
-call SaveInteger(BOT_DB,bpPlayer,105,BOT_Clock)
-call SaveReal(BOT_DB,bpPlayer,106,GetUnitX(bpUnit))
-call SaveReal(BOT_DB,bpPlayer,107,GetUnitY(bpUnit))
-elseif BOT_Clock-LoadInteger(BOT_DB,bpPlayer,105)>=24 then
-set bpStep=-1
-call SaveInteger(BOT_DB,bpPlayer,105,BOT_Clock)
+call SaveInteger(BOT_DB,slot,102,0)
+set x=LoadReal(BOT_DB,slot,108)
+set y=LoadReal(BOT_DB,slot,109)
+if LoadInteger(BOT_DB,slot,104)<=BOT_Clock or SR(GetUnitX(hero),GetUnitY(hero),x,y)<300. or not Bof_InZone(zone,x,y,0.) then
+loop
+set x=GetRectMinX(zone)+width*GetRandomReal(.16,.84)
+set y=GetRectMinY(zone)+height*GetRandomReal(.16,.84)
+set attempts=attempts+1
+exitwhen attempts>=5 or (SR(GetUnitX(hero),GetUnitY(hero),x,y)>500. and not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY))
+endloop
+call SaveReal(BOT_DB,slot,108,x)
+call SaveReal(BOT_DB,slot,109,y)
+call SaveInteger(BOT_DB,slot,104,BOT_Clock+GetRandomInt(16,28))
 endif
-if bpStep<=0 then
-    set bpStep=GetRandomInt(1,9)
+call BOT_Move(hero,x,y)
 endif
-set bpPoint=bpStep-1
-if bpPoint==8 then
-set bpX=GetRectCenterX(bpZone)
-elseif bpPoint==0 or bpPoint==6 or bpPoint==7 then
-set bpX=GetRectMinX(bpZone)+bpWidth*.27
-elseif bpPoint==1 or bpPoint==5 then
-set bpX=GetRectCenterX(bpZone)
-else
-set bpX=GetRectMinX(bpZone)+bpWidth*.73
-endif
-if bpPoint<=2 then
-set bpY=GetRectMinY(bpZone)+bpHeight*.27
-elseif bpPoint==3 or bpPoint==7 or bpPoint==8 then
-set bpY=GetRectCenterY(bpZone)
-else
-set bpY=GetRectMinY(bpZone)+bpHeight*.73
-endif
-set bpDX=GetUnitX(bpUnit)-bpX
-set bpDY=GetUnitY(bpUnit)-bpY
-if bpDX*bpDX+bpDY*bpDY<=90000. then
-set bpStep=bpStep+1
-else
-call BOT_Move(bpUnit,bpX,bpY)
-endif
-call SaveInteger(BOT_DB,bpPlayer,104,bpStep)
-endif
-set bpZone=null
-set bpUnit=null
+set zone=null
+set hero=null
 endfunction
 function BOT_Dodge takes integer playerId,unit enemy returns boolean
 local unit botHero=Hero[playerId]
@@ -314938,6 +315901,458 @@ set botHero=null
 set zone=null
 return false
 endfunction
+function BOT_Support takes integer bi returns boolean
+local unit caster=Hero[bi]
+local unit ally
+local unit cross
+local unit hero
+local unit shielded
+local unit target
+local rect zone
+local integer slot=0
+local real distance
+local real closest=4500.
+local integer ty=BOT_Type[bi]
+local integer spell=0
+local integer mode=0
+local boolean result=false
+if ty=='H074' then
+    set zone=Bof_Zone(GetUnitX(caster),GetUnitY(caster))
+    if BOT_Ready(caster,'A1HD') then
+        loop
+            exitwhen slot>=10
+            set hero=Hero[slot]
+            if hero!=null and not UnitIsAlive(hero) and IsUnitAlly(hero,OwnerOf(caster)) then
+                set target=LoadUnitHandle(HH,GetHandleId(hero),StringHash("OrihimeResCross"))
+                if UnitIsAlive(target) and GetUnitTypeId(target)=='e16T' and OwnerOf(target)==OwnerOf(caster) and Bof_InZone(zone,GetUnitX(target),GetUnitY(target),0.) then
+                    set distance=BOT_Distance(caster,target)
+                    if distance<closest then
+                        set closest=distance
+                        set cross=target
+                    endif
+                endif
+            endif
+            set slot=slot+1
+        endloop
+        if cross!=null then
+            if closest<=1800. and BOT_Items(bi,null,'I00K') then
+                set result=true
+            elseif closest<=300. then
+                set result=BOT_QueueTarget(caster,BOT_Order(caster,'A1HD'),cross)
+            elseif GetUnitAbilityLevel(caster,'B00V')==0 and GetUnitAbilityLevel(caster,'A1HG')==0 and BOT_Ready(caster,'A1HB') then
+                set result=BOT_QueueTarget(caster,BOT_Order(caster,'A1HB'),caster)
+            else
+                call BOT_Move(caster,GetUnitX(cross),GetUnitY(cross))
+                set result=true
+            endif
+        endif
+    endif
+    if not result then
+        if BOT_Ready(caster,'A1HA') then
+            set ally=BOT_HealTarget(caster,1700.,.75)
+            if ally!=null then
+                set spell='A1HA'
+                set mode=2
+            endif
+        endif
+        if spell==0 and BOT_Ready(caster,'A1HB') then
+            set ally=BOT_HealTarget(caster,1200.,.65)
+            if ally!=null then
+                set spell='A1HB'
+                set mode=1
+            endif
+        endif
+    endif
+    if not result and spell==0 and BOT_Ready(caster,'A1HC') then
+        set shielded=LoadUnitHandle(h,GetHandleId(caster),'A1HB'+1)
+        if UnitIsAlive(shielded) and GetUnitAbilityLevel(shielded,'A1HG')>0 and LoadUnitHandle(h,GetHandleId(shielded),SH_ore2)==caster and UnitIsAlive(LoadUnitHandle(h,GetHandleId(caster),'A1HB')) then
+            set slot=0
+            set closest=2500.
+            set target=null
+            loop
+                exitwhen slot>=10
+                set hero=Hero[slot]
+                if BOT_Enemy(caster,hero) and not BOT_BlockedTarget(caster,hero) then
+                    set distance=BOT_Distance(shielded,hero)
+                    if distance<closest then
+                        set closest=distance
+                        set target=hero
+                    endif
+                endif
+                set slot=slot+1
+            endloop
+            if target!=null then
+                set result=BOT_QueuePoint(caster,BOT_Order(caster,'A1HC'),GetUnitX(target),GetUnitY(target))
+            endif
+        endif
+    endif
+elseif ty=='H051' then
+    set ally=BOT_HealTarget(caster,1000.,.55)
+    if ally!=null and BOT_Ready(caster,'A1DL') and not IsUnitInvulnerable(ally) then
+        set spell='A1DL'
+        set mode=1
+    endif
+elseif ty=='H04C' then
+    if BOT_Ready(caster,'A0UK') and BOT_HealTarget(caster,1700.,.72)!=null then
+        set spell='A0UK'
+    elseif BOT_Ready(caster,'A0UQ') then
+        set spell='A0UQ'
+    endif
+endif
+if spell!=0 then
+    if mode==0 then
+        set result=BOT_QueueImmediate(caster,BOT_Order(caster,spell))
+    elseif mode==1 then
+        set result=BOT_QueueTarget(caster,BOT_Order(caster,spell),ally)
+    else
+        set result=BOT_QueuePoint(caster,BOT_Order(caster,spell),GetUnitX(ally),GetUnitY(ally))
+    endif
+endif
+if result then
+    set BOT_Wait[bi]=BOT_Clock+3
+endif
+set caster=null
+set ally=null
+set hero=null
+set shielded=null
+set target=null
+set zone=null
+set cross=null
+return result
+endfunction
+function BOT_Sinon takes integer bi,unit enemy returns boolean
+local unit caster=Hero[bi]
+local integer ammo=LoadInteger(HH,GetHandleId(caster),Sinon_Ammo)
+local integer spell=0
+local real x
+local real y
+local boolean result=false
+local boolean freshPing=LoadInteger(BOT_DB,bi,196)>BOT_Clock
+local integer pingSlot=0
+local integer publicPing=-1
+local real distance=99999.
+local real enemyReach=0.
+local real bestDistance=5000.
+local real rollAngle
+local real rollX
+local real rollY
+local rect zone=Bof_Zone(GetUnitX(caster),GetUnitY(caster))
+if enemy!=null then
+set distance=BOT_Distance(caster,enemy)
+set enemyReach=GetUnitAttackRangeByIndex(enemy,0)
+endif
+if enemy==null and not freshPing and ammo>0 then
+    loop
+        exitwhen pingSlot>=10
+        if BOT_PublicPingUntil[pingSlot]>BOT_Clock and IsPlayerEnemy(PlayerV(pingSlot),OwnerOf(caster)) and Bof_InZone(Bof_Zone(GetUnitX(caster),GetUnitY(caster)),BOT_PublicPingX[pingSlot],BOT_PublicPingY[pingSlot],0.) then
+            set distance=SR(GetUnitX(caster),GetUnitY(caster),BOT_PublicPingX[pingSlot],BOT_PublicPingY[pingSlot])
+            if distance<=bestDistance then
+                set bestDistance=distance
+                set publicPing=pingSlot
+            endif
+        endif
+        set pingSlot=pingSlot+1
+    endloop
+endif
+if GetUnitCurrentOrder(caster)==OrderId("chainlightning") then
+    set result=true
+elseif enemy!=null and distance<=1180. and not BOT_BlockedTarget(caster,enemy) and GetUnitAbilityLevel(caster,'A17K')>0 then
+    set result=BOT_Attack[bi]==enemy and GetUnitCurrentOrder(caster)==OrderId("attack")
+    if not result and BOT_QueueTarget(caster,OrderId("attack"),enemy) then
+        set BOT_Attack[bi]=enemy
+        set result=true
+    endif
+elseif (ammo==0 or ((ammo==2 or ammo==3) and enemy==null and not freshPing and publicPing<0)) and BOT_Ready(caster,'A2DC') then
+    set result=BOT_QueueImmediate(caster,BOT_Order(caster,'A2DC'))
+    if result then
+        set BOT_Wait[bi]=BOT_Clock+5
+    endif
+elseif enemy!=null and distance<=1650. and BOT_Ready(caster,'A17G') and (not BOT_BlockedTarget(caster,enemy) or distance<600.) then
+    set rollAngle=Atan2(GetUnitY(enemy)-GetUnitY(caster),GetUnitX(enemy)-GetUnitX(caster))
+    if distance<=RMaxBJ(510.,RMinBJ(750.,enemyReach+220.)) then
+        set rollAngle=rollAngle+bj_PI
+    elseif distance<1250. then
+        set rollAngle=rollAngle+bj_PI*.45*I2R(1-2*ModuloInteger(bi,2))
+    endif
+    set rollX=GetUnitX(caster)+600.*Cos(rollAngle)
+    set rollY=GetUnitY(caster)+600.*Sin(rollAngle)
+    if Bof_InZone(zone,rollX,rollY,0.) and not IsTerrainPathable(rollX,rollY,PATHING_TYPE_WALKABILITY) then
+        set result=BOT_QueuePoint(caster,BOT_Order(caster,'A17G'),rollX,rollY)
+    endif
+elseif enemy==null and ammo>0 and (freshPing or publicPing>=0 or LoadInteger(BOT_DB,bi,102)>BOT_Clock+20) and LoadInteger(BOT_DB,bi,193)<=BOT_Clock then
+    if freshPing then
+        set x=LoadReal(BOT_DB,bi,194)
+        set y=LoadReal(BOT_DB,bi,195)
+    elseif publicPing>=0 then
+        set x=BOT_PublicPingX[publicPing]
+        set y=BOT_PublicPingY[publicPing]
+    else
+        set x=LoadReal(BOT_DB,bi,100)
+        set y=LoadReal(BOT_DB,bi,101)
+    endif
+    if SR(GetUnitX(caster),GetUnitY(caster),x,y)<=5000. then
+        if BOT_Ready(caster,'A270') then
+            set spell='A270'
+        elseif ammo>=2 and BOT_Ready(caster,'A2ZD') then
+            set spell='A2ZD'
+        endif
+        if spell!=0 then
+            set result=BOT_QueuePoint(caster,BOT_Order(caster,spell),x,y)
+            if result then
+                set BOT_Wait[bi]=BOT_Clock+3
+                call SaveInteger(BOT_DB,bi,193,BOT_Clock+12)
+                call RemoveSavedInteger(BOT_DB,bi,196)
+            endif
+        endif
+    endif
+endif
+set caster=null
+set zone=null
+return result
+endfunction
+function BOT_StayNearSupport takes unit caster,unit enemy returns boolean
+local integer slot=0
+local unit ally
+local unit singer=null
+local timer healing
+local rect zone=Bof_Zone(GetUnitX(caster),GetUnitY(caster))
+local real x
+local real y
+local real distance
+local real bestHeal=2000.
+local real bestSong=4000.
+local real healX
+local real healY
+local boolean result=false
+local boolean wounded=GetWidgetLife(caster)<GetUnitMaxLife(caster)*.65
+loop
+    exitwhen slot>=10
+    set ally=Hero[slot]
+    if ally!=null and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) then
+        if wounded and GetUnitTypeId(ally)=='H074' then
+            set healing=LoadTimerHandle(HH,GetHandleId(ally),StringHash("OrihimeHealingZone"))
+            if healing!=null and LoadReal(h,GetHandleId(healing),10)>1. then
+                set x=LoadReal(h,GetHandleId(healing),1)
+                set y=LoadReal(h,GetHandleId(healing),2)
+                set distance=SR(GetUnitX(caster),GetUnitY(caster),x,y)
+                if distance<bestHeal and Bof_InZone(zone,x,y,0.) then
+                    set bestHeal=distance
+                    set healX=x
+                    set healY=y
+                endif
+            endif
+        elseif ally!=caster and GetUnitTypeId(ally)=='H04C' and GetUnitAbilityLevel(ally,'A0UL')>0 and GetUnitCurrentOrder(ally)==OrderId("doom") then
+            set distance=BOT_Distance(caster,ally)
+            if distance<bestSong and Bof_InZone(zone,GetUnitX(ally),GetUnitY(ally),0.) then
+                set singer=ally
+                set bestSong=distance
+            endif
+        endif
+    endif
+    set slot=slot+1
+endloop
+if bestHeal<2000. then
+    if bestHeal>225. then
+        call BOT_Move(caster,healX,healY)
+        set result=true
+    elseif enemy==null or SR(GetUnitX(enemy),GetUnitY(enemy),healX,healY)>300. then
+        call BOT_QueueImmediate(caster,OrderId("holdposition"))
+        set result=true
+    endif
+elseif singer!=null then
+    if bestSong>2200. then
+        set distance=Atan2(GetUnitY(caster)-GetUnitY(singer),GetUnitX(caster)-GetUnitX(singer))
+        call BOT_Move(caster,GetUnitX(singer)+1700.*Cos(distance),GetUnitY(singer)+1700.*Sin(distance))
+        set result=true
+    elseif enemy==null or BOT_Distance(singer,enemy)>2300. then
+        call BOT_QueueImmediate(caster,OrderId("holdposition"))
+        set result=true
+    endif
+endif
+set healing=null
+set zone=null
+set singer=null
+set ally=null
+return result
+endfunction
+function BOT_KeepDistance takes integer slot,unit hero,unit enemy,real distance returns boolean
+local real radius=RMaxBJ(420.,RMinBJ(700.,GetUnitAttackRangeByIndex(hero,0)-50.))
+local real angle
+local real x
+local real y
+local rect zone
+local boolean moved=false
+// Different slots enter the spacing window at different times. Attacking resumes automatically.
+if ModuloInteger(BOT_Clock+slot*7,24)>=5 or distance>radius-100. or IsUnitStunned(enemy) or GetWidgetLife(enemy)<GetUnitTotalDamage(hero)*2. or (BOT_Until[slot]>BOT_Clock and BOT_Mode[slot]>0) then
+return false
+endif
+set zone=Bof_Zone(GetUnitX(hero),GetUnitY(hero))
+set angle=Atan2(GetUnitY(hero)-GetUnitY(enemy),GetUnitX(hero)-GetUnitX(enemy))+.26*I2R(1-2*ModuloInteger(slot,2))
+set x=Bof_X(zone,GetUnitX(enemy)+radius*Cos(angle))
+set y=Bof_Y(zone,GetUnitY(enemy)+radius*Sin(angle))
+if SR(GetUnitX(enemy),GetUnitY(enemy),x,y)>distance+70. and not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+call BOT_Move(hero,x,y)
+set BOT_Attack[slot]=null
+set moved=true
+endif
+set zone=null
+return moved
+endfunction
+// 1: back line, 2: support, 3: front line. Use the tavern's roles for other tanks and supports.
+function BOT_PositionRole takes integer heroType returns integer
+if heroType=='H014' or heroType=='H00K' or heroType=='H00J' or heroType=='H04T' or heroType=='H018' then
+return 1
+elseif heroType=='H051' or heroType=='HAlb' or heroType=='H060' or heroType=='HGrp' or heroType=='H00Y' or heroType=='H02L' or LoadBoolean(TavRoleHT,heroType,9) then
+return 3
+elseif LoadBoolean(TavRoleHT,heroType,6) then
+return 2
+endif
+return 0
+endfunction
+function BOT_RolePosition takes integer slot,unit caster,unit enemy,integer role returns boolean
+local rect zone=Bof_Zone(GetUnitX(caster),GetUnitY(caster))
+local unit ally
+local unit anchor
+local integer allySlot=0
+local integer allyRole
+local real nearest=99999.
+local real score
+local real enemyRange=99999.
+local real anchorRange
+local real casterX=GetUnitX(caster)
+local real casterY=GetUnitY(caster)
+local real x=casterX
+local real y=casterY
+local real angle
+local real radius=850.
+local integer currentOrder=GetUnitCurrentOrder(caster)
+local boolean occupy=false
+if role==0 or (BOT_Until[slot]>BOT_Clock and BOT_Mode[slot]>0 and not LoadBoolean(BOT_DB,slot,131)) then
+set zone=null
+return false
+endif
+if enemy!=null then
+set enemyRange=BOT_Distance(caster,enemy)
+endif
+loop
+exitwhen allySlot>=10
+set ally=Hero[allySlot]
+if ally!=null and ally!=caster and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and not Sh_InZone(ally) and Bof_InZone(zone,GetUnitX(ally),GetUnitY(ally),0.) then
+set allyRole=BOT_PositionRole(SG_Canonical(GetUnitTypeId(ally)))
+set score=BOT_Distance(caster,ally)
+if role==3 then
+if enemy!=null and score<=1250. and (allyRole==1 or allyRole==2) and BOT_Distance(ally,enemy)+200.<enemyRange and score<nearest then
+set nearest=score
+set anchor=ally
+endif
+elseif (enemy!=null or (allyRole!=1 and allyRole!=2) or allySlot<slot) then
+if allyRole==1 or allyRole==2 then
+set score=score+400.
+endif
+if score<nearest then
+set nearest=score
+set anchor=ally
+endif
+endif
+endif
+set allySlot=allySlot+1
+endloop
+if role==3 then
+if anchor!=null and BOT_Distance(anchor,enemy)<1200. then
+set angle=Atan2(GetUnitY(enemy)-GetUnitY(anchor),GetUnitX(enemy)-GetUnitX(anchor))
+set x=GetUnitX(anchor)+350.*Cos(angle)
+set y=GetUnitY(anchor)+350.*Sin(angle)
+set occupy=true
+endif
+elseif enemy==null then
+if anchor!=null then
+set occupy=true
+if BOT_Distance(caster,anchor)>600. then
+set angle=Atan2(casterY-GetUnitY(anchor),casterX-GetUnitX(anchor))
+set x=GetUnitX(anchor)+470.*Cos(angle)
+set y=GetUnitY(anchor)+470.*Sin(angle)
+elseif not IsUnitMoving(anchor) then
+// Search around a stationary ally without leaving supporting range.
+set angle=I2R(ModuloInteger(slot*73+(BOT_Clock/20)*109,360))*bj_DEGTORAD
+set x=GetUnitX(anchor)+420.*Cos(angle)
+set y=GetUnitY(anchor)+420.*Sin(angle)
+endif
+endif
+elseif role==2 then
+if anchor!=null then
+set anchorRange=BOT_Distance(caster,anchor)
+if anchorRange>750. or BOT_Distance(anchor,enemy)>850. then
+set angle=Atan2(GetUnitY(anchor)-GetUnitY(enemy),GetUnitX(anchor)-GetUnitX(enemy))
+set x=GetUnitX(anchor)+480.*Cos(angle)
+set y=GetUnitY(anchor)+480.*Sin(angle)
+set occupy=true
+endif
+endif
+elseif role==1 then
+if BOT_Type[slot]=='H00J' then
+set radius=560.
+elseif BOT_Type[slot]=='H018' then
+set radius=RMaxBJ(560.,GetUnitAttackRangeByIndex(caster,0)-100.)
+elseif BOT_Type[slot]=='H04T' then
+set radius=RMaxBJ(830.,RMinBJ(1120.,GetUnitAttackRangeByIndex(enemy,0)+290.))
+endif
+if anchor!=null and enemyRange<1300. and BOT_Distance(caster,anchor)<1450. and BOT_Distance(anchor,enemy)>enemyRange+200. and BOT_PositionRole(SG_Canonical(GetUnitTypeId(anchor)))==3 then
+set angle=Atan2(GetUnitY(anchor)-GetUnitY(enemy),GetUnitX(anchor)-GetUnitX(enemy))
+set x=GetUnitX(anchor)+300.*Cos(angle)
+set y=GetUnitY(anchor)+300.*Sin(angle)
+set occupy=true
+elseif enemyRange<radius-120. then
+set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))+.20*I2R(1-2*ModuloInteger(slot,2))
+set x=GetUnitX(enemy)+radius*Cos(angle)
+set y=GetUnitY(enemy)+radius*Sin(angle)
+set occupy=true
+elseif BOT_Type[slot]=='H00J' and enemyRange>790. and enemyRange<=1550. and not BOT_BlockedTarget(caster,enemy) then
+set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))
+set x=GetUnitX(enemy)+650.*Cos(angle)
+set y=GetUnitY(enemy)+650.*Sin(angle)
+set occupy=true
+elseif BOT_Type[slot]=='H018' and enemyRange>GetUnitAttackRangeByIndex(caster,0)-25. and enemyRange<=1500. and not BOT_BlockedTarget(caster,enemy) then
+set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))
+set x=GetUnitX(enemy)+radius*Cos(angle)
+set y=GetUnitY(enemy)+radius*Sin(angle)
+set occupy=true
+elseif enemyRange>radius+250. then
+if anchor!=null and BOT_Distance(anchor,enemy)<enemyRange-150. then
+set angle=Atan2(GetUnitY(anchor)-GetUnitY(enemy),GetUnitX(anchor)-GetUnitX(enemy))
+set radius=RMaxBJ(radius,BOT_Distance(anchor,enemy)+200.)
+set x=GetUnitX(enemy)+radius*Cos(angle)
+set y=GetUnitY(enemy)+radius*Sin(angle)
+elseif anchor==null then
+set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))
+set x=GetUnitX(enemy)+(radius+140.)*Cos(angle)
+set y=GetUnitY(enemy)+(radius+140.)*Sin(angle)
+endif
+set occupy=true
+elseif enemyRange>GetUnitAttackRangeByIndex(caster,0)-35. or BOT_BlockedTarget(caster,enemy) then
+set occupy=true
+endif
+endif
+if occupy then
+set x=Bof_X(zone,x)
+set y=Bof_Y(zone,y)
+if SR(casterX,casterY,x,y)>120. then
+if BOT_Type[slot]!='H00J' or enemyRange>=430. or not BOT_Escape(slot,x,y) then
+call BOT_Move(caster,x,y)
+endif
+elseif role==3 then
+set occupy=false
+elseif currentOrder!=OrderId("holdposition") then
+call BOT_QueueImmediate(caster,OrderId("holdposition"))
+endif
+if occupy then
+set BOT_Attack[slot]=null
+endif
+endif
+set anchor=null
+set ally=null
+set zone=null
+return occupy
+endfunction
 function BOT_Think takes integer bi returns nothing
 local unit u=Hero[bi]
 local unit e
@@ -314946,6 +316361,14 @@ local real dx
 local real dy
 local real botTargetDistance
 local real hp
+local boolean shouldRetreat
+local integer positionRole=BOT_PositionRole(BOT_Type[bi])
+local timer ishidaBarrage
+local boolean roundStart
+if BOT_OrderPending[bi] then
+set u=null
+return
+endif
 if u==null or not UnitIsAlive(u) then
 set BOT_Casting[bi]=false
 set u=null
@@ -314959,21 +316382,41 @@ endif
 endif
 if not udg_B then
 set BOT_Casting[bi]=false
+call SaveBoolean(BOT_DB,bi,251,false)
 set u=null
 return
-endif
-if BOT_Casting[bi] and not IsUnitPaused(u) and BOT_Clock-LoadInteger(BOT_DB,bi,150)>4 and GetUnitCurrentOrder(u)!=LoadInteger(BOT_DB,bi,151) then
-set BOT_Casting[bi]=false
 endif
 if Sh_InZone(u) or (TSE_On and TSE_PlayerStopped(PlayerV(bi))) or IsUnitPaused(u) then
 set u=null
 return
 endif
-if BOT_RengokuRelease(bi) or BOT_Casting[bi] or BOT_Defend(bi) then
+set roundStart=not LoadBoolean(BOT_DB,bi,251) or LoadInteger(BOT_DB,bi,250)!=round
+if roundStart then
+call SaveBoolean(BOT_DB,bi,251,true)
+call SaveInteger(BOT_DB,bi,250,round)
+set BOT_Casting[bi]=false
+set BOT_Wait[bi]=0
+set BOT_Attack[bi]=null
+set BOT_MoveUnitId[bi]=0
+call SaveInteger(BOT_DB,bi,50,0)
+call RemoveSavedHandle(BOT_DB,bi,52)
+call SaveInteger(BOT_DB,bi,104,0)
+endif
+if BOT_Casting[bi] and not IsUnitPaused(u) and BOT_Clock-LoadInteger(BOT_DB,bi,150)>4 and (GetUnitCurrentOrder(u)!=LoadInteger(BOT_DB,bi,151) or BOT_Clock-LoadInteger(BOT_DB,bi,150)>48) then
+set BOT_Casting[bi]=false
+endif
+if (BOT_Type[bi]=='H04C' and GetUnitAbilityLevel(u,'A0UL')>0 and GetUnitCurrentOrder(u)==OrderId("doom")) or BOT_RengokuRelease(bi) or BOT_Casting[bi] or BOT_Defend(bi) then
 set u=null
 return
 endif
 set e=BOT_Target(bi)
+if roundStart and e==null and GetUnitCurrentOrder(u)==0 and BOT_Until[bi]<=BOT_Clock then
+    call BOT_Patrol(bi)
+    if BOT_OrderPending[bi] then
+        set u=null
+        return
+    endif
+endif
 if BOT_Dodge(bi,e) or BOT_Wait[bi]>BOT_Clock or BOT_AlbedoArmor(bi) then
 set e=null
 set u=null
@@ -314982,7 +316425,23 @@ endif
 if ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8) then
 call BOT_Inventory(bi,false)
 endif
-if BOT_Extras(bi,e) or BOT_Form(bi,e) then
+if BOT_Type[bi]=='H018' then
+set ishidaBarrage=LoadTimerHandle(HH,GetHandleId(u),StringHash("ISH_QTimer"))
+if ishidaBarrage!=null then
+// Preserve Licht Regen. The dodge path above can still use Hirenkyaku.
+call BOT_RolePosition(bi,u,LoadUnitHandle(h,GetHandleId(ishidaBarrage),1),positionRole)
+set ishidaBarrage=null
+set e=null
+set u=null
+return
+endif
+endif
+if (BOT_Type[bi]=='H00J' and BOT_LuffyTactics(bi,e)) or BOT_Extras(bi,e) or BOT_Form(bi,e) then
+set u=null
+set e=null
+return
+endif
+if e!=null and GetUnitAbilityLevel(e,'A1CE')>0 and GetUnitAbilityLevel(e,'BNC2')==0 and not (BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]==3) and BOT_Items(bi,e,'I04L') then
 set u=null
 set e=null
 return
@@ -314994,7 +316453,7 @@ set u=null
 return
 endif
 endif
-if BOT_Heal(bi) or BOT_Items(bi,e) then
+if BOT_Heal(bi) or (e!=null and (BOT_Items(bi,e,'I054') or BOT_Items(bi,e,'I044'))) or ((BOT_Type[bi]!='H04T' or GetUnitAbilityLevel(u,'A17K')==0) and BOT_Items(bi,e,0)) then
 set e=null
 set u=null
 return
@@ -315038,6 +316497,22 @@ endif
 endif
 set leader=null
 endif
+if ((BOT_Type[bi]=='H074' or BOT_Type[bi]=='H051' or BOT_Type[bi]=='H04C') and BOT_Support(bi)) or (BOT_Type[bi]=='H04T' and BOT_Sinon(bi,e)) then
+set u=null
+set e=null
+return
+endif
+if (BOT_Until[bi]<=BOT_Clock or BOT_Mode[bi]==0) and BOT_StayNearSupport(u,e) then
+set u=null
+set e=null
+return
+endif
+set shouldRetreat=BOT_ShouldRetreat(bi)
+if not shouldRetreat and BOT_CastOnStun(bi) then
+set u=null
+set e=null
+return
+endif
 if e!=null and LoadUnitHandle(BOT_DB,bi,180)==e and LoadInteger(BOT_DB,bi,181)>BOT_Clock then
 set u=null
 set e=null
@@ -315045,7 +316520,7 @@ return
 endif
 if e!=null then
 set botTargetDistance=BOT_Distance(u,e)
-if BOT_ShouldRetreat(bi) and botTargetDistance<1000. then
+if shouldRetreat and botTargetDistance<1000. then
 if ModuloInteger(BOT_Clock,4)==ModuloInteger(bi,4) then
 set dx=GetUnitX(u)-GetUnitX(e)
 set dy=GetUnitY(u)-GetUnitY(e)
@@ -315055,21 +316530,23 @@ call BOT_Move(u,GetUnitX(u)+dx/botTargetDistance*700.,GetUnitY(u)+dy/botTargetDi
 endif
 endif
 elseif BOT_BlockedTarget(u,e) then
+if not BOT_RolePosition(bi,u,e,positionRole) then
 set BOT_Attack[bi]=null
 if botTargetDistance<450. then
     call BOT_Move(u,GetUnitX(u)+(GetUnitX(u)-GetUnitX(e))*.75,GetUnitY(u)+(GetUnitY(u)-GetUnitY(e))*.75)
 else
     call BOT_Move(u,GetUnitX(e),GetUnitY(e))
 endif
-elseif BOT_PrioritySpell(bi,e) or BOT_Combo(bi,e) or BOT_GokuderaBurst(bi,e) or BOT_Lucci(bi,e) then
+endif
+elseif BOT_Combo(bi,e) or BOT_PrioritySpell(bi,e) or BOT_GokuderaBurst(bi,e) or BOT_Lucci(bi,e) then
 // Keep the next combo cast ahead of unrelated spells and attack orders.
-elseif not BOT_Cast(bi,e) then
-if BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
-call IssueTargetOrder(u,"attack",e)
+elseif not BOT_Cast(bi,e) and not BOT_RolePosition(bi,u,e,positionRole) and (positionRole!=0 or not BOT_KeepDistance(bi,u,e,botTargetDistance)) then
+if BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or GetUnitCurrentOrder(u)==OrderId("move") or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
+call BOT_QueueTarget(u,OrderId("attack"),e)
 set BOT_Attack[bi]=e
 endif
 endif
-elseif ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8) then
+elseif (GetUnitCurrentOrder(u)==0 or (GetUnitCurrentOrder(u)==OrderId("move") and BOT_Clock-BOT_MoveClock[bi]>=4) or ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8)) and not BOT_RolePosition(bi,u,null,positionRole) then
 if BOT_Until[bi]>BOT_Clock and BOT_Mode[bi]>0 then
 set dx=GetUnitX(u)-BOT_X[bi]
 set dy=GetUnitY(u)-BOT_Y[bi]
@@ -315124,6 +316601,7 @@ call SaveBoolean(BOT_DB,-1,bmpType,true)
 loop
 exitwhen bmpIndex>=150
 if udg_RH[bmpIndex]==bmpType then
+call SaveInteger(BOT_DB,bmpPlayer,240,bmpIndex+1)
 set udg_RH[bmpIndex]=0
 endif
 if RH_Force[bmpIndex]==bmpType then
@@ -315157,35 +316635,34 @@ set bmpTitle=null
 set bmpSelected=null
 endfunction
 
-function BOT_Create takes integer bi returns boolean
+function BOT_ChooseHero takes nothing returns integer
 local integer k=0
-local integer botPoolStart=GetRandomInt(0,23)
-local integer ty
-local integer ri
-local integer chosen=0
+local integer start=GetRandomInt(0,30)
+local integer heroType
+local integer index
+loop
+exitwhen k>=31
+set heroType=BOT_Pool[ModuloInteger(start+k,31)]
+if not BOT_HeroTaken(heroType) then
+set index=0
+loop
+exitwhen index>=150
+if udg_RH[index]==heroType then
+return heroType
+endif
+set index=index+1
+endloop
+endif
+set k=k+1
+endloop
+return 0
+endfunction
+function BOT_Create takes integer bi,integer chosen returns boolean
 local integer j=0
 local player p=PlayerV(bi)
 local unit u
 local string botShortName
-if not BOT_CanFill(bi) then
-set p=null
-return false
-endif
-// Wait out hero bans/captain selection. Never create a banned/duplicate hero.
-loop
-exitwhen k>=24 or chosen!=0
-set ty=BOT_Pool[ModuloInteger(botPoolStart+k,24)]
-set ri=0
-loop
-exitwhen ri>=150 or chosen!=0
-if udg_RH[ri]==ty and not BOT_HeroTaken(ty) then
-set chosen=ty
-endif
-set ri=ri+1
-endloop
-set k=k+1
-endloop
-if chosen==0 then
+if chosen==0 or not BOT_CanFill(bi) then
 set p=null
 return false
 endif
@@ -315222,6 +316699,9 @@ set u=CreateUnit(p,chosen,GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rec
 call UnitInventorySetSize(u,10)
 set Hero[bi]=u
 set udg_Hero[bi+1]=u
+set udg_ExtraH[bi+1]=u
+// The normal selection trigger is terrain-dependent. Register explicitly for bots.
+call PickPreloadSystem(u)
 if FFAMode then
 call GroupAddUnit(udg_CG[4],u)
 else
@@ -315233,7 +316713,14 @@ endif
 call SetUnitOwner(Chest[bi],p,false)
 call ShowUnit(Chest[bi],true)
 call UnitInventorySetSize(Chest[bi],10)
-call BOT_Learn(bi)
+if udg_test and udg_B then
+call SetUnitPosition(u,GetRectCenterX(gg_rct_GameZone)+350.*I2R(2*TeamOfP(bi)-1),GetRectCenterY(gg_rct_GameZone)+90.*I2R(ModuloInteger(bi,5)-2))
+call ShowUnit(u,true)
+call SetUnitTargetable(u,true)
+call UnitEnableMovement(u,true,false)
+call UnitEnableAttack(u,true,false)
+call MapPauseUnit(u,false)
+endif
 set u=null
 set p=null
 return true
@@ -315242,7 +316729,7 @@ function BOT_Fill takes nothing returns nothing
 local integer bi=0
 local integer made=0
 local player p
-if not BOT_Enabled or BOT_Locked or pick!=0 or cmb or (DraftOn and not DraftDone) then
+if not BOT_Enabled or (BOT_Locked and not udg_test) or pick!=0 or cmb or (DraftOn and not DraftDone) then
 return
 endif
 loop
@@ -315252,7 +316739,7 @@ if not BOT_Active[bi] and BOT_CanFill(bi) then
 // Do not reuse a departed human's hero or a judge-controlled slot.
 if Hero[bi]==null and udg_Hero[bi+1]==null then
 set BOT_Active[bi]=true
-if BOT_Create(bi) then
+if BOT_Create(bi,BOT_ChooseHero()) then
 set made=made+1
 else
 set BOT_Active[bi]=false
@@ -315273,9 +316760,103 @@ call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Защита 
 endif
 set p=null
 endfunction
+function BOT_RefundInventory takes unit holder returns integer
+local integer slot=0
+local integer refund=0
+local item held
+if holder==null then
+return 0
+endif
+loop
+exitwhen slot>=10
+set held=UnitItemInSlot(holder,slot)
+if held!=null then
+set refund=refund+Sh_Cost(GetItemTypeId(held))
+call RemoveItem(held)
+endif
+set slot=slot+1
+endloop
+set held=null
+return refund
+endfunction
+function BOT_TestReroll takes integer slot returns boolean
+local unit old=Hero[slot]
+local integer next=0
+local integer oldType=BOT_Type[slot]
+local integer tavernIndex=LoadInteger(BOT_DB,slot,240)-1
+local integer oldXP
+local integer oldGold=GetPlayerState(PlayerV(slot),PLAYER_STATE_RESOURCE_GOLD)
+local integer oldLevel=udg_lvl[slot]
+local integer i=0
+local boolean inArena
+local real x
+local real y
+local framehandle heroFrame
+local framehandle titleFrame
+if not udg_test or not BOT_Active[slot] or old==null or pick!=0 or cmb or (DraftOn and not DraftDone) then
+set old=null
+return false
+endif
+set oldXP=GetHeroXP(old)
+set inArena=udg_B and UnitIsAlive(old) and RectContainsUnit(gg_rct_GameZone1,old)
+set x=GetUnitX(old)
+set y=GetUnitY(old)
+set next=BOT_ChooseHero()
+if next==0 then
+set old=null
+return false
+endif
+set oldGold=oldGold+BOT_RefundInventory(old)+BOT_RefundInventory(Chest[slot])
+call FlushChildHashtable(HH,GetHandleId(old))
+call FlushChildHashtable(h,GetHandleId(old))
+call RemoveUnit(old)
+set Hero[slot]=null
+set udg_Hero[slot+1]=null
+if tavernIndex>=0 and udg_RH[tavernIndex]==0 then
+set udg_RH[tavernIndex]=oldType
+set heroFrame=GetFrameByName("TavernBarHero",tavernIndex)
+set titleFrame=GetFrameByName("TavernBarHeroTitle",tavernIndex)
+set i=0
+loop
+exitwhen i>2
+if heroFrame!=null then
+call SetFrameColourEx(heroFrame,i,0xFFFFFFFF)
+endif
+if titleFrame!=null then
+call SetFrameColourEx(titleFrame,i,0xFFFFFFFF)
+endif
+set i=i+1
+endloop
+endif
+call RemoveSavedBoolean(BOT_DB,-1,oldType)
+call FlushChildHashtable(BOT_DB,slot)
+set BOT_Attack[slot]=null
+set BOT_Casting[slot]=false
+set BOT_Buy[slot]=0
+set BOT_Spell[slot]=0
+set BOT_Wait[slot]=0
+set BOT_Mode[slot]=0
+set BOT_Until[slot]=0
+set BOT_MoveUnitId[slot]=0
+call BOT_Create(slot,next)
+call SetPlayerState(PlayerV(slot),PLAYER_STATE_RESOURCE_GOLD,oldGold)
+call SetHeroXP(Hero[slot],oldXP,false)
+set udg_lvl[slot]=oldLevel
+if inArena then
+call SetUnitPosition(Hero[slot],x,y)
+endif
+// The next bot tick learns the new hero's skills with the restored XP.
+set heroFrame=null
+set titleFrame=null
+set old=null
+return true
+endfunction
 function BOT_Command takes nothing returns nothing
 local player p=GetTriggerPlayer()
 local integer bi=0
+local integer rerolled=0
+local integer requestedSlot=0
+local string command=GetEventPlayerChatString()
 // The first live human slot is the host for this command, including games without red.
 loop
 exitwhen bi>=10 or (GetPlayerController(PlayerV(bi))==MAP_CONTROL_USER and GetPlayerSlotState(PlayerV(bi))==PLAYER_SLOT_STATE_PLAYING)
@@ -315283,7 +316864,34 @@ set bi=bi+1
 endloop
 if (bi>=10 or p!=PlayerV(bi)) and not (GetPlayerId(p)>=10 and GetPlayerId(p)<12 and GetPlayerController(p)==MAP_CONTROL_USER) then
 call DisplayTimedTextToPlayer(p,0,0,4,Lng("Команда ботов доступна первому активному игроку.","The first active player can enable bots."))
-elseif BOT_Locked or round>1 or udg_B then
+elseif SubString(command,0,10)=="-botreroll" then
+if udg_test then
+set bi=0
+if StringLength(command)>10 then
+set requestedSlot=S2I(SubString(command,11,StringLength(command)))
+if requestedSlot<1 or requestedSlot>10 then
+call DisplayTimedTextToPlayer(p,0,0,5,"-botreroll [1-10]")
+set p=null
+return
+endif
+endif
+loop
+exitwhen bi>=10
+if (requestedSlot==0 or bi+1==requestedSlot) and BOT_TestReroll(bi) then
+set rerolled=rerolled+1
+endif
+set bi=bi+1
+endloop
+if rerolled>0 then
+if mbg!=null then
+call DestroyMultiboard(mbg)
+call Trig_mult_Actions()
+endif
+call UpdateMultiboard()
+endif
+call DisplayTimedTextToPlayer(p,0,0,5,Lng("Героев ботов заменено: ","Bot heroes rerolled: ")+I2S(rerolled))
+endif
+elseif not udg_test and (BOT_Locked or round>1 or udg_B) then
 call DisplayTimedTextToPlayer(p,0,0,4,Lng("Ботов можно включить только до первого раунда.","Bots can only be enabled before the first round."))
 else
 set BOT_Enabled=true
@@ -315379,36 +316987,50 @@ set bi=bi+1
 endloop
 endfunction
 
+function BOT_ThinkTick takes nothing returns nothing
+local integer timerId=GetHandleId(GetExpiredTimer())
+local integer slot=LoadInteger(BOT_DB,timerId,0)
+if BOT_Active[slot] then
+    call BOT_Think(slot)
+    if LoadBoolean(BOT_DB,timerId,1) and Hero[slot]!=null then
+        call BOT_Inventory(slot,true)
+    endif
+endif
+endfunction
 function BOT_Tick takes nothing returns nothing
-local integer bi=0
+local integer slot=0
+local timer thinkTimer
+local integer timerId
+local boolean equipAtRoundStart
 set BOT_Clock=BOT_Clock+1
 if not BOT_Enabled then
 return
 endif
-if udg_B and not LoadBoolean(BOT_DB,-5,0) then
-loop
-exitwhen bi>=10
-if BOT_Active[bi] and Hero[bi]!=null then
-call BOT_Inventory(bi,true)
-endif
-set bi=bi+1
-endloop
-set bi=0
-endif
-call SaveBoolean(BOT_DB,-5,0,udg_B)
 if ModuloInteger(BOT_Clock,4)==0 then
 call BOT_Alliances()
 endif
-if not BOT_Locked and ModuloInteger(BOT_Clock,4)==0 then
+if (not BOT_Locked or udg_test) and ModuloInteger(BOT_Clock,4)==0 then
 call BOT_Fill()
 endif
+set equipAtRoundStart=udg_B and not LoadBoolean(BOT_DB,-5,0)
+call SaveBoolean(BOT_DB,-5,0,udg_B)
 loop
-exitwhen bi>=10
-if BOT_Active[bi] then
-call BOT_Think(bi)
-endif
-set bi=bi+1
+    exitwhen slot>=10
+    if BOT_Active[slot] then
+        set thinkTimer=BOT_ThinkTimer[slot]
+        if thinkTimer==null then
+            set thinkTimer=CreateTimer()
+            set BOT_ThinkTimer[slot]=thinkTimer
+            call SaveInteger(BOT_DB,GetHandleId(thinkTimer),0,slot)
+        endif
+        set timerId=GetHandleId(thinkTimer)
+        call SaveBoolean(BOT_DB,timerId,1,equipAtRoundStart)
+        // Each bot gets its own JASS execution budget in the same tick.
+        call TimerStart(thinkTimer,0.,false,function BOT_ThinkTick)
+    endif
+    set slot=slot+1
 endloop
+set thinkTimer=null
 endfunction
 function BOT_PingSend takes nothing returns nothing
 local player psPlayer=GetMinimapPingSource()
@@ -315435,7 +317057,13 @@ endif
 call SaveInteger(BOT_DB,psOwner,130,BOT_Clock+8)
 loop
 exitwhen psBot>=10
-if BOT_Active[psBot] and IsPlayerAlly(PlayerV(psBot),psPlayer) and psBot!=psOwner and not (BOT_Until[psBot]>BOT_Clock and BOT_Mode[psBot]>0 and not LoadBoolean(BOT_DB,psBot,131)) then
+if BOT_Active[psBot] and IsPlayerAlly(PlayerV(psBot),psPlayer) and psBot!=psOwner then
+if BOT_Type[psBot]=='H04T' then
+call SaveReal(BOT_DB,psBot,194,psX)
+call SaveReal(BOT_DB,psBot,195,psY)
+call SaveInteger(BOT_DB,psBot,196,BOT_Clock+12)
+endif
+if not (BOT_Until[psBot]>BOT_Clock and BOT_Mode[psBot]>0 and not LoadBoolean(BOT_DB,psBot,131)) then
 call SaveBoolean(BOT_DB,psBot,131,true)
 set BOT_Mode[psBot]=2
 set BOT_X[psBot]=psX
@@ -315443,6 +317071,7 @@ set BOT_Y[psBot]=psY
 set BOT_Leader[psBot]=psOwner
 set BOT_Until[psBot]=BOT_Clock+40
 set BOT_Attack[psBot]=null
+endif
 endif
 set psBot=psBot+1
 endloop
@@ -315464,6 +317093,8 @@ exitwhen bi>=12
 call TriggerRegisterPlayerEvent(ping,Player(bi),EVENT_PLAYER_MINIMAP_PING)
 call TriggerRegisterPlayerSyncEvent(pingSync,Player(bi),"BPNG",false)
 call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-bots",true)
+call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botreroll",true)
+call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botreroll ",false)
 call TriggerRegisterPlayerSyncEvent(sync,Player(bi),"BEMT",false)
 call TriggerRegisterPlayerUnitEvent(armor,Player(bi),EVENT_PLAYER_UNIT_DAMAGED,null)
 call TriggerRegisterPlayerUnitEvent(threat,Player(bi),EVENT_PLAYER_UNIT_SPELL_CAST,null)
