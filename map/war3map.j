@@ -311518,9 +311518,9 @@ call LANG_F("RESOURCE_UBERTIP_GOLD","Gold is earned by winning rounds and by def
 endfunction
 function LANG_Data59 takes nothing returns nothing
 call LANG_F("RESOURCE_UBERTIP_LUMBER","Victory points are earned for winning a round, by reaching a certain number of points you win.")
-call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
-call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
-call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.4 EN|r")
+call LANG_F("UPKEEP_HIGH","|c0000FF00Choice Battle |r|c0000FFFFv3.8.5 EN|r")
+call LANG_F("UPKEEP_LOW","|c0000FF00Choice Battle |r|c0000FFFFv3.8.5 EN|r")
+call LANG_F("UPKEEP_NONE","|c0000FF00Choice Battle |r|c0000FFFFv3.8.5 EN|r")
 endfunction
 function LANG_DataAll takes nothing returns nothing
 call ExecuteFunc("LANG_Data0")
