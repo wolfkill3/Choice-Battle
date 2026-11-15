@@ -72,6 +72,7 @@ boolean BOT_Locked=false
 boolean array BOT_Active
 boolean array BOT_Casting
 integer BOT_Clock=0
+integer BOT_OrderDelayMs=10
 timer array BOT_ThinkTimer
 timer array BOT_OrderTimer
 boolean array BOT_OrderPending
@@ -9081,7 +9082,7 @@ function ShieldPortraitInit takes nothing returns nothing
     call ClearFrameAllPoints(SP_Frame)
     call SetFrameSize(SP_Frame,.075,.022)
     // рамка в стиле статус-бара
-    call SetFrameTextureEx(SP_Frame,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+    call SetFrameTextureEx(SP_Frame,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",255)
     call SetFrameRelativePoint(SP_Frame,FRAMEPOINT_BOTTOM,GetOriginFrame(ORIGIN_FRAME_PORTRAIT,0),FRAMEPOINT_TOP,0.,.002)
     call SetFramePriority(SP_Frame,7)
     set SP_Text=CreateFrameByType("SIMPLETEXT","ShieldPortraitText",SP_Frame,"",0)
@@ -9553,8 +9554,8 @@ function HPB_Update takes nothing returns nothing
                             set HPB_CcK[hps]=hpk
                             set HPB_CcW[hps]=-1.
                             if hpk>0 then
-                                call SetFrameTextureEx(HPB_CcIco[hps],0,CCB_Ico[hpk],false,"",0)
-                                call SetFrameTextureEx(HPB_CcFill[hps],0,HPB_Tex(CCB_Col[hpk]),false,"",0)
+                                call SetFrameTextureEx(HPB_CcIco[hps],0,CCB_Ico[hpk],false,"",255)
+                                call SetFrameTextureEx(HPB_CcFill[hps],0,HPB_Tex(CCB_Col[hpk]),false,"",255)
                                 call SetFrameText(HPB_CcTxt[hps],CCB_Name[hpk])
                             endif
                             call ShowFrame(HPB_Cc[hps],hpk>0)
@@ -9872,7 +9873,7 @@ function HPB_MenuInit takes nothing returns nothing
     set HPB_MBtnFrame=CreateFrameByType("SIMPLEFRAME","HPBarMenuButtonFrame",null,"",0)
     call ClearFrameAllPoints(HPB_MBtnFrame)
     call SetFrameSize(HPB_MBtnFrame,.032,.016)
-    call SetFrameTextureEx(HPB_MBtnFrame,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+    call SetFrameTextureEx(HPB_MBtnFrame,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",255)
     call SetFrameRelativePoint(HPB_MBtnFrame,FRAMEPOINT_CENTER,HPB_MBtn,FRAMEPOINT_CENTER,0.,0.)
     call SetFramePriority(HPB_MBtnFrame,7)
     call ShowFrame(HPB_MBtnFrame,false)
@@ -9893,7 +9894,7 @@ function HPB_MenuInit takes nothing returns nothing
     //call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_BOTTOMLEFT,HPB_MBtn,FRAMEPOINT_TOPLEFT,0.,.003)
     // крупное окно — по центру экрана, как панели эмодзи и статистики; иконки героев сверху не перекрывает
     call SetFrameRelativePoint(HPB_Menu,FRAMEPOINT_CENTER,GetOriginFrame(ORIGIN_FRAME_GAME_UI,0),FRAMEPOINT_BOTTOM,0.,.33)
-    call SetFrameTextureEx(HPB_Menu,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+    call SetFrameTextureEx(HPB_Menu,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",255)
     //call SetFramePriority(HPB_Menu,8)
     call SetFramePriority(HPB_Menu,4) // приоритеты SIMPLE-фреймов общие и не выше 8 (больше — как 8): окно 4, кнопки 5, рамки 6-7, деления 8
     set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuTitle",HPB_Menu,"",0)
@@ -9928,14 +9929,14 @@ function HPB_MenuInit takes nothing returns nothing
         call ClearFrameAllPoints(hpf)
         call SetFrameSize(hpf,(.017)*CBS_Z,(.017)*CBS_Z)
         call SetFrameRelativePoint(hpf,FRAMEPOINT_TOPLEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(.016),CBS_PY(-.056-hps*.025))
-        call SetFrameTextureEx(hpf,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",false,"",0)
+        call SetFrameTextureEx(hpf,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-background.blp",false,"",255)
         //call SetFramePriority(hpf,9)
         call SetFramePriority(hpf,5)
         set HPB_MChk[hps]=CreateFrameByType("SIMPLEFRAME","HPBarMenuCheck",null,"",hps)
         call ClearFrameAllPoints(HPB_MChk[hps])
         call SetFrameSize(HPB_MChk[hps],(.017)*CBS_Z,(.017)*CBS_Z)
         call SetFrameRelativePoint(HPB_MChk[hps],FRAMEPOINT_CENTER,hpf,FRAMEPOINT_CENTER,0.,0.)
-        call SetFrameTextureEx(HPB_MChk[hps],0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+        call SetFrameTextureEx(HPB_MChk[hps],0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",255)
         //call SetFramePriority(HPB_MChk[hps],10)
         call SetFramePriority(HPB_MChk[hps],6)
         set hpf=CreateFrameByType("SIMPLETEXT","HPBarMenuLabel",HPB_Menu,"",hps)
@@ -9986,7 +9987,7 @@ function HPB_Bar takes string hpn, framehandle hpr, integer hps, real hpw, real 
     local framehandle hpf=CreateFrameByType("SIMPLEFRAME",hpn,hpr,"",hps)
     call ClearFrameAllPoints(hpf)
     call SetFrameSize(hpf,hpw,hph)
-    call SetFrameTextureEx(hpf,0,hpt,false,"",0)
+    call SetFrameTextureEx(hpf,0,hpt,false,"",255)
     call SetFramePriority(hpf,hpk)
     return hpf
 endfunction
@@ -25744,6 +25745,7 @@ call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.1","|cFFFFC850Игро
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.2","|cFFFFC850Игровые команды|r:\n\"-debug\" - снимает все эффекты, неуязвимости и паузы, если вы 15 секунд не двигалась. Телепортирует в случайную точку не далее 120 ед.\n\"-rfh\" - пересоздает героя, в случае бага, возможно только вне раунда.\n\"-re\" - воскрешает героя, применимо только на базе.\n\"killme\" - убивает героя через 10 сек.\n\"-swap x\" - поменяться персанажем с союзником.\n\"-take N\" / \"-untake\" - судья занимает место вышедшего игрока N (без номера — первое свободное) / возвращается в судьи.\n\"-switch x\" - перейти со своим героем в команду соперника, а вышедший игрок x с его героем переходит в вашу. Не в FFA, только между раундами.","|cFFFFC850Game commands|r:\n\"-debug\" - removes all effects, invulnerabilities and pauses if you have not moved for 15 seconds. Teleports to a random point no further than 120 units.\n\"-rfh\" - recreates the hero, in case of a bug, only possible outside the round.\n\"-re\" - resurrects the hero, only applicable at the base.\n\"killme\" - kills the hero after 10 sec.\n\"-swap x\" - swap characters with an ally.\n\"-take N\" / \"-untake\" - a judge takes the place of player N who left (no number: the first free one) / goes back to judging.\n\"-switch x\" - move with your hero to the enemy team; player x who left moves with their hero to yours. Not in FFA, only between rounds.","ReplaceableTextures\\CommandButtons\\BTNOrochimaru.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.3","|cFFFFC850Игровые команды|r:\n\"-mr\" - показывает текущее количество магических резистов у вашего персонажа.\n\"-cr\" - показывает текущее количество резистов к контролю у вашего персонажа.\n\"-damage\" - показывает игроку весь урон, который он нанес за всё время в игре, также количество уменьшенного урона общими резистами (не маг) и также количество урона, которое он заблокировал щитами или другими источниками.\n\"-tdamage\" - показывает всю эту информацию также и про других игроков.\n\"-theal\" - показывает всю информацию по восстановленному себе или союзным героям HP и MP у всех игроков.","|cFFFFC850Game commands|r:\n\"-mr\" - shows the current amount of magic resistances your character has.\n\"-cr\" - shows the current amount of control resistances your character has.\n\"-damage\" - shows the player all the damage he has dealt throughout the entire game, as well as the amount of damage reduced by general resistances (not a mage) and also the amount of damage he has blocked with shields or other sources.\n\"-tdamage\" - shows all this information about other players as well.\n\"-theal\" - shows all the information about HP and MP restored to yourself or allied heroes for all players.","ReplaceableTextures\\CommandButtons\\BTNLaxusExD_Port.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands p.4","|cFFFFC850Игровые команды|r:\n\"-rounds xx\" - устанавливает кол-во раундов от 2 до 50.\n\"-setduels xx\" - устанавливает разницу между дуэлями, указать можно от 2 до 50. Написать можно лишь в первом раунде.\n\"-noduels\" - включает/выключает дуэли. Так же, после раунда, когда дуэль должна произойти, выдается компенсация. Написать можно лишь в первом раунде.","|cFFFFC850Game commands|r:\n\"-rounds xx\" - sets the number of rounds from 2 to 50.\n\"-setduels xx\" - sets the difference between duels, you can specify from 2 to 50. You can write only in the first round.\n\"-noduels\" - enables/disables duels. Also, after the round, when the duel should take place, compensation is given. You can only write in the first round.","ReplaceableTextures\\CommandButtons\\BTNWendy.blp")
+call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Bot Commands","|cFFFFC850-bots|r — добавляет ботов в свободные слоты до первого раунда. В тестовом режиме работает в любое время.\n\n|cFFFFC850-botdelay N|r — задаёт задержку приказов всех ботов от 0 до 200 мс. По умолчанию 10 мс. Без числа показывает текущее значение.\n\nКоманды доступны первому активному игроку и судьям.","|cFFFFC850-bots|r adds bots to empty slots before the first round. In test mode it works at any time.\n\n|cFFFFC850-botdelay N|r sets the order delay for all bots from 0 to 200 ms. Default is 10 ms. Omit the number to see the current delay.\n\nThe first active player and judges can use these commands.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Commands for Test Mode","|cFFFFC850Игровые команды|r:\n\"-hero x yyy\" - Создается герой c id yyy для игрока x. Узнать id можно с помощью команды \"-id 1..4 \".\n\"-cd\" - сбрасывает перезарядку у всех героев.\n\"-setmr\" - позволяет установить текуший маг резист.\n\"-heal\" и \"-unheal\" - Восстанавливает/Уменьшает до 1 здоровье и ману всех героев.\n\"-start\" - Начинает раунд спустя 3 сек.\n\"-pause\" - Останавливает любой таймер на экране.\"-amir\" - Дает каждому игроку 99999999 золота.\n\"-lvlamir\" - Дает максимальный уровень всем героям.\n\"-lvl x\" - устанавливает всем игрокам X уровень.\n\"-control x\" - Дает контроль над указанным игроком.\n\"-height x\" - Устанавливает выбранному юниту X высоту.","|cFFFFC850Game commands|r:\n\"-hero x yyy\" - A hero with the id yyy is created for player x. You can find out the id using the command \"-id 1..4 \".\n\"-cd\" - Resets the cooldown for all heroes.\n\"-setmr\" - Allows you to set the current magic resistance.\n\"-heal\" and \"-unheal\" - Restores/Reduces to 1 health and mana for all heroes.\n\"-start\" - Starts the round after 3 sec.\n\"-pause\" - Stops any timer for screen.\"-amir\" - Gives each player 99999999 gold.\n\"-lvlamir\" - Gives the maximum level to all heroes.\n\"-lvl x\" - sets all players to level X.\n\"-control x\" - Gives control over the specified player.\n\"-height x\" - Sets the selected unit's height to X.","ReplaceableTextures\\CommandButtons\\BTNHourglass_Yukirin.blp")
 //call CreateQuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Sounds and Music!","|cFFFFC850Информация об озвучке в карте:|r:\n\nЧтобы в карте появилась озвучка, вам необходимо:\n\n1)Скачать архив, из паблика Вконтакте, на ХГМ или Нарутоваре.\n2)Выполнить инструкцию написанную в \"ридми\".\n3)Играть :)","ReplaceableTextures\\CommandButtons\\BTNDrum.blp")
 call LANG_QuestBJ(bj_QUESTTYPE_OPT_DISCOVERED,"Help!","|cFFFFC850Что собирать в начале|r:\n1)Сапоги скорости\n2)Медаль храбрости\n3)Медаль храбрости или шинель квинси\nДальше по вашему усмотрению.","|cFFFFC850What to collect at the beginning|r:\n1)Boots of Speed\n2)Medal of Courage\n3)Medal of Courage or Quincy Coat\nThen at your discretion.","ReplaceableTextures\\CommandButtons\\BTNSelectHeroOff.blp")
@@ -38219,7 +38221,7 @@ loop
         call ClearFrameAllPoints(panel)
         call SetFrameRelativePoint(panel,FRAMEPOINT_CENTER,TavernHeroFrame,FRAMEPOINT_CENTER,0,.02)
         call SetFrameSize(panel,.26,.125)
-        call SetFrameTextureEx(panel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+        call SetFrameTextureEx(panel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",255)
         call SetFramePriority(panel,8)
         call ShowFrame(panel,false)
         set SD_Panel[i]=panel
@@ -38531,7 +38533,7 @@ if udg_test==false then
     call SetFrameRelativePoint( TavernHeroAbilityTooltip, FRAMEPOINT_CENTER, TavernHeroAbilityIcon, FRAMEPOINT_CENTER,  3.13, -.1  )
     call ShowFrame( TavernHeroAbilityTooltip, false )
     call SetFrameParent( TavernHeroAbilityTooltip, TavernHeroAbilityIcon )
-    call SetFrameTextureEx(TavernHeroAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(TavernHeroAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( TavernHeroAbilityTooltip, 8 )
     call SetFrameTooltip(TavernHeroAbilityIcon,TavernHeroAbilityTooltip)
 
@@ -38622,7 +38624,7 @@ if udg_test==false then
     call SetFrameRelativePoint( TavernHeroAdditionalAbilityTooltip, FRAMEPOINT_CENTER, TavernHeroAdditionalAbilityIcon, FRAMEPOINT_CENTER,  3.13, -.1  )
     call ShowFrame( TavernHeroAdditionalAbilityTooltip, false )
     call SetFrameParent( TavernHeroAdditionalAbilityTooltip, TavernHeroAdditionalAbilityIcon )
-    call SetFrameTextureEx(TavernHeroAdditionalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(TavernHeroAdditionalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( TavernHeroAdditionalAbilityTooltip, 8 )
     call SetFrameSize( TavernHeroAdditionalAbilityTooltip, .22, .0455)
     call SetFrameTooltip(TavernHeroAdditionalAbilityIcon,TavernHeroAdditionalAbilityTooltip)
@@ -38909,7 +38911,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -38993,7 +38995,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -39077,7 +39079,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -39195,7 +39197,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -39303,7 +39305,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -39411,7 +39413,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -39518,7 +39520,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -39625,7 +39627,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -39733,7 +39735,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
 
@@ -39841,7 +39843,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -39948,7 +39950,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -40056,7 +40058,7 @@ if udg_test==false then
     call SetFrameSize( HoverHeroTavernIcon, .22, .0455)
     call ShowFrame( HoverHeroTavernIcon, false )
     call SetFrameParent( HoverHeroTavernIcon, HeroTavernIcon )
-    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroTavernIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroTavernIcon, 8 )
     call SetFrameTooltip(HeroTavernIcon,HoverHeroTavernIcon)
     
@@ -40655,7 +40657,7 @@ elseif bu==udg_Button[3] then
     call SetFrameSize( TavernCMIconTooltip, .48, .04)
     call ShowFrame( TavernCMIconTooltip, true )
     call SetFrameParent( TavernCMIconTooltip, TavernHeroFrame )
-    call SetFrameTextureEx(TavernCMIconTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(TavernCMIconTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( TavernCMIconTooltip, 7 )
     //call SetFrameTooltip(TavernCMIcon,TavernCMIconTooltip)
 
@@ -41258,7 +41260,7 @@ call ClearFrameAllPoints(TavRolePanel)
 // две колонки по 6: слева — как бьёт и живёт (Carry, Assassin, Durable, Tank, Swordsman, Escape),
 // справа — способности (Caster, Nuker, Disabler, Exhauster, Support, Initiator); «Сбросить» — под левой колонкой
 call SetFrameSize(TavRolePanel,.19,.016*6+.012+.024)
-call SetFrameTextureEx(TavRolePanel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",0)
+call SetFrameTextureEx(TavRolePanel,0,"UI\\widgets\\BattleNet\\bnet-tooltip-background.blp",false,"Choice-tooltip-border.blp",255)
 call SetFramePriority(TavRolePanel,8)
 call SetFrameRelativePoint(TavRolePanel,FRAMEPOINT_BOTTOMLEFT,TavRoleBtn,FRAMEPOINT_BOTTOMRIGHT,.003,-.04)
 loop
@@ -45052,6 +45054,9 @@ function Trig_Killer_Actions takes nothing returns nothing
             endif
             //=== End Streak System
             // золото за убийство и за серию: убийце и помощникам по урону за последние 15 с; печатает одну строку
+            if not FFAMode and iu!=ic and IsUnitAlly(c,PlayerV(iu)) then
+                set goldTotal=R2I(100*kf)
+            endif
             call AST_PayKill(iu,c,goldTotal,streakGold,killMsg)
             if assistnames!="" then
                 call FlushChildHashtable(HH,GetHandleId(PlayerH))
@@ -46262,7 +46267,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( CustomClassTooltip, FRAMEPOINT_CENTER, CustomClassFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
     call ShowFrame( CustomClassTooltip, false )
     call SetFrameParent( CustomClassTooltip, CustomClassFrame )
-    call SetFrameTextureEx(CustomClassTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(CustomClassTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( CustomClassTooltip, 6 )
     call SetFrameTooltip(CustomClassFrame,CustomClassTooltip)
 
@@ -46309,7 +46314,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( CustomAbilityVarTooltip, FRAMEPOINT_CENTER, CustomAbilityVarFrame, FRAMEPOINT_CENTER,  3.13, -.1  )
     call ShowFrame( CustomAbilityVarTooltip, false )
     call SetFrameParent( CustomAbilityVarTooltip, CustomAbilityVarFrame )
-    call SetFrameTextureEx(CustomAbilityVarTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(CustomAbilityVarTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( CustomAbilityVarTooltip, 6 )
     call SetFrameTooltip(CustomAbilityVarFrame,CustomAbilityVarTooltip)
 
@@ -46449,7 +46454,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call SetFrameRelativePoint( CustomGlobalAbilityTooltip, FRAMEPOINT_CENTER, CustomGlobalAbilityFrame, FRAMEPOINT_TOPRIGHT,  3.13, -.1  )
     call ShowFrame( CustomGlobalAbilityTooltip, false )
     call SetFrameParent( CustomGlobalAbilityTooltip, CustomGlobalAbilityFrame )
-    call SetFrameTextureEx(CustomGlobalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(CustomGlobalAbilityTooltip, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( CustomGlobalAbilityTooltip, 7 )
     call SetFrameTooltip(CustomGlobalAbilityFrame,CustomGlobalAbilityTooltip)
 
@@ -46478,7 +46483,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( CustomLeaderboard )
     call SetFrameRelativePoint( CustomLeaderboard, FRAMEPOINT_BOTTOMRIGHT, GetOriginFrame( ORIGIN_FRAME_CONSOLE_UI, 0 ), FRAMEPOINT_CENTER,  .3915, -0.14  )
     call ShowFrame( CustomLeaderboard, false )
-    call SetFrameTextureEx(CustomLeaderboard, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(CustomLeaderboard, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( CustomLeaderboard, 5 )
 
     set CustomLeaderboardText=CreateFrameByType( "SIMPLETEXT", "CustomLeaderboardText", CustomLeaderboard, "", 0 )
@@ -46507,7 +46512,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     // высота 0.04 (было 0.0425), верхний край на прежнем месте (0.1 + 0.02125)
     call SetFrameRelativePoint( StatusBarFrame, FRAMEPOINT_CENTER, consoleUI, FRAMEPOINT_BOTTOM,  .0013, .10125  )
     call SetFrameSize( StatusBarFrame, .21, .04)
-    call SetFrameTextureEx(StatusBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(StatusBarFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( StatusBarFrame, 7 )
 
     set CloseStatusButton=CreateFrameByType( "SIMPLEBUTTON", "StatusBarClose", StatusBarFrame, "", 0 )
@@ -46537,13 +46542,13 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( SB_Track )
     call SetFrameSize( SB_Track, .19, .003 )
     call SetFrameRelativePoint( SB_Track, FRAMEPOINT_BOTTOM, StatusBarFrame, FRAMEPOINT_BOTTOM, 0, .0015 )
-    call SetFrameTextureEx( SB_Track, 0, "TooltipLessVisible.blp", false, "", 0 )
+    call SetFrameTextureEx( SB_Track, 0, "TooltipLessVisible.blp", false, "", 255 )
     call SetFramePriority( SB_Track, 7 )
     set SB_Thumb=CreateFrameByType( "SIMPLEFRAME", "StatusBarThumb", StatusBarFrame, "", 0 )
     call ClearFrameAllPoints( SB_Thumb )
     call SetFrameSize( SB_Thumb, .06, .003 )
     call SetFrameRelativePoint( SB_Thumb, FRAMEPOINT_LEFT, SB_Track, FRAMEPOINT_LEFT, 0, 0 )
-    call SetFrameTextureEx( SB_Thumb, 0, "war3mapImported\\shop_thumb_blue.tga", false, "", 0 )
+    call SetFrameTextureEx( SB_Thumb, 0, "war3mapImported\\shop_thumb_blue.tga", false, "", 255 )
     call SetFramePriority( SB_Thumb, 8 )
     set SB_BtnL=CreateFrameByType( "SIMPLEBUTTON", "StatusBarScrollL", StatusBarFrame, "", 0 )
     call ClearFrameAllPoints( SB_BtnL )
@@ -46803,7 +46808,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call ClearFrameAllPoints( StatsBarFrame )
     call SetFrameRelativePoint( StatsBarFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_BOTTOM,  .0013, .378  )
     call SetFrameSize( StatsBarFrame, .8, .386)
-    call SetFrameTextureEx(StatsBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(StatsBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( StatsBarFrame, 5 )
         
     
@@ -47330,7 +47335,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     //call SetFrameSize( ResistBarFrame, .094, .145) // 29 окт: +2 строки AS
     call SetFrameSize( ResistBarFrame, .094, .155) // 29 окт: +2 строки AS, +1 Phys Resist
     call ShowFrame( ResistBarFrame, false )
-    call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(ResistBarFrame, 0, "TooltipLessVisible.blp", false, "Choice-tooltip-border.blp", 255)
     // SIMPLE с приоритетом выше 5 (выше WFEUIBlackBar у WFE); кнопка «%» — ещё выше
     call SetFramePriority( ResistBarFrame, 8 )
 
@@ -55635,9 +55640,6 @@ set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[ip+1]))
-call ShowAbility2Timed('A10B',true,0.13)
-call ShowAbility2Timed('A20B',false,0.12)
-call ShowAbility2Timed('A30B',false,0.12)
 call ShowUnitAbility(n,'TMW0',true)
 call ShowUnitAbility(n,'A0J5',true)
 if GetHeroLevel(u)>1 then
@@ -56182,12 +56184,6 @@ set udg_Swap[udg_SwapId[i]]=false
 set udg_Swap[i]=false
 call W3MMD_Lite_Set_Integer(PlayerV(udg_SwapId[i]-1),"Picked_hero",HeroSkin(udg_Hero[i]))
 call W3MMD_Lite_Set_Integer(PlayerV(i-1),"Picked_hero",HeroSkin(udg_Hero[udg_SwapId[i]]))
-call ShowAbility2Timed('A10B',true,0.13)
-call ShowAbility2Timed('A20B',false,0.12)
-call ShowAbility2Timed('A30B',false,0.12)
-call ShowAbility2Timed('A10B',true,0.13)
-call ShowAbility2Timed('A20B',false,0.12)
-call ShowAbility2Timed('A30B',false,0.12)
 call SetUnitPosition(u1,GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1))
 if GetUnitTypeId(udg_Hero[i])=='H06G' or GetUnitTypeId(udg_Hero[udg_SwapId[i]])=='H06G' then
 call SetPlayerAbilityAvailable(PlayerV(udg_SwapId[i]-1),'A1DT',false)
@@ -56799,7 +56795,7 @@ function Trig_test_Actions takes nothing returns nothing
     call ClearFrameAllPoints( IdHeroFrame )
     call SetFrameRelativePoint( IdHeroFrame, FRAMEPOINT_CENTER, gameUI, FRAMEPOINT_CENTER,  0, .067  )
     call SetFrameSize( IdHeroFrame, .705, .405)
-    call SetFrameTextureEx(IdHeroFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(IdHeroFrame, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( IdHeroFrame, 5 )
     
     if TavernHeroFrame!=null then
@@ -57043,7 +57039,7 @@ function Trig_test_Actions takes nothing returns nothing
     call SetFrameSize( HoverHeroIdIcon, .22, .0455)
     call ShowFrame( HoverHeroIdIcon, false )
     call SetFrameParent( HoverHeroIdIcon, HeroIdIcon )
-    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroIdIcon, 7 )
     set y=0
     loop 
@@ -57126,7 +57122,7 @@ function Trig_test_Actions takes nothing returns nothing
     call SetFrameSize( HoverHeroIdIcon, .22, .0455)
     call ShowFrame( HoverHeroIdIcon, false )
     call SetFrameParent( HoverHeroIdIcon, HeroIdIcon )
-    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroIdIcon, 7 )
     set y=0
     loop 
@@ -57210,7 +57206,7 @@ function Trig_test_Actions takes nothing returns nothing
     call SetFrameSize( HoverHeroIdIcon, .22, .0455)
     call ShowFrame( HoverHeroIdIcon, false )
     call SetFrameParent( HoverHeroIdIcon, HeroIdIcon )
-    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 0)
+    call SetFrameTextureEx(HoverHeroIdIcon, 0, "UI\\widgets\\BattleNet\\bnet-tooltip-background.blp", false, "Choice-tooltip-border.blp", 255)
     call SetFramePriority( HoverHeroIdIcon, 7 )
     set y=0
     loop 
@@ -58396,9 +58392,6 @@ set rfhpick=true
 set Hero[ip]=n
 set udg_Hero[ip+1]=n
 call W3MMD_Lite_Set_Integer(p,"Picked_hero",HeroSkin(udg_Hero[ip+1]))
-call ShowAbility2Timed('A10B',true,0.13)
-call ShowAbility2Timed('A20B',false,0.12)
-call ShowAbility2Timed('A30B',false,0.12)
 call ShowUnitAbility(n,'TMW0',true)
 call ShowAbility2('A0J5',true)
 call ShowAbility2('A177',true)
@@ -60791,7 +60784,7 @@ endif
 if CBS_QcAb==0 then
 return
 endif
-if CBS_QcAb=='HaG1' or CBS_QcAb=='MaTc' then
+if CBS_QcAb=='HaG1' or CBS_QcAb=='MaTc' or CBS_QcAb=='A0CT' then
 if CBS_QC or not IsKeyPressed(CBS_Key[CBS_QcKey]) then
 call CBS_QcSend(CBS_QcAb)
 set CBS_QcAb=0
@@ -61644,13 +61637,13 @@ set CBS_SlTrack[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlTrack",null,"",cbS)
 call ClearFrameAllPoints(CBS_SlTrack[cbS])
 call SetFrameSize(CBS_SlTrack[cbS],CBS_SLW,.006)
 call SetFrameRelativePoint(CBS_SlTrack[cbS],FRAMEPOINT_LEFT,HPB_Menu,FRAMEPOINT_TOPLEFT,CBS_PX(cbX),CBS_PY(cbY))
-call SetFrameTextureEx(CBS_SlTrack[cbS],0,"Textures\\Black32.blp",false,"",0)
+call SetFrameTextureEx(CBS_SlTrack[cbS],0,"Textures\\Black32.blp",false,"",255)
 //call SetFramePriority(CBS_SlTrack[cbS],10)
 call SetFramePriority(CBS_SlTrack[cbS],5)
 set CBS_SlFill[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlFill",null,"",cbS)
 call ClearFrameAllPoints(CBS_SlFill[cbS])
 call SetFrameRelativePoint(CBS_SlFill[cbS],FRAMEPOINT_LEFT,CBS_SlTrack[cbS],FRAMEPOINT_LEFT,0.,0.)
-call SetFrameTextureEx(CBS_SlFill[cbS],0,cbTex,false,"",0)
+call SetFrameTextureEx(CBS_SlFill[cbS],0,cbTex,false,"",255)
 //call SetFramePriority(CBS_SlFill[cbS],11)
 call SetFramePriority(CBS_SlFill[cbS],6)
 //set CBS_SlThumb[cbS]=CreateFrameByType("SIMPLEFRAME","CBSSlThumb",null,"",cbS)
@@ -62474,7 +62467,7 @@ set CBS_AlChk=CreateFrameByType("SIMPLEFRAME","CBSAutoLearnCheck",null,"",0)
 call ClearFrameAllPoints(CBS_AlChk)
 call SetFrameSize(CBS_AlChk,(.017)*CBS_Z,(.017)*CBS_Z)
 call SetFrameRelativePoint(CBS_AlChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
-call SetFrameTextureEx(CBS_AlChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFrameTextureEx(CBS_AlChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",255)
 call SetFramePriority(CBS_AlChk,6)
 call ShowFrame(CBS_AlChk,false)
 set CBS_AlLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSAutoLearnLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.038,-.3555)
@@ -62662,7 +62655,7 @@ set cbF=CBS_Ring(4+cbK,.027,.013,.0012,7)
 //call SetFrameParent(CBS_RingP[(4+cbK)*4+1],cbF)
 //call SetFrameParent(CBS_RingP[(4+cbK)*4+2],cbF)
 //call SetFrameParent(CBS_RingP[(4+cbK)*4+3],cbF)
-call SetFrameTextureEx(cbF,0,"Textures\\Black32.blp",false,"",0)
+call SetFrameTextureEx(cbF,0,"Textures\\Black32.blp",false,"",255)
 //call SetFramePriority(cbF,16)
 call SetFrameRelativePoint(cbF,FRAMEPOINT_BOTTOM,CBS_HkBtn[cbK],FRAMEPOINT_BOTTOM,0.,.002)
 //set CBS_HkTxt[cbK]=CreateFrameByType("SIMPLETEXT","CBSHkKey",CBS_HkBtn[cbK],"",cbK)
@@ -62720,7 +62713,7 @@ set cbX=0.
 call ClearFrameAllPoints(CBS_QcChk)
 call SetFrameSize(CBS_QcChk,(.017)*CBS_Z,(.017)*CBS_Z)
 call SetFrameRelativePoint(CBS_QcChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
-call SetFrameTextureEx(CBS_QcChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFrameTextureEx(CBS_QcChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",255)
 call SetFramePriority(CBS_QcChk,6)
 call ShowFrame(CBS_QcChk,false)
 set CBS_QcLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSQuickCastLabel",HPB_Menu,"",cbK),.012,0xFFFFFFFF,.038,-.3305)
@@ -62730,7 +62723,7 @@ set CBS_ScChk=CreateFrameByType("SIMPLEFRAME","CBSQuickCastCheck",null,"",cbK)
 call ClearFrameAllPoints(CBS_ScChk)
 call SetFrameSize(CBS_ScChk,(.017)*CBS_Z,(.017)*CBS_Z)
 call SetFrameRelativePoint(CBS_ScChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
-call SetFrameTextureEx(CBS_ScChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFrameTextureEx(CBS_ScChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",255)
 call SetFramePriority(CBS_ScChk,6)
 call ShowFrame(CBS_ScChk,false)
 set CBS_SmLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSQuickCastLabel",HPB_Menu,"",cbK),.012,0xFFFFFFFF,.038,-.3545)
@@ -62754,7 +62747,7 @@ set CBS_MmChk=CreateFrameByType("SIMPLEFRAME","CBSMinimapOptCheck",null,"",0)
 call ClearFrameAllPoints(CBS_MmChk)
 call SetFrameSize(CBS_MmChk,(.017)*CBS_Z,(.017)*CBS_Z)
 call SetFrameRelativePoint(CBS_MmChk,FRAMEPOINT_CENTER,cbF,FRAMEPOINT_CENTER,0.,0.)
-call SetFrameTextureEx(CBS_MmChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",0)
+call SetFrameTextureEx(CBS_MmChk,0,"UI\\Widgets\\EscMenu\\Human\\checkbox-check.blp",false,"",255)
 call SetFramePriority(CBS_MmChk,6)
 call ShowFrame(CBS_MmChk,false)
 set CBS_MmLbl=CBS_Label(CreateFrameByType("SIMPLETEXT","CBSMinimapOptLabel",HPB_Menu,"",0),.012,0xFFFFFFFF,.274,-.3305)
@@ -63455,9 +63448,12 @@ function EndOfChoiceAct takes nothing returns nothing
             call SetUnitAbilityLevel(Hero[i], 'MaDs', 1)
         endif
         call IssueImmediateOrder(Hero[i], "stop")
-        call ShowAbility2Timed('A10B',true,1.33)
-        call ShowAbility2Timed('A20B',false,1.32)
-        call ShowAbility2Timed('A30B',false,1.32)
+        if GetUnitAbilityLevel(Hero[i],'A10B')>0 then
+            call RemoveSavedInteger(HH,GetHandleId(Hero[i]),StringHash("CellDiskStage"))
+            call ShowUnitAbility(Hero[i],'A10B',true)
+            call ShowUnitAbility(Hero[i],'A20B',false)
+            call ShowUnitAbility(Hero[i],'A30B',false)
+        endif
         call SetBuffDispellable(GetUnitBuff( Hero[i], 'B06L' ),false)
         call SetBuffDispellable(GetUnitBuff( Hero[i], 'B16L' ),false)
         call ShowAbility2('TMW0',true)
@@ -133000,7 +132996,18 @@ local real dmg=LoadReal(h,id,4)
 local real dist=LoadReal(h,id,2)
 local real scale=LoadReal(h,id,10)
 local real lvl=LoadReal(h,id,13)
-if GetUnitCurrentOrder(u)==OrderId("curse") then
+if GetUnitAbilityLevel(u,'cbc9')>0 then
+    call StopSound(LoadSoundHandle(h,id,16),false,true)
+    call RemoveUnit(l__d)
+    call DestroyGroup(LoadGroupHandle(h,id,12))
+    call SetUnitTimeScale(u,1.)
+    call CameraSetTargetNoiseEx(0,0,true)
+    call CameraSetSourceNoiseEx(0,0,true)
+    call StartAbilityCooldown(GetUnitAbility(u,'A0RJ'),35.)
+    call RemoveSavedHandle(HH,GetHandleId(u),StringHash("FinalFlashCharge"))
+    call FlushChildHashtable(h,id)
+    call TSE_DestroyTimer(t)
+elseif GetUnitCurrentOrder(u)==OrderId("curse") then
 set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',.01)
 call SetUnitVertexColor(n,255,220,40,50)
@@ -133014,6 +133021,7 @@ call SetUnitFacingInstant(u,a*bj_RADTODEG)
 call SetUnitScale(l__d,scale,scale,scale)
 call DestroyEffect(AddSpecialEffect("Abilities\\Weapons\\FarseerMissile\\FarseerMissile.mdl",x+GetRandomReal(-355,355),y+GetRandomReal(-355,355)))
 else
+call RemoveSavedHandle(HH,GetHandleId(u),StringHash("FinalFlashCharge"))
 call IssueImmediateOrder(u,"stop")
 call MapPauseUnit(u,true)
 call StopSound(LoadSoundHandle(h,id,16),false,true) // звук из массива — останавливаем, не удаляем
@@ -133093,6 +133101,7 @@ endif
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
+call SaveTimerHandle(HH,GetHandleId(u),StringHash("FinalFlashCharge"),t)
 call TSE_TimerStart(t,0.1,true,function FinalFlashCast2)
 set u=null
 set p=null
@@ -141168,9 +141177,9 @@ call SaveInteger(HH,SH_ShnChanT,'A0ZS',2)
 call SaveStr(HH,SH_ShnChanO,'A0ZV',"acidbomb")
 call SaveInteger(HH,SH_ShnChanT,'A0ZV',1)
 call SaveStr(HH,SH_ShnChanO,'A100',"dispel")
-call SaveStr(HH,SH_ShnChanO,'A104',"acidbomb")
+call SaveStr(HH,SH_ShnChanO,'A104',"stampede")
 call SaveInteger(HH,SH_ShnChanT,'A104',2)
-call SaveStr(HH,SH_ShnChanO,'A106',"hex")
+call SaveStr(HH,SH_ShnChanO,'A106',"rainofchaos")
 call SaveInteger(HH,SH_ShnChanT,'A106',2)
 call SaveStr(HH,SH_ShnChanO,'A108',"channel")
 call SaveStr(HH,SH_ShnChanO,'A109',"web")
@@ -141302,7 +141311,7 @@ call SaveInteger(HH,SH_ShnChanT,'A156',1)
 call SaveStr(HH,SH_ShnChanO,'A15A',"resumeharvesting")
 call SaveStr(HH,SH_ShnChanO,'A15E',"devour")
 call SaveInteger(HH,SH_ShnChanT,'A15E',1)
-call SaveStr(HH,SH_ShnChanO,'A15L',"absorb")
+call SaveStr(HH,SH_ShnChanO,'A15L',"banish")
 call SaveInteger(HH,SH_ShnChanT,'A15L',3)
 call SaveStr(HH,SH_ShnChanO,'A15N',"avengerform")
 call SaveInteger(HH,SH_ShnChanT,'A15N',2)
@@ -141664,7 +141673,7 @@ call SaveStr(HH,SH_ShnChanO,'A2U9',"parasite")
 call SaveInteger(HH,SH_ShnChanT,'A2U9',1)
 call SaveStr(HH,SH_ShnChanO,'A2ZD',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'A2ZD',2)
-call SaveStr(HH,SH_ShnChanO,'A30B',"evileye")
+call SaveStr(HH,SH_ShnChanO,'A30B',"vengeance")
 call SaveInteger(HH,SH_ShnChanT,'A30B',2)
 call SaveStr(HH,SH_ShnChanO,'A34E',"channel")
 call SaveStr(HH,SH_ShnChanO,'A3D0',"blink")
@@ -141705,7 +141714,7 @@ call SaveStr(HH,SH_ShnChanO,'AKT1',"tornado")
 call SaveStr(HH,SH_ShnChanO,'AKW1',"channel")
 call SaveStr(HH,SH_ShnChanO,'AMUG',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'AMUR',"stomp")
-call SaveStr(HH,SH_ShnChanO,'AP03',"blizzard")
+call SaveStr(HH,SH_ShnChanO,'AP03',"darkconversion")
 call SaveInteger(HH,SH_ShnChanT,'AP03',3)
 call SaveStr(HH,SH_ShnChanO,'AP09',"hex")
 call SaveInteger(HH,SH_ShnChanT,'AP09',2)
@@ -141887,7 +141896,7 @@ call SaveStr(HH,SH_ShnChanO,'CS05',"avatar")
 call SaveInteger(HH,SH_ShnChanT,'CS05',1)
 call SaveStr(HH,SH_ShnChanO,'CelF',"ancestralspirit")
 call SaveInteger(HH,SH_ShnChanT,'CelF',2)
-call SaveStr(HH,SH_ShnChanO,'CelG',"charm")
+call SaveStr(HH,SH_ShnChanO,'CelG',"monsoon")
 call SaveInteger(HH,SH_ShnChanT,'CelG',2)
 call SaveStr(HH,SH_ShnChanO,'CelT',"tornado")
 call SaveStr(HH,SH_ShnChanO,'DMD1',"curse")
@@ -142054,7 +142063,7 @@ call SaveStr(HH,SH_ShnChanO,'HSE1',"healingspray")
 call SaveInteger(HH,SH_ShnChanT,'HSE1',2)
 call SaveStr(HH,SH_ShnChanO,'HSF1',"drain")
 call SaveStr(HH,SH_ShnChanO,'HSG1',"acidbomb")
-call SaveStr(HH,SH_ShnChanO,'HSQ1',"charm")
+call SaveStr(HH,SH_ShnChanO,'HSQ1',"spiritlink")
 call SaveInteger(HH,SH_ShnChanT,'HSQ1',3)
 call SaveStr(HH,SH_ShnChanO,'HSR1',"heal")
 call SaveInteger(HH,SH_ShnChanT,'HSR1',3)
@@ -142148,7 +142157,7 @@ call SaveStr(HH,SH_ShnChanO,'JNF1',"charm")
 call SaveStr(HH,SH_ShnChanO,'JNF4',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'JNG1',"purge")
 call SaveInteger(HH,SH_ShnChanT,'JNG1',1)
-call SaveStr(HH,SH_ShnChanO,'JNQ1',"absorb")
+call SaveStr(HH,SH_ShnChanO,'JNQ1',"transmute")
 call SaveInteger(HH,SH_ShnChanT,'JNQ1',3)
 call SaveStr(HH,SH_ShnChanO,'JNR1',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'JNR1',1)
@@ -142455,9 +142464,9 @@ call SaveInteger(HH,SH_ShnChanT,'SuW1',2)
 call SaveStr(HH,SH_ShnChanO,'TMD0',"blackarrow")
 call SaveStr(HH,SH_ShnChanO,'TME0',"ancestralspirittarget")
 call SaveInteger(HH,SH_ShnChanT,'TME0',1)
-call SaveStr(HH,SH_ShnChanO,'TMF0',"revive")
+call SaveStr(HH,SH_ShnChanO,'TMF0',"soulburn")
 call SaveInteger(HH,SH_ShnChanT,'TMF0',3)
-call SaveStr(HH,SH_ShnChanO,'TMF2',"revive")
+call SaveStr(HH,SH_ShnChanO,'TMF2',"parasite")
 call SaveInteger(HH,SH_ShnChanT,'TMF2',3)
 call SaveStr(HH,SH_ShnChanO,'TMG0',"thunderclap")
 call SaveStr(HH,SH_ShnChanO,'TMQ0',"absorb")
@@ -143259,8 +143268,8 @@ call SaveStr(HH,SH_AbOrd,'A0ZW',"immolation")
 call SaveStr(HH,SH_AbOrd,'A100',"dispel")
 call SaveStr(HH,SH_AbOrd,'A101',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'A103',"frenzy")
-call SaveStr(HH,SH_AbOrd,'A104',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'A106',"hex")
+call SaveStr(HH,SH_AbOrd,'A104',"stampede")
+call SaveStr(HH,SH_AbOrd,'A106',"rainofchaos")
 call SaveStr(HH,SH_AbOrd,'A108',"channel")
 call SaveStr(HH,SH_AbOrd,'A109',"web")
 call SaveStr(HH,SH_AbOrd,'A10A',"blight")
@@ -143368,7 +143377,7 @@ call SaveStr(HH,SH_AbOrd,'A15A',"resumeharvesting")
 call SaveStr(HH,SH_AbOrd,'A15C',"berserk")
 call SaveStr(HH,SH_AbOrd,'A15E',"devour")
 call SaveStr(HH,SH_AbOrd,'A15J',"doom")
-call SaveStr(HH,SH_AbOrd,'A15L',"absorb")
+call SaveStr(HH,SH_AbOrd,'A15L',"banish")
 call SaveStr(HH,SH_AbOrd,'A15N',"avengerform")
 call SaveStr(HH,SH_AbOrd,'A15O',"AImove")
 call SaveStr(HH,SH_AbOrd,'A15P',"curseon")
@@ -143656,7 +143665,7 @@ call SaveStr(HH,SH_AbOrd,'A2SK',"immolation")
 call SaveStr(HH,SH_AbOrd,'A2U9',"parasite")
 call SaveStr(HH,SH_AbOrd,'A2X2',"mirrorimage")
 call SaveStr(HH,SH_AbOrd,'A2ZD',"breathoffire")
-call SaveStr(HH,SH_AbOrd,'A30B',"evileye")
+call SaveStr(HH,SH_AbOrd,'A30B',"vengeance")
 call SaveStr(HH,SH_AbOrd,'A30C',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A315',"divineshield")
 call SaveStr(HH,SH_AbOrd,'A31C',"immolation")
@@ -143918,7 +143927,7 @@ call SaveStr(HH,SH_AbOrd,'AOw2',"stomp")
 call SaveStr(HH,SH_AbOrd,'AOwk',"windwalk")
 call SaveStr(HH,SH_AbOrd,'AOws',"stomp")
 call SaveStr(HH,SH_AbOrd,'AOww',"whirlwind")
-call SaveStr(HH,SH_AbOrd,'AP03',"blizzard")
+call SaveStr(HH,SH_AbOrd,'AP03',"darkconversion")
 call SaveStr(HH,SH_AbOrd,'AP09',"hex")
 call SaveStr(HH,SH_AbOrd,'APrl',"resurrection")
 call SaveStr(HH,SH_AbOrd,'APrr',"resurrection")
@@ -144199,7 +144208,7 @@ call SaveStr(HH,SH_AbOrd,'CS02',"root")
 call SaveStr(HH,SH_AbOrd,'CS03',"roar")
 call SaveStr(HH,SH_AbOrd,'CS05',"avatar")
 call SaveStr(HH,SH_AbOrd,'CelF',"ancestralspirit")
-call SaveStr(HH,SH_AbOrd,'CelG',"charm")
+call SaveStr(HH,SH_AbOrd,'CelG',"monsoon")
 call SaveStr(HH,SH_AbOrd,'CelT',"tornado")
 call SaveStr(HH,SH_AbOrd,'Con1',"ensnare")
 call SaveStr(HH,SH_AbOrd,'Con2',"thunderbolt")
@@ -144322,7 +144331,7 @@ call SaveStr(HH,SH_AbOrd,'HSC1',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'HSE1',"healingspray")
 call SaveStr(HH,SH_AbOrd,'HSF1',"drain")
 call SaveStr(HH,SH_AbOrd,'HSG1',"acidbomb")
-call SaveStr(HH,SH_AbOrd,'HSQ1',"charm")
+call SaveStr(HH,SH_AbOrd,'HSQ1',"spiritlink")
 call SaveStr(HH,SH_AbOrd,'HSR1',"heal")
 call SaveStr(HH,SH_AbOrd,'HST1',"bearform")
 call SaveStr(HH,SH_AbOrd,'HST2',"tornado")
@@ -144391,7 +144400,7 @@ call SaveStr(HH,SH_AbOrd,'JNE1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'JNF1',"charm")
 call SaveStr(HH,SH_AbOrd,'JNF4',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'JNG1',"purge")
-call SaveStr(HH,SH_AbOrd,'JNQ1',"absorb")
+call SaveStr(HH,SH_AbOrd,'JNQ1',"transmute")
 call SaveStr(HH,SH_AbOrd,'JNR1',"ancestralspirittarget")
 call SaveStr(HH,SH_AbOrd,'JNT1',"web")
 call SaveStr(HH,SH_AbOrd,'JNW1',"acidbomb")
@@ -144656,8 +144665,8 @@ call SaveStr(HH,SH_AbOrd,'SuW1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'Suhf',"unholyfrenzy")
 call SaveStr(HH,SH_AbOrd,'TMD0',"blackarrow")
 call SaveStr(HH,SH_AbOrd,'TME0',"ancestralspirittarget")
-call SaveStr(HH,SH_AbOrd,'TMF0',"revive")
-call SaveStr(HH,SH_AbOrd,'TMF2',"revive")
+call SaveStr(HH,SH_AbOrd,'TMF0',"soulburn")
+call SaveStr(HH,SH_AbOrd,'TMF2',"parasite")
 call SaveStr(HH,SH_AbOrd,'TMG0',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'TMG1',"silence")
 call SaveStr(HH,SH_AbOrd,'TMG3',"silence")
@@ -150494,7 +150503,7 @@ local player p=OwnerOf(u)
 local group g=LoadGroupHandle(h,id,6)
 local integer st=0
 local real time = LoadReal(h,id,10)
-if(OrderId2String(GetUnitCurrentOrder(u))!="doom") or time==0 then
+if GetUnitAbilityLevel(u,'cbc9')>0 or GetUnitCurrentOrder(u)!=OrderId("doom") or time==0 then
     if LoadBoolean(h,id,11)==false then
         call SetUnitInvulnerable(u,false)
         call SetUnitFlyHeight(u,0,800)
@@ -155532,21 +155541,46 @@ set soundplay=SndN(2192) // Sound\Music\mp3Music\ThrowDisc.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call SaveReal(h,id,10,dmg)
-if GetSpellAbilityId()=='A10B' then
-call ShowAbility2Timed('A10B',false,0.76)
-call ShowAbility2Timed('A20B',true,0.77)
-elseif GetSpellAbilityId()=='A20B' then
-call ShowAbility2Timed('A20B',false,0.76)
-call ShowAbility2Timed('A30B',true,0.77)
-elseif GetSpellAbilityId()=='A30B' then
-call ShowAbility2Timed('A30B',false,0.76)
-call ShowAbility2Timed('A10B',true,0.77)
-endif
+call SaveInteger(HH,GetHandleId(u),StringHash("CellDiskStage"),GetSpellAbilityId())
 call SetUnitFacing(LoadUnitHandle(h,id,1),a*bj_RADTODEG)
 call TSE_TimerStart(t,0.03,true,function DestructoDiskCast2)
 set u=null
 set p=null
 set t=null
+endfunction
+function DestructoDiskSwitch takes nothing returns nothing
+local timer swap=GetExpiredTimer()
+local integer id=GetHandleId(swap)
+local unit caster=LoadUnitHandle(h,id,0)
+local integer stage=LoadInteger(h,id,1)
+local integer nextStage='A10B'
+if GetUnitTypeId(caster)!=0 and LoadInteger(HH,GetHandleId(caster),StringHash("CellDiskStage"))==stage then
+    call RemoveSavedInteger(HH,GetHandleId(caster),StringHash("CellDiskStage"))
+    if stage=='A10B' then
+        set nextStage='A20B'
+    elseif stage=='A20B' then
+        set nextStage='A30B'
+    endif
+    call ShowUnitAbility(caster,stage,false)
+    call ShowUnitAbility(caster,nextStage,true)
+endif
+call FlushChildHashtable(h,id)
+call TSE_DestroyTimer(swap)
+set caster=null
+set swap=null
+endfunction
+function DestructoDiskEnd takes nothing returns nothing
+local unit caster=GetTriggerUnit()
+local integer stage=GetSpellAbilityId()
+local timer swap
+if LoadInteger(HH,GetHandleId(caster),StringHash("CellDiskStage"))==stage then
+    set swap=CreateTimer()
+    call SaveUnitHandle(h,GetHandleId(swap),0,caster)
+    call SaveInteger(h,GetHandleId(swap),1,stage)
+    call TSE_TimerStartOwned(swap,0.,false,function DestructoDiskSwitch,OwnerOf(caster))
+endif
+set caster=null
+set swap=null
 endfunction
 function DestructoLearnCond takes nothing returns boolean
 return GetLearnedSkill()=='A10A' and IsUnitIllusion(GetTriggerUnit())==false
@@ -155561,10 +155595,10 @@ call UnitAddAbility(u,'A10B')
 call UnitMakeAbilityPermanent(u,true,'A10B')
 call UnitAddAbility(u,'A20B')
 call UnitMakeAbilityPermanent(u,true,'A20B')
-call ShowAbility2('A20B',false)
+call ShowUnitAbility(u,'A20B',false)
 call UnitAddAbility(u,'A30B')
 call UnitMakeAbilityPermanent(u,true,'A30B')
-call ShowAbility2('A30B',false)
+call ShowUnitAbility(u,'A30B',false)
 endif
 call SetUnitAbilityLevel(u,'A10B',lvl)
 call SetUnitAbilityLevel(u,'A20B',lvl)
@@ -182995,6 +183029,9 @@ local unit c=GetSpellTargetUnit()
 local player p=OwnerOf(u)
 if GetUnitAbilityLevel(c,'A15H')==0 or IsUnitAlly(c,p) then
 call SetControlToUnit(u, c, 2, "cyclone")
+if GetUnitAbilityLevel(c,'cbc9')>0 and GetUnitTypeId(c)=='H04C' and GetUnitAbilityLevel(c,'A0UL')>0 and GetUnitCurrentOrder(c)==OrderId("doom") then
+    call IssueImmediateOrder(c,"stop")
+endif
 else
 call DisplayTimedWarningMessage(OwnerOf(u),10,Lng("Нельзя использовать на врага под эффектом Imagine Breaker.","Cannot be used on an enemy under the effect of Imagine Breaker."))
 call IssueImmediateOrder(u,"stop")
@@ -218854,9 +218891,10 @@ function AkainuRCast2 takes nothing returns nothing
     local player p=OwnerOf(u)
     local real dmg=GetHeroStr(u,true)*(2+GetUnitAbilityLevel(u,'A06Y'))
     local real time=LoadReal(h,id,9)
+    local real nextTime=time+0.001
     local group g=LoadGroupHandle(h,id,7)
-    call SaveReal(h,id,9,time+0.001)
-    if time==starttime+0.01 then
+    call SaveReal(h,id,9,nextTime)
+    if time<starttime+0.01 and nextTime>=starttime+0.01 then
         set EFF=AddSpecialEffect("acg_Wenzhang_huoyan.mdl", x,y)
         call SetSpecialEffectScale(EFF , 2.0)
         call RemoveEffect(EFF,0.9,false,CreateTimer())
@@ -218870,7 +218908,7 @@ function AkainuRCast2 takes nothing returns nothing
         call SetUnitInvulnerable(u,true)
     endif
     if time<0.5 then
-        if time==0.0 then
+        if time<0.0 and nextTime>=0.0 then
             set soundplay=SndN(3314) // Sound\Music\mp3Music\AkainuR2.mp3
             call StartSound(soundplay)
             //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -218880,8 +218918,9 @@ function AkainuRCast2 takes nothing returns nothing
         endif
         call MapPauseUnit(u,true)
         call SetUnitInvulnerable(u,true)
-    else
-        if time==0.5 then
+    endif
+    if time>=0.5 or nextTime>=0.5 then
+        if time<0.5 then
             call MapPauseUnit(u,true)
             call SetUnitInvulnerable(u,true)
             call UnitApplyTimedLife(CreateUnit(p,'e0JG',x1,y1,GetRandomReal(0,359)),'BTLF',1)
@@ -218956,7 +218995,7 @@ function AkainuRCast2 takes nothing returns nothing
             call PauseTimer(t)
             call TSE_DestroyTimer(t)
         endif
-        if time==0.7 then
+        if time<0.7 and nextTime>=0.7 then
             call UnitRemoveAbility(u,'A0QL')
             call ResetUnitZ(u)
             call MapPauseUnit(u,false)
@@ -232644,11 +232683,11 @@ endfunction
 //========= Hashirama Start
 //==============================================================================
 function HashiramaQCasttimeCond takes nothing returns boolean
-return (GetIssuedOrderId()==OrderId("charm")and (GetUnitTypeId(GetTriggerUnit())=='HHSN' or GetUnitTypeId(GetTriggerUnit())=='HHSG')) or (GetIssuedOrderId()==OrderId("absorb") and GetUnitTypeId(GetTriggerUnit())=='HJi1')
+return (GetIssuedOrderId()==OrderId("spiritlink") and (GetUnitTypeId(GetTriggerUnit())=='HHSN' or GetUnitTypeId(GetTriggerUnit())=='HHSG')) or (GetIssuedOrderId()==OrderId("transmute") and GetUnitTypeId(GetTriggerUnit())=='HJi1')
 endfunction
 function HashiramaQCasttimeCast takes nothing returns nothing
     local unit u=GetTriggerUnit()
-    if GetIssuedOrderId()==OrderId("charm") then
+    if GetIssuedOrderId()==OrderId("spiritlink") then
         if GetOrderTargetUnit()==u then
             call SetAbilityRealLevelField(GetUnitAbility(u,'HSQ1'),ABILITY_RLF_CASTING_TIME,0,0.3)
             call SetAbilityRealLevelField(GetUnitAbility(u,'HSQ1'),ABILITY_RLF_CASTING_TIME,1,0.3)
@@ -232662,7 +232701,7 @@ function HashiramaQCasttimeCast takes nothing returns nothing
             call SetAbilityRealLevelField(GetUnitAbility(u,'HSQ1'),ABILITY_RLF_CASTING_TIME,3,0)
             call SetAbilityRealLevelField(GetUnitAbility(u,'HSQ1'),ABILITY_RLF_CASTING_TIME,4,0)
         endif
-    elseif GetIssuedOrderId()==OrderId("absorb") then
+    elseif GetIssuedOrderId()==OrderId("transmute") then
         if GetOrderTargetUnit()==u then
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,0,0.2)
             call SetAbilityRealLevelField(GetUnitAbility(u,'JNQ1'),ABILITY_RLF_CASTING_TIME,1,0.2)
@@ -232888,7 +232927,7 @@ call TSE_DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 endif
 else
-if(OrderId2String(GetUnitCurrentOrder(caster))!="charm")then
+if(OrderId2String(GetUnitCurrentOrder(caster))!="spiritlink")then
 call SaveReal(HH,id,5,5)
 else
 set time0=time0+0.02
@@ -233035,7 +233074,7 @@ call TSE_DestroyTimer(t)
 call FlushChildHashtable(HH,id)
 endif
 else
-if(OrderId2String(GetUnitCurrentOrder(caster))!="charm")then
+if(OrderId2String(GetUnitCurrentOrder(caster))!="spiritlink")then
 call SaveReal(HH,id,5,5)
 else
 set time0=time0+0.02
@@ -269823,8 +269862,8 @@ call SaveStr(SG_DB,'H074',0,"I01F I01M I01M I066 I00K I054 I068 I018 I040 I05Z I
 call SaveStr(SG_DB,'H074',1,"I01F I01M I01M I066 I00K I054 I068 I04V I05Z I040 I018 I06O I06Q I04T I04G")
 call SaveInteger(SG_DB,'H074',20,7)
 call SaveInteger(SG_DB,'H074',21,3)
-call SaveStr(SG_DB,'H05C',0,"I01F I01M I01H I00D I046 I04V I01U I00Q I042 I02V IBSI I03L IPlA I03F I04T")
-call SaveStr(SG_DB,'H05C',1,"I01F I01M I01H I00D I046 I04V I03F I00Q I042 I01U I04T IPlA I02V IBSI I03P")
+call SaveStr(SG_DB,'H05C',0,"I01F I01M I01H I04E I046 I04F I04V I01U I00Q I02V IBSI I03L IPlA I03F I04T")
+call SaveStr(SG_DB,'H05C',1,"I01F I01M I01H I04E I046 I04F I04V I03F I00Q I01U I04T IPlA I02V IBSI I03P")
 call SaveInteger(SG_DB,'H05C',20,3)
 call SaveInteger(SG_DB,'H05C',21,3)
 call SaveStr(SG_DB,'Ho0Z',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
@@ -296029,6 +296068,10 @@ call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function DestructoDiskCond))
 call TriggerAddAction(t,function DestructoDiskCast)
 set t=CreateTrigger()
+call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_ENDCAST)
+call TriggerAddCondition(t,Condition(function DestructoDiskCond))
+call TriggerAddAction(t,function DestructoDiskEnd)
+set t=CreateTrigger()
 call TriggerRegisterAnyUnitEventBJ(t,EVENT_PLAYER_UNIT_SPELL_EFFECT)
 call TriggerAddCondition(t,Condition(function ExplCond))
 call TriggerAddAction(t,function ExplCast)
@@ -298737,26 +298780,26 @@ call LANG_A('A0CS',1,4,"Kurotsuchi Mayuri heals himself or an ally for a certain
 call LANG_A('A0CS',2,0,"Regenerative Serum, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CS',3,0,"Kurotsuchi Mayuri heals himself or an ally for a certain amount of time. At level 35, you gain an additional 4 Instant Heal*|r|c0077FFFFINT|r|cFF00A5FF|n|n|cFF00A5FF|nHealing: 2\\3\\4\\5\\6*|r|c0077FFFFINT|r|cFF00A5FF +100 HP|nDuration: 30 sec.|nCooldown: 20 seconds|r")
 call LANG_A('A0CT',0,0,"Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 10%|nRange: 500|nCooldown"+": 28 seconds|r")
+call LANG_A('A0CT',1,0,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.025*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 10% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 28 sec.|r")
 call LANG_A('A0CT',0,1,"Ashisogi Jizo, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,1,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.5×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 20%|nRange: 500|nCooldow"+"n: 26 seconds|r")
+call LANG_A('A0CT',1,1,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 2.5*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.05*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 20% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 26 sec.|r")
 call LANG_A('A0CT',0,2,"Ashisogi Jizo, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,2,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.75×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 30%|nRange: 500|nCooldown"+": 24 seconds|r")
+call LANG_A('A0CT',1,2,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.075*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 30% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 24 sec.|r")
 call LANG_A('A0CT',0,3,"Ashisogi Jizo, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,3,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 3.5×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 40%|nRange: 500|nCooldown:"+" 22 seconds|r")
+call LANG_A('A0CT',1,3,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 3.5*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.1*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 40% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 22 sec.|r")
 call LANG_A('A0CT',0,4,"Ashisogi Jizo, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',1,4,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slow: 50%|nRange: 500|nCooldown"+": 20 seconds|r")
+call LANG_A('A0CT',1,4,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.125*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 50% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 20 sec.|r")
 call LANG_A('A0CT',2,0,"Ashisogi Jizo, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
-call LANG_A('A0CT',3,0,"• Mayuri makes a short dash toward an enemy and stabs them, leaving a mark for 7 seconds.|n• After the marked target uses an ability, the mark is consumed: the target is silenced for 2 seconds and becomes m"+"ore vulnerable to control for 5 seconds.|n• Incoming control duration and MS/AS slow, miss chance and damage reduction amounts increase by 25%. Reapplying refreshes the effect.|n• Passive: ability damage po"+"isons enemies for 5 seconds and slows their MS/AS for 6 seconds.|n|cFF00A5FF|nStab damage: 2\\2.5\\3\\3.5\\4×|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.25\\0.5\\0.75\\1\\1.25×|r|c0077FFFFINT|r|cFF00A5FF|nMS/AS slo"+"w: 10\\20\\30\\40\\50%|nRange: 500|nCooldown: 28\\26\\24\\22\\20 seconds|r")
+call LANG_A('A0CT',3,0,"Mayuri dashes to an enemy and stabs them. He is invulnerable during the dash. The stab leaves a mark that triggers when the target uses an ability, silencing them and amplifying incoming control. This increases control duration, MS/AS slows, miss chance and damage reduction effects.|n|nPassive: ability damage poisons and slows enemies.|n|n|cFF00A5FF|nStab damage: 2/2.5/3/3.5/4*|r|c0077FFFFINT|r|cFF00A5FF|nPoison damage: 0.025/0.05/0.075/0.1/0.125*|r|c0077FFFFINT|r|cFF00A5FF every 0.5 sec. for 5 sec.|nMS/AS slow: 10/20/30/40/50% for 6 sec.|nMark duration: 7 sec.|nSilence: 2 sec.|nControl amplification: +25% for 5 sec.|nRange: 500|nCooldown: 28/26/24/22/20 sec.|r")
 call LANG_A('A0CU',0,0,"Nikushibuki, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
 call LANG_A('A0CU',1,0,"Kurotsuchi Mayuri becomes invisible and creates a doppelganger of himself, which creates the effect of the death of the hero.|n|nAlso: passively poisons all enemies within a 400 radius when the hero dies, dealing damage to them.|n|n|cFF00A5FFDuration: 10 sec.|nDamage: |c00FFFF66AllStat|r|cFF00A5FF*5"+"|nCooldown: 30 seconds|r")
 call LANG_A('A0CU',2,0,"Nikushibuki, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A0CU',3,0,"Itachi creates a clone that cannot be distinguished from him, and he himself becomes invisible to opponents.|nThe clone explodes after 5 seconds and deals damage, if the clone is killed prematurely, it will not explode.|n|n|cFF00A5FFDuration: 5 sec.|nDamage: 3\\4\\5\\6\\7*|r|c0077FFFFINT|r|cFF00A5FF"+"|nCooldown: 20\\17\\15\\12\\10 sec|r")
-call LANG_A('A0CV',1,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0CV',1,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
 call LANG_A('MaTc',0,0,"Aim poison (|cffffcc00T|r)")
-call LANG_A('MaTc',1,0,"Choose the center of the poison spray, up to 1300 away. The zanpakuto moves into position. Does not extend its duration or spend MP.")
+call LANG_A('MaTc',1,0,"Choose the center of the poison spray, up to 1300 away. The zanpakuto moves into position. Does not extend its duration.")
 call LANG_A('A0CV',2,0,"Konjiki Ashisogi Jizo, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
-call LANG_A('A0CV',3,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without spending MP or extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
+call LANG_A('A0CV',3,0,"|nMayuri summons his zanpakuto for 10 sec. It moves so the selected point is 600 units ahead, at the center of its poison spray.|n• While active, T becomes T2: use it again to change where the poison lands without extending the summon dur"+"ation.|n|n|cFF00A5FF|nDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF every 0.2 sec.|nAS/MS slow: 40% for 5 sec.|nAoE: 600|nPoison targeting range: 1300 from the zanpakuto|nDuration: 1"+"0 sec.|nCooldown: 25 sec.|r")
 call LANG_A('A0CX',0,0,"Mini Bomb, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,1,"Mini Bomb, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A0CX',0,2,"Mini Bomb, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
@@ -313298,7 +313341,7 @@ call SaveInteger(BOT_DB,'I01Q',20,90)
 call SaveInteger(BOT_DB,'I01S',20,60)
 call SaveInteger(BOT_DB,'I01U',20,90)
 call SaveInteger(BOT_DB,'I02V',20,60)
-call SaveInteger(BOT_DB,'I020',20,0)
+call SaveInteger(BOT_DB,'I020',20,95)
 call SaveInteger(BOT_DB,'I04F',20,90)
 call SaveInteger(BOT_DB,'I03O',20,70)
 call SaveInteger(BOT_DB,'I031',20,75)
@@ -313376,7 +313419,7 @@ call SaveInteger(BOT_DB,'I00D',20,35)
 call SaveInteger(BOT_DB,'I00K',20,75)
 call SaveInteger(BOT_DB,'I00W',20,70)
 call SaveInteger(BOT_DB,'I04E',20,72)
-call SaveInteger(BOT_DB,'I02Q',20,0)
+call SaveInteger(BOT_DB,'I02Q',20,90)
 call SaveInteger(BOT_DB,'I02J',20,0)
 call SaveInteger(BOT_DB,'I04R',20,70)
 call SaveInteger(BOT_DB,'I05B',20,90)
@@ -313505,7 +313548,7 @@ call SaveInteger(BOT_DB,'I048',11,2)
 call SaveReal(BOT_DB,'I048',12,900.)
 call SaveInteger(BOT_DB,'I04G',10,'A0WJ')
 call SaveInteger(BOT_DB,'I04G',11,2)
-call SaveReal(BOT_DB,'I04G',12,1200.)
+call SaveReal(BOT_DB,'I04G',12,1000.)
 call SaveInteger(BOT_DB,'IHnK',10,'A1YI')
 call SaveInteger(BOT_DB,'IHnK',11,5)
 call SaveReal(BOT_DB,'IHnK',12,1200.)
@@ -313616,6 +313659,26 @@ endif
 set active=null
 return ready
 endfunction
+function BOT_OrderCooling takes integer slot,integer order returns boolean
+return order!=0 and LoadInteger(BOT_DB,slot,260)==order and LoadInteger(BOT_DB,slot,261)>BOT_Clock
+endfunction
+function BOT_ClearFailedCast takes integer slot,integer order returns nothing
+call RemoveSavedInteger(BOT_DB,slot,262)
+if order!=0 then
+    call SaveInteger(BOT_DB,slot,260,order)
+    call SaveInteger(BOT_DB,slot,261,BOT_Clock+6)
+endif
+set BOT_Wait[slot]=BOT_Clock
+set BOT_Attack[slot]=null
+set BOT_MoveUnitId[slot]=0
+call SaveInteger(BOT_DB,slot,50,0)
+call RemoveSavedHandle(BOT_DB,slot,52)
+call RemoveSavedHandle(BOT_DB,slot,180)
+call RemoveSavedInteger(BOT_DB,slot,181)
+call SaveInteger(BOT_DB,slot,235,0)
+call RemoveSavedHandle(BOT_DB,slot,236)
+call RemoveSavedHandle(BOT_DB,slot,242)
+endfunction
 function BOT_RunQueuedAction takes nothing returns nothing
 local timer actionTimer=GetExpiredTimer()
 local integer timerId=GetHandleId(actionTimer)
@@ -313630,9 +313693,15 @@ local real y=LoadReal(h,timerId,7)
 local integer abilityId=LoadInteger(h,timerId,8)
 local integer actionRound=LoadInteger(h,timerId,9)
 local boolean issued=false
+local integer itemType=GetItemTypeId(usedItem)
+local boolean spell=kind<=3 and order!=OrderId("move") and order!=OrderId("attack") and order!=OrderId("holdposition") and order!=OrderId("smart") and order!=OrderId("stop")
 set BOT_OrderPending[slot]=false
 call FlushChildHashtable(h,timerId)
 if udg_B and actionRound==round and BOT_Active[slot] and actor==Hero[slot] and UnitIsAlive(actor) and not IsUnitPaused(actor) and not (TSE_On and TSE_PlayerStopped(OwnerOf(actor))) then
+if spell then
+    call SaveInteger(BOT_DB,slot,262,order)
+    call SaveInteger(BOT_DB,slot,263,BOT_Clock+4)
+endif
 if kind==1 then
 if target==null or UnitIsAlive(target) then
 if target!=null then
@@ -313659,15 +313728,15 @@ set issued=true
 endif
 endif
 if not issued and actor==Hero[slot] then
-// A rejected order should not leave the bot waiting for a cast that never started.
-set BOT_Wait[slot]=BOT_Clock
-set BOT_Attack[slot]=null
-set BOT_MoveUnitId[slot]=0
-call SaveInteger(BOT_DB,slot,50,0)
-call RemoveSavedHandle(BOT_DB,slot,52)
-call SaveInteger(BOT_DB,slot,235,0)
-call RemoveSavedHandle(BOT_DB,slot,236)
-call RemoveSavedHandle(BOT_DB,slot,242)
+    if itemType!=0 then
+        call SaveInteger(BOT_DB,slot,264,itemType)
+        call SaveInteger(BOT_DB,slot,265,BOT_Clock+6)
+    endif
+    if spell then
+        call BOT_ClearFailedCast(slot,order)
+    else
+        call BOT_ClearFailedCast(slot,0)
+    endif
 endif
 set usedItem=null
 set target=null
@@ -313678,7 +313747,7 @@ function BOT_QueueAction takes unit actor,integer kind,integer order,unit target
 local integer slot=PId(OwnerOf(actor))
 local timer actionTimer
 local integer timerId
-if slot<0 or slot>=10 or not BOT_Active[slot] or actor!=Hero[slot] or BOT_OrderPending[slot] or (kind<=3 and order==0) then
+if slot<0 or slot>=10 or not BOT_Active[slot] or actor!=Hero[slot] or BOT_OrderPending[slot] or (kind<=3 and (order==0 or BOT_OrderCooling(slot,order))) or (usedItem!=null and GetItemTypeId(usedItem)==LoadInteger(BOT_DB,slot,264) and LoadInteger(BOT_DB,slot,265)>BOT_Clock) then
 return false
 endif
 set actionTimer=BOT_OrderTimer[slot]
@@ -313701,7 +313770,7 @@ call SaveReal(h,timerId,6,x)
 call SaveReal(h,timerId,7,y)
 call SaveInteger(h,timerId,8,abilityId)
 call SaveInteger(h,timerId,9,round)
-call TimerStart(actionTimer,.010,false,function BOT_RunQueuedAction)
+call TimerStart(actionTimer,I2R(BOT_OrderDelayMs)*.001,false,function BOT_RunQueuedAction)
 set BOT_OrderPending[slot]=true
 set actionTimer=null
 return true
@@ -313764,12 +313833,16 @@ if ReverseActiveId(targetId) and not ReverseBlocked(target) and GetUnitAbilityLe
 endif
 return HeroHasShield(target) and ShieldHPTotal(target)<=0. and GetUnitAbilityLevel(attacker,'A1WT')==0 and GetUnitAbilityLevel(attacker,'A3WR')==0 and GetUnitAbilityLevel(target,'Bwul')==0 and LoadInteger(HH,GetHandleId(attacker),BlockPenetrate)==0
 endfunction
+function BOT_PainBody takes unit candidate returns boolean
+local integer heroType=GetUnitTypeId(candidate)
+return not IsUnitIllusion(candidate) and GetUnitAbilityLevel(candidate,'A0QL')==0 and (heroType=='H03T' or heroType=='H03U' or heroType=='H03V' or heroType=='H03W' or heroType=='H03X')
+endfunction
 function BOT_NearbySecondary takes integer slot,unit caster returns unit
 local unit target=LoadUnitHandle(BOT_DB,slot,238)
 local unit candidate
 local real distance=950.
 local real candidateDistance
-if not BOT_Enemy(caster,target) or BOT_Distance(caster,target)>950. or BOT_BlockedTarget(caster,target) then
+if not BOT_Enemy(caster,target) or not BOT_PainBody(target) or BOT_Distance(caster,target)>950. or BOT_BlockedTarget(caster,target) then
 set target=null
 endif
 if LoadInteger(BOT_DB,slot,239)<=BOT_Clock then
@@ -313779,7 +313852,7 @@ loop
 set candidate=FirstOfGroup(BOT_SearchGroup)
 exitwhen candidate==null
 call GroupRemoveUnit(BOT_SearchGroup,candidate)
-if GetUnitAbilityLevel(candidate,'Aloc')==0 and not IsUnitHidden(candidate) and (IsUnitType(candidate,UNIT_TYPE_HERO) or IsUnitType(candidate,UNIT_TYPE_SUMMONED) and GetUnitTotalDamage(candidate)>0.) and BOT_Enemy(caster,candidate) and not BOT_BlockedTarget(caster,candidate) then
+if BOT_PainBody(candidate) and not IsUnitHidden(candidate) and BOT_Enemy(caster,candidate) and not BOT_BlockedTarget(caster,candidate) then
 set candidateDistance=BOT_Distance(caster,candidate)
 if candidateDistance<distance then
 set distance=candidateDistance
@@ -313844,7 +313917,7 @@ set best=e
 endif
 endif
 set clone=udg_DM[j+1]
-if clone!=e and BOT_Enemy(u,clone) and not BOT_BlockedTarget(u,clone) then
+if clone!=e and GetUnitTypeId(clone)=='H00Q' and not IsUnitIllusion(clone) and BOT_Enemy(u,clone) and not BOT_BlockedTarget(u,clone) then
 set cloneScore=BOT_Distance(u,clone)+RMinBJ(4000.,GetWidgetLife(clone)+ShieldHPTotal(clone))*.55+250.
 if cloneScore<value then
 set value=cloneScore
@@ -313894,24 +313967,24 @@ set u=null
 endfunction
 function BOT_Order takes unit boUnit,integer boAbility returns integer
 local string boName=LoadStr(HH,SH_AbOrd,boAbility)
-local ability active
-local integer order=0
 if boName!=null and boName!="" then
-set order=OrderId(boName)
+    return OrderId(boName)
 endif
-if order==0 and boAbility!=0 then
-set active=GetUnitAbility(boUnit,boAbility)
-if active!=null then
-set order=GetAbilityOrderId(active)
-endif
-endif
-set active=null
-return order
+return 0
 endfunction
 function BOT_SpellEvent takes nothing returns nothing
 local integer bi=PId(GetOwningPlayer(GetTriggerUnit()))
+local integer issuedOrder
 if bi<0 or bi>=10 or not BOT_Active[bi] or Hero[bi]!=GetTriggerUnit() then
 return
+endif
+set issuedOrder=BOT_Order(GetTriggerUnit(),GetSpellAbilityId())
+if issuedOrder!=0 and issuedOrder==LoadInteger(BOT_DB,bi,262) then
+    if GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_EFFECT then
+        call RemoveSavedInteger(BOT_DB,bi,262)
+    elseif GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_ENDCAST then
+        call BOT_ClearFailedCast(bi,issuedOrder)
+    endif
 endif
 if GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_EFFECT then
     if GetSpellAbilityId()=='RenQ' then
@@ -313922,7 +313995,7 @@ endif
 set BOT_Casting[bi]=GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_CHANNEL
 if BOT_Casting[bi] then
 call SaveInteger(BOT_DB,bi,150,BOT_Clock)
-call SaveInteger(BOT_DB,bi,151,BOT_Order(GetTriggerUnit(),GetSpellAbilityId()))
+call SaveInteger(BOT_DB,bi,151,issuedOrder)
 set BOT_Wait[bi]=BOT_Clock+4
 endif
 endfunction
@@ -314137,6 +314210,59 @@ endloop
 set ally=null
 return false
 endfunction
+function BOT_CycloneTarget takes integer slot,unit focus returns unit
+local unit caster=Hero[slot]
+local unit enemy
+local unit ally
+local unit victim
+local unit best=null
+local integer i=0
+local integer j
+local integer score
+local integer bestScore=0
+local boolean channel
+local boolean focused
+loop
+    exitwhen i>=10
+    set enemy=Hero[i]
+    if enemy!=null and UnitIsAlive(enemy) and IsUnitEnemy(enemy,OwnerOf(caster)) and IsUnitVisible(enemy,OwnerOf(caster)) and BOT_Distance(caster,enemy)<=1000. and GetUnitAbilityLevel(enemy,'A15H')==0 and GetUnitAbilityLevel(enemy,'cbc9')==0 then
+        set channel=(GetUnitTypeId(enemy)=='H04C' and GetUnitAbilityLevel(enemy,'A0UL')>0 and GetUnitCurrentOrder(enemy)==OrderId("doom")) or LoadTimerHandle(HH,GetHandleId(enemy),StringHash("FinalFlashCharge"))!=null
+        set focused=enemy==focus
+        set j=0
+        loop
+            exitwhen j>=10 or focused or channel
+            set ally=Hero[j]
+            if ally!=null and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and (GetUnitTargetUnit(ally)==enemy or (BOT_Active[j] and BOT_Attack[j]==enemy)) then
+                set focused=true
+            endif
+            set j=j+1
+        endloop
+        set victim=GetUnitTargetUnit(enemy)
+        set score=0
+        if channel then
+            set score=3
+        elseif not focused and not IsUnitInvulnerable(enemy) and not IsUnitStunned(enemy) and GetUnitAbilityLevel(enemy,'BNC3')==0 and GetUnitCurrentOrder(enemy)==OrderId("attack") and victim!=null and IsUnitAlly(victim,OwnerOf(caster)) and BOT_Distance(enemy,victim)<=GetUnitAttackRangeByIndex(enemy,0)+175. then
+            set score=1
+            if victim==caster and GetWidgetLife(caster)<GetUnitMaxLife(caster)*.55 then
+                set score=2
+            endif
+        endif
+        if score>bestScore then
+            set bestScore=score
+            set best=enemy
+        endif
+    endif
+    set i=i+1
+endloop
+if best==null and not IsUnitInvulnerable(caster) and GetUnitAbilityLevel(caster,'cbc9')==0 and GetWidgetLife(caster)<GetUnitMaxLife(caster)*.45 and LoadInteger(BOT_DB,slot,60)>BOT_Clock then
+    set best=caster
+endif
+set caster=null
+set enemy=null
+set ally=null
+set victim=null
+return best
+endfunction
 function BOT_Items takes integer bi,unit e,integer onlyItem returns boolean
 local integer j=0
 local integer id
@@ -314184,6 +314310,17 @@ endif
 if not RectContainsCoords(gg_rct_AntiMh,x,y) then
 set ok=BOT_QueueItemPoint(u,it,x,y)
 endif
+elseif id=='I04G' then
+    if GetUnitTypeId(u)!='H007' and GetUnitTypeId(u)!='H04U' then
+        set bhAlly=BOT_CycloneTarget(bi,e)
+        if bhAlly!=null then
+            set ok=BOT_QueueItemTarget(u,it,bhAlly)
+        endif
+    endif
+elseif id=='I02Q' then
+    if e!=null and dist<=GetUnitAttackRangeByIndex(e,0)+175. and GetUnitCurrentOrder(e)==OrderId("attack") and GetUnitTargetUnit(e)==u then
+        set ok=BOT_QueueItem(u,it)
+    endif
 elseif id=='I054' then
 if GetUnitAbilityLevel(u,'A15F')==0 and (mp<.70 or (mp<.88 and e!=null and dist<1200.)) then
 if GetAbilityIntegerLevelField(a,ABILITY_ILF_TARGET_TYPE,0)==0 then
@@ -314200,7 +314337,7 @@ elseif mode==0 and hp<.75 then
 set ok=BOT_QueueItem(u,it)
 elseif mode==1 and mp<.60 then
 set ok=BOT_QueueItem(u,it)
-elseif mode==2 and e!=null and (id!='I020' or BOT_Type[bi]!='H00J' or onlyItem=='I020') and (not enemyBlocked or id=='ISTi' or (onlyItem=='I04L' and GetUnitAbilityLevel(e,'A1CE')>0)) and dist<=LoadReal(BOT_DB,id,12) and (id!='IGDi' or (GetUnitTypeId(u)!='H007' and GetUnitAbilityLevel(u,'GIE1')==0)) and (id!='I04L' or (GetUnitAbilityLevel(e,'BNC2')==0 and GetUnitAbilityLevel(e,'GIE1')==0 and GetUnitAbilityLevel(u,'GIE1')==0)) then
+elseif mode==2 and e!=null and (id!='I020' or (GetUnitAbilityLevel(e,'A15H')==0 and (BOT_Type[bi]!='H00J' or onlyItem=='I020' or (GetUnitCurrentOrder(e)==OrderId("attack") and GetUnitTargetUnit(e)==u)))) and (not enemyBlocked or id=='ISTi' or (onlyItem=='I04L' and GetUnitAbilityLevel(e,'A1CE')>0)) and dist<=LoadReal(BOT_DB,id,12) and (id!='IGDi' or (GetUnitTypeId(u)!='H007' and GetUnitAbilityLevel(u,'GIE1')==0)) and (id!='I04L' or (GetUnitAbilityLevel(e,'BNC2')==0 and GetUnitAbilityLevel(e,'GIE1')==0 and GetUnitAbilityLevel(u,'GIE1')==0)) then
 set ok=BOT_QueueItemTarget(u,it,e)
 elseif mode==3 and id!='I044' and e!=null and not enemyBlocked and dist<=LoadReal(BOT_DB,id,12) then
 set ok=BOT_QueueItemPoint(u,it,GetUnitX(e),GetUnitY(e))
@@ -314351,6 +314488,35 @@ if controlCount>=2 and Sh_ItemAllowed('I04V') then
 endif
 return 0
 endfunction
+function BOT_EnemyCarryCount takes integer slot returns integer
+local integer i=0
+local integer count=0
+local unit enemy
+loop
+    exitwhen i>=10
+    set enemy=Hero[i]
+    if enemy!=null and IsUnitEnemy(enemy,PlayerV(slot)) and LoadBoolean(TavRoleHT,SG_Canonical(GetUnitTypeId(enemy)),1) then
+        set count=count+1
+    endif
+    set i=i+1
+endloop
+set enemy=null
+return count
+endfunction
+function BOT_AlliedStaffPlanned takes integer slot returns boolean
+local integer i=0
+if FFAMode then
+    return false
+endif
+loop
+    exitwhen i>=10
+    if i!=slot and TeamOfP(slot)==TeamOfP(i) and (BOT_ItemCount(Hero[i],'I020')+BOT_ItemCount(Chest[i],'I020')>0 or (BOT_Active[i] and BOT_PlanHas(i,'I020'))) then
+        return true
+    endif
+    set i=i+1
+endloop
+return false
+endfunction
 function BOT_Plan takes integer bgPlayer returns nothing
 local integer bgHero=SG_Canonical(BOT_Type[bgPlayer])
 local string bgList=BOT_Guide(bgPlayer)
@@ -314365,10 +314531,12 @@ local integer bgIndex=0
 local integer bgCount=0
 local integer bgTry=0
 local integer bgLimit=7
+local integer enemyCarries
 if LoadBoolean(BOT_DB,bgPlayer,221) or bgSize<=0 then
 return
 endif
 set bgCounter=BOT_CounterItem(bgPlayer)
+set enemyCarries=BOT_EnemyCarryCount(bgPlayer)
 loop
 exitwhen bgIndex>=bgSize
 set bgType=String2Id(SubString(bgList,(bgStart+bgIndex)*4,(bgStart+bgIndex)*4+4))
@@ -314396,7 +314564,7 @@ if bgHero!='H059' and StringFind(SubString(bgList,bgStart*4,(bgStart+3)*4),"IBBi
     set bgCount=bgCount+1
     set bgLimit=8
 endif
-if bgHero=='H01H' then
+if bgHero=='H01H' or bgHero=='H05C' then
     set bgCore='I04E'
 elseif bgHero=='H04T' then
     set bgCore='IPRB'
@@ -314407,14 +314575,37 @@ if bgCore!=0 then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgCore)
 set bgCount=bgCount+1
 endif
+if bgHero=='H05C' then
+    call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I04F')
+    set bgCount=bgCount+1
+endif
 if bgDefense!=0 and bgDefense!=bgCore then
 call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgDefense)
 set bgCount=bgCount+1
 endif
 call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
-if bgCount==3 and bgHero!='H01H' and bgHero!='H04T' and bgHero!='H054' and GetRandomInt(0,1)==1 then
+if bgCount==3 and enemyCarries==0 and bgHero!='H01H' and bgHero!='H04T' and bgHero!='H054' and GetRandomInt(0,1)==1 then
 call SaveInteger(BOT_DB,bgPlayer,201,bgDefense)
 call SaveInteger(BOT_DB,bgPlayer,202,bgCore)
+endif
+// Counter purchases share the ordinary seven-item plan.
+if enemyCarries>0 then
+    if LoadBoolean(TavRoleHT,bgHero,6) and not BOT_AlliedStaffPlanned(bgPlayer) and not BOT_PlanHas(bgPlayer,'I020') and Sh_ItemAllowed('I020') then
+        call SaveInteger(BOT_DB,bgPlayer,200+bgCount,'I020')
+        set bgCount=bgCount+1
+        call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
+    endif
+    if LoadBoolean(TavRoleHT,bgHero,6) or LoadBoolean(TavRoleHT,bgHero,9) or enemyCarries>=2 then
+        set bgType='IAoF'
+        if enemyCarries==1 and LoadBoolean(TavRoleHT,bgHero,6) then
+            set bgType='I02Q'
+        endif
+        if Sh_ItemAllowed(bgType) and not BOT_PlanHas(bgPlayer,bgType) then
+            call SaveInteger(BOT_DB,bgPlayer,200+bgCount,bgType)
+            set bgCount=bgCount+1
+            call SaveInteger(BOT_DB,bgPlayer,220,bgCount)
+        endif
+    endif
 endif
 // Keep the hero-specific core ahead of the remaining guide options.
 if bgHero=='H01H' then
@@ -315006,7 +315197,7 @@ endfunction
 function BOT_MeteorAt takes integer slot,real x,real y returns boolean
 return BOT_MeteorActive(slot) and SR(x,y,LoadReal(BOT_DB,slot,254),LoadReal(BOT_DB,slot,255))<1400.
 endfunction
-function BOT_Move takes unit u,real x,real y returns nothing
+function BOT_Move takes unit u,real x,real y returns boolean
 local rect bmZone=Bof_Zone(GetUnitX(u),GetUnitY(u))
 local real bmX=Bof_X(bmZone,x)
 local real bmY=Bof_Y(bmZone,y)
@@ -315014,6 +315205,7 @@ local real bmAngle
 local integer bmStep=0
 local integer bmDir
 local boolean bmFound
+local boolean bmIssued=false
 local integer bmPlayer=PId(OwnerOf(u))
 local integer bmUnitId=GetHandleId(u)
 local real bmRequestedX
@@ -315039,7 +315231,7 @@ set bmDY=bmY-BOT_MoveY[bmPlayer]
 if BOT_MoveUnitId[bmPlayer]==bmUnitId and bmOrder==OrderId("move") and bmDX*bmDX+bmDY*bmDY<9216. then
     if BOT_Clock-BOT_MoveClock[bmPlayer]<4 then
         set bmZone=null
-        return
+        return true
     endif
     if SR(bmUX,bmUY,LoadReal(BOT_DB,bmPlayer,252),LoadReal(BOT_DB,bmPlayer,253))<32. and SR(bmUX,bmUY,bmX,bmY)>160. then
         // A move order can stay active even when the unit is blocked at spawn.
@@ -315051,7 +315243,7 @@ if BOT_MoveUnitId[bmPlayer]==bmUnitId and bmOrder==OrderId("move") and bmDX*bmDX
         call SaveReal(BOT_DB,bmPlayer,252,bmUX)
         call SaveReal(BOT_DB,bmPlayer,253,bmUY)
         set bmZone=null
-        return
+        return true
     endif
 endif
 set bmFound=not IsTerrainPathable(bmX,bmY,PATHING_TYPE_WALKABILITY)
@@ -315075,7 +315267,8 @@ if bmStep==0 then
 set x=bmX
 set y=bmY
 endif
-if bmFound and BOT_QueuePoint(u,OrderId("move"),x,y) then
+if bmFound and SR(bmUX,bmUY,x,y)>60. and BOT_QueuePoint(u,OrderId("move"),x,y) then
+set bmIssued=true
 set BOT_MoveUnitId[bmPlayer]=bmUnitId
 set BOT_MoveClock[bmPlayer]=BOT_Clock
 set BOT_MoveX[bmPlayer]=bmRequestedX
@@ -315084,6 +315277,7 @@ call SaveReal(BOT_DB,bmPlayer,252,bmUX)
 call SaveReal(BOT_DB,bmPlayer,253,bmUY)
 endif
 set bmZone=null
+return bmIssued
 endfunction
 function BOT_Ready takes unit bcUnit,integer bcAbility returns boolean
 local ability bcHandle=GetUnitAbility(bcUnit,bcAbility)
@@ -315691,12 +315885,30 @@ endif
 set gbUnit=null
 return gbResult
 endfunction
-function BOT_AlbedoDamage takes nothing returns nothing
+function BOT_CombatDamage takes nothing returns nothing
 local unit adUnit=GetTriggerUnit()
+local unit source=GetEventDamageSource()
+local integer sourceSlot=PId(OwnerOf(source))
 local integer adPlayer=PId(OwnerOf(adUnit))
 local integer adKind=83
 local real adAmount=GetEventDamage()
-if adPlayer>=0 and adPlayer<10 and BOT_Active[adPlayer] and BOT_Type[adPlayer]=='HAlb' and adUnit==Hero[adPlayer] and adAmount>0. and IsUnitEnemy(GetEventDamageSource(),OwnerOf(adUnit)) then
+if not BOT_Enabled or not udg_B or adAmount<=0. or adPlayer<0 or adPlayer>=10 or adUnit!=Hero[adPlayer] or not IsUnitEnemy(source,OwnerOf(adUnit)) then
+    set adUnit=null
+    set source=null
+    return
+endif
+// Record where allies fight even if they cast spells instead of attacking.
+call SaveInteger(BOT_DB,adPlayer,266,BOT_Clock+12)
+call SaveInteger(BOT_DB,adPlayer,267,round)
+call SaveReal(BOT_DB,adPlayer,268,GetUnitX(adUnit))
+call SaveReal(BOT_DB,adPlayer,269,GetUnitY(adUnit))
+if sourceSlot>=0 and sourceSlot<10 and source==Hero[sourceSlot] then
+    call SaveInteger(BOT_DB,sourceSlot,266,BOT_Clock+12)
+    call SaveInteger(BOT_DB,sourceSlot,267,round)
+    call SaveReal(BOT_DB,sourceSlot,268,GetUnitX(adUnit))
+    call SaveReal(BOT_DB,sourceSlot,269,GetUnitY(adUnit))
+endif
+if BOT_Active[adPlayer] and BOT_Type[adPlayer]=='HAlb' then
 if BOT_Clock-LoadInteger(BOT_DB,adPlayer,80)>48 then
 call SaveReal(BOT_DB,adPlayer,81,0.)
 call SaveReal(BOT_DB,adPlayer,82,0.)
@@ -315711,6 +315923,7 @@ call SaveReal(BOT_DB,adPlayer,adKind,LoadReal(BOT_DB,adPlayer,adKind)+adAmount)
 call SaveInteger(BOT_DB,adPlayer,80,BOT_Clock)
 endif
 set adUnit=null
+set source=null
 endfunction
 function BOT_AlbedoArmor takes integer aaPlayer returns boolean
 local unit aaUnit=Hero[aaPlayer]
@@ -315933,7 +316146,57 @@ set caster=null
 set target=null
 return issued
 endfunction
-function BOT_Patrol takes integer slot returns nothing
+function BOT_RallyToFight takes integer slot,rect zone returns boolean
+local unit caster=Hero[slot]
+local unit ally
+local unit enemy
+local integer i=0
+local real x
+local real y
+local real score
+local real nearest=999999.
+local real goalX
+local real goalY
+local boolean moving=false
+loop
+    exitwhen i>=10
+    set ally=Hero[i]
+    if ally!=null and ally!=caster and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and not Sh_InZone(ally) and Bof_InZone(zone,GetUnitX(ally),GetUnitY(ally),0.) then
+        if GetUnitCurrentOrder(ally)==OrderId("attack") then
+            set enemy=GetUnitTargetUnit(ally)
+            if enemy!=null and UnitIsAlive(enemy) and IsUnitEnemy(enemy,OwnerOf(caster)) then
+                set x=GetUnitX(enemy)
+                set y=GetUnitY(enemy)
+            endif
+        endif
+        if enemy==null or not UnitIsAlive(enemy) or not IsUnitEnemy(enemy,OwnerOf(caster)) then
+            if LoadInteger(BOT_DB,i,266)>BOT_Clock and LoadInteger(BOT_DB,i,267)==round then
+                set x=LoadReal(BOT_DB,i,268)
+                set y=LoadReal(BOT_DB,i,269)
+            else
+                set x=GetUnitX(ally)
+                set y=GetUnitY(ally)
+            endif
+        endif
+        set score=SR(GetUnitX(caster),GetUnitY(caster),x,y)
+        if score>120. and score<nearest and Bof_InZone(zone,x,y,0.) and (enemy!=null and UnitIsAlive(enemy) and IsUnitEnemy(enemy,OwnerOf(caster)) or (LoadInteger(BOT_DB,i,266)>BOT_Clock and LoadInteger(BOT_DB,i,267)==round)) then
+            set nearest=score
+            set goalX=x
+            set goalY=y
+        endif
+        set enemy=null
+    endif
+    set i=i+1
+endloop
+if nearest<999999. then
+    set moving=BOT_Move(caster,goalX,goalY)
+endif
+set caster=null
+set ally=null
+set enemy=null
+return moving
+endfunction
+function BOT_Patrol takes integer slot,integer role returns nothing
 local unit hero=Hero[slot]
 local rect zone=Bof_Zone(GetUnitX(hero),GetUnitY(hero))
 local real x=LoadReal(BOT_DB,slot,100)
@@ -315942,18 +316205,55 @@ local real dx=GetUnitX(hero)-x
 local real dy=GetUnitY(hero)-y
 local real width=GetRectMaxX(zone)-GetRectMinX(zone)
 local real height=GetRectMaxY(zone)-GetRectMinY(zone)
+local real centerX=GetRectCenterX(zone)
+local real centerY=GetRectCenterY(zone)
 local integer attempts=0
+local integer ping=0
+local real nearest=4500.
+local real distance
 set BOT_Attack[slot]=null
 if LoadInteger(BOT_DB,slot,102)>BOT_Clock and Bof_InZone(zone,x,y,0.) and dx*dx+dy*dy>62500. then
 call BOT_Move(hero,x,y)
 else
 call SaveInteger(BOT_DB,slot,102,0)
+if role==3 and BOT_RallyToFight(slot,zone) then
+    set zone=null
+    set hero=null
+    return
+endif
+loop
+    exitwhen ping>=10
+    if BOT_PublicPingUntil[ping]>BOT_Clock and IsPlayerEnemy(PlayerV(ping),OwnerOf(hero)) and Bof_InZone(zone,BOT_PublicPingX[ping],BOT_PublicPingY[ping],0.) then
+        set distance=SR(GetUnitX(hero),GetUnitY(hero),BOT_PublicPingX[ping],BOT_PublicPingY[ping])
+        if distance>400. and distance<nearest then
+            set nearest=distance
+            set x=BOT_PublicPingX[ping]
+            set y=BOT_PublicPingY[ping]
+        endif
+    endif
+    set ping=ping+1
+endloop
+if nearest<4500. and BOT_Move(hero,x,y) then
+    set zone=null
+    set hero=null
+    return
+endif
+if role==3 and SR(GetUnitX(hero),GetUnitY(hero),centerX,centerY)>1000. and BOT_Move(hero,centerX,centerY) then
+    set zone=null
+    set hero=null
+    return
+endif
 set x=LoadReal(BOT_DB,slot,108)
 set y=LoadReal(BOT_DB,slot,109)
 if LoadInteger(BOT_DB,slot,104)<=BOT_Clock or SR(GetUnitX(hero),GetUnitY(hero),x,y)<300. or not Bof_InZone(zone,x,y,0.) then
 loop
-set x=GetRectMinX(zone)+width*GetRandomReal(.16,.84)
-set y=GetRectMinY(zone)+height*GetRandomReal(.16,.84)
+if role==3 then
+    set x=centerX+GetRandomReal(-.12,.12)*width
+    set y=centerY+GetRandomReal(-.12,.12)*height
+else
+    set x=GetRectMinX(zone)+width*GetRandomReal(.16,.84)
+    set y=GetRectMinY(zone)+height*GetRandomReal(.16,.84)
+endif
 set attempts=attempts+1
 exitwhen attempts>=5 or (SR(GetUnitX(hero),GetUnitY(hero),x,y)>500. and not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY))
 endloop
@@ -315961,7 +316261,9 @@ call SaveReal(BOT_DB,slot,108,x)
 call SaveReal(BOT_DB,slot,109,y)
 call SaveInteger(BOT_DB,slot,104,BOT_Clock+GetRandomInt(16,28))
 endif
-call BOT_Move(hero,x,y)
+if not BOT_Move(hero,x,y) then
+    call SaveInteger(BOT_DB,slot,104,0)
+endif
 endif
 set zone=null
 set hero=null
@@ -316136,6 +316438,18 @@ set zone=null
 set cross=null
 return result
 endfunction
+function BOT_AttackTarget takes integer slot,unit target returns boolean
+local unit caster=Hero[slot]
+local boolean attacking=BOT_Attack[slot]==target and GetUnitCurrentOrder(caster)==OrderId("attack")
+if not attacking or ModuloInteger(BOT_Clock,12)==ModuloInteger(slot,12) then
+    if BOT_QueueTarget(caster,OrderId("attack"),target) then
+        set BOT_Attack[slot]=target
+        set attacking=true
+    endif
+endif
+set caster=null
+return attacking
+endfunction
 function BOT_Sinon takes integer bi,unit enemy returns boolean
 local unit caster=Hero[bi]
 local integer ammo=LoadInteger(HH,GetHandleId(caster),Sinon_Ammo)
@@ -316148,6 +316462,8 @@ local integer pingSlot=0
 local integer publicPing=-1
 local real distance=99999.
 local real enemyReach=0.
+local real attackReach=GetUnitAttackRangeByIndex(caster,0)
+local boolean canShoot=ammo>0 and BOT_Ready(caster,'A270')
 local real bestDistance=5000.
 local real rollAngle
 local real rollX
@@ -316172,22 +316488,20 @@ if enemy==null and not freshPing and ammo>0 then
 endif
 if GetUnitCurrentOrder(caster)==OrderId("chainlightning") then
     set result=true
-elseif enemy!=null and distance<=1180. and not BOT_BlockedTarget(caster,enemy) and GetUnitAbilityLevel(caster,'A17K')>0 then
-    set result=BOT_Attack[bi]==enemy and GetUnitCurrentOrder(caster)==OrderId("attack")
-    if not result and BOT_QueueTarget(caster,OrderId("attack"),enemy) then
-        set BOT_Attack[bi]=enemy
-        set result=true
-    endif
-elseif (ammo==0 or ((ammo==2 or ammo==3) and enemy==null and not freshPing and publicPing<0)) and BOT_Ready(caster,'A2DC') then
+elseif enemy!=null and distance<=attackReach and not BOT_BlockedTarget(caster,enemy) and GetUnitAbilityLevel(caster,'A17K')>0 then
+    set result=BOT_AttackTarget(bi,enemy)
+elseif canShoot and enemy!=null and not BOT_BlockedTarget(caster,enemy) and BOT_Use(bi,'A270',enemy) then
+    set result=true
+elseif ((ammo==0 and (enemy==null or distance>attackReach+250.)) or ((ammo==2 or ammo==3) and enemy==null and not freshPing and publicPing<0)) and BOT_Ready(caster,'A2DC') then
     set result=BOT_QueueImmediate(caster,BOT_Order(caster,'A2DC'))
     if result then
         set BOT_Wait[bi]=BOT_Clock+5
     endif
-elseif enemy!=null and distance<=1650. and BOT_Ready(caster,'A17G') and (not BOT_BlockedTarget(caster,enemy) or distance<600.) then
+elseif enemy!=null and distance<=1650. and BOT_Ready(caster,'A17G') and (distance>attackReach and not BOT_BlockedTarget(caster,enemy) or (distance<enemyReach+120. and GetUnitTargetUnit(enemy)==caster and (enemyReach<=300. or GetWidgetLife(caster)<.65*GetUnitMaxLife(caster)))) then
     set rollAngle=Atan2(GetUnitY(enemy)-GetUnitY(caster),GetUnitX(enemy)-GetUnitX(caster))
-    if distance<=RMaxBJ(510.,RMinBJ(750.,enemyReach+220.)) then
+    if distance<enemyReach+120. and GetUnitTargetUnit(enemy)==caster then
         set rollAngle=rollAngle+bj_PI
-    elseif distance<1250. then
+    elseif distance<750. then
         set rollAngle=rollAngle+bj_PI*.45*I2R(1-2*ModuloInteger(bi,2))
     endif
     set rollX=GetUnitX(caster)+600.*Cos(rollAngle)
@@ -316221,6 +316535,9 @@ elseif enemy==null and ammo>0 and (freshPing or publicPing>=0 or LoadInteger(BOT
             endif
         endif
     endif
+endif
+if not result and enemy!=null and not BOT_BlockedTarget(caster,enemy) then
+    set result=BOT_AttackTarget(bi,enemy)
 endif
 set caster=null
 set zone=null
@@ -316269,20 +316586,16 @@ loop
 endloop
 if bestHeal<2000. then
     if bestHeal>225. then
-        call BOT_Move(caster,healX,healY)
-        set result=true
-    elseif enemy==null or SR(GetUnitX(enemy),GetUnitY(enemy),healX,healY)>300. then
-        call BOT_QueueImmediate(caster,OrderId("holdposition"))
-        set result=true
+        set result=BOT_Move(caster,healX,healY)
+    elseif enemy==null then
+        set result=GetUnitCurrentOrder(caster)==OrderId("holdposition") or BOT_QueueImmediate(caster,OrderId("holdposition"))
     endif
 elseif singer!=null then
     if bestSong>2200. then
         set distance=Atan2(GetUnitY(caster)-GetUnitY(singer),GetUnitX(caster)-GetUnitX(singer))
-        call BOT_Move(caster,GetUnitX(singer)+1700.*Cos(distance),GetUnitY(singer)+1700.*Sin(distance))
-        set result=true
-    elseif enemy==null or BOT_Distance(singer,enemy)>2300. then
-        call BOT_QueueImmediate(caster,OrderId("holdposition"))
-        set result=true
+        set result=BOT_Move(caster,GetUnitX(singer)+1700.*Cos(distance),GetUnitY(singer)+1700.*Sin(distance))
+    elseif enemy==null then
+        set result=GetUnitCurrentOrder(caster)==OrderId("holdposition") or BOT_QueueImmediate(caster,OrderId("holdposition"))
     endif
 endif
 set healing=null
@@ -316341,14 +316654,19 @@ local real x=casterX
 local real y=casterY
 local real angle
 local real radius=850.
+local boolean rangedPressure=BOT_Type[slot]=='H00K' or BOT_Type[slot]=='H014'
 local integer currentOrder=GetUnitCurrentOrder(caster)
 local boolean occupy=false
-if role==0 or (BOT_Until[slot]>BOT_Clock and BOT_Mode[slot]>0 and not LoadBoolean(BOT_DB,slot,131)) then
+if role==0 or role==3 or (BOT_Until[slot]>BOT_Clock and BOT_Mode[slot]>0 and not LoadBoolean(BOT_DB,slot,131)) then
 set zone=null
 return false
 endif
 if enemy!=null then
 set enemyRange=BOT_Distance(caster,enemy)
+if enemyRange<=GetUnitAttackRangeByIndex(caster,0) and not BOT_BlockedTarget(caster,enemy) then
+    set zone=null
+    return false
+endif
 endif
 loop
 exitwhen allySlot>=10
@@ -316356,14 +316674,11 @@ set ally=Hero[allySlot]
 if ally!=null and ally!=caster and UnitIsAlive(ally) and IsUnitAlly(ally,OwnerOf(caster)) and not Sh_InZone(ally) and Bof_InZone(zone,GetUnitX(ally),GetUnitY(ally),0.) then
 set allyRole=BOT_PositionRole(SG_Canonical(GetUnitTypeId(ally)))
 set score=BOT_Distance(caster,ally)
-if role==3 then
-if enemy!=null and score<=1250. and (allyRole==1 or allyRole==2) and BOT_Distance(ally,enemy)+200.<enemyRange and score<nearest then
-set nearest=score
-set anchor=ally
-endif
-elseif (enemy!=null or (allyRole!=1 and allyRole!=2) or allySlot<slot) then
-if allyRole==1 or allyRole==2 then
-set score=score+400.
+if enemy!=null or (allyRole!=1 and allyRole!=2) or allySlot<slot then
+if role==2 and score>1400. then
+    set score=99999.
+elseif allyRole==1 or allyRole==2 then
+    set score=score+400.
 endif
 if score<nearest then
 set nearest=score
@@ -316373,14 +316688,7 @@ endif
 endif
 set allySlot=allySlot+1
 endloop
-if role==3 then
-if anchor!=null and BOT_Distance(anchor,enemy)<1200. then
-set angle=Atan2(GetUnitY(enemy)-GetUnitY(anchor),GetUnitX(enemy)-GetUnitX(anchor))
-set x=GetUnitX(anchor)+350.*Cos(angle)
-set y=GetUnitY(anchor)+350.*Sin(angle)
-set occupy=true
-endif
-elseif enemy==null then
+if enemy==null then
 if anchor!=null then
 set occupy=true
 if BOT_Distance(caster,anchor)>600. then
@@ -316405,14 +316713,16 @@ set occupy=true
 endif
 endif
 elseif role==1 then
-if BOT_Type[slot]=='H00J' then
+if rangedPressure then
+set radius=GetUnitAttackRangeByIndex(caster,0)-150.
+elseif BOT_Type[slot]=='H00J' then
 set radius=560.
 elseif BOT_Type[slot]=='H018' then
 set radius=RMaxBJ(560.,GetUnitAttackRangeByIndex(caster,0)-100.)
 elseif BOT_Type[slot]=='H04T' then
 set radius=RMaxBJ(830.,RMinBJ(1120.,GetUnitAttackRangeByIndex(enemy,0)+290.))
 endif
-if anchor!=null and enemyRange<1300. and BOT_Distance(caster,anchor)<1450. and BOT_Distance(anchor,enemy)>enemyRange+200. and BOT_PositionRole(SG_Canonical(GetUnitTypeId(anchor)))==3 then
+if not rangedPressure and anchor!=null and enemyRange<1300. and BOT_Distance(caster,anchor)<1450. and BOT_Distance(anchor,enemy)>enemyRange+200. and BOT_PositionRole(SG_Canonical(GetUnitTypeId(anchor)))==3 then
 set angle=Atan2(GetUnitY(anchor)-GetUnitY(enemy),GetUnitX(anchor)-GetUnitX(enemy))
 set x=GetUnitX(anchor)+300.*Cos(angle)
 set y=GetUnitY(anchor)+300.*Sin(angle)
@@ -316432,6 +316742,18 @@ set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))
 set x=GetUnitX(enemy)+radius*Cos(angle)
 set y=GetUnitY(enemy)+radius*Sin(angle)
 set occupy=true
+elseif rangedPressure and enemyRange>GetUnitAttackRangeByIndex(caster,0)-15. and not BOT_BlockedTarget(caster,enemy) then
+set angle=Atan2(casterY-GetUnitY(enemy),casterX-GetUnitX(enemy))
+set x=GetUnitX(enemy)+radius*Cos(angle)
+set y=GetUnitY(enemy)+radius*Sin(angle)
+set occupy=BOT_Move(caster,x,y)
+if occupy then
+    set BOT_Attack[slot]=null
+endif
+set anchor=null
+set ally=null
+set zone=null
+return occupy
 elseif enemyRange>radius+250. then
 if anchor!=null and BOT_Distance(anchor,enemy)<enemyRange-150. then
 set angle=Atan2(GetUnitY(anchor)-GetUnitY(enemy),GetUnitX(anchor)-GetUnitX(enemy))
@@ -316444,7 +316766,7 @@ set x=GetUnitX(enemy)+(radius+140.)*Cos(angle)
 set y=GetUnitY(enemy)+(radius+140.)*Sin(angle)
 endif
 set occupy=true
-elseif enemyRange>GetUnitAttackRangeByIndex(caster,0)-35. or BOT_BlockedTarget(caster,enemy) then
+elseif BOT_BlockedTarget(caster,enemy) then
 set occupy=true
 endif
 endif
@@ -316453,9 +316775,9 @@ set x=Bof_X(zone,x)
 set y=Bof_Y(zone,y)
 if SR(casterX,casterY,x,y)>120. then
 if BOT_Type[slot]!='H00J' or enemyRange>=430. or not BOT_Escape(slot,x,y) then
-call BOT_Move(caster,x,y)
+set occupy=BOT_Move(caster,x,y)
 endif
-elseif role==3 then
+elseif enemy!=null and not BOT_BlockedTarget(caster,enemy) then
 set occupy=false
 elseif currentOrder!=OrderId("holdposition") then
 call BOT_QueueImmediate(caster,OrderId("holdposition"))
@@ -316469,6 +316791,33 @@ set ally=null
 set zone=null
 return occupy
 endfunction
+function BOT_CloseGap takes integer slot,unit enemy,real distance,integer role returns boolean
+local unit caster=Hero[slot]
+local real reach=GetUnitAttackRangeByIndex(caster,0)
+local real angle
+local real step
+local boolean issued=false
+if (role==3 or (role==0 and reach<=350.)) and distance>RMaxBJ(550.,reach+150.) and distance<=1400. and GetWidgetLife(caster)>GetUnitMaxLife(caster)*.45 and not BOT_MeteorAt(slot,GetUnitX(enemy),GetUnitY(enemy)) then
+    set angle=Atan2(GetUnitY(enemy)-GetUnitY(caster),GetUnitX(enemy)-GetUnitX(caster))
+    set step=RMinBJ(700.,distance-RMaxBJ(225.,reach*.75))
+    set issued=BOT_Escape(slot,GetUnitX(caster)+step*Cos(angle),GetUnitY(caster)+step*Sin(angle))
+endif
+set caster=null
+return issued
+endfunction
+function BOT_TankAdvance takes integer slot,unit caster returns boolean
+local rect zone=Bof_Zone(GetUnitX(caster),GetUnitY(caster))
+local real x=GetRectCenterX(zone)+160.*I2R(ModuloInteger(slot,5)-2)
+local real y=GetRectCenterY(zone)
+local boolean advancing=false
+if SR(GetUnitX(caster),GetUnitY(caster),x,y)>350. then
+    set advancing=BOT_Move(caster,x,y)
+else
+    call RemoveSavedInteger(BOT_DB,slot,270)
+endif
+set zone=null
+return advancing
+endfunction
 function BOT_Think takes integer bi returns nothing
 local unit u=Hero[bi]
 local unit e
@@ -316481,6 +316830,7 @@ local boolean shouldRetreat
 local integer positionRole=BOT_PositionRole(BOT_Type[bi])
 local timer ishidaBarrage
 local boolean roundStart
+local integer castOrder
 if BOT_OrderPending[bi] then
 set u=null
 return
@@ -316517,17 +316867,39 @@ set BOT_MoveUnitId[bi]=0
 call SaveInteger(BOT_DB,bi,50,0)
 call RemoveSavedHandle(BOT_DB,bi,52)
 call SaveInteger(BOT_DB,bi,104,0)
+call RemoveSavedInteger(BOT_DB,bi,260)
+call RemoveSavedInteger(BOT_DB,bi,262)
+call RemoveSavedInteger(BOT_DB,bi,264)
+if positionRole==3 then
+    call SaveInteger(BOT_DB,bi,270,BOT_Clock+48)
+endif
+endif
+set castOrder=LoadInteger(BOT_DB,bi,262)
+if castOrder!=0 and LoadInteger(BOT_DB,bi,263)<=BOT_Clock and not BOT_Casting[bi] then
+    call BOT_ClearFailedCast(bi,castOrder)
 endif
 if BOT_Casting[bi] and not IsUnitPaused(u) and BOT_Clock-LoadInteger(BOT_DB,bi,150)>4 and (GetUnitCurrentOrder(u)!=LoadInteger(BOT_DB,bi,151) or BOT_Clock-LoadInteger(BOT_DB,bi,150)>48) then
 set BOT_Casting[bi]=false
+endif
+if castOrder!=0 and not BOT_Casting[bi] and LoadInteger(BOT_DB,bi,262)==castOrder and GetUnitCurrentOrder(u)==castOrder then
+    set u=null
+    return
 endif
 if (BOT_Type[bi]=='H04C' and GetUnitAbilityLevel(u,'A0UL')>0 and GetUnitCurrentOrder(u)==OrderId("doom")) or BOT_RengokuRelease(bi) or BOT_Casting[bi] or BOT_Defend(bi) then
 set u=null
 return
 endif
 set e=BOT_Target(bi)
+if positionRole==3 and LoadInteger(BOT_DB,bi,270)>BOT_Clock then
+    if e!=null then
+        call RemoveSavedInteger(BOT_DB,bi,270)
+    elseif BOT_Until[bi]<=BOT_Clock and (BOT_Dodge(bi,null) or BOT_TankAdvance(bi,u)) then
+        set u=null
+        return
+    endif
+endif
 if roundStart and e==null and GetUnitCurrentOrder(u)==0 and BOT_Until[bi]<=BOT_Clock then
-    call BOT_Patrol(bi)
+    call BOT_Patrol(bi,positionRole)
     if BOT_OrderPending[bi] then
         set u=null
         return
@@ -316569,7 +316941,7 @@ set u=null
 return
 endif
 endif
-if BOT_Heal(bi) or (e!=null and (BOT_Items(bi,e,'IGDi') or BOT_Items(bi,e,'I054') or BOT_Items(bi,e,'I044'))) or ((BOT_Type[bi]!='H04T' or GetUnitAbilityLevel(u,'A17K')==0) and BOT_Items(bi,e,0)) then
+if BOT_Items(bi,e,'I04G') or BOT_Heal(bi) or (e!=null and (BOT_Items(bi,e,'IGDi') or BOT_Items(bi,e,'I054') or BOT_Items(bi,e,'I044'))) or ((BOT_Type[bi]!='H04T' or GetUnitAbilityLevel(u,'A17K')==0) and BOT_Items(bi,e,0)) then
 set e=null
 set u=null
 return
@@ -316618,18 +316990,13 @@ set u=null
 set e=null
 return
 endif
-if (BOT_Until[bi]<=BOT_Clock or BOT_Mode[bi]==0) and BOT_StayNearSupport(u,e) then
+if (positionRole!=3 or hp<.65) and (BOT_Until[bi]<=BOT_Clock or BOT_Mode[bi]==0) and BOT_StayNearSupport(u,e) then
 set u=null
 set e=null
 return
 endif
-set shouldRetreat=BOT_ShouldRetreat(bi)
+set shouldRetreat=(positionRole!=3 or hp<.45) and ((BOT_Type[bi]!='H00K' and BOT_Type[bi]!='H014') or hp<.60) and BOT_ShouldRetreat(bi)
 if not shouldRetreat and BOT_CastOnStun(bi) then
-set u=null
-set e=null
-return
-endif
-if e!=null and LoadUnitHandle(BOT_DB,bi,180)==e and LoadInteger(BOT_DB,bi,181)>BOT_Clock then
 set u=null
 set e=null
 return
@@ -316654,14 +317021,15 @@ else
     call BOT_Move(u,GetUnitX(e),GetUnitY(e))
 endif
 endif
-elseif BOT_Combo(bi,e) or BOT_PrioritySpell(bi,e) or BOT_GokuderaBurst(bi,e) or BOT_Lucci(bi,e) then
-// Keep the next combo cast ahead of unrelated spells and attack orders.
-elseif not BOT_Cast(bi,e) and not BOT_RolePosition(bi,u,e,positionRole) and (positionRole!=0 or not BOT_KeepDistance(bi,u,e,botTargetDistance)) then
+elseif not (LoadUnitHandle(BOT_DB,bi,180)==e and LoadInteger(BOT_DB,bi,181)>BOT_Clock) and (BOT_Combo(bi,e) or BOT_PrioritySpell(bi,e) or BOT_GokuderaBurst(bi,e) or BOT_Lucci(bi,e) or BOT_Cast(bi,e)) then
+// Avoid spending a second offensive spell while a finishing hit is pending.
+elseif not BOT_CloseGap(bi,e,botTargetDistance,positionRole) and not BOT_RolePosition(bi,u,e,positionRole) and (positionRole!=0 or not BOT_KeepDistance(bi,u,e,botTargetDistance)) then
 if BOT_MeteorAt(bi,GetUnitX(e),GetUnitY(e)) and botTargetDistance>GetUnitAttackRangeByIndex(u,0) then
     call BOT_Move(u,GetUnitX(e),GetUnitY(e))
-elseif BOT_Attack[bi]!=e or GetUnitCurrentOrder(u)==0 or GetUnitCurrentOrder(u)==OrderId("move") or ModuloInteger(BOT_Clock,12)==ModuloInteger(bi,12) then
-call BOT_QueueTarget(u,OrderId("attack"),e)
-set BOT_Attack[bi]=e
+elseif botTargetDistance>GetUnitAttackRangeByIndex(u,0)+225. and BOT_Type[bi]=='H00D' then
+    call BOT_Move(u,GetUnitX(e),GetUnitY(e))
+else
+    call BOT_AttackTarget(bi,e)
 endif
 endif
 elseif (GetUnitCurrentOrder(u)==0 or (GetUnitCurrentOrder(u)==OrderId("move") and BOT_Clock-BOT_MoveClock[bi]>=4) or ModuloInteger(BOT_Clock,8)==ModuloInteger(bi,8)) and not BOT_RolePosition(bi,u,null,positionRole) then
@@ -316670,12 +317038,12 @@ set dx=GetUnitX(u)-BOT_X[bi]
 set dy=GetUnitY(u)-BOT_Y[bi]
 if BOT_Mode[bi]==2 and dx*dx+dy*dy<=122500. then
 set BOT_Until[bi]=0
-call BOT_Patrol(bi)
+call BOT_Patrol(bi,positionRole)
 else
 call BOT_Move(u,BOT_X[bi],BOT_Y[bi])
 endif
 else
-call BOT_Patrol(bi)
+call BOT_Patrol(bi,positionRole)
 endif
 endif
 set u=null
@@ -316974,6 +317342,8 @@ local player p=GetTriggerPlayer()
 local integer bi=0
 local integer rerolled=0
 local integer requestedSlot=0
+local integer delayMs
+local string delayText
 local string command=GetEventPlayerChatString()
 // The first live human slot is the host for this command, including games without red.
 loop
@@ -316982,6 +317352,17 @@ set bi=bi+1
 endloop
 if (bi>=10 or p!=PlayerV(bi)) and not (GetPlayerId(p)>=10 and GetPlayerId(p)<12 and GetPlayerController(p)==MAP_CONTROL_USER) then
 call DisplayTimedTextToPlayer(p,0,0,4,Lng("Команда ботов доступна первому активному игроку.","The first active player can enable bots."))
+elseif command=="-botdelay" then
+    call DisplayTimedTextToPlayer(p,0,0,5,Lng("Задержка ботов, мс: ","Bot order delay in ms: ")+I2S(BOT_OrderDelayMs)+"  (-botdelay 0-200)")
+elseif SubString(command,0,10)=="-botdelay " then
+    set delayText=SubString(command,10,StringLength(command))
+    set delayMs=S2I(delayText)
+    if delayText==I2S(delayMs) and delayMs>=0 and delayMs<=200 then
+        set BOT_OrderDelayMs=delayMs
+        call DisplayTimedTextToPlayer(p,0,0,5,Lng("Задержка ботов, мс: ","Bot order delay in ms: ")+I2S(BOT_OrderDelayMs))
+    else
+        call DisplayTimedTextToPlayer(p,0,0,5,"-botdelay 0-200")
+    endif
 elseif SubString(command,0,10)=="-botreroll" then
 if udg_test then
 set bi=0
@@ -317211,6 +317592,8 @@ exitwhen bi>=12
 call TriggerRegisterPlayerEvent(ping,Player(bi),EVENT_PLAYER_MINIMAP_PING)
 call TriggerRegisterPlayerSyncEvent(pingSync,Player(bi),"BPNG",false)
 call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-bots",true)
+call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botdelay",true)
+call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botdelay ",false)
 call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botreroll",true)
 call TriggerRegisterPlayerChatEvent(chat,Player(bi),"-botreroll ",false)
 call TriggerRegisterPlayerSyncEvent(sync,Player(bi),"BEMT",false)
@@ -317228,7 +317611,7 @@ call TriggerAddAction(chat,function BOT_Command)
 call TriggerAddAction(sync,function BOT_EmojiSync)
 call TriggerAddAction(spell,function BOT_SpellEvent)
 call TriggerAddAction(threat,function BOT_Threat)
-call TriggerAddAction(armor,function BOT_AlbedoDamage)
+call TriggerAddAction(armor,function BOT_CombatDamage)
 call TimerStart(CreateTimer(),0.25,true,function BOT_Tick)
 set ping=null
 set pingSync=null
