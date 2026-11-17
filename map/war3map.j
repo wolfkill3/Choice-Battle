@@ -3782,12 +3782,24 @@ endfunction
 function UnitHasAlastor takes unit whichUnit returns boolean
     return GetItemOfTypeFromUnitBJ(whichUnit, 'I03A') != null or GetUnitAbilityLevel(whichUnit,'KII4')>0
 endfunction
+function HomuraBaseAttackRange takes unit homuraRangeUnit returns real
+    if GetUnitTypeId(homuraRangeUnit)=='HHom' and HaveSavedReal(HH,GetHandleId(homuraRangeUnit),StringHash("HomuraAttackRange")) then
+        return LoadReal(HH,GetHandleId(homuraRangeUnit),StringHash("HomuraAttackRange"))
+    endif
+    return GetUnitBaseWeaponRealFieldById(GetUnitTypeId(homuraRangeUnit),UNIT_WEAPON_RF_ATTACK_RANGE,0)
+endfunction
+
 function CheckUnitBonusRange2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local integer id=GetHandleId(t)
 local unit u=LoadUnitHandle(HH,id,0)
-call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3+50))
-call SetUnitAttackRangeByIndex(u, 0, GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)+B2I(UnitHasBow(u))*(GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3+50))
+local real homuraRangeBase=HomuraBaseAttackRange(u)
+if GetUnitTypeId(u)=='HHom' then
+call SetUnitAcquireRange(u,homuraRangeBase+150.+B2I(UnitHasBow(u))*(homuraRangeBase*0.3+50.))
+else
+call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+B2I(UnitHasBow(u))*(homuraRangeBase*0.3+50))
+endif
+call SetUnitAttackRangeByIndex(u, 0, homuraRangeBase+B2I(UnitHasBow(u))*(homuraRangeBase*0.3+50))
 call PauseTimer(t)
 call DestroyTimer(t)
 call FlushChildHashtable(HH,id)
@@ -13492,6 +13504,22 @@ call SND_Add(4969,4,"Sound\\Homura\\Homura_W_Shot_Alt.mp3",12700)
 call SND_Add(4973,6,"Sound\\Homura\\Homura_W_Hit.mp3",12700)
 call SND_Add(4979,2,"Sound\\Homura\\Homura_E_Launch.mp3",12700)
 call SND_Add(4981,2,"Sound\\Homura\\Homura_E_Hit_Alt.mp3",12700)
+call SND_Add(4983,2,"Voice\\HomuraSummon.mp3",2050)
+call SND_Add(4985,2,"Voice\\HomuraDevilSummon.mp3",1930)
+call SND_Add(4987,2,"Sound\\Homura\\Homura_Q1.mp3",1800)
+call SND_Add(4989,2,"Sound\\Homura\\Homura_W.mp3",840)
+call SND_Add(4991,2,"Sound\\Homura\\Homura_E.mp3",1470)
+call SND_Add(4993,2,"Sound\\Homura\\Homura_Move.mp3",1360)
+call SND_Add(4995,2,"Sound\\Homura\\Homura_Ready.mp3",1820)
+call SND_Add(4997,2,"Sound\\Homura\\Homura_Devil.mp3",2970)
+call SND_Add(4999,2,"Sound\\Homura\\Homura_Devil_Ready.mp3",1370)
+call SND_Add(5001,2,"Sound\\Homura\\Homura_G_Step.mp3",410)
+call SND_Add(5003,2,"Sound\\Homura\\Homura_F_Mark.mp3",460)
+call SND_Add(5005,2,"Sound\\Homura\\Homura_F_Return.mp3",580)
+call SND_Add(5007,2,"Sound\\Homura\\Homura_Q_Shield.mp3",510)
+call SND_Add(5009,2,"Sound\\Homura\\Homura_Q_ShieldHit.mp3",300)
+call SND_Add(5011,2,"Sound\\Homura\\Homura_E_Hit.mp3",950)
+call SND_Add(5013,2,"Sound\\Homura\\Homura_R.mp3",3100)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -24380,6 +24408,40 @@ function WaveRegisterInTable takes unit waveFront,timer waveMotion,hashtable wav
     call SaveHashtableHandle(HH,GetHandleId(waveFront),StringHash("WaveData"),waveData)
 endfunction
 
+function WaveRegisterShared takes unit waveFront,timer waveMotion returns nothing
+    call WaveRegister(waveFront,waveMotion,null,null)
+    call SaveBoolean(HH,GetHandleId(waveFront),StringHash("WaveSharesMotion"),true)
+endfunction
+
+function WaveTrackSound takes unit waveFront,sound waveAudio returns nothing
+    call SaveSoundHandle(HH,GetHandleId(waveFront),StringHash("WaveAudio"),waveAudio)
+endfunction
+
+function WaveExpireCastEffect takes nothing returns nothing
+    local timer waveExpiry=GetExpiredTimer()
+    local integer waveExpiryId=GetHandleId(waveExpiry)
+    local integer waveFrontId=LoadInteger(h,waveExpiryId,0)
+    if LoadTimerHandle(HH,waveFrontId,StringHash("WaveEffectTimer"))==waveExpiry then
+        call RemoveSavedHandle(HH,waveFrontId,StringHash("WaveEffectTimer"))
+        call RemoveSavedHandle(HH,waveFrontId,StringHash("WaveCastEffect"))
+    endif
+    call DestroyEffect(LoadEffectHandle(h,waveExpiryId,1))
+    call FlushChildHashtable(h,waveExpiryId)
+    call TSE_DestroyTimer(waveExpiry)
+    set waveExpiry=null
+endfunction
+
+function WaveTrackCastEffect takes unit waveFront,effect waveCastFx,real waveDuration returns nothing
+    local timer waveExpiry=CreateTimer()
+    local integer waveFrontId=GetHandleId(waveFront)
+    call SaveTimerHandle(HH,waveFrontId,StringHash("WaveEffectTimer"),waveExpiry)
+    call SaveEffectHandle(HH,waveFrontId,StringHash("WaveCastEffect"),waveCastFx)
+    call SaveInteger(h,GetHandleId(waveExpiry),0,waveFrontId)
+    call SaveEffectHandle(h,GetHandleId(waveExpiry),1,waveCastFx)
+    call TSE_TimerStart(waveExpiry,waveDuration,false,function WaveExpireCastEffect)
+    set waveExpiry=null
+endfunction
+
 function WaveRegisterHoming takes unit waveFront,timer waveMotion returns nothing
     call WaveRegister(waveFront,waveMotion,null,null)
     call SaveBoolean(HH,GetHandleId(waveFront),StringHash("WaveHoming"),true)
@@ -24396,6 +24458,26 @@ function WaveUnregister takes handle waveFront,boolean waveDestroyVisuals return
     local integer waveKey=GetHandleId(waveFront)
     local group waveTrail=LoadGroupHandle(HH,waveKey,StringHash("WaveVisuals"))
     local unit wavePart
+    local timer waveEffectTimer=LoadTimerHandle(HH,waveKey,StringHash("WaveEffectTimer"))
+    local effect waveCastFx
+    local sound waveAudio
+    if waveDestroyVisuals then
+        if waveEffectTimer!=null then
+            set waveCastFx=LoadEffectHandle(HH,waveKey,StringHash("WaveCastEffect"))
+            call SetSpecialEffectVisible(waveCastFx,false)
+            call DestroyEffect(waveCastFx)
+            call FlushChildHashtable(h,GetHandleId(waveEffectTimer))
+            call TSE_DestroyTimer(waveEffectTimer)
+        endif
+        set waveAudio=LoadSoundHandle(HH,waveKey,StringHash("WaveAudio"))
+        if waveAudio!=null then
+            call StopSound(waveAudio,false,true)
+        endif
+    endif
+    call RemoveSavedHandle(HH,waveKey,StringHash("WaveCastEffect"))
+    call RemoveSavedHandle(HH,waveKey,StringHash("WaveEffectTimer"))
+    call RemoveSavedHandle(HH,waveKey,StringHash("WaveAudio"))
+    call RemoveSavedBoolean(HH,waveKey,StringHash("WaveSharesMotion"))
     if waveTrail!=null then
         if waveDestroyVisuals then
             loop
@@ -24414,6 +24496,7 @@ function WaveUnregister takes handle waveFront,boolean waveDestroyVisuals return
     call RemoveSavedBoolean(HH,waveKey,StringHash("WavePriorInvulnerability"))
     call RemoveSavedReal(HH,waveKey,StringHash("WavePriorHeight"))
     call RemoveSavedReal(HH,waveKey,StringHash("WavePriorTimeScale"))
+    call RemoveSavedHandle(HH,waveKey,StringHash("WaveCaptive"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveUnit"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveEffect"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveWarning"))
@@ -24430,6 +24513,9 @@ function WaveUnregister takes handle waveFront,boolean waveDestroyVisuals return
     call RemoveSavedBoolean(HH,waveKey,StringHash("CancelWave"))
     set waveTrail=null
     set wavePart=null
+    set waveEffectTimer=null
+    set waveCastFx=null
+    set waveAudio=null
 endfunction
 
 function WaveCancelled takes handle waveFront returns boolean
@@ -24460,6 +24546,28 @@ function WaveReleaseCaster takes unit waveFront returns nothing
     set waveCaster=null
 endfunction
 
+function WaveReleaseCaptive takes unit captiveWave returns nothing
+    local integer captiveKey=GetHandleId(captiveWave)
+    local unit captiveUnit=LoadUnitHandle(HH,captiveKey,StringHash("WaveCaptive"))
+    local unit captiveCaster
+    if captiveUnit!=null then
+        set captiveCaster=LoadUnitHandle(HH,captiveKey,StringHash("WaveReleaseCaster"))
+        call RemoveSavedHandle(HH,captiveKey,StringHash("WaveCaptive"))
+        call WaveReleaseCaster(captiveWave)
+        if UnitIsAlive(captiveCaster) then
+            call SetUnitTurnSpeed(captiveCaster,1.)
+            call SetUnitAnimation(captiveCaster,"Stand")
+        endif
+        call SaveBoolean(HH,GetHandleId(captiveUnit),TARGET_ABILITY,false)
+        if UnitIsAlive(captiveUnit) then
+            call MapPauseUnit(captiveUnit,false)
+            call SetUnitInvulnerable(captiveUnit,false)
+        endif
+    endif
+    set captiveUnit=null
+    set captiveCaster=null
+endfunction
+
 function WaveCancelCleanup takes nothing returns nothing
     local timer waveCleanup=GetExpiredTimer()
     local integer waveCleanupId=GetHandleId(waveCleanup)
@@ -24470,12 +24578,14 @@ function WaveCancelCleanup takes nothing returns nothing
     local timer waveMotion
     local group waveTargets
     local hashtable waveData
+    local boolean waveSharesMotion
     if waveModel!=null then
         set waveKey=GetHandleId(waveModel)
     endif
     set waveMotion=LoadTimerHandle(HH,waveKey,StringHash("WaveMotion"))
     set waveTargets=LoadGroupHandle(HH,waveKey,StringHash("WaveTargets"))
     if waveMotion!=null and LoadBoolean(HH,waveKey,StringHash("CancelWave")) then
+        set waveSharesMotion=LoadBoolean(HH,waveKey,StringHash("WaveSharesMotion"))
         set waveData=LoadHashtableHandle(HH,waveKey,StringHash("WaveData"))
         if waveData==null then
             set waveData=h
@@ -24490,14 +24600,17 @@ function WaveCancelCleanup takes nothing returns nothing
                 call DestroyEffect(waveWarning)
             endif
         else
+            call WaveReleaseCaptive(waveFront)
             call WaveReleaseCaster(waveFront)
             call WaveUnregister(waveFront,true)
             call RemoveUnit(waveFront)
         endif
-        call FlushChildHashtable(waveData,GetHandleId(waveMotion))
-        call TSE_DestroyTimer(waveMotion)
+        if not waveSharesMotion then
+            call FlushChildHashtable(waveData,GetHandleId(waveMotion))
+            call TSE_DestroyTimer(waveMotion)
+        endif
         if waveTargets!=null then
-            call FlushChildHashtable(h,GetHandleId(waveTargets))
+            call FlushChildHashtable(waveData,GetHandleId(waveTargets))
             call DestroyGroup(waveTargets)
         endif
     endif
@@ -24571,6 +24684,7 @@ function WaveRedirectInternal takes handle waveFront,unit waveNewSource,real wav
         call SaveReal(HH,waveFrontId,StringHash("DeflectWaveZ"),GetUnitFlyHeight(waveUnit))
         call SetUnitOwner(waveUnit,OwnerOf(waveNewSource),false)
         call SetUnitFacingInstant(waveUnit,waveHeading*bj_RADTODEG)
+        call WaveReleaseCaptive(waveUnit)
     else
         call SetSpecialEffectYaw(waveModel,waveHeading*bj_RADTODEG)
     endif
@@ -28111,7 +28225,11 @@ call TriggerAddAction(gg_trg_VoicePreload,function Trig_VoicePreload_Actions)
 endfunction
 function InitVoice takes integer id returns string
 local string l__s="sdf.mp3"
-if id=='H02M' or id=='H12M' then
+if id=='HHom' then
+set l__s="HomuraSummon.mp3"
+elseif id=='HHDv' then
+set l__s="HomuraDevilSummon.mp3"
+elseif id=='H02M' or id=='H12M' then
 set l__s="Aizen.mp3"
 elseif id=='HIc1' then
 set l__s="Ichigo.mp3"
@@ -45594,7 +45712,7 @@ if ItemP(it)==p and udg_test==false and (udg_B==false or DU2==false) then
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
             call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
         endif
     endif
     //
@@ -45603,7 +45721,7 @@ elseif ItemP(it)==p then
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
             call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
+            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
         endif
     endif
 endif
@@ -45876,7 +45994,7 @@ else
                 call SetItemRemainingCooldown(it,cd)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 and GetItemTypeId(ittarg) !=  'ISPB' and GetItemTypeId(ittarg) !=  'IPRB' then
                     call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
                 endif
             endif
         else
@@ -45897,7 +46015,7 @@ else
                     call SetItemRemainingCooldown(it,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==1 and GetItemTypeId(it) !=  'ISPB' and GetItemTypeId(it) !=  'IPRB' then
                         call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-GetUnitBaseWeaponRealFieldById(GetUnitTypeId(u),UNIT_WEAPON_RF_ATTACK_RANGE,0)*0.3-50)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
                     endif
                 endif
             else
@@ -57949,17 +58067,374 @@ function InitTrig_height takes nothing returns nothing
     call TriggerAddAction(t,function Trig_height_Actions)
     set t=null
 endfunction
+function HomuraFxAt takes string homuraFxModel,real homuraFxX,real homuraFxY,real homuraFxZ,real homuraFxYaw,real homuraFxScale,real homuraFxTime,integer homuraRed,integer homuraGreen,integer homuraBlue,integer homuraAlpha returns nothing
+    local effect homuraVisual=AddSpecialEffect(homuraFxModel,homuraFxX,homuraFxY)
+    if homuraVisual!=null then
+        call SetSpecialEffectZ(homuraVisual,homuraFxZ)
+        call SetSpecialEffectOrientation(homuraVisual,homuraFxYaw,0.,0.)
+        call SetSpecialEffectScale(homuraVisual,homuraFxScale)
+        call SetSpecialEffectVertexColour(homuraVisual,homuraRed,homuraGreen,homuraBlue,homuraAlpha)
+        call RemoveEffect(homuraVisual,homuraFxTime,false,CreateTimer())
+    endif
+    set homuraVisual=null
+endfunction
+
+function HomuraPlayVoice takes unit homuraSpeaking,integer homuraSoundId,real homuraVoiceGap returns nothing
+    local integer homuraVoiceKey=GetHandleId(homuraSpeaking)
+    local real homuraVoiceNow=TimerGetElapsed(ShnClock)
+    if homuraVoiceNow>=LoadReal(HH,homuraVoiceKey,StringHash("HomuraVoiceUntil")) then
+        call SaveReal(HH,homuraVoiceKey,StringHash("HomuraVoiceUntil"),homuraVoiceNow+homuraVoiceGap)
+        call StartSound(SndN(homuraSoundId))
+    endif
+endfunction
+
+function HomuraShieldFinish takes unit homuraShielded,boolean homuraShieldHit returns nothing
+    local integer homuraShieldKey=GetHandleId(homuraShielded)
+    local timer homuraShieldTimer=LoadTimerHandle(HH,homuraShieldKey,StringHash("HomuraShieldTimer"))
+    local effect homuraShieldFx=LoadEffectHandle(HH,homuraShieldKey,StringHash("HomuraShieldFX"))
+    call RemoveSavedReal(HH,homuraShieldKey,StringHash("HomuraShieldUntil"))
+    if homuraShieldTimer!=null then
+        call RemoveSavedHandle(HH,homuraShieldKey,StringHash("HomuraShieldTimer"))
+        call FlushChildHashtable(h,GetHandleId(homuraShieldTimer))
+        call DestroyTimer(homuraShieldTimer)
+    endif
+    if homuraShieldFx!=null then
+        call RemoveSavedHandle(HH,homuraShieldKey,StringHash("HomuraShieldFX"))
+        call SetSpecialEffectVisible(homuraShieldFx,false)
+        call DestroyEffect(homuraShieldFx)
+    endif
+    if homuraShieldHit then
+        call HomuraFxAt("CirclePulse_White.mdx",GetUnitX(homuraShielded),GetUnitY(homuraShielded),GetUnitZ(homuraShielded)+45.,0.,0.75,0.36,155,105,225,190)
+        call StartSound(SndN(5009))
+    endif
+    set homuraShieldFx=null
+    set homuraShieldTimer=null
+endfunction
+
+function HomuraShieldExpire takes nothing returns nothing
+    local unit homuraShielded=LoadUnitHandle(h,GetHandleId(GetExpiredTimer()),0)
+    call HomuraShieldFinish(homuraShielded,false)
+    set homuraShielded=null
+endfunction
+
+function HomuraShieldStart takes unit homuraShielded returns nothing
+    local integer homuraShieldKey=GetHandleId(homuraShielded)
+    local timer homuraShieldTimer=CreateTimer()
+    local effect homuraShieldFx
+    call HomuraShieldFinish(homuraShielded,false)
+    set homuraShieldFx=AddSpecialEffectTarget("EnergyShield_Full.mdx",homuraShielded,"origin")
+    call SetSpecialEffectVertexColour(homuraShieldFx,158,112,255,120)
+    call SetSpecialEffectScale(homuraShieldFx,0.65)
+    call SaveEffectHandle(HH,homuraShieldKey,StringHash("HomuraShieldFX"),homuraShieldFx)
+    call SaveTimerHandle(HH,homuraShieldKey,StringHash("HomuraShieldTimer"),homuraShieldTimer)
+    call SaveReal(HH,homuraShieldKey,StringHash("HomuraShieldUntil"),TimerGetElapsed(ShnClock)+1.25)
+    call SaveUnitHandle(h,GetHandleId(homuraShieldTimer),0,homuraShielded)
+    call TimerStart(homuraShieldTimer,1.25,false,function HomuraShieldExpire)
+    call HomuraFxAt("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraShielded),GetUnitY(homuraShielded),GetUnitZ(homuraShielded)+10.,GetUnitFacing(homuraShielded),0.92,0.34,200,141,248,165)
+    call StartSound(SndN(5007))
+    set homuraShieldFx=null
+    set homuraShieldTimer=null
+endfunction
+
+function HomuraWeaponAnimation takes unit homuraAnimUnit,integer homuraAnimMode returns nothing
+    call AddUnitAnimationProperties(homuraAnimUnit,"second",false)
+    call AddUnitAnimationProperties(homuraAnimUnit,"third",false)
+    call AddUnitAnimationProperties(homuraAnimUnit,"fourth",false)
+    call AddUnitAnimationProperties(homuraAnimUnit,"alternate",homuraAnimMode!=0)
+    if homuraAnimMode==2 then
+        call AddUnitAnimationProperties(homuraAnimUnit,"second",true)
+    elseif homuraAnimMode==3 then
+        call AddUnitAnimationProperties(homuraAnimUnit,"third",true)
+    elseif homuraAnimMode==4 then
+        call AddUnitAnimationProperties(homuraAnimUnit,"fourth",true)
+    endif
+endfunction
+
+function HomuraRefreshQ takes unit homuraMover returns nothing
+    local ability homuraQ=GetUnitAbility(homuraMover,'HmQ1')
+    local integer homuraMode=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))
+    local integer homuraArt
+    local integer homuraLevel=GetUnitAbilityLevel(homuraMover,'HmQ1')-1
+    if homuraQ!=null and homuraLevel>=0 then
+        if homuraMode==0 then
+            set homuraArt='A0BG'
+            call CBS_SetTT(homuraQ,homuraLevel,0)
+        else
+            if homuraMode==1 then
+                set homuraArt='HmW1'
+            elseif homuraMode==2 then
+                set homuraArt='HmE1'
+            elseif homuraMode==3 then
+                set homuraArt='A270'
+            else
+                set homuraArt='A19Q'
+            endif
+            call CBS_SetTT(homuraQ,homuraLevel,2)
+        endif
+        call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById(homuraArt,ABILITY_SF_ICON_NORMAL))
+    endif
+    set homuraQ=null
+endfunction
+
+function HomuraApplyWeapon takes unit homuraMover,integer homuraMode returns nothing
+    local integer homuraKey=GetHandleId(homuraMover)
+    local integer homuraBonus=0
+    local real homuraReach=135.
+    local real homuraInterval=1.4
+    local real homuraAttackLeft=GetUnitAttackRemainingCooldown(homuraMover)
+    if homuraMode==1 then
+        set homuraReach=600.
+        set homuraInterval=0.95
+        set homuraBonus=-10
+    elseif homuraMode==2 then
+        set homuraReach=900.
+        set homuraInterval=2.25
+        set homuraBonus=35
+    elseif homuraMode==3 then
+        set homuraReach=1450.
+        set homuraInterval=3.6
+        set homuraBonus=90
+    elseif homuraMode==4 then
+        set homuraReach=650.
+        set homuraInterval=1.9
+    endif
+    call SaveInteger(HH,homuraKey,StringHash("HomuraWeapon"),homuraMode)
+    call HomuraWeaponAnimation(homuraMover,homuraMode)
+    call SetUnitBaseDamageByIndex(homuraMover,0,GetUnitBaseDamageByIndex(homuraMover,0)-LoadInteger(HH,homuraKey,StringHash("HomuraAttackDelta"))+homuraBonus)
+    call SaveInteger(HH,homuraKey,StringHash("HomuraAttackDelta"),homuraBonus)
+    if homuraMode==0 then
+        call SetUnitWeaponTypeByIndex(homuraMover,0,ConvertWeaponType(1))
+    else
+        call SetUnitWeaponTypeByIndex(homuraMover,0,ConvertWeaponType(5))
+    endif
+    call SaveReal(HH,homuraKey,StringHash("HomuraAttackRange"),homuraReach)
+    if UnitHasBow(homuraMover) then
+        set homuraReach=homuraReach+homuraReach*0.3+50.
+    endif
+    call SetUnitAttackRangeByIndex(homuraMover,0,homuraReach)
+    call SetUnitAcquireRange(homuraMover,homuraReach+150.)
+    call SetUnitAttackCooldownByIndex(homuraMover,0,homuraInterval)
+    call SetUnitAttackRemainingCooldown(homuraMover,homuraAttackLeft)
+endfunction
+
+function HomuraCombatAnim takes unit homuraFormUnit,integer homuraNormalAnim,integer homuraDevilAnim returns nothing
+    if GetUnitTypeId(homuraFormUnit)=='HHDv' then
+        call SetUnitAnimationByIndex(homuraFormUnit,homuraDevilAnim)
+    else
+        call SetUnitAnimationByIndex(homuraFormUnit,homuraNormalAnim)
+    endif
+endfunction
+
+function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType returns nothing
+    local integer homuraFormOld=GetUnitTypeId(homuraFormUnit)
+    local integer homuraFormKey=GetHandleId(homuraFormUnit)
+    local integer homuraFormMode=LoadInteger(HH,homuraFormKey,StringHash("HomuraWeapon"))
+    local integer homuraFormBaseDamage
+    local integer homuraFormIndex=0
+    local integer array homuraFormIds
+    local integer array homuraFormLevels
+    local real array homuraFormCooldowns
+    local real homuraFormHP
+    local real homuraFormMana
+    local real homuraFormAttackLeft
+    local ability homuraFormAbility
+    if homuraFormOld==homuraFormType or not UnitIsAlive(homuraFormUnit) then
+        return
+    endif
+    set homuraFormIds[0]='HmQ1'
+    set homuraFormIds[1]='HmW1'
+    set homuraFormIds[2]='HmE1'
+    set homuraFormIds[3]='HmR1'
+    set homuraFormIds[4]='HmT1'
+    set homuraFormIds[5]='HmD1'
+    set homuraFormIds[6]='HmF1'
+    set homuraFormIds[7]='HmG1'
+    loop
+        exitwhen homuraFormIndex>=8
+        set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
+        if homuraFormAbility!=null then
+            set homuraFormLevels[homuraFormIndex]=GetUnitAbilityLevel(homuraFormUnit,homuraFormIds[homuraFormIndex])
+            set homuraFormCooldowns[homuraFormIndex]=GetAbilityRemainingCooldown(homuraFormAbility)
+        endif
+        set homuraFormIndex=homuraFormIndex+1
+    endloop
+    set homuraFormBaseDamage=GetUnitBaseDamageByIndex(homuraFormUnit,0)-LoadInteger(HH,homuraFormKey,StringHash("HomuraAttackDelta"))
+    set homuraFormHP=GetWidgetLife(homuraFormUnit)
+    set homuraFormMana=GetWidgetMana(homuraFormUnit)
+    set homuraFormAttackLeft=GetUnitAttackRemainingCooldown(homuraFormUnit)
+    call MorphUnitToTypeId(homuraFormUnit,homuraFormType)
+    if GetUnitTypeId(homuraFormUnit)!=homuraFormType then
+        set homuraFormAbility=null
+        return
+    endif
+    call SetWidgetLife(homuraFormUnit,homuraFormHP)
+    call SetWidgetMana(homuraFormUnit,homuraFormMana)
+    call SetUnitBaseDamageByIndex(homuraFormUnit,0,homuraFormBaseDamage)
+    call RemoveSavedInteger(HH,homuraFormKey,StringHash("HomuraAttackDelta"))
+    set homuraFormIndex=0
+    loop
+        exitwhen homuraFormIndex>=8
+        if homuraFormLevels[homuraFormIndex]>0 then
+            set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
+            if homuraFormAbility==null then
+                call UnitAddAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
+                set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
+            endif
+            if homuraFormAbility!=null then
+                if GetUnitAbilityLevel(homuraFormUnit,homuraFormIds[homuraFormIndex])!=homuraFormLevels[homuraFormIndex] then
+                    call SetUnitAbilityLevel(homuraFormUnit,homuraFormIds[homuraFormIndex],homuraFormLevels[homuraFormIndex])
+                endif
+                call SetAbilityRemainingCooldown(homuraFormAbility,homuraFormCooldowns[homuraFormIndex])
+            endif
+        endif
+        set homuraFormIndex=homuraFormIndex+1
+    endloop
+    if homuraFormType=='HHDv' then
+        call HomuraWeaponAnimation(homuraFormUnit,0)
+        call HomuraPlayVoice(homuraFormUnit,4997,3.)
+        call HomuraFxAt("CirclePulse_White.mdx",GetUnitX(homuraFormUnit),GetUnitY(homuraFormUnit),GetUnitZ(homuraFormUnit)+30.,0.,1.25,0.48,204,130,245,180)
+        call SetUnitWeaponTypeByIndex(homuraFormUnit,0,ConvertWeaponType(5))
+        call SetUnitAttackCooldownByIndex(homuraFormUnit,0,1.4)
+        call SetUnitAcquireRange(homuraFormUnit,850.)
+        call SetWidgetPortrait(homuraFormUnit,"Homura\\HomuraWitch_Portrait.mdx")
+        call IH('HHDv',homuraFormUnit,"ReplaceableTextures\\CommandButtons\\BTNDevilHomura.blp")
+    else
+        call HomuraApplyWeapon(homuraFormUnit,homuraFormMode)
+        call SetWidgetPortrait(homuraFormUnit,"Homura\\Homura_Portrait.mdx")
+        call IH('HHom',homuraFormUnit,"ReplaceableTextures\\CommandButtons\\BTNHomura.blp")
+    endif
+    call SetUnitAttackRemainingCooldown(homuraFormUnit,homuraFormAttackLeft)
+    call HomuraRefreshQ(homuraFormUnit)
+    call CheckUnitBonusRange(homuraFormUnit)
+    call UpdateClassBar(homuraFormUnit)
+    set homuraFormAbility=null
+endfunction
+
+function HomuraVowClear takes unit homuraKeeper returns nothing
+    local integer homuraVowKey=GetHandleId(homuraKeeper)
+    local effect homuraVowMark=LoadEffectHandle(HH,homuraVowKey,StringHash("HomuraVowMark"))
+    call RemoveSavedHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"))
+    if homuraVowMark!=null then
+        call RemoveSavedHandle(HH,homuraVowKey,StringHash("HomuraVowMark"))
+        call SetSpecialEffectVisible(homuraVowMark,false)
+        call DestroyEffect(homuraVowMark)
+    endif
+    set homuraVowMark=null
+endfunction
+
+function HomuraIsMadoka takes unit homuraVowAlly returns boolean
+    local integer homuraVowType=GetUnitTypeId(homuraVowAlly)
+    return homuraVowType=='HMad' or homuraVowType=='HMaG'
+endfunction
+
+function HomuraVowTeammates takes unit homuraKeeper,unit homuraVowAlly returns boolean
+    local integer homuraVowPK=PId(OwnerOf(homuraKeeper))
+    local integer homuraVowPA=PId(OwnerOf(homuraVowAlly))
+    return not FFAMode and homuraVowPK>=0 and homuraVowPK<10 and homuraVowPA>=0 and homuraVowPA<10 and homuraVowPK!=homuraVowPA and Hero[homuraVowPK]==homuraKeeper and Hero[homuraVowPA]==homuraVowAlly and TeamOfP(homuraVowPK)==TeamOfP(homuraVowPA)
+endfunction
+
+function HomuraVowMadoka takes unit homuraKeeper returns unit
+    local integer homuraVowSlot=0
+    loop
+        exitwhen homuraVowSlot>=10
+        if HomuraIsMadoka(Hero[homuraVowSlot]) and HomuraVowTeammates(homuraKeeper,Hero[homuraVowSlot]) then
+            return Hero[homuraVowSlot]
+        endif
+        set homuraVowSlot=homuraVowSlot+1
+    endloop
+    return null
+endfunction
+
+function HomuraVowBind takes unit homuraKeeper,unit homuraVowAlly returns boolean
+    local integer homuraVowKey=GetHandleId(homuraKeeper)
+    local effect homuraVowMark
+    local ability homuraVowButton=GetUnitAbility(homuraKeeper,'HmD1')
+    if GetUnitTypeId(homuraKeeper)!='HHom' or homuraVowButton==null or not UnitIsAlive(homuraKeeper) or LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round or not UnitIsAlive(homuraVowAlly) or not HomuraVowTeammates(homuraKeeper,homuraVowAlly) then
+        set homuraVowButton=null
+        return false
+    endif
+    call HomuraVowClear(homuraKeeper)
+    call SaveInteger(HH,homuraVowKey,StringHash("HomuraVowRound"),round)
+    call SaveUnitHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"),homuraVowAlly)
+    set homuraVowMark=AddSpecialEffectTarget("Homura\\HomuraTimeDial.mdx",homuraVowAlly,"origin")
+    call SetSpecialEffectScale(homuraVowMark,0.63)
+    call SetSpecialEffectVertexColour(homuraVowMark,228,137,231,142)
+    call SaveEffectHandle(HH,homuraVowKey,StringHash("HomuraVowMark"),homuraVowMark)
+    call StartAbilityCooldown(homuraVowButton,9999.)
+    set homuraVowButton=null
+    set homuraVowMark=null
+    return true
+endfunction
+
+function HomuraVowReady takes unit homuraKeeper,unit homuraVowAlly returns boolean
+    local integer homuraVowKey=GetHandleId(homuraKeeper)
+    return GetUnitTypeId(homuraKeeper)=='HHom' and UnitIsAlive(homuraKeeper) and LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round and LoadUnitHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"))==homuraVowAlly and HomuraVowTeammates(homuraKeeper,homuraVowAlly)
+endfunction
+
+function HomuraVowGoddess takes unit homuraGoddess returns nothing
+    local integer homuraVowSlot=0
+    if not udg_B or not DU or not DU2 or GetUnitTypeId(homuraGoddess)!='HMaG' then
+        return
+    endif
+    loop
+        exitwhen homuraVowSlot>=10
+        if HomuraVowReady(Hero[homuraVowSlot],homuraGoddess) then
+            call HomuraVowClear(Hero[homuraVowSlot])
+            call HomuraChangeForm(Hero[homuraVowSlot],'HHDv')
+        endif
+        set homuraVowSlot=homuraVowSlot+1
+    endloop
+endfunction
+
+function HomuraVowAuto takes unit homuraKeeper returns nothing
+    local unit homuraVowAlly=HomuraVowMadoka(homuraKeeper)
+    if homuraVowAlly!=null and HomuraVowBind(homuraKeeper,homuraVowAlly) then
+        call HomuraVowGoddess(homuraVowAlly)
+    endif
+    set homuraVowAlly=null
+endfunction
+
+function HomuraVowSave takes unit homuraVowAlly returns boolean
+    local integer homuraVowSlot=0
+    local real homuraVowFraction=0.30
+    loop
+        exitwhen homuraVowSlot>=10
+        if HomuraVowReady(Hero[homuraVowSlot],homuraVowAlly) then
+            if HomuraIsMadoka(homuraVowAlly) then
+                set homuraVowFraction=0.45
+            endif
+            call SetEventDamage(0.)
+            call HomuraVowClear(Hero[homuraVowSlot])
+            call SetWidgetLife(homuraVowAlly,GetWidgetMaxLife(homuraVowAlly)*homuraVowFraction)
+            call HomuraFxAt("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraVowAlly),GetUnitY(homuraVowAlly),GetUnitZ(homuraVowAlly)+12.,0.,1.23,0.55,238,132,211,188)
+            call HomuraChangeForm(Hero[homuraVowSlot],'HHDv')
+            return true
+        endif
+        set homuraVowSlot=homuraVowSlot+1
+    endloop
+    return false
+endfunction
+
+function HomuraVowRoundReset takes unit homuraKeeper returns nothing
+    local ability homuraVowAbility
+    if GetUnitTypeId(homuraKeeper)=='HHDv' then
+        call HomuraChangeForm(homuraKeeper,'HHom')
+    endif
+    if GetUnitTypeId(homuraKeeper)=='HHom' then
+        call HomuraVowClear(homuraKeeper)
+        set homuraVowAbility=GetUnitAbility(homuraKeeper,'HmD1')
+        if homuraVowAbility!=null then
+            call SetAbilityRemainingCooldown(homuraVowAbility,0.)
+        endif
+    endif
+    set homuraVowAbility=null
+endfunction
+
 function HomuraDevilTest takes nothing returns nothing
     local unit homuraTestUnit=Hero[PId(TrigP())]
-    if homuraTestUnit!=null and UnitIsAlive(homuraTestUnit) and GetUnitTypeId(homuraTestUnit)=='HHom' then
-        call UnitAddAbility(homuraTestUnit,'HmM1')
-        call IssueImmediateOrder(homuraTestUnit,"bearform")
-        call UnitRemoveAbility(homuraTestUnit,'HmM1')
-        if GetUnitTypeId(homuraTestUnit)=='HHDv' then
-            call SetWidgetPortrait(homuraTestUnit,"Homura\\HomuraWitch_Portrait.mdx")
-            call IH('HHDv',homuraTestUnit,"ReplaceableTextures\\CommandButtons\\BTNDevilHomura.blp")
-            call UpdateClassBar(homuraTestUnit)
-        endif
+    if UnitIsAlive(homuraTestUnit) and GetUnitTypeId(homuraTestUnit)=='HHom' then
+        call HomuraVowClear(homuraTestUnit)
+        call HomuraChangeForm(homuraTestUnit,'HHDv')
     endif
     set homuraTestUnit=null
 endfunction
@@ -63952,6 +64427,7 @@ function EndOfChoiceAct takes nothing returns nothing
             call ShowAbility2( 'YoF0', true)
         endif
         call RemoveTransformation(Hero[i])
+        call HomuraVowRoundReset(Hero[i])
         call SetUnitTargetable(Hero[i],true)
         if GetUnitTypeId(Hero[i]) == 'H00H' and GetUnitAbilityLevel(Hero[i],'A1A3')>0 then
             call SaveReal(HH,GetHandleId(Hero[i]),TIME_HASH,45)
@@ -64600,6 +65076,7 @@ call UnitAddAbility(Hero[i],'A00D')
 call UnitRemoveAbility(Hero[i],'A00D')
 call IssueImmediateOrder(Hero[i],"unimmolation")
 call RemoveTransformation(Hero[i])
+call HomuraVowRoundReset(Hero[i])
 call SetUnitFlyHeight(Hero[i],0,0)
 set i=i+1
 endloop
@@ -65519,6 +65996,14 @@ call ForGroup(udg_CG[2],function Trig_Start_Func002C)
 endif
 endif
 set DU=true
+loop
+    exitwhen i>=10
+    if GetUnitTypeId(Hero[i])=='HHom' then
+        call HomuraVowAuto(Hero[i])
+    endif
+    set i=i+1
+endloop
+set i=0
 if PauseRes==true then
 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%."))
 else
@@ -67707,6 +68192,7 @@ function MadokaF3_Periodic takes nothing returns nothing
 			call UnitAddAbility(caster, 'MaF3')
 			call IssueImmediateOrder(caster, "bearform")
 			call UnitRemoveAbility(caster, 'MaF3')
+			call HomuraVowGoddess(caster)
 			if GetHeroLevel(caster) >= 25 then
 				call ShowAbility2( 'MaT1' , false)
 				call UnitAddAbility(caster, 'MaT2')
@@ -71372,6 +71858,13 @@ set u=null
 return
 endif
 set htdgu=null
+if b>0. and isTargetEnemy and (duid=='HHom' or duid=='HHDv') and LoadReal(HH,uid,StringHash("HomuraShieldUntil"))>TimerGetElapsed(ShnClock) then
+    call HomuraShieldFinish(u,true)
+    call SetEventDamage(0.)
+    set c=null
+    set u=null
+    return
+endif
 if b>0. and LoadBoolean(HH,uid,StringHash("HitEGuard")) and GetUnitAbilityLevel(c,'A1WT')==0 then
 call SetEventDamage(0.)
 set c=null
@@ -75232,6 +75725,9 @@ if nb>0 then
         call TSE_HoldDmg(u,c,nb)
         call SetEventDamage(0)
         set nb=0
+    endif
+    if nb>0. and nb>=GetWidgetLife(u)-0.405 and udg_B and DU and DU2 and isTargetEnemy and u==Hero[idu] and HomuraVowSave(u) then
+        set nb=0.
     endif
     // 3.8.2: Ключ Баб-Илу — добивание вражеского героя ниже 3% HP (урон любого юнита владельца ключа)
     if nb>0 and u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and (UnitHasItemOfTypeBJ(Hero[idc],'IBBi') or GetUnitAbilityLevel(c,'KIBK')>0) then
@@ -112452,6 +112948,27 @@ local real he=(dist/md)*mh
 local real sc=0
 local real x2=0
 local real y2=0
+local unit planetSource=WaveRedirectedSource(l__d)
+local real planetSpan
+if WaveCancelled(l__d) then
+set p=null
+set l__d=null
+set t=null
+set u=null
+set planetSource=null
+return
+endif
+if planetSource!=null then
+set p=OwnerOf(planetSource)
+set x1=WaveTargetX(l__d)
+set y1=WaveTargetY(l__d)
+set a=Atan2(y1-y,x1-x)
+set dist=SR1(x,y,x1,y1)
+set planetSpan=LoadReal(HH,GetHandleId(l__d),StringHash("DeflectWaveSpan"))
+set he=LoadReal(HH,GetHandleId(l__d),StringHash("DeflectWaveZ"))*dist/planetSpan
+else
+set planetSource=u
+endif
 if dist>speed+5 and udg_B==true and DU2==true then
 set x=x+speed*Cos(a)
 set y=y+speed*Sin(a)
@@ -112463,21 +112980,21 @@ if buuMusic==false then
 set soundplay=SndN(1408) // Sound\war3mapImported\BuuT2.mp3
 call StartSound(soundplay)
 call SaveSoundHandle(h,id,16,soundplay)
+call WaveTrackSound(l__d,soundplay)
 call SaveBoolean(h,id,11,true)
 endif
-set n=CreateUnit(p,'e0T1',x,y,GetRandomReal(0,359))
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0T1',x,y,GetRandomReal(0,359)))
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitScale(n,3.5,3.5,3.5)
-set n=CreateUnit(p,'e0MF',x,y,GetRandomReal(0,359))
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0MF',x,y,GetRandomReal(0,359)))
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitScale(n,3.5,3.5,3.5)
-set n=CreateUnit(p,'e0PM',x,y,GetRandomReal(0,359))
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0PM',x,y,GetRandomReal(0,359)))
 call UnitApplyTimedLife(n,'BTLF',3)
 call SetUnitScale(n,3.5,3.5,3.5)
 endif
 call SetUnitFlyHeight(l__d,he,0)
 else
-call ShakeCamera(3,50)
 call SetUnitFlyHeight(l__d,0,0)
 call StopSound(LoadSoundHandle(h,id,16),false,true) // звук из массива — останавливаем, не удаляем
 call StartSound(soundStr[47])
@@ -112485,14 +113002,17 @@ call GroupEnumUnitsInRange(DG,x1,y1,1200,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
-if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-if GetUnitAbilityLevel(u,'A0SN')>0 then
+if not WaveCancelled(l__d) and Condition_Base(p,E) then
+call myCustomDamage(planetSource,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and GetUnitAbilityLevel(u,'A0SN')>0 then
 call SetControlToUnit(E,E, 2, "stun")
 endif
 endif
 call GroupRemoveUnit(DG,E)
 endloop
+if not WaveCancelled(l__d) then
+call WaveUnregister(l__d,false)
+call ShakeCamera(3,50)
 call UnitApplyTimedLife(CreateUnit(p,'e0DL',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DK',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0DJ',x1,y1,GetRandomReal(0,359)),'BTLF',3)
@@ -112505,10 +113025,12 @@ call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call KillUnit(l__d)
 endif
+endif
 set p=null
 set l__d=null
 set t=null
 set u=null
+set planetSource=null
 endfunction
 function MissleMovePlanetBurst takes unit u,real x,real y,unit l__d,real speed,real angle,real dmg,real mh,real dist returns nothing
 local timer t=CreateTimer()
@@ -112523,6 +113045,7 @@ call SaveReal(h,id,7,y)
 call SaveReal(h,id,8,mh)
 call SaveReal(h,id,9,dist)
 call SaveBoolean(h,id,11,false)
+call WaveRegister(l__d,t,null,null)
 call TSE_TimerStart(t,0.03,true,function MissleMovePlanetBurst2)
 set t=null
 endfunction
@@ -117591,35 +118114,54 @@ function LightningPencilCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0L8'
 endfunction
 function BijuDamaBee takes nothing returns nothing
-        local integer id = GetHandleID()
+        local timer beeBallTimer=GetExpiredTimer()
+local integer id=GetHandleId(beeBallTimer)
+local unit beeBall=LoadUnitHandle(HH,id,DummyHash)
+local unit beeBallCaster=LoadUnitHandle(HH,id,CasterHash)
+local unit beeBallSource=WaveRedirectedSource(beeBall)
         local integer time = LoadInt("Time")
-        local real x = GetUnitX(LoadUnit("Dummy"))
-        local real y = GetUnitY(LoadUnit("Dummy"))
+        local real x = GetUnitX(beeBall)
+        local real y = GetUnitY(beeBall)
         local real ang = LoadFloat("ang")
-    local player p=OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash))
-        local real dmg = GetHeroAgi(LoadUnitHandle(HH,MUIHandle(),CasterHash),true) * (3 + GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0L8'))+100
-        call ExtraTime()
+    local player p=OwnerOf(beeBallCaster)
+        local real dmg = GetHeroAgi(beeBallCaster,true) * (3 + GetUnitAbilityLevel(beeBallCaster,'A0L8'))+100
+        if WaveCancelled(beeBall) then
+set p=null
+set beeBallTimer=null
+set beeBall=null
+set beeBallCaster=null
+set beeBallSource=null
+return
+endif
+if beeBallSource!=null then
+set ang=WaveRedirectedAngle(beeBall)
+set p=OwnerOf(beeBallSource)
+endif
+if beeBallSource==null then
+set beeBallSource=beeBallCaster
+endif
+call ExtraTime()
         
         if time == 0 then
-                set n = CreateUnit(p,'e55V',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),ang*bj_RADTODEG)
+                set n = WaveTrackVisual(beeBall,CreateUnit(p,'e55V',GetUnitX(beeBallCaster),GetUnitY(beeBallCaster),ang*bj_RADTODEG))
                 call SetUnitScale(n, 0.9, 0.9, 0.9)
                 call UnitApplyTimedLife(n,'BTLF',0.2)
-        call SetUnitScale(LoadUnit("Dummy"), 0.2, 0.2, 0.2)
-        call SetUnitFlyHeight(LoadUnit("Dummy"),GetRandomReal(80,120),0)
+        call SetUnitScale(beeBall, 0.2, 0.2, 0.2)
+        call SetUnitFlyHeight(beeBall,GetRandomReal(80,120),0)
                 set soundplay=SndN(1513) // Sound\war3mapImported\BeeQ1.mp3
                 call StartSound(soundplay)
                 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
         endif
         
         if time < 100 and not IsTerrainPathable(x + 22 * Cos(ang),y + 22 * Sin(ang),PATHING_TYPE_FLYABILITY) then
-                call SetUnitX(LoadUnit("Dummy"), x + 22 * Cos(ang))
-                call SetUnitY(LoadUnit("Dummy"), y + 22 * Sin(ang))
+                call SetUnitX(beeBall, x + 22 * Cos(ang))
+                call SetUnitY(beeBall, y + 22 * Sin(ang))
                 call GroupClear(G)
                 call GroupEnumUnitsInRange(G,x,y,200,Base)
                 loop
                         set E=FirstOfGroup(G)
                         exitwhen E==null
-                        if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),E)then
+                        if not WaveCancelled(beeBall) and Condition_Base(p,E) then
                                 call SaveInteger(HH,id, TIME_HASH, 106)
                         endif
                         call GroupRemoveUnit(G,E)
@@ -117634,21 +118176,29 @@ function BijuDamaBee takes nothing returns nothing
                 loop
                         set E=FirstOfGroup(G)
                         exitwhen E==null
-                        if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),E)then
-                                call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash),E,dmg,false,false,null,null,null)
+                        if not WaveCancelled(beeBall) and Condition_Base(p,E) then
+                                call myCustomDamage(beeBallSource,E,dmg,false,false,null,null,null)
                                 call SaveInteger(HH,id, TIME_HASH, 126)
                         endif
                         call GroupRemoveUnit(G,E)
                 endloop
+                if not WaveCancelled(beeBall) then
                 set soundplay=SndN(1516) // Sound\war3mapImported\BeeQ2.mp3
                 call StartSound(soundplay)
                 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\A_P.blast2.mdl", x,y))
                 call DestroyEffect(AddSpecialEffect("war3mapImported\\aerialexplosionv3.mdx",x,y))
-                call UnitApplyTimedLife(LoadUnit("Dummy"),'BTLF',0.2)
-                call RemoveSavedHandle(HH,id,DummyHash)
-                call Clear(id)
+                call WaveUnregister(beeBall,false)
+call UnitApplyTimedLife(beeBall,'BTLF',0.2)
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(beeBallTimer)
+endif
         endif
+set beeBallTimer=null
+set beeBall=null
+set beeBallCaster=null
+set beeBallSource=null
+set p=null
 endfunction
 function LightningPencilCast2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -117663,6 +118213,28 @@ local real y=GetUnitY(l__d)+75*Sin(a)
 local real dmg=GetHeroInt(u,true)*(1+GetUnitAbilityLevel(u,'A0L8'))+100
 local player p=OwnerOf(u)
 local group g=LoadGroupHandle(HH,id,3)
+local unit beePencilSource=WaveRedirectedSource(l__d)
+if WaveCancelled(l__d) then
+set t=null
+set u=null
+set l__d=null
+set l__d2=null
+set g=null
+set p=null
+set beePencilSource=null
+return
+endif
+if beePencilSource!=null then
+set a=WaveRedirectedAngle(l__d)
+set p=OwnerOf(beePencilSource)
+endif
+if beePencilSource==null then
+set beePencilSource=u
+else
+set x=GetUnitX(l__d)+75*Cos(a)
+set y=GetUnitY(l__d)+75*Sin(a)
+call SetUnitFacingInstant(l__d2,a*bj_RADTODEG)
+endif
 if dist<1700 and IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY)==false then
 call SetUnitXY_1(l__d,x,y, false)
 call SetUnitXY_1(l__d2,x,y, false)
@@ -117672,14 +118244,15 @@ set idg=GetHandleId(g)
 loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
-if Condition_Base(p,E)and LoadUnitHandle(HH,idg,ide)!=E then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and Condition_Base(p,E) and LoadUnitHandle(HH,idg,ide)!=E then
+call myCustomDamage(beePencilSource,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(HH,idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
 exitwhen E==null
 endloop
 else
+call WaveUnregister(l__d,false)
 call RemoveUnit(l__d)
 call RemoveUnit(l__d2)
 call FlushChildHashtable(HH,GetHandleId(g))
@@ -117694,6 +118267,7 @@ set t=null
 set l__d=null
 set p=null
     set l__d2=null
+set beePencilSource=null
 endfunction
 function LightningPencilCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -117703,7 +118277,8 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local real x1=GetSpellTargetX()
 local real y1=GetSpellTargetY()
-local integer id2 = NewTimer(PId(TrigP()))
+local integer id2=id
+local unit beePencil
 local player p=OwnerOf(u)
 local real a=Atan2(y1-y,x1-x)
 if GetUnitTypeId(u) != 'H03I' then
@@ -117715,6 +118290,10 @@ call SaveUnitHandle(HH,id,2,CreateUnit(OwnerOf(u),'e0GY',x,y,a*bj_RADTODEG))
 set soundplay=SndN(1519) // Sound\Music\mp3Music\KillerBee_F.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+set beePencil=LoadUnitHandle(HH,id,1)
+call WaveRegister(beePencil,t,LoadGroupHandle(HH,id,3),null)
+call SaveHashtableHandle(HH,GetHandleId(beePencil),StringHash("WaveData"),HH)
+call WaveTrackVisual(beePencil,LoadUnitHandle(HH,id,2))
 call TSE_TimerStart(t,0.02,true,function LightningPencilCast2)
 set bjLCE = AddSpecialEffect("Ikarice2_FAW34.mdl", x+55*Cos(a), y+55*Sin(a))
 //Ikarice2_FAW34.mdl
@@ -117723,7 +118302,7 @@ call SetSpecialEffectScale (bjLCE, 1.2)
 call SetSpecialEffectZ     (bjLCE, 130)
 call SetSpecialEffectRoll  (bjLCE, 90)
 call SetSpecialEffectPitch (bjLCE, a*bj_RADTODEG-90)
-call RemoveEffect   (bjLCE, 0.8, false, CreateTimer())
+call WaveTrackCastEffect(beePencil,bjLCE,0.8)
 else
 call SaveAgentHandle(HH,id2, CasterHash, u)
 call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,'e45V',GetUnitX(u)-100*Cos(a),GetUnitY(u)-100*Sin(a),a*bj_RADTODEG))
@@ -117733,10 +118312,13 @@ call SaveReal(HH,id2,SH_tx,GetSpellTargetX())
 call SaveReal(HH,id2,SH_ty,GetSpellTargetY())
 call SaveReal(HH,id2,SH_ang,a)
 call SetUnitAnimation(u,"Spell Channel")
-call TSE_TimerStart(LoadTimer(PId(TrigP())),0.01,true,function BijuDamaBee)
+call WaveRegisterInTable(LoadUnitHandle(HH,id2,DummyHash),t,HH)
+call TSE_TimerStart(t,0.01,true,function BijuDamaBee)
 endif
 set u=null
 set t=null
+set beePencil=null
+set p=null
 endfunction
 function LightningPencilInit takes nothing returns nothing
 set gg_trg_LightningPencil=CreateTrigger()
@@ -143363,8 +143945,10 @@ call SaveStr(HH,SH_ShnChanO,'HaG1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'HaG1',2)
 call SaveStr(HH,SH_ShnChanO,'HdD1',"roar")
 call SaveStr(HH,SH_ShnChanO,'HdE1',"clusterrockets")
-call SaveStr(HH,SH_ShnChanO,'HdF1',"berserk")
+call SaveStr(HH,SH_ShnChanO,'HdF1',"innerfire")
+call SaveInteger(HH,SH_ShnChanT,'HdF1',1)
 call SaveStr(HH,SH_ShnChanO,'HdG1',"blink")
+call SaveInteger(HH,SH_ShnChanT,'HdG1',2)
 call SaveStr(HH,SH_ShnChanO,'HdQ1',"carrionswarm")
 call SaveStr(HH,SH_ShnChanO,'HdR1',"rainoffire")
 call SaveStr(HH,SH_ShnChanO,'HdT1',"starfall")
@@ -143376,13 +143960,17 @@ call SaveStr(HH,SH_ShnChanO,'HerT',"tornado")
 call SaveInteger(HH,SH_ShnChanT,'HerT',1)
 call SaveStr(HH,SH_ShnChanO,'HiW1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'HiW1',2)
-call SaveStr(HH,SH_ShnChanO,'HmD1',"roar")
+call SaveStr(HH,SH_ShnChanO,'HmD1',"faeriefire")
+call SaveInteger(HH,SH_ShnChanT,'HmD1',1)
 call SaveStr(HH,SH_ShnChanO,'HmE1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'HmE1',2)
-call SaveStr(HH,SH_ShnChanO,'HmF1',"berserk")
+call SaveStr(HH,SH_ShnChanO,'HmF1',"innerfire")
+call SaveInteger(HH,SH_ShnChanT,'HmF1',1)
 call SaveStr(HH,SH_ShnChanO,'HmG1',"blink")
+call SaveInteger(HH,SH_ShnChanT,'HmG1',3)
 call SaveStr(HH,SH_ShnChanO,'HmQ1',"carrionswarm")
 call SaveStr(HH,SH_ShnChanO,'HmR1',"rainoffire")
+call SaveInteger(HH,SH_ShnChanT,'HmR1',2)
 call SaveStr(HH,SH_ShnChanO,'HmT1',"starfall")
 call SaveStr(HH,SH_ShnChanO,'HmW1',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'HmW1',2)
@@ -145641,7 +146229,7 @@ call SaveStr(HH,SH_AbOrd,'HaF2',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'HaG1',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'HdD1',"roar")
 call SaveStr(HH,SH_AbOrd,'HdE1',"clusterrockets")
-call SaveStr(HH,SH_AbOrd,'HdF1',"berserk")
+call SaveStr(HH,SH_AbOrd,'HdF1',"innerfire")
 call SaveStr(HH,SH_AbOrd,'HdG1',"blink")
 call SaveStr(HH,SH_AbOrd,'HdQ1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'HdR1',"rainoffire")
@@ -145651,9 +146239,9 @@ call SaveStr(HH,SH_AbOrd,'HerF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'HerG',"charm")
 call SaveStr(HH,SH_AbOrd,'HerT',"tornado")
 call SaveStr(HH,SH_AbOrd,'HiW1',"clusterrockets")
-call SaveStr(HH,SH_AbOrd,'HmD1',"roar")
+call SaveStr(HH,SH_AbOrd,'HmD1',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'HmE1',"clusterrockets")
-call SaveStr(HH,SH_AbOrd,'HmF1',"berserk")
+call SaveStr(HH,SH_AbOrd,'HmF1',"innerfire")
 call SaveStr(HH,SH_AbOrd,'HmG1',"blink")
 call SaveStr(HH,SH_AbOrd,'HmM1',"bearform")
 call SaveStr(HH,SH_AbOrd,'HmM2',"bearform")
@@ -148951,96 +149539,110 @@ endfunction
 function KienzanCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0SX' and udg_B==true
 endfunction
+function KienzanDiskStep takes unit diskOwner,unit discFront,group discGroup,real discPhase,real discSweep,real discDamage returns nothing
+    local unit discSource=WaveRedirectedSource(discFront)
+    local unit discTarget
+    local player discPlayer
+    local integer discGroupKey=GetHandleId(discGroup)
+    local real discX=GetUnitX(discFront)
+    local real discY=GetUnitY(discFront)
+    local real discAngle=GetUnitFacing(discFront)
+    local unit discTrail
+    if discSource!=null then
+        set discAngle=WaveRedirectedAngle(discFront)*bj_RADTODEG
+    endif
+    if discPhase>=0.25 then
+        if discSource==null then
+            if SR(discX,discY,GetUnitX(diskOwner),GetUnitY(diskOwner))<1000 then
+                call SetUnitFacing(discFront,discAngle+discSweep*GetRandomReal(-90,90))
+            else
+                call SetUnitFacing(discFront,Atan2(GetUnitY(diskOwner)-discY,GetUnitX(diskOwner)-discX)*bj_RADTODEG)
+            endif
+        endif
+    else
+        if discSource==null then
+            set discSource=diskOwner
+        endif
+        set discPlayer=OwnerOf(discSource)
+        set discAngle=discAngle*bj_DEGTORAD
+        set discX=discX+45*Cos(discAngle)
+        set discY=discY+45*Sin(discAngle)
+        call SetUnitX(discFront,discX)
+        call SetUnitY(discFront,discY)
+        set discTrail=WaveTrackVisual(discFront,CreateUnit(discPlayer,'e0B2',discX,discY,GetRandomReal(0,359)))
+        call UnitApplyTimedLife(discTrail,'BTLF',0.01)
+        call SetUnitVertexColor(discTrail,200,40,255,30)
+        call GroupEnumUnitsInRange(discGroup,discX,discY,130,Base)
+        loop
+            set discTarget=FirstOfGroup(discGroup)
+            exitwhen discTarget==null
+            call GroupRemoveUnit(discGroup,discTarget)
+            if not WaveCancelled(discFront) and Condition_Base(discPlayer,discTarget) and discTarget!=LoadUnitHandle(h,discGroupKey,GetHandleId(discTarget)) then
+                call myCustomDamage(discSource,discTarget,discDamage,false,false,null,null,null)
+                if not WaveCancelled(discFront) then
+                    call SetControlToUnit(discTarget,discTarget,1,"stun")
+                    call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",discTarget,"chest"))
+                    call SaveUnitHandle(h,discGroupKey,GetHandleId(discTarget),discTarget)
+                endif
+            endif
+        endloop
+    endif
+    set discSource=null
+    set discTarget=null
+    set discTrail=null
+    set discPlayer=null
+endfunction
+
 function KienzanCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local unit d1=LoadUnitHandle(h,id,3)
-local unit d2=LoadUnitHandle(h,id,4)
-local real r=LoadReal(h,id,2)
-local group g=LoadGroupHandle(h,id,1)
-local integer l__idg=GetHandleId(g)
-local player p=OwnerOf(u)
-local real x2=GetUnitX(u)
-local real y2=GetUnitY(u)
-local real x=GetUnitX(d1)
-local real y=GetUnitY(d1)
-local real x1=GetUnitX(d2)
-local real y1=GetUnitY(d2)
-local real f1=GetUnitFacing(d1)
-local real f2=GetUnitFacing(d2)
-local real dmg=GetUnitAbilityLevel(u,'A0SX')*GetHeroInt(u,true)*0.5+50*GetUnitAbilityLevel(u,'A0SX')
-if GetWidgetLife(d1)>0 and udg_B==true and DU2==true then
-if r<0.25 then
-set f1=f1*bj_DEGTORAD
-set f2=f2*bj_DEGTORAD
-set x=x+45*Cos(f1)
-set y=y+45*Sin(f1)
-set x1=x1+45*Cos(f2)
-set y1=y1+45*Sin(f2)
-call SetUnitX(d1,x)
-call SetUnitX(d2,x1)
-call SetUnitY(d2,y1)
-call SetUnitY(d1,y)
-call SaveReal(h,id,2,r+0.025)
-set n=CreateUnit(p,'e0B2',x,y,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,'BTLF',0.01)
-call SetUnitVertexColor(n,200,40,255,30)
-set n=CreateUnit(p,'e0B2',x1,y1,GetRandomReal(0,359))
-call UnitApplyTimedLife(n,'BTLF',0.01)
-call SetUnitVertexColor(n,200,40,255,30)
-call GroupEnumUnitsInRange(g,x,y,130,Base)
-loop
-set E=FirstOfGroup(g)
-set ide=GetHandleId(E)
-exitwhen E==null
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,ide)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SetControlToUnit(E,E, 1, "stun")
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
-call SaveUnitHandle(h,l__idg,ide,E)
-endif
-call GroupRemoveUnit(g,E)
-endloop
-call GroupEnumUnitsInRange(g,x1,y1,130,Base)
-loop
-set E=FirstOfGroup(g)
-set ide=GetHandleId(E)
-exitwhen E==null
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,ide)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
-call SetControlToUnit(E,E, 1, "stun")
-call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",E,"chest"))
-call SaveUnitHandle(h,l__idg,ide,E)
-endif
-call GroupRemoveUnit(g,E)
-endloop
-else
-call SaveReal(h,id,2,0)
-if SR(x,y,x2,y2)<1000 then
-call SetUnitFacing(d1,f1+GetRandomReal(-90,90))
-else
-call SetUnitFacing(d1,Atan2(y2-y,x2-x)*bj_RADTODEG)
-endif
-if SR(x1,y1,x2,y2)<1000 then
-call SetUnitFacing(d2,f2-GetRandomReal(-90,90))
-else
-call SetUnitFacing(d2,Atan2(y2-y1,x2-x1)*bj_RADTODEG)
-endif
-call FlushChildHashtable(h,l__idg)
-endif
-else
-call FlushChildHashtable(h,id)
-call FlushChildHashtable(h,l__idg)
-call TSE_DestroyTimer(t)
-call DestroyGroup(g)
-endif
-set u=null
-set d1=null
-set d2=null
-set t=null
-set g=null
-set p=null
+    local timer t=GetExpiredTimer()
+    local integer id=GetHandleId(t)
+    local unit u=LoadUnitHandle(h,id,0)
+    local unit d1=LoadUnitHandle(h,id,3)
+    local unit d2=LoadUnitHandle(h,id,4)
+    local real r=LoadReal(h,id,2)
+    local group g=LoadGroupHandle(h,id,1)
+    local integer l__idg=GetHandleId(g)
+    local real dmg=GetUnitAbilityLevel(u,'A0SX')*GetHeroInt(u,true)*0.5+50*GetUnitAbilityLevel(u,'A0SX')
+    local boolean discFirstActive=UnitIsAlive(d1) and not WaveCancelled(d1)
+    local boolean discSecondActive=UnitIsAlive(d2) and not WaveCancelled(d2)
+    if (discFirstActive or discSecondActive) and udg_B and DU2 then
+        if discFirstActive then
+            call KienzanDiskStep(u,d1,g,r,1.,dmg)
+        elseif not WaveCancelled(d1) then
+            call WaveUnregister(d1,false)
+            call RemoveSavedHandle(h,id,3)
+        endif
+        if discSecondActive and not WaveCancelled(d2) then
+            call KienzanDiskStep(u,d2,g,r,-1.,dmg)
+        elseif not WaveCancelled(d2) then
+            call WaveUnregister(d2,false)
+            call RemoveSavedHandle(h,id,4)
+        endif
+        if r<0.25 then
+            call SaveReal(h,id,2,r+0.025)
+        else
+            call SaveReal(h,id,2,0.)
+            call FlushChildHashtable(h,l__idg)
+        endif
+    else
+        if d1!=null and not WaveCancelled(d1) then
+            call WaveUnregister(d1,not udg_B or not DU2)
+            call RemoveUnit(d1)
+        endif
+        if d2!=null and not WaveCancelled(d2) then
+            call WaveUnregister(d2,not udg_B or not DU2)
+            call RemoveUnit(d2)
+        endif
+        call FlushChildHashtable(h,id)
+        call FlushChildHashtable(h,l__idg)
+        call TSE_DestroyTimer(t)
+        call DestroyGroup(g)
+    endif
+    set u=null
+    set d1=null
+    set d2=null
+    set t=null
+    set g=null
 endfunction
 function KienzanCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -149064,6 +149666,8 @@ set soundplay=SndN(2001) // Sound\Music\mp3Music\Frieza\FriezaDeathSaucer-jap.mp
 endif
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call WaveRegisterShared(LoadUnitHandle(h,id,3),t)
+call WaveRegisterShared(LoadUnitHandle(h,id,4),t)
 call TSE_TimerStart(t,0.025,true,function KienzanCast2)
 set t=null
 set u=null
@@ -149228,6 +149832,26 @@ local real dist=LoadReal(h,id,8)
 local real time=LoadReal(h,id,9)
 local group g=LoadGroupHandle(h,id,10)
 local integer l__idg=GetHandleId(g)
+local unit friezaOrbSource=WaveRedirectedSource(l__d)
+local unit friezaOrbVictim
+local real friezaOrbBest=221.
+local real friezaOrbDistance
+if WaveCancelled(l__d) then
+set p=null
+set l__d=null
+set c=null
+set t=null
+set u=null
+set g=null
+set friezaOrbSource=null
+return
+endif
+if friezaOrbSource!=null then
+set p=OwnerOf(friezaOrbSource)
+set x1=x
+set y1=y
+set a=WaveRedirectedAngle(l__d)
+endif
 if time>=0 then
 call SaveReal(h,id,9,time-1)
 elseif dist>0 then
@@ -149238,27 +149862,29 @@ else
 set x=x-speed*Cos(a)
 set y=y-speed*Sin(a)
 endif
-if dist<700 then
+if dist<700 and friezaOrbSource==null then
 set x2=x2+speed*Cos(a)
 set y2=y2+speed*Sin(a)
 call SetUnitAnimation(u,"walk")
 call SetUnitFacing(u,a*bj_RADTODEG)
 if GetUnitTypeId(u)=='H248' then
-set n=CreateUnit(p,'e1QV',x2,y2,a*bj_DEGTORAD)
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e1QV',x2,y2,a*bj_DEGTORAD))
 else
-set n=CreateUnit(p,'e0QV',x2,y2,a*bj_DEGTORAD)
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0QV',x2,y2,a*bj_DEGTORAD))
 endif
 call UnitApplyTimedLife(n,'BTLF',0.14)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
 endif
 call SetUnitXY_1(l__d,x,y, false)
+if friezaOrbSource==null then
 call SetUnitXY_1(c,x,y, false)
 call SetUnitXY_1(u,x2,y2, false)
+call SetUnitTurnSpeed(u,1)
+endif
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(h,id,8,dist-speed)
-call SetUnitTurnSpeed(u,1)
-set n=CreateUnit(p,'e0TI',x1,y1,GetRandomReal(0,359))
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0TI',x1,y1,GetRandomReal(0,359)))
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitScale(n,1,1,1)
 call SetUnitVertexColor(n,255,230,100,100)
@@ -149267,35 +149893,69 @@ loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
-if Condition_Base(p,E) and E!=c then
+if not WaveCancelled(l__d) and Condition_Base(p,E) and (friezaOrbSource!=null or E!=c) then
 if E!=LoadUnitHandle(h,l__idg,ide) then
+if friezaOrbSource==null then
 call myCustomDamage(u,E,LoadReal(h,id,5)*0.2,false,false,null,null,null)
+else
+call myCustomDamage(friezaOrbSource,E,LoadReal(h,id,5)*0.2,false,false,null,null,null)
 endif
+endif
+if not WaveCancelled(l__d) then
 call Push(E,20,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),40)
 call SaveUnitHandle(h,l__idg,ide,E)
+endif
 endif
 call GroupRemoveUnit(g,E)
 endloop
 else
+if friezaOrbSource==null then
 call MapPauseUnit(u,false)
 call SetUnitTimeScale(u,1)
 call SetUnitInvulnerable(u,false)
 call SetUnitAnimation(u,"Stand")
+endif
 call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0NK',x1,y1,GetRandomReal(0,359)),'BTLF',6)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x1,y1,GetRandomReal(0,359)),'BTLF',3)
+if friezaOrbSource==null then
 call MapPauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(c,false)
-call myCustomDamage(u,c,LoadReal(h,id,5),false,false,null,null,null)
-call SetControlToUnit(u,c,3, "stun")
+set friezaOrbVictim=c
+set friezaOrbSource=u
+else
+call GroupEnumUnitsInRange(g,x1,y1,220.,Base)
+loop
+    set E=FirstOfGroup(g)
+    exitwhen E==null
+    call GroupRemoveUnit(g,E)
+    if Condition_Base(p,E) then
+        set friezaOrbDistance=SR1(x1,y1,GetUnitX(E),GetUnitY(E))
+        if friezaOrbDistance<friezaOrbBest then
+            set friezaOrbBest=friezaOrbDistance
+            set friezaOrbVictim=E
+        endif
+    endif
+endloop
+endif
+if friezaOrbVictim!=null then
+call myCustomDamage(friezaOrbSource,friezaOrbVictim,LoadReal(h,id,5),false,false,null,null,null)
+if not WaveCancelled(l__d) then
+call SetControlToUnit(friezaOrbSource,friezaOrbVictim,3,"stun")
+endif
+endif
+if not WaveCancelled(l__d) then
+call WaveUnregister(l__d,false)
+call FlushChildHashtable(h,l__idg)
 call DestroyGroup(LoadGroupHandle(h,id,10)) // утечка группы (12 окт)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call KillUnit(l__d)
+endif
 endif
 set p=null
 set l__d=null
@@ -149303,6 +149963,8 @@ set c=null
 set t=null
 set u=null
 set g=null
+set friezaOrbVictim=null
+set friezaOrbSource=null
 endfunction
 function MissleMoveFriezaCombo takes unit u,unit c,unit l__d,real speed,real dmg returns nothing
 local timer t=CreateTimer()
@@ -149323,6 +149985,9 @@ set soundplay=SndN(2009) // Sound\Music\mp3Music\Frieza\FriezaW2-jap.mp3
 endif
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call WaveRegister(l__d,t,LoadGroupHandle(h,id,10),null)
+call WaveKeepCasterState(l__d,u,false,false,GetUnitFlyHeight(u),1.)
+call SaveUnitHandle(HH,GetHandleId(l__d),StringHash("WaveCaptive"),c)
 call TSE_TimerStart(t,0.02,true,function MissleMoveFriezaCombo2)
 set t=null
 endfunction
@@ -156503,11 +157168,20 @@ local real damage=LoadReal(HH,id,15)
 
 local integer rand22=GetRandomInt(1,10)
 local integer rand33=GetRandomInt(1,2)
+local unit cellStormSource=WaveRedirectedSource(Dummy)
+if WaveCancelled(Dummy) then
+set caster=null
+set gr=null
+set Dummy=null
+set cellStormSource=null
+return
+endif
 set time=time+0.02
 call SaveReal(HH,id,5,time)
 if time>0.5 then
 call GroupClear(gr)
 call DestroyGroup(gr)
+call WaveUnregister(Dummy,false)
 call RemoveUnit(Dummy)
 call PauseTimer(GetExpiredTimer())
 call FlushChildHashtable(HH,id)
@@ -156572,21 +157246,31 @@ call SetUnitFlyHeight(n0,0,0)
 call UnitColor(n0,100,100,100,60)
 call UnitSpeed(n0,1)
 call SaveUnitHandle(HH,id,20,n0)
+call WaveRegister(n0,GetExpiredTimer(),gr,null)
+call SaveHashtableHandle(HH,GetHandleId(n0),StringHash("WaveData"),HH)
 set n0=null
 call UnitSpeed(caster,1)
 endif
 if time>0.02 then
+if cellStormSource!=null then
+set facing=WaveRedirectedAngle(Dummy)*bj_RADTODEG
+else
+set cellStormSource=caster
 if LoadInteger(HH,id,25)==1 then
 set facing=facing-time*360
 else
 set facing=facing+time*360
 endif
+endif
 call MoveUnit(Dummy,Dummy,70,facing)
 set time1=time1+.02
 if time1>=0.04 then
 call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1.75,2.5,100,100,100,40,0,Dummy,0,facing)
+call WaveTrackVisual(Dummy,n)
 call EffectCreateAndMoveAn(true,EffectID[24],GetRandomReal(0,360),1.5,0.8,1.5,100,100,100,30,100,Dummy,0,facing,2)
+call WaveTrackVisual(Dummy,n)
 call EffectCreateAndMove(true,EffectID[529],GetRandomReal(0,360),1.5,1.5,2,100,100,100,60,0,Dummy,0,facing)
+call WaveTrackVisual(Dummy,n)
 set time1=0
 endif
 call SaveReal(HH,id,6,time1)
@@ -156595,9 +157279,9 @@ call GroupEnumUnitsInRange(G,x0,y0,200,null)
 loop
 set n0=FirstOfGroup(G)
 exitwhen n0==null
-if IsUnitInGroup(n0,gr)==false and Condition_Base_Random(caster,n0)then
+if not WaveCancelled(Dummy) and IsUnitInGroup(n0,gr)==false and Condition_Base_Random(cellStormSource,n0)then
 call GroupAddUnit(gr,n0)
-call DamageU(false,caster,n0,damage)
+call DamageU(false,cellStormSource,n0,damage)
 endif
 call GroupRemoveUnit(G,n0)
 endloop
@@ -156608,6 +157292,7 @@ endif
 set caster=null
 set gr=null
 set Dummy=null
+set cellStormSource=null
 endfunction
 function Cell_G_Act takes unit caster,real x1,real y1 returns nothing
 local timer t=CreateTimer()
@@ -156824,10 +157509,29 @@ local real a=LoadReal(h,id,5)
 local integer l__idg=GetHandleId(g)
 local player p=OwnerOf(u)
 local real dmg=LoadReal(h,id,10)
-if SR(x,y,x1,y1)<=2450 then
+local unit cellDiskSource=WaveRedirectedSource(l__d)
+local real cellDiskTravel=LoadReal(h,id,17)
+if WaveCancelled(l__d) then
+set u=null
+set p=null
+set t=null
+set g=null
+set l__d=null
+set cellDiskSource=null
+return
+endif
+if cellDiskSource!=null then
+set a=WaveRedirectedAngle(l__d)
+set p=OwnerOf(cellDiskSource)
+endif
+if (cellDiskSource==null and SR(x,y,x1,y1)<=2450) or (cellDiskSource!=null and cellDiskTravel<=2450) then
+call SaveReal(h,id,17,cellDiskTravel+68.)
+if cellDiskSource==null then
+set cellDiskSource=u
+endif
 call SetUnitX(l__d,x1+68*Cos(a))
 call SetUnitY(l__d,y1+68*Sin(a))
-set n=CreateUnit(p,'e0B2',x1,y1,GetRandomReal(0,359))
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0B2',x1,y1,GetRandomReal(0,359)))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitVertexColor(n,200,40,255,30)
 call DestroyEffect(AddSpecialEffect("Objects\\Spawnmodels\\Undead\\ImpaleTargetDust\\ImpaleTargetDust.mdl",x1,y1))
@@ -156836,15 +157540,18 @@ loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
-if Condition_Base(p,E)and E!=LoadUnitHandle(h,l__idg,ide)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and Condition_Base(p,E) and E!=LoadUnitHandle(h,l__idg,ide)then
+call myCustomDamage(cellDiskSource,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) then
 call SetControlToUnit(E,E, 1, "stun")
 call DestroyEffect(AddSpecialEffect("Abilities\\Spells\\Other\\Stampede\\StampedeMissileDeath.mdl",GetUnitX(E),GetUnitY(E)))
 call SaveUnitHandle(h,l__idg,ide,E)
 endif
+endif
 call GroupRemoveUnit(g,E)
 endloop
 else
+call WaveUnregister(l__d,false)
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
@@ -156856,6 +157563,7 @@ set p=null
 set t=null
 set g=null
 set l__d=null
+set cellDiskSource=null
 endfunction
 function DestructoDiskCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -156884,6 +157592,7 @@ call StartSound(soundplay)
 call SaveReal(h,id,10,dmg)
 call SaveInteger(HH,GetHandleId(u),StringHash("CellDiskStage"),GetSpellAbilityId())
 call SetUnitFacing(LoadUnitHandle(h,id,1),a*bj_RADTODEG)
+call WaveRegister(LoadUnitHandle(h,id,1),t,LoadGroupHandle(h,id,4),null)
 call TSE_TimerStart(t,0.03,true,function DestructoDiskCast2)
 set u=null
 set p=null
@@ -157252,12 +157961,32 @@ local integer idu=PId(p)
 local real cof=rd/dist
 local real sc=LoadReal(h,id,10)
 local real hei=0
+local unit cellKameSource=WaveRedirectedSource(l__d)
+if WaveCancelled(l__d) then
+set p=null
+set l__d=null
+set t=null
+set u=null
+set cellKameSource=null
+return
+endif
+if cellKameSource!=null then
+set p=OwnerOf(cellKameSource)
+set x1=WaveTargetX(l__d)
+set y1=WaveTargetY(l__d)
+set a=Atan2(y1-y,x1-x)
+set rd=SR1(x,y,x1,y1)
+set cof=rd/LoadReal(HH,GetHandleId(l__d),StringHash("DeflectWaveSpan"))
+set mh=LoadReal(HH,GetHandleId(l__d),StringHash("DeflectWaveZ"))
+else
+set cellKameSource=u
+endif
 if rd>30+speed and udg_B==true and DU2==true then
 call SetUnitX(l__d,x+30*Cos(a))
 call SetUnitY(l__d,y+30*Sin(a))
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 set hei=mh*cof+50
-set n=CreateUnit(p,'e0CT',x,y,a*bj_RADTODEG)
+set n=WaveTrackVisual(l__d,CreateUnit(p,'e0CT',x,y,a*bj_RADTODEG))
 call SetUnitScale(n,sc+5,sc+5,sc+5)
 call UnitApplyTimedLife(n,'BTLF',1.5)
 call SetUnitFlyHeight(n,hei,0)
@@ -157269,12 +157998,15 @@ call GroupEnumUnitsInRange(DG,x1,y1,700,Base)
 loop
 set E=FirstOfGroup(DG)
 exitwhen E==null
-if Condition_Base(p,E)then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and Condition_Base(p,E) then
+call myCustomDamage(cellKameSource,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) then
 call SetControlToUnit(E,E, 2, "stun")
+endif
 endif
 call GroupRemoveUnit(DG,E)
 endloop
+if not WaveCancelled(l__d) then
 call MapPauseUnit(u,false)
 call SetUnitInvulnerable(u,false)
 call SetUnitFlyHeight(u,0,350)
@@ -157297,6 +158029,7 @@ set n=CreateUnit(p,'e0C7',x,y,(a*bj_RADTODEG))
 call UnitApplyTimedLife(n,'BTLF',6)
 call SetUnitScale(n,0.375,0.375,0.375)
 call StartSound(soundStr[47])
+call WaveUnregister(l__d,false)
 call RemoveUnit(l__d)
 //call UnitRemoveAbility(u,'A0NP')
 call PauseTimer(t)
@@ -157304,10 +158037,12 @@ call TSE_DestroyTimer(t)
 call DestroyGroup(LoadGroupHandle(h,id,12)) // утечка группы (12 окт)
 call FlushChildHashtable(h,id)
 endif
+endif
 set p=null
 set l__d=null
 set t=null
     set u=null
+set cellKameSource=null
 endfunction
 function CellKamehamehaStopOrders2 takes nothing returns nothing
 local timer t=GetExpiredTimer()
@@ -157410,6 +158145,8 @@ else
         set n=CreateUnit(p,'e0R6',x+35*Cos(a),y+35*Sin(a),a*bj_RADTODEG)
         call SetUnitScale(n,scale+1.5,scale+1.5,scale+1.5)
         call SaveUnitHandle(h,id,12,n)
+call WaveRegister(n,t,LoadGroupHandle(h,id,12),null)
+call WaveKeepCasterState(n,u,LoadBoolean(h,id,30),LoadBoolean(h,id,31),LoadReal(h,id,32),LoadReal(h,id,33))
         call SetUnitAnimation(u,"Cinematic Throw")
         call SetUnitScale(l__d,0.8,0.8,0.8)
         call PauseTimer(t)
@@ -157448,6 +158185,10 @@ set y=y-600*Sin(a)
 call SetUnitXY_1(u,x,y, false)
 call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
 endif
+call SaveBoolean(h,id,30,IsUnitPaused(u))
+call SaveBoolean(h,id,31,IsUnitInvulnerable(u))
+call SaveReal(h,id,32,GetUnitFlyHeight(u))
+call SaveReal(h,id,33,GetUnitTimeScale(u))
 call SetUnitFlyHeight(u,350,0)
 call SaveUnitHandle(h,id,0,u)
 call SaveReal(h,id,5,x1)
@@ -157506,9 +158247,18 @@ local real dmg=(2+GetUnitAbilityLevel(u,'A104'))*GetHeroInt(u,true)+75
 local player p=OwnerOf(u)
 local group g=LoadGroupHandle(h,id,3)
 local real time=LoadReal(h,id,5)
+local unit cellBeamSource
+if WaveCancelled(l__d) then
+set g=null
+set u=null
+set t=null
+set l__d=null
+set p=null
+return
+endif
 if time<0.8 then
 call SaveReal(h,id,5,time+0.017)
-if time==0.799 then
+if time+0.017>=0.8 then
 call UnitAddAbility(u,'A107')
 call UnitRemoveAbility(u,'A107')
 call SetUnitInvulnerable(u,false)
@@ -157517,12 +158267,24 @@ call SetUnitTimeScale(u,1)
 set n=CreateUnit(OwnerOf(u),'e0PP',GetUnitX(u)+35*Cos(a),GetUnitY(u)+35*Sin(a),a*bj_RADTODEG)
 call SetUnitFlyHeight(n,90,0)
 call SaveUnitHandle(h,id,1,n)
+call WaveRegister(n,t,g,null)
 call SetUnitScale(n,0.3,0.3,0.3)
 endif
 else
+set cellBeamSource=WaveRedirectedSource(l__d)
+if cellBeamSource!=null then
+set a=WaveRedirectedAngle(l__d)
+set p=OwnerOf(cellBeamSource)
+endif
+if cellBeamSource==null then
+set cellBeamSource=u
+else
+set x=GetUnitX(l__d)+40*Cos(a)
+set y=GetUnitY(l__d)+40*Sin(a)
+endif
 if dist>0 and IsTerrainPathable(GetUnitX(l__d),GetUnitY(l__d),PATHING_TYPE_FLYABILITY)==false then
 call SetUnitXY_1(l__d,x,y, false)
-set n=CreateUnit(p,0x6530595A,x,y,a*bj_RADTODEG)
+set n=WaveTrackVisual(l__d,CreateUnit(p,0x6530595A,x,y,a*bj_RADTODEG))
 call SetUnitTimeScale(n,0)
 call SetUnitFlyHeight(n,90,0)
 call UnitApplyTimedLife(n,'BTLF',1)
@@ -157532,8 +158294,8 @@ call SaveReal(h,id,10,dist-40)
 loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
-if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and Condition_Base(p,E) and LoadUnitHandle(h,idg,ide)!=E then
+call myCustomDamage(cellBeamSource,E,dmg,false,false,null,null,null)
 call SaveUnitHandle(h,idg,ide,E)
 endif
 call GroupRemoveUnit(g,E)
@@ -157544,12 +158306,13 @@ call GroupEnumUnitsInRange(g,x,y,400,Base)
 loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
-if Condition_Base(p,E)and LoadUnitHandle(h,idg,ide)!=E then
-call myCustomDamage(u,E,dmg,false,false,null,null,null)
+if not WaveCancelled(l__d) and Condition_Base(p,E) and LoadUnitHandle(h,idg,ide)!=E then
+call myCustomDamage(cellBeamSource,E,dmg,false,false,null,null,null)
 endif
 call GroupRemoveUnit(g,E)
 exitwhen E==null
 endloop
+if not WaveCancelled(l__d) then
 call ShakeCamera(0.5,20)
 call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x,y,GetRandomReal(0,359)),'BTLF',3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0NK',x,y,GetRandomReal(0,359)),'BTLF',3)
@@ -157557,6 +158320,7 @@ call UnitApplyTimedLife(CreateUnit(p,'e0NI',x,y,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x,y,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x,y,GetRandomReal(0,359)),'BTLF',3)
 call StartSound(soundStr[47])
+call WaveUnregister(l__d,false)
 call RemoveUnit(l__d)
 call FlushChildHashtable(h,GetHandleId(g))
 call DestroyGroup(g)
@@ -157565,11 +158329,13 @@ call TSE_DestroyTimer(t)
 call FlushChildHashtable(h,id)
 endif
 endif
+endif
 set g=null
 set u=null
 set t=null
 set l__d=null
 set p=null
+set cellBeamSource=null
 endfunction
 function CastGulickGun takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -211880,25 +212646,44 @@ set u=null
 set t=null
 endfunction
 function QFriezaCast2 takes nothing returns nothing
-local integer id = GetHandleID()
+local timer friezaBeamTimer=GetExpiredTimer()
+local integer id=GetHandleId(friezaBeamTimer)
+local unit friezaBeam=LoadUnitHandle(HH,id,DummyHash)
+local unit friezaBeamCaster=LoadUnitHandle(HH,id,CasterHash)
+local unit friezaBeamSource=WaveRedirectedSource(friezaBeam)
 local integer time = LoadInt("Time")
-local real x = GetUnitX(LoadUnit("Dummy"))
-local real y = GetUnitY(LoadUnit("Dummy"))
+local real x = GetUnitX(friezaBeam)
+local real y = GetUnitY(friezaBeam)
 local real ang = LoadFloat("ang")
-local player p=OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash))
-local real dmg = GetHeroInt(LoadUnitHandle(HH,MUIHandle(),CasterHash),true) * (2.0+(0.4 * GetUnitAbilityLevel(LoadUnitHandle(HH,MUIHandle(),CasterHash),'A0SP')))
-if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H248' then
+local player p=OwnerOf(friezaBeamCaster)
+local real dmg = GetHeroInt(friezaBeamCaster,true) * (2.0+(0.4 * GetUnitAbilityLevel(friezaBeamCaster,'A0SP')))
+if WaveCancelled(friezaBeam) then
+set p=null
+set friezaBeamTimer=null
+set friezaBeam=null
+set friezaBeamCaster=null
+set friezaBeamSource=null
+return
+endif
+if friezaBeamSource!=null then
+set ang=WaveRedirectedAngle(friezaBeam)
+set p=OwnerOf(friezaBeamSource)
+endif
+if friezaBeamSource==null then
+set friezaBeamSource=friezaBeamCaster
+endif
+if GetUnitTypeId(friezaBeamCaster)=='H248' then
 set dmg = dmg*1.25
 endif
 call ExtraTime()
 if time == 0 then
-set n = CreateUnit(p,'e55V',GetUnitX(LoadUnitHandle(HH,MUIHandle(),CasterHash)),GetUnitY(LoadUnitHandle(HH,MUIHandle(),CasterHash)),LoadFloat("ang")*bj_RADTODEG)
+set n = WaveTrackVisual(friezaBeam,CreateUnit(p,'e55V',GetUnitX(friezaBeamCaster),GetUnitY(friezaBeamCaster),LoadFloat("ang")*bj_RADTODEG))
 call SetUnitScale(n, 0.9, 0.9, 0.9)
 call UnitApplyTimedLife(n,'BTLF',0.2)
-call SetUnitTimeScale(LoadUnit("Dummy"),2.8)
-call SetUnitScale(LoadUnit("Dummy"), 1.4, 1.4, 1.4)
-call SetUnitFlyHeight(LoadUnit("Dummy"),GetRandomReal(40,70),0)
-call SetUnitAnimation(LoadUnitHandle(HH,MUIHandle(),CasterHash),"Spell Channel")
+call SetUnitTimeScale(friezaBeam,2.8)
+call SetUnitScale(friezaBeam, 1.4, 1.4, 1.4)
+call SetUnitFlyHeight(friezaBeam,GetRandomReal(40,70),0)
+call SetUnitAnimation(friezaBeamCaster,"Spell Channel")
 set soundplay=SndN(3091) // Sound\Music\mp3Music\deathbeams.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
@@ -211923,11 +212708,13 @@ call GroupEnumUnitsInRange(G,x,y,135,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),E)then
-call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash),E,dmg,false,false,null,null,null)
+if not WaveCancelled(friezaBeam) and Condition_Base(p,E) then
+call myCustomDamage(friezaBeamSource,E,dmg,false,false,null,null,null)
+if not WaveCancelled(friezaBeam) then
 call IssueImmediateOrder(E, "stop")
-if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H248' then
-call SlowUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash),E,0.4,0.4,3,2,false)
+if GetUnitTypeId(friezaBeamCaster)=='H248' then
+call SlowUnit(friezaBeamSource,E,0.4,0.4,3,2,false)
+endif
 endif
 endif
 call GroupRemoveUnit(G,E)
@@ -211935,47 +212722,59 @@ endloop
 call GroupClear(G)
 endif
 
+if not WaveCancelled(friezaBeam) then
 if time < 26 and not IsTerrainPathable(x + 80 * Cos(ang),y + 80 * Sin(ang),PATHING_TYPE_FLYABILITY) then
-call SetUnitX(LoadUnit("Dummy"), x + 80 * Cos(ang))
-call SetUnitY(LoadUnit("Dummy"), y + 80 * Sin(ang))
+call SetUnitX(friezaBeam, x + 80 * Cos(ang))
+call SetUnitY(friezaBeam, y + 80 * Sin(ang))
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x,y,130,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),E)then
+if not WaveCancelled(friezaBeam) and Condition_Base(p,E) then
 call SaveInteger(HH,id, TIME_HASH, 106)
 set time=27
 endif
 call GroupRemoveUnit(G,E)
 endloop
 else
-call SetUnitAnimation(LoadUnitHandle(HH,MUIHandle(),CasterHash),"Stand")
+call SetUnitAnimation(friezaBeamCaster,"Stand")
 call SaveInteger(HH,id, TIME_HASH, 106)
 set time=27
 endif
 
-if time >= 26 then
+if time >= 26 and not WaveCancelled(friezaBeam) then
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x,y,135,Base)
 loop
 set E=FirstOfGroup(G)
 exitwhen E==null
-if Condition_Base(OwnerOf(LoadUnitHandle(HH,MUIHandle(),CasterHash)),E)then
-call myCustomDamage(LoadUnitHandle(HH,MUIHandle(),CasterHash),E,dmg,false,false,null,null,null)
+if not WaveCancelled(friezaBeam) and Condition_Base(p,E) then
+call myCustomDamage(friezaBeamSource,E,dmg,false,false,null,null,null)
+if not WaveCancelled(friezaBeam) then
 call IssueImmediateOrder(E, "stop")
-if GetUnitTypeId(LoadUnitHandle(HH,MUIHandle(),CasterHash))=='H248' then
-call SlowUnit(LoadUnitHandle(HH,MUIHandle(),CasterHash),E,0.4,0.4,3,2,false)
+if GetUnitTypeId(friezaBeamCaster)=='H248' then
+call SlowUnit(friezaBeamSource,E,0.4,0.4,3,2,false)
+endif
 endif
 call SaveInteger(HH,id, TIME_HASH, 126)
 endif
 call GroupRemoveUnit(G,E)
 endloop
 call GroupClear(G)
-call UnitApplyTimedLife(LoadUnit("Dummy"),'BTLF',0.2)
-call RemoveSavedHandle(HH,id,DummyHash)
-call Clear(id)
+if not WaveCancelled(friezaBeam) then
+call WaveUnregister(friezaBeam,false)
+call UnitApplyTimedLife(friezaBeam,'BTLF',0.2)
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(friezaBeamTimer)
 endif
+endif
+endif
+set friezaBeamTimer=null
+set friezaBeam=null
+set friezaBeamCaster=null
+set friezaBeamSource=null
+set p=null
 endfunction
 function QFriezaCast takes nothing returns nothing
 local unit u=GetTriggerUnit()
@@ -211983,7 +212782,7 @@ local player p=OwnerOf(u)
 local timer t=CreateTimer()
 local integer id=GetHandleId(t)
 local real a=Atan2(GetSpellTargetY()-GetUnitY(u),GetSpellTargetX()-GetUnitX(u))
-local integer id2 = NewTimer(PId(TrigP()))
+local integer id2=id
 call SaveAgentHandle(HH,id2, CasterHash, u)
 if GetUnitTypeId(u)=='H248' then
 call SaveAgentHandle(HH,id2, DummyHash, CreateUnit(p,'e35V',GetUnitX(u)-60*Cos(a),GetUnitY(u)-60*Sin(a),a*bj_RADTODEG))
@@ -211997,7 +212796,8 @@ call SaveReal(HH,id2,SH_tx,GetSpellTargetX())
 call SaveReal(HH,id2,SH_ty,GetSpellTargetY())
 call SaveReal(HH,id2,SH_ang,a)
 call SetUnitAnimation(u,"Spell Channel")
-call TSE_TimerStart(LoadTimer(PId(TrigP())),0.01,true,function QFriezaCast2)
+call WaveRegisterInTable(LoadUnitHandle(HH,id2,DummyHash),t,HH)
+call TSE_TimerStart(t,0.01,true,function QFriezaCast2)
 set u=null
 set t=null
 endfunction
@@ -260574,7 +261374,8 @@ function HomuraBulletTick takes nothing returns nothing
     local group homuraScan=LoadGroupHandle(h,homuraId,2)
     local real homuraAngle=LoadReal(h,homuraId,3)
     local real homuraDistance=LoadReal(h,homuraId,4)
-    local real homuraStep=RMinBJ(50.,1100.-homuraDistance)
+    local real homuraRange=LoadReal(h,homuraId,6)
+    local real homuraStep=RMinBJ(50.,homuraRange-homuraDistance)
     local real homuraX=GetUnitX(homuraBullet)+homuraStep*Cos(homuraAngle)
     local real homuraY=GetUnitY(homuraBullet)+homuraStep*Sin(homuraAngle)
     local real homuraBest=86.
@@ -260615,10 +261416,16 @@ function HomuraBulletTick takes nothing returns nothing
         endloop
         if homuraVictim!=null then
             call StartSound(SndN(4973))
+            if LoadInteger(h,homuraId,7)==3 then
+                call HomuraFxAt("WindVectorPush.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.66,0.33,214,177,255,155)
+                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+62.,homuraAngle*bj_RADTODEG,0.55,0.3,242,212,255,180)
+            else
+                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.28,0.22,255,209,160,135)
+            endif
             call myCustomDamage(homuraShooter,homuraVictim,LoadReal(h,homuraId,5),false,false,null,null,null)
         endif
     endif
-    if not WaveCancelled(homuraBullet) and (homuraVictim!=null or homuraDistance+homuraStep>=1100. or not udg_B or not DU2 or GetUnitTypeId(homuraShooter)==0 or not UnitIsAlive(homuraBullet)) then
+    if not WaveCancelled(homuraBullet) and (homuraVictim!=null or homuraDistance+homuraStep>=homuraRange or not udg_B or not DU2 or GetUnitTypeId(homuraShooter)==0 or not UnitIsAlive(homuraBullet)) then
         call WaveUnregister(homuraBullet,false)
         call RemoveUnit(homuraBullet)
         call DestroyGroup(homuraScan)
@@ -260633,12 +261440,7 @@ function HomuraBulletTick takes nothing returns nothing
     set homuraTimer=null
 endfunction
 
-function HomuraUziTick takes nothing returns nothing
-    local timer homuraVolleyTimer=GetExpiredTimer()
-    local integer homuraVolleyId=GetHandleId(homuraVolleyTimer)
-    local unit homuraGunner=LoadUnitHandle(h,homuraVolleyId,0)
-    local integer homuraShots=LoadInteger(h,homuraVolleyId,1)
-    local real homuraAim=LoadReal(h,homuraVolleyId,2)
+function HomuraFireBullet takes unit homuraGunner,real homuraAim,real homuraBulletDamage,real homuraBulletRange,integer homuraShotStyle returns nothing
     local timer homuraShotTimer
     local integer homuraShotId
     local unit homuraFlash
@@ -260647,30 +261449,61 @@ function HomuraUziTick takes nothing returns nothing
     local group homuraShotVisuals
     local real homuraOriginX
     local real homuraOriginY
+    set homuraOriginX=GetUnitX(homuraGunner)+55.*Cos(homuraAim)
+    set homuraOriginY=GetUnitY(homuraGunner)+55.*Sin(homuraAim)
+    set homuraFlash=CreateUnit(OwnerOf(homuraGunner),'d237',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
+    call SetUnitFlyHeight(homuraFlash,85.,0.)
+    if homuraShotStyle!=0 then
+        call SetUnitModel(homuraFlash,"Hit\\PurpleMuzzle.mdx")
+        call SetUnitAnimationByIndex(homuraFlash,0)
+        call SetUnitTimeScale(homuraFlash,2.3)
+        if homuraShotStyle==3 then
+            call SetUnitScale(homuraFlash,0.62,0.62,0.62)
+        else
+            call SetUnitScale(homuraFlash,0.36,0.36,0.36)
+        endif
+    endif
+    call MyRemoveUnit(homuraFlash,0.35)
+    set homuraTracer=CreateUnit(OwnerOf(homuraGunner),'d236',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
+    call SetUnitFlyHeight(homuraTracer,85.,0.)
+    if homuraShotStyle==3 then
+        call SetUnitScale(homuraTracer,1.25,1.25,1.25)
+        call SetUnitVertexColor(homuraTracer,220,170,255,220)
+    else
+        call SetUnitScale(homuraTracer,0.7,0.7,0.7)
+    endif
+    set homuraShotTimer=CreateTimer()
+    set homuraShotId=GetHandleId(homuraShotTimer)
+    call SaveUnitHandle(h,homuraShotId,0,homuraGunner)
+    call SaveUnitHandle(h,homuraShotId,1,homuraTracer)
+    set homuraShotTargets=CreateGroup()
+    set homuraShotVisuals=CreateGroup()
+    call GroupAddUnit(homuraShotVisuals,homuraFlash)
+    call SaveGroupHandle(h,homuraShotId,2,homuraShotTargets)
+    call SaveReal(h,homuraShotId,3,homuraAim)
+    call SaveReal(h,homuraShotId,4,55.)
+    call SaveReal(h,homuraShotId,5,homuraBulletDamage)
+    call SaveReal(h,homuraShotId,6,homuraBulletRange)
+    call SaveInteger(h,homuraShotId,7,homuraShotStyle)
+    call WaveRegister(homuraTracer,homuraShotTimer,homuraShotTargets,homuraShotVisuals)
+    call TSE_TimerStartOwned(homuraShotTimer,0.02,true,function HomuraBulletTick,OwnerOf(homuraGunner))
+    call StartSound(SndN(4969))
+    set homuraShotTimer=null
+    set homuraFlash=null
+    set homuraTracer=null
+    set homuraShotTargets=null
+    set homuraShotVisuals=null
+endfunction
+
+function HomuraUziTick takes nothing returns nothing
+    local timer homuraVolleyTimer=GetExpiredTimer()
+    local integer homuraVolleyId=GetHandleId(homuraVolleyTimer)
+    local unit homuraGunner=LoadUnitHandle(h,homuraVolleyId,0)
+    local integer homuraShots=LoadInteger(h,homuraVolleyId,1)
+    local real homuraAim=LoadReal(h,homuraVolleyId,2)
     if UnitIsAlive(homuraGunner) and not IsUnitPaused(homuraGunner) and udg_B and DU2 and GetUnitCurrentOrder(homuraGunner)==OrderId("breathoffire") then
         set homuraAim=homuraAim+GetRandomReal(-4.,4.)*bj_DEGTORAD
-        set homuraOriginX=GetUnitX(homuraGunner)+55.*Cos(homuraAim)
-        set homuraOriginY=GetUnitY(homuraGunner)+55.*Sin(homuraAim)
-        set homuraFlash=CreateUnit(OwnerOf(homuraGunner),'d237',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
-        call SetUnitFlyHeight(homuraFlash,85.,0.)
-        call MyRemoveUnit(homuraFlash,0.35)
-        set homuraTracer=CreateUnit(OwnerOf(homuraGunner),'d236',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
-        call SetUnitFlyHeight(homuraTracer,85.,0.)
-        call SetUnitScale(homuraTracer,0.7,0.7,0.7)
-        set homuraShotTimer=CreateTimer()
-        set homuraShotId=GetHandleId(homuraShotTimer)
-        call SaveUnitHandle(h,homuraShotId,0,homuraGunner)
-        call SaveUnitHandle(h,homuraShotId,1,homuraTracer)
-        set homuraShotTargets=CreateGroup()
-        set homuraShotVisuals=CreateGroup()
-        call GroupAddUnit(homuraShotVisuals,homuraFlash)
-        call SaveGroupHandle(h,homuraShotId,2,homuraShotTargets)
-        call SaveReal(h,homuraShotId,3,homuraAim)
-        call SaveReal(h,homuraShotId,4,55.)
-        call SaveReal(h,homuraShotId,5,LoadReal(h,homuraVolleyId,3))
-        call WaveRegister(homuraTracer,homuraShotTimer,homuraShotTargets,homuraShotVisuals)
-        call TSE_TimerStartOwned(homuraShotTimer,0.02,true,function HomuraBulletTick,OwnerOf(homuraGunner))
-        call StartSound(SndN(4969))
+        call HomuraFireBullet(homuraGunner,homuraAim,LoadReal(h,homuraVolleyId,3),1100.,0)
         set homuraShots=homuraShots+1
         call SaveInteger(h,homuraVolleyId,1,homuraShots)
     else
@@ -260680,11 +261513,6 @@ function HomuraUziTick takes nothing returns nothing
         call FlushChildHashtable(h,homuraVolleyId)
         call TSE_DestroyTimer(homuraVolleyTimer)
     endif
-    set homuraShotTimer=null
-    set homuraFlash=null
-    set homuraTracer=null
-    set homuraShotTargets=null
-    set homuraShotVisuals=null
     set homuraGunner=null
     set homuraVolleyTimer=null
 endfunction
@@ -260702,9 +261530,17 @@ function HomuraRocketTick takes nothing returns nothing
     local real homuraRocketBaseZ=LoadReal(h,homuraRocketId,7)
     local real homuraRocketEndZ=LoadReal(h,homuraRocketId,8)
     local integer homuraRocketFrame=LoadInteger(h,homuraRocketId,9)+1
+    local real homuraFrameLimit=LoadReal(h,homuraRocketId,12)
+    local real homuraArc=LoadReal(h,homuraRocketId,13)
+    local real homuraRadius=LoadReal(h,homuraRocketId,14)
+    local boolean homuraAutoGrenade=LoadBoolean(h,homuraRocketId,15)
+    local boolean homuraStopOnEnemy=LoadBoolean(h,homuraRocketId,16)
     local real homuraFraction
     local real homuraHeight
     local real homuraRise
+    local real homuraImpactZ
+    local real homuraArcX
+    local real homuraArcY
     local group homuraBlastGroup
     local unit homuraBlastTarget
     local effect homuraBlast
@@ -260727,7 +261563,9 @@ function HomuraRocketTick takes nothing returns nothing
                 set homuraRocketEndZ=GetLocationZ(homuraNewGround)
                 call RemoveLocation(homuraNewGround)
                 set homuraNewGround=null
-                call SetSpecialEffectPositionWithZ(homuraWarning,homuraNewX,homuraNewY,homuraRocketEndZ+12.)
+                if homuraWarning!=null then
+                    call SetSpecialEffectPositionWithZ(homuraWarning,homuraNewX,homuraNewY,homuraRocketEndZ+12.)
+                endif
                 call SaveReal(h,homuraRocketId,3,homuraNewX)
                 call SaveReal(h,homuraRocketId,4,homuraNewY)
                 call SaveReal(h,homuraRocketId,5,homuraRocketStartX)
@@ -260740,39 +261578,74 @@ function HomuraRocketTick takes nothing returns nothing
         else
             set homuraRocketSource=homuraLauncher
         endif
-        set homuraFraction=(I2R(homuraRocketFrame)-homuraFlightStart)/(80.-homuraFlightStart)
-        if homuraRocketFrame<80 then
-            set homuraHeight=homuraRocketBaseZ+(homuraRocketEndZ-homuraRocketBaseZ)*homuraFraction+1600.*homuraFraction*(1.-homuraFraction)
-            set homuraRise=homuraRocketEndZ-homuraRocketBaseZ+1600.*(1.-2.*homuraFraction)
-            call SetSpecialEffectPositionWithZ(homuraRocket,homuraRocketStartX+(homuraDestinationX-homuraRocketStartX)*homuraFraction,homuraRocketStartY+(homuraDestinationY-homuraRocketStartY)*homuraFraction,homuraHeight)
+        set homuraFraction=(I2R(homuraRocketFrame)-homuraFlightStart)/(homuraFrameLimit-homuraFlightStart)
+        if I2R(homuraRocketFrame)<homuraFrameLimit then
+            set homuraHeight=homuraRocketBaseZ+(homuraRocketEndZ-homuraRocketBaseZ)*homuraFraction+homuraArc*homuraFraction*(1.-homuraFraction)
+            set homuraRise=homuraRocketEndZ-homuraRocketBaseZ+homuraArc*(1.-2.*homuraFraction)
+            set homuraArcX=homuraRocketStartX+(homuraDestinationX-homuraRocketStartX)*homuraFraction
+            set homuraArcY=homuraRocketStartY+(homuraDestinationY-homuraRocketStartY)*homuraFraction
+            call SetSpecialEffectPositionWithZ(homuraRocket,homuraArcX,homuraArcY,homuraHeight)
             call SetSpecialEffectPitch(homuraRocket,Atan2(homuraRise,SR(homuraRocketStartX,homuraRocketStartY,homuraDestinationX,homuraDestinationY))*bj_RADTODEG)
             call SaveInteger(h,homuraRocketId,9,homuraRocketFrame)
-        else
+            if homuraStopOnEnemy then
+                set homuraBlastGroup=CreateGroup()
+                call GroupEnumUnitsInRange(homuraBlastGroup,homuraArcX,homuraArcY,110.,null)
+                loop
+                    set homuraBlastTarget=FirstOfGroup(homuraBlastGroup)
+                    exitwhen homuraBlastTarget==null
+                    call GroupRemoveUnit(homuraBlastGroup,homuraBlastTarget)
+                    if HomuraCanHit(OwnerOf(homuraRocketSource),homuraBlastTarget) then
+                        set homuraRocketFrame=R2I(homuraFrameLimit)
+                        set homuraDestinationX=homuraArcX
+                        set homuraDestinationY=homuraArcY
+                        exitwhen true
+                    endif
+                endloop
+                call DestroyGroup(homuraBlastGroup)
+            endif
+        endif
+        if I2R(homuraRocketFrame)>=homuraFrameLimit and not WaveCancelled(homuraRocket) then
             set homuraBlast=AddSpecialEffect("war3mapImported\\explode.mdx",homuraDestinationX,homuraDestinationY)
-            call SetSpecialEffectScale(homuraBlast,0.75)
+            set homuraImpactZ=GetTerrainHeightAt(homuraDestinationX,homuraDestinationY)
+            if LoadBoolean(h,homuraRocketId,17) then
+                call SetSpecialEffectScale(homuraBlast,0.51)
+                call HomuraFxAt("Others\\SmokeFuzzy1.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+28.,0.,0.62,0.72,255,221,203,145)
+                call StartSound(SndN(5011))
+            else
+                call SetSpecialEffectScale(homuraBlast,0.75)
+                call HomuraFxAt("CirclePulse_White.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+18.,0.,homuraRadius/235.,0.33,255,174,110,167)
+                call HomuraFxAt("az_hitheavy.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+43.,0.,0.70,0.23,255,197,136,185)
+                call HomuraFxAt("Others\\SmokeFuzzy1.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+36.,0.,1.18,1.13,217,174,155,160)
+                call StartSound(SndN(4981))
+            endif
             call RemoveEffect(homuraBlast,1.,false,CreateTimer())
-            call StartSound(SndN(4981))
             set homuraBlastGroup=CreateGroup()
-            call GroupEnumUnitsInRange(homuraBlastGroup,homuraDestinationX,homuraDestinationY,350.,null)
+            call GroupEnumUnitsInRange(homuraBlastGroup,homuraDestinationX,homuraDestinationY,homuraRadius,null)
             loop
                 set homuraBlastTarget=FirstOfGroup(homuraBlastGroup)
                 exitwhen homuraBlastTarget==null
                 call GroupRemoveUnit(homuraBlastGroup,homuraBlastTarget)
                 if not WaveCancelled(homuraRocket) and HomuraCanHit(OwnerOf(homuraRocketSource),homuraBlastTarget) then
-                    call myCustomDamage(homuraRocketSource,homuraBlastTarget,LoadReal(h,homuraRocketId,10),false,false,null,null,null)
+                    if homuraAutoGrenade then
+                        call myCustomDamage(homuraRocketSource,homuraBlastTarget,LoadReal(h,homuraRocketId,10),true,true,ATTACK_TYPE_HERO,DAMAGE_TYPE_NORMAL,null)
+                    else
+                        call myCustomDamage(homuraRocketSource,homuraBlastTarget,LoadReal(h,homuraRocketId,10),false,false,null,null,null)
+                    endif
                 endif
             endloop
             call DestroyGroup(homuraBlastGroup)
         endif
     else
-        set homuraRocketFrame=80
+        set homuraRocketFrame=R2I(homuraFrameLimit)
     endif
-    if homuraRocketFrame>=80 and not WaveCancelled(homuraRocket) then
+    if I2R(homuraRocketFrame)>=homuraFrameLimit and not WaveCancelled(homuraRocket) then
         call WaveUnregister(homuraRocket,false)
         call SetSpecialEffectVisible(homuraRocket,false)
-        call SetSpecialEffectVisible(homuraWarning,false)
         call DestroyEffect(homuraRocket)
-        call DestroyEffect(homuraWarning)
+        if homuraWarning!=null then
+            call SetSpecialEffectVisible(homuraWarning,false)
+            call DestroyEffect(homuraWarning)
+        endif
         call FlushChildHashtable(h,homuraRocketId)
         call TSE_DestroyTimer(homuraRocketTimer)
     endif
@@ -260786,63 +261659,512 @@ function HomuraRocketTick takes nothing returns nothing
     set homuraRocketTimer=null
 endfunction
 
-function HomuraWeaponCond takes nothing returns boolean
-    return udg_B and DU2 and GetUnitTypeId(GetTriggerUnit())=='HHom' and (GetSpellAbilityId()=='HmW1' or GetSpellAbilityId()=='HmE1')
-endfunction
-
-function HomuraWeaponCast takes nothing returns nothing
-    local unit homuraCaster=GetTriggerUnit()
-    local integer homuraSpell=GetSpellAbilityId()
-    local integer homuraRank=GetUnitAbilityLevel(homuraCaster,homuraSpell)
+function HomuraLaunchArc takes unit homuraCaster,real homuraTargetX,real homuraTargetY,string homuraRocketModel,real homuraArcDamage,real homuraBlastRadius,real homuraFrames,real homuraArcSize,boolean homuraFromAttack,boolean homuraStopOnEnemy returns nothing
     local timer homuraCastTimer=CreateTimer()
     local integer homuraCastId=GetHandleId(homuraCastTimer)
-    local real homuraTargetX=GetSpellTargetX()
-    local real homuraTargetY=GetSpellTargetY()
     local real homuraStartX=GetUnitX(homuraCaster)
     local real homuraStartY=GetUnitY(homuraCaster)
     local real homuraShotAngle=Atan2(homuraTargetY-homuraStartY,homuraTargetX-homuraStartX)
     local effect homuraCastRocket
     local effect homuraCastWarning
     local location homuraGround
+    local boolean homuraIsGrenade=homuraRocketModel=="Grenade.mdx"
     call SaveUnitHandle(h,homuraCastId,0,homuraCaster)
-    call SetUnitFacingInstant(homuraCaster,homuraShotAngle*bj_RADTODEG)
-    if homuraSpell=='HmW1' then
-        call SaveReal(h,homuraCastId,2,homuraShotAngle)
-        call SaveReal(h,homuraCastId,3,(1.+homuraRank)*0.1*GetHeroInt(homuraCaster,true))
-        call TSE_TimerStartOwned(homuraCastTimer,0.08,true,function HomuraUziTick,OwnerOf(homuraCaster))
+    set homuraCastRocket=AddSpecialEffect(homuraRocketModel,homuraStartX,homuraStartY)
+    call SetSpecialEffectZ(homuraCastRocket,GetUnitZ(homuraCaster)+85.)
+    call SetSpecialEffectYaw(homuraCastRocket,homuraShotAngle*bj_RADTODEG)
+    call SetSpecialEffectScale(homuraCastRocket,0.55)
+    if homuraIsGrenade then
+        call StartSound(SndN(5003))
     else
-        set homuraCastRocket=AddSpecialEffect("Others\\Rocket1.mdx",homuraStartX,homuraStartY)
-        call SetSpecialEffectZ(homuraCastRocket,GetUnitZ(homuraCaster)+85.)
-        call SetSpecialEffectYaw(homuraCastRocket,homuraShotAngle*bj_RADTODEG)
-        call SetSpecialEffectScale(homuraCastRocket,0.55)
         call StartSound(SndN(4979))
-        set homuraGround=Location(homuraTargetX,homuraTargetY)
-        set homuraCastWarning=AddSpecialEffect("RingPulse.mdx",homuraTargetX,homuraTargetY)
-        call SetSpecialEffectScale(homuraCastWarning,350./88.5)
-        call SetSpecialEffectZ(homuraCastWarning,GetLocationZ(homuraGround)+12.)
-        call SetSpecialEffectVertexColour(homuraCastWarning,255,100,70,180)
-        call SaveEffectHandle(h,homuraCastId,1,homuraCastRocket)
-        call SaveEffectHandle(h,homuraCastId,2,homuraCastWarning)
-        call SaveReal(h,homuraCastId,3,homuraTargetX)
-        call SaveReal(h,homuraCastId,4,homuraTargetY)
-        call SaveReal(h,homuraCastId,5,homuraStartX)
-        call SaveReal(h,homuraCastId,6,homuraStartY)
-        call SaveReal(h,homuraCastId,7,GetUnitZ(homuraCaster)+85.)
-        call SaveReal(h,homuraCastId,8,GetLocationZ(homuraGround))
-        call SaveReal(h,homuraCastId,10,(2.+homuraRank)*GetHeroInt(homuraCaster,true))
-        call RemoveLocation(homuraGround)
-        call WaveRegisterEffect(homuraCastRocket,homuraCastTimer,homuraCastWarning)
-        call TSE_TimerStartOwned(homuraCastTimer,0.025,true,function HomuraRocketTick,OwnerOf(homuraCaster))
+        call HomuraFxAt("Hit\\PurpleMuzzle.mdx",homuraStartX+65.*Cos(homuraShotAngle),homuraStartY+65.*Sin(homuraShotAngle),GetUnitZ(homuraCaster)+85.,homuraShotAngle*bj_RADTODEG,0.72,0.37,255,210,180,175)
     endif
+    set homuraGround=Location(homuraTargetX,homuraTargetY)
+    if not homuraStopOnEnemy then
+        set homuraCastWarning=AddSpecialEffect("Homura\\HomuraReticle.mdx",homuraTargetX,homuraTargetY)
+        call SetSpecialEffectScale(homuraCastWarning,homuraBlastRadius/88.5)
+        call SetSpecialEffectZ(homuraCastWarning,GetLocationZ(homuraGround)+12.)
+        call SetSpecialEffectVertexColour(homuraCastWarning,255,142,93,198)
+    endif
+    call SaveEffectHandle(h,homuraCastId,1,homuraCastRocket)
+    call SaveEffectHandle(h,homuraCastId,2,homuraCastWarning)
+    call SaveReal(h,homuraCastId,3,homuraTargetX)
+    call SaveReal(h,homuraCastId,4,homuraTargetY)
+    call SaveReal(h,homuraCastId,5,homuraStartX)
+    call SaveReal(h,homuraCastId,6,homuraStartY)
+    call SaveReal(h,homuraCastId,7,GetUnitZ(homuraCaster)+85.)
+    call SaveReal(h,homuraCastId,8,GetLocationZ(homuraGround))
+    call SaveReal(h,homuraCastId,10,homuraArcDamage)
+    call SaveReal(h,homuraCastId,12,homuraFrames)
+    call SaveReal(h,homuraCastId,13,homuraArcSize)
+    call SaveReal(h,homuraCastId,14,homuraBlastRadius)
+    call SaveBoolean(h,homuraCastId,15,homuraFromAttack)
+    call SaveBoolean(h,homuraCastId,16,homuraStopOnEnemy)
+    call SaveBoolean(h,homuraCastId,17,homuraIsGrenade)
+    call RemoveLocation(homuraGround)
+    call WaveRegisterEffect(homuraCastRocket,homuraCastTimer,homuraCastWarning)
+    call TSE_TimerStartOwned(homuraCastTimer,0.025,true,function HomuraRocketTick,OwnerOf(homuraCaster))
     set homuraGround=null
     set homuraCastRocket=null
     set homuraCastWarning=null
     set homuraCastTimer=null
+endfunction
+
+function HomuraWeaponCond takes nothing returns boolean
+    return udg_B and DU2 and (GetUnitTypeId(GetTriggerUnit())=='HHom' or GetUnitTypeId(GetTriggerUnit())=='HHDv') and (GetSpellAbilityId()=='HmW1' or GetSpellAbilityId()=='HmE1')
+endfunction
+
+function HomuraWeaponCast takes nothing returns nothing
+    local unit homuraCaster=GetTriggerUnit()
+    local integer homuraSpell=GetSpellAbilityId()
+    local integer homuraRank=GetUnitAbilityLevel(homuraCaster,homuraSpell)
+    local timer homuraCastTimer
+    local integer homuraCastId
+    local real homuraTargetX=GetSpellTargetX()
+    local real homuraTargetY=GetSpellTargetY()
+    local real homuraStartX=GetUnitX(homuraCaster)
+    local real homuraStartY=GetUnitY(homuraCaster)
+    local real homuraShotAngle=Atan2(homuraTargetY-homuraStartY,homuraTargetX-homuraStartX)
+    call SetUnitFacingInstant(homuraCaster,homuraShotAngle*bj_RADTODEG)
+    if homuraSpell=='HmW1' then
+        call HomuraCombatAnim(homuraCaster,38,4)
+        call HomuraPlayVoice(homuraCaster,4989,0.85)
+        call HomuraFxAt("Others\\HakkeStart2.mdx",homuraStartX+45.*Cos(homuraShotAngle),homuraStartY+45.*Sin(homuraShotAngle),GetUnitZ(homuraCaster)+45.,homuraShotAngle*bj_RADTODEG,0.38,0.38,255,228,208,110)
+        set homuraCastTimer=CreateTimer()
+        set homuraCastId=GetHandleId(homuraCastTimer)
+        call SaveUnitHandle(h,homuraCastId,0,homuraCaster)
+        call SaveReal(h,homuraCastId,2,homuraShotAngle)
+        call SaveReal(h,homuraCastId,3,(1.+homuraRank)*0.1*GetHeroInt(homuraCaster,true))
+        call TSE_TimerStartOwned(homuraCastTimer,0.08,true,function HomuraUziTick,OwnerOf(homuraCaster))
+    else
+        call HomuraCombatAnim(homuraCaster,35,5)
+        call HomuraPlayVoice(homuraCaster,4991,1.5)
+        call HomuraLaunchArc(homuraCaster,homuraTargetX,homuraTargetY,"Others\\Rocket1.mdx",(2.+homuraRank)*GetHeroInt(homuraCaster,true),350.,80.,1600.,false,false)
+    endif
+    set homuraCastTimer=null
     set homuraCaster=null
+endfunction
+
+function HomuraBlinkAbility takes unit homuraMover returns ability
+    return GetUnitAbility(homuraMover,'HmG1')
+endfunction
+
+function HomuraCutBlink takes unit homuraMover returns nothing
+    local ability homuraBlink=HomuraBlinkAbility(homuraMover)
+    if homuraBlink!=null then
+        call SetAbilityRemainingCooldown(homuraBlink,RMaxBJ(0.,GetAbilityRemainingCooldown(homuraBlink)-3.))
+    endif
+    set homuraBlink=null
+endfunction
+
+function HomuraSwapWeapon takes unit homuraMover returns nothing
+    local integer homuraMode=ModuloInteger(LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))+GetRandomInt(1,4),5)
+    call HomuraApplyWeapon(homuraMover,homuraMode)
+    call HomuraRefreshQ(homuraMover)
+endfunction
+
+function HomuraTravelAllowed takes unit homuraMover returns boolean
+    return UnitIsAlive(homuraMover) and not IsUnitPaused(homuraMover) and not IsUnitStunned(homuraMover) and not TSE_TargetFrozen(homuraMover) and GetUnitAbilityLevel(homuraMover,'A1BL')==0
+endfunction
+
+function HomuraLandingAllowed takes real homuraX,real homuraY returns boolean
+    local rect homuraBounds=WorldBoundsR()
+    local boolean homuraValid=homuraX>GetRectMinX(homuraBounds)+32. and homuraX<GetRectMaxX(homuraBounds)-32. and homuraY>GetRectMinY(homuraBounds)+32. and homuraY<GetRectMaxY(homuraBounds)-32. and not IsTerrainPathable(homuraX,homuraY,PATHING_TYPE_WALKABILITY)
+    set homuraBounds=null
+    return homuraValid
+endfunction
+
+function HomuraTeleport takes unit homuraMover,real homuraX,real homuraY returns nothing
+    local real homuraTravelX=GetUnitX(homuraMover)
+    local real homuraTravelY=GetUnitY(homuraMover)
+    local real homuraTravelYaw=Atan2(homuraY-homuraTravelY,homuraX-homuraTravelX)*bj_RADTODEG
+    call HomuraFxAt("Homura\\HomuraTimeDial.mdx",homuraTravelX,homuraTravelY,GetTerrainHeightAt(homuraTravelX,homuraTravelY)+14.,homuraTravelYaw,0.85,0.40,167,101,244,148)
+    call HomuraFxAt("Others\\HakkeStart2.mdx",homuraTravelX,homuraTravelY,GetUnitZ(homuraMover)+13.,homuraTravelYaw,0.46,0.29,212,150,255,95)
+    call ShinjiBlink(homuraTravelX,homuraTravelY)
+    call SetUnitXY_1(homuraMover,homuraX,homuraY,false)
+    call ShinjiBlink(homuraX,homuraY)
+    call HomuraFxAt("Homura\\HomuraTimeDial.mdx",homuraX,homuraY,GetTerrainHeightAt(homuraX,homuraY)+14.,homuraTravelYaw+15.,0.71,0.29,205,148,250,175)
+endfunction
+
+function HomuraBlinkCast takes unit homuraMover returns nothing
+    local ability homuraBlink=HomuraBlinkAbility(homuraMover)
+    local real homuraX=GetUnitX(homuraMover)
+    local real homuraY=GetUnitY(homuraMover)
+    local real homuraTX=GetSpellTargetX()
+    local real homuraTY=GetSpellTargetY()
+    local real homuraDist=SR1(homuraX,homuraY,homuraTX,homuraTY)
+    local real homuraTime=12.
+    if HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
+        if GetSpellTargetUnit()==homuraMover then
+            if GetUnitTypeId(homuraMover)=='HHom' then
+                call HomuraSwapWeapon(homuraMover)
+                call HomuraFxAt("Homura\\HomuraTimeDial.mdx",homuraX,homuraY,GetUnitZ(homuraMover)+14.,GetUnitFacing(homuraMover),0.56,0.27,206,139,255,155)
+                call StartSound(SndN(5003))
+            endif
+        elseif homuraDist>=1. then
+            if homuraDist>750. then
+                set homuraTX=homuraX+(homuraTX-homuraX)*750./homuraDist
+                set homuraTY=homuraY+(homuraTY-homuraY)*750./homuraDist
+            endif
+            if HomuraLandingAllowed(homuraTX,homuraTY) then
+                call HomuraTeleport(homuraMover,homuraTX,homuraTY)
+                call StartSound(SndN(5001))
+                if GetUnitTypeId(homuraMover)=='HHom' then
+                    call HomuraSwapWeapon(homuraMover)
+                    call SetUnitAnimationByIndex(homuraMover,39)
+                    call HomuraPlayVoice(homuraMover,4993,1.65)
+                else
+                    call SetUnitAnimationByIndex(homuraMover,17)
+                    call HomuraPlayVoice(homuraMover,4999,1.65)
+                endif
+                if TSE_On and TSE_Src==homuraMover then
+                    set homuraTime=1.5
+                endif
+                call SetAbilityRemainingCooldown(homuraBlink,homuraTime)
+            endif
+        endif
+    endif
+    set homuraBlink=null
+endfunction
+
+function HomuraRecallClear takes timer homuraRecallTimer returns nothing
+    local integer homuraRecallId=GetHandleId(homuraRecallTimer)
+    local unit homuraRecallCaster=LoadUnitHandle(h,homuraRecallId,0)
+    local integer homuraRecallKey=GetHandleId(homuraRecallCaster)
+    local effect homuraRecallFx=LoadEffectHandle(h,homuraRecallId,4)
+    local effect homuraRecallClock=LoadEffectHandle(h,homuraRecallId,5)
+    if LoadTimerHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))==homuraRecallTimer then
+        call RemoveSavedHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))
+    endif
+    if homuraRecallFx!=null then
+        call SetSpecialEffectVisible(homuraRecallFx,false)
+        call DestroyEffect(homuraRecallFx)
+    endif
+    if homuraRecallClock!=null then
+        call SetSpecialEffectVisible(homuraRecallClock,false)
+        call DestroyEffect(homuraRecallClock)
+    endif
+    set homuraRecallClock=null
+    call FlushChildHashtable(h,homuraRecallId)
+    call TSE_DestroyTimer(homuraRecallTimer)
+    set homuraRecallFx=null
+    set homuraRecallCaster=null
+endfunction
+
+function HomuraRecallExpire takes nothing returns nothing
+    call HomuraRecallClear(GetExpiredTimer())
+endfunction
+
+function HomuraRecallCast takes unit homuraRecallCaster,integer homuraCastSpell returns boolean
+    local unit homuraRecallAlly=GetSpellTargetUnit()
+    local integer homuraRecallKey=GetHandleId(homuraRecallCaster)
+    local timer homuraRecallTimer=LoadTimerHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))
+    local integer homuraRecallId=GetHandleId(homuraRecallTimer)
+    local real homuraSavedX
+    local real homuraSavedY
+    local ability homuraRecallAbility
+    local boolean homuraRecallUsed=false
+    local effect homuraRecallFx
+    local effect homuraRecallClock
+    local integer homuraRecallAnimation=40
+    if GetUnitTypeId(homuraRecallCaster)=='HHDv' then
+        set homuraRecallAnimation=18
+    endif
+    if HomuraTravelAllowed(homuraRecallCaster) and UnitIsAlive(homuraRecallAlly) and homuraRecallAlly!=homuraRecallCaster and IsUnitType(homuraRecallAlly,UNIT_TYPE_HERO) and not IsUnitIllusion(homuraRecallAlly) and IsUnitAlly(homuraRecallAlly,OwnerOf(homuraRecallCaster)) then
+        if homuraRecallTimer!=null and LoadUnitHandle(h,homuraRecallId,1)==homuraRecallAlly then
+            set homuraSavedX=LoadReal(h,homuraRecallId,2)
+            set homuraSavedY=LoadReal(h,homuraRecallId,3)
+            if HomuraTravelAllowed(homuraRecallAlly) and HomuraLandingAllowed(homuraSavedX,homuraSavedY) then
+                call HomuraRecallClear(homuraRecallTimer)
+                call HomuraTeleport(homuraRecallAlly,homuraSavedX,homuraSavedY)
+                call StartSound(SndN(5005))
+                call SetUnitAnimationByIndex(homuraRecallCaster,homuraRecallAnimation)
+                set homuraRecallAbility=GetUnitAbility(homuraRecallCaster,homuraCastSpell)
+                call SetAbilityRemainingCooldown(homuraRecallAbility,20.)
+                set homuraRecallUsed=true
+            endif
+        elseif homuraRecallTimer==null then
+            set homuraRecallTimer=CreateTimer()
+            set homuraRecallId=GetHandleId(homuraRecallTimer)
+            set homuraSavedX=GetUnitX(homuraRecallAlly)
+            set homuraSavedY=GetUnitY(homuraRecallAlly)
+            set homuraRecallFx=AddSpecialEffect("Homura\\HomuraTimeDial.mdx",homuraSavedX,homuraSavedY)
+            call SetSpecialEffectScale(homuraRecallFx,1.15)
+            call SetSpecialEffectZ(homuraRecallFx,GetTerrainHeightAt(homuraSavedX,homuraSavedY)+10.)
+            call SetSpecialEffectVertexColour(homuraRecallFx,174,118,245,195)
+            set homuraRecallClock=AddSpecialEffect("Others\\clockwisetimer.mdx",homuraSavedX,homuraSavedY)
+            call SetSpecialEffectZ(homuraRecallClock,GetTerrainHeightAt(homuraSavedX,homuraSavedY)+20.)
+            call SetSpecialEffectScale(homuraRecallClock,0.37)
+            call SetSpecialEffectVertexColour(homuraRecallClock,206,147,255,150)
+            call SetSpecialEffectAnimationByIndex(homuraRecallClock,1)
+            call SaveEffectHandle(h,homuraRecallId,5,homuraRecallClock)
+            call SetUnitAnimationByIndex(homuraRecallCaster,homuraRecallAnimation)
+            call StartSound(SndN(5003))
+            if GetUnitTypeId(homuraRecallCaster)=='HHDv' then
+                call HomuraPlayVoice(homuraRecallCaster,4999,1.65)
+            else
+                call HomuraPlayVoice(homuraRecallCaster,4995,1.9)
+            endif
+            call SaveTimerHandle(HH,homuraRecallKey,StringHash("HomuraRecall"),homuraRecallTimer)
+            call SaveUnitHandle(h,homuraRecallId,0,homuraRecallCaster)
+            call SaveUnitHandle(h,homuraRecallId,1,homuraRecallAlly)
+            call SaveReal(h,homuraRecallId,2,homuraSavedX)
+            call SaveReal(h,homuraRecallId,3,homuraSavedY)
+            call SaveEffectHandle(h,homuraRecallId,4,homuraRecallFx)
+            call TSE_TimerStartOwned(homuraRecallTimer,3.,false,function HomuraRecallExpire,OwnerOf(homuraRecallCaster))
+            set homuraRecallUsed=true
+        endif
+    endif
+    set homuraRecallFx=null
+    set homuraRecallClock=null
+    set homuraRecallAbility=null
+    set homuraRecallTimer=null
+    set homuraRecallAlly=null
+    return homuraRecallUsed
+endfunction
+
+function HomuraRecallDeath takes nothing returns nothing
+    local unit homuraDead=GetTriggerUnit()
+    local integer homuraSlot=0
+    local timer homuraPending
+    if GetUnitTypeId(homuraDead)=='HHom' or GetUnitTypeId(homuraDead)=='HHDv' then
+        call HomuraVowClear(homuraDead)
+        call HomuraShieldFinish(homuraDead,false)
+    endif
+    loop
+        exitwhen homuraSlot>=12
+        if LoadUnitHandle(HH,GetHandleId(Hero[homuraSlot]),StringHash("HomuraVowTarget"))==homuraDead then
+            call HomuraVowClear(Hero[homuraSlot])
+        endif
+        set homuraPending=LoadTimerHandle(HH,GetHandleId(Hero[homuraSlot]),StringHash("HomuraRecall"))
+        if homuraPending!=null and (Hero[homuraSlot]==homuraDead or LoadUnitHandle(h,GetHandleId(homuraPending),1)==homuraDead) then
+            call HomuraRecallClear(homuraPending)
+        endif
+        set homuraSlot=homuraSlot+1
+    endloop
+    set homuraPending=null
+    set homuraDead=null
+endfunction
+
+function HomuraLearn takes nothing returns nothing
+    if GetLearnedSkill()=='HmQ1' then
+        call HomuraRefreshQ(GetTriggerUnit())
+    endif
+endfunction
+
+function HomuraSecondPistolShot takes nothing returns nothing
+    local timer homuraPistolTimer=GetExpiredTimer()
+    local integer homuraPistolId=GetHandleId(homuraPistolTimer)
+    local unit homuraPistolCaster=LoadUnitHandle(h,homuraPistolId,0)
+    if udg_B and DU2 and UnitIsAlive(homuraPistolCaster) then
+        call HomuraFireBullet(homuraPistolCaster,LoadReal(h,homuraPistolId,1),LoadReal(h,homuraPistolId,2),600.,1)
+    endif
+    call FlushChildHashtable(h,homuraPistolId)
+    call TSE_DestroyTimer(homuraPistolTimer)
+    set homuraPistolTimer=null
+    set homuraPistolCaster=null
+endfunction
+
+function HomuraQCast takes unit homuraQCaster returns nothing
+    local integer homuraMode=LoadInteger(HH,GetHandleId(homuraQCaster),StringHash("HomuraWeapon"))
+    local real homuraInt=GetHeroInt(homuraQCaster,true)
+    local real homuraRank=I2R(GetUnitAbilityLevel(homuraQCaster,'HmQ1'))
+    local real homuraQX=GetUnitX(homuraQCaster)
+    local real homuraQY=GetUnitY(homuraQCaster)
+    local real homuraTX=GetSpellTargetX()
+    local real homuraTY=GetSpellTargetY()
+    local real homuraQA=Atan2(homuraTY-homuraQY,homuraTX-homuraQX)
+    local real homuraQDmg
+    local timer homuraQTimer
+    local integer homuraQId
+    call HomuraPlayVoice(homuraQCaster,4987,1.8)
+    if homuraMode==0 then
+        call HomuraCombatAnim(homuraQCaster,33,6)
+        call HomuraShieldStart(homuraQCaster)
+    else
+        call SetUnitFacingInstant(homuraQCaster,homuraQA*bj_RADTODEG)
+        if homuraMode==1 then
+            set homuraQDmg=(0.65+0.20*homuraRank)*homuraInt
+            call HomuraCombatAnim(homuraQCaster,34,15)
+            call HomuraFireBullet(homuraQCaster,homuraQA,homuraQDmg,600.,1)
+            set homuraQTimer=CreateTimer()
+            set homuraQId=GetHandleId(homuraQTimer)
+            call SaveUnitHandle(h,homuraQId,0,homuraQCaster)
+            call SaveReal(h,homuraQId,1,homuraQA)
+            call SaveReal(h,homuraQId,2,homuraQDmg)
+            call TSE_TimerStartOwned(homuraQTimer,0.12,false,function HomuraSecondPistolShot,OwnerOf(homuraQCaster))
+        elseif homuraMode==2 then
+            call HomuraCombatAnim(homuraQCaster,35,5)
+            call HomuraLaunchArc(homuraQCaster,homuraQX+900.*Cos(homuraQA),homuraQY+900.*Sin(homuraQA),"Others\\Rocket1.mdx",(1.5+0.55*homuraRank)*homuraInt,225.,20.,0.,false,true)
+        elseif homuraMode==3 then
+            call HomuraCombatAnim(homuraQCaster,36,4)
+            call HomuraFireBullet(homuraQCaster,homuraQA,(2.+0.60*homuraRank)*homuraInt,1700.,3)
+        else
+            if SR1(homuraQX,homuraQY,homuraTX,homuraTY)>750. then
+                set homuraTX=homuraQX+750.*Cos(homuraQA)
+                set homuraTY=homuraQY+750.*Sin(homuraQA)
+            endif
+            call HomuraCombatAnim(homuraQCaster,37,16)
+            call HomuraLaunchArc(homuraQCaster,homuraTX,homuraTY,"Grenade.mdx",(1.25+0.5*homuraRank)*homuraInt,250.,32.,850.,false,false)
+        endif
+    endif
+    set homuraQTimer=null
+endfunction
+
+function HomuraGrenadeOrder takes nothing returns boolean
+    local unit homuraThrower=GetTriggerProjectileSource()
+    local boolean homuraThrows=udg_B and DU2 and GetUnitTypeId(homuraThrower)=='HHom' and not IsUnitIllusion(homuraThrower) and LoadInteger(HH,GetHandleId(homuraThrower),StringHash("HomuraWeapon"))==4 and GetTriggerProjectileTargetUnit()!=null and GetProjectileSourceAbility(GetTriggerProjectile())==null
+    set homuraThrower=null
+    return homuraThrows
+endfunction
+
+function HomuraGrenadeLaunch takes nothing returns nothing
+    local projectile homuraAttack=GetTriggerProjectile()
+    local unit homuraThrower=GetTriggerProjectileSource()
+    local unit homuraAimUnit=GetTriggerProjectileTargetUnit()
+    local real homuraDamage=GetProjectileDamage(homuraAttack,0)
+    if homuraDamage<=0. then
+        set homuraDamage=GetUnitTotalDamage(homuraThrower)
+    endif
+    call KillProjectile(homuraAttack)
+    call HomuraLaunchArc(homuraThrower,GetUnitX(homuraAimUnit),GetUnitY(homuraAimUnit),"Grenade.mdx",homuraDamage,225.,32.,850.,true,false)
+    set homuraAttack=null
+    set homuraThrower=null
+    set homuraAimUnit=null
+endfunction
+
+function HomuraBarrageAdvance takes timer homuraBarrageTimer returns nothing
+    local integer homuraBarrageId=GetHandleId(homuraBarrageTimer)
+    local unit homuraBarrageCaster=LoadUnitHandle(h,homuraBarrageId,0)
+    local integer homuraBarrageKey=GetHandleId(homuraBarrageCaster)
+    local integer homuraBarrageStep=LoadInteger(h,homuraBarrageId,5)
+    local real homuraBarrageX=LoadReal(h,homuraBarrageId,1)
+    local real homuraBarrageY=LoadReal(h,homuraBarrageId,2)
+    local real homuraBarrageAngle=LoadReal(h,homuraBarrageId,3)+I2R((homuraBarrageStep-ModuloInteger(homuraBarrageStep,2))/2)*bj_PI/3.
+    local real homuraBarrageTX=homuraBarrageX+210.*Cos(homuraBarrageAngle+0.5)
+    local real homuraBarrageTY=homuraBarrageY+210.*Sin(homuraBarrageAngle+0.5)
+    local real homuraBarrageLX
+    local real homuraBarrageLY
+    local effect homuraBarrageMark
+    if homuraBarrageCaster!=null and LoadTimerHandle(HH,homuraBarrageKey,StringHash("HomuraBarrage"))==homuraBarrageTimer and (GetUnitTypeId(homuraBarrageCaster)=='HHom' or GetUnitTypeId(homuraBarrageCaster)=='HHDv') and HomuraTravelAllowed(homuraBarrageCaster) and udg_B and DU2 then
+        if ModuloInteger(homuraBarrageStep,2)==0 then
+            set homuraBarrageLX=homuraBarrageX+520.*Cos(homuraBarrageAngle)
+            set homuraBarrageLY=homuraBarrageY+520.*Sin(homuraBarrageAngle)
+            if not HomuraLandingAllowed(homuraBarrageLX,homuraBarrageLY) then
+                set homuraBarrageLX=homuraBarrageX+410.*Cos(homuraBarrageAngle+0.22)
+                set homuraBarrageLY=homuraBarrageY+410.*Sin(homuraBarrageAngle+0.22)
+            endif
+            if HomuraLandingAllowed(homuraBarrageLX,homuraBarrageLY) then
+                call HomuraTeleport(homuraBarrageCaster,homuraBarrageLX,homuraBarrageLY)
+            endif
+            call SetUnitFacingInstant(homuraBarrageCaster,Atan2(homuraBarrageTY-GetUnitY(homuraBarrageCaster),homuraBarrageTX-GetUnitX(homuraBarrageCaster))*bj_RADTODEG)
+            call HomuraCombatAnim(homuraBarrageCaster,41,16)
+        else
+            call HomuraLaunchArc(homuraBarrageCaster,homuraBarrageTX,homuraBarrageTY,"Grenade.mdx",LoadReal(h,homuraBarrageId,4),245.,24.,700.,false,false)
+        endif
+        call SaveInteger(h,homuraBarrageId,5,homuraBarrageStep+1)
+    else
+        set homuraBarrageStep=11
+    endif
+    if homuraBarrageStep>=11 then
+        if LoadTimerHandle(HH,homuraBarrageKey,StringHash("HomuraBarrage"))==homuraBarrageTimer then
+            call RemoveSavedHandle(HH,homuraBarrageKey,StringHash("HomuraBarrage"))
+        endif
+        set homuraBarrageMark=LoadEffectHandle(h,homuraBarrageId,6)
+        if homuraBarrageMark!=null then
+            call SetSpecialEffectVisible(homuraBarrageMark,false)
+            call DestroyEffect(homuraBarrageMark)
+        endif
+        call FlushChildHashtable(h,homuraBarrageId)
+        call TSE_DestroyTimer(homuraBarrageTimer)
+    endif
+    set homuraBarrageCaster=null
+    set homuraBarrageMark=null
+endfunction
+
+function HomuraBarrageTick takes nothing returns nothing
+    call HomuraBarrageAdvance(GetExpiredTimer())
+endfunction
+
+function HomuraBarrageCast takes unit homuraBarrageCaster returns nothing
+    local timer homuraBarrageTimer=CreateTimer()
+    local integer homuraBarrageId=GetHandleId(homuraBarrageTimer)
+    local real homuraBarrageX=GetSpellTargetX()
+    local real homuraBarrageY=GetSpellTargetY()
+    local effect homuraBarrageMark=AddSpecialEffect("Homura\\HomuraReticle.mdx",homuraBarrageX,homuraBarrageY)
+    call SetSpecialEffectScale(homuraBarrageMark,455./88.5)
+    call SetSpecialEffectZ(homuraBarrageMark,GetTerrainHeightAt(homuraBarrageX,homuraBarrageY)+10.)
+    call SetSpecialEffectVertexColour(homuraBarrageMark,255,141,89,112)
+    call SaveEffectHandle(h,homuraBarrageId,6,homuraBarrageMark)
+    call SaveTimerHandle(HH,GetHandleId(homuraBarrageCaster),StringHash("HomuraBarrage"),homuraBarrageTimer)
+    call SaveUnitHandle(h,homuraBarrageId,0,homuraBarrageCaster)
+    call SaveReal(h,homuraBarrageId,1,homuraBarrageX)
+    call SaveReal(h,homuraBarrageId,2,homuraBarrageY)
+    call SaveReal(h,homuraBarrageId,3,Atan2(GetUnitY(homuraBarrageCaster)-homuraBarrageY,GetUnitX(homuraBarrageCaster)-homuraBarrageX))
+    call SaveReal(h,homuraBarrageId,4,(0.8+0.2*GetUnitAbilityLevel(homuraBarrageCaster,'HmR1'))*GetHeroInt(homuraBarrageCaster,true))
+    call HomuraPlayVoice(homuraBarrageCaster,5013,3.1)
+    call TSE_TimerStartOwned(homuraBarrageTimer,0.16,true,function HomuraBarrageTick,OwnerOf(homuraBarrageCaster))
+    call HomuraBarrageAdvance(homuraBarrageTimer)
+    set homuraBarrageMark=null
+    set homuraBarrageTimer=null
+endfunction
+
+
+function HomuraReworkCast takes nothing returns nothing
+    local unit homuraMover=GetTriggerUnit()
+    local integer homuraType=GetUnitTypeId(homuraMover)
+    local integer homuraCastSpell=GetSpellAbilityId()
+    local unit homuraVowAlly
+    if udg_B and DU2 and (homuraType=='HHom' or homuraType=='HHDv') then
+        if homuraCastSpell=='HmG1' then
+            call HomuraBlinkCast(homuraMover)
+        elseif homuraCastSpell=='HmF1' then
+            if HomuraRecallCast(homuraMover,homuraCastSpell) then
+                call HomuraCutBlink(homuraMover)
+            endif
+        elseif homuraCastSpell=='HmD1' and homuraType=='HHom' and DU and HomuraTravelAllowed(homuraMover) then
+            set homuraVowAlly=HomuraVowMadoka(homuraMover)
+            if homuraVowAlly!=null then
+                call HomuraVowAuto(homuraMover)
+            elseif HomuraVowBind(homuraMover,GetSpellTargetUnit()) then
+                call HomuraCutBlink(homuraMover)
+            endif
+        elseif homuraCastSpell=='HmR1' then
+            if HomuraTravelAllowed(homuraMover) then
+                call HomuraBarrageCast(homuraMover)
+                call HomuraCutBlink(homuraMover)
+            endif
+        elseif (homuraCastSpell=='HmQ1' or homuraCastSpell=='HmW1' or homuraCastSpell=='HmE1') then
+            if homuraCastSpell=='HmQ1' then
+                call HomuraQCast(homuraMover)
+            endif
+            call HomuraCutBlink(homuraMover)
+        endif
+    endif
+    set homuraVowAlly=null
+    set homuraMover=null
 endfunction
 
 function InitHomuraWeapons takes nothing returns nothing
     local trigger homuraWeaponTrigger=CreateTrigger()
+    local trigger homuraReworkTrigger=CreateTrigger()
+    local trigger homuraLearnTrigger=CreateTrigger()
+    local trigger homuraRecallDeathTrigger=CreateTrigger()
+    local trigger homuraGrenadeTrigger=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(homuraGrenadeTrigger,EVENT_PLAYER_UNIT_PROJECTILE_LAUNCH)
+    call TriggerAddCondition(homuraGrenadeTrigger,Condition(function HomuraGrenadeOrder))
+    call TriggerAddAction(homuraGrenadeTrigger,function HomuraGrenadeLaunch)
+    set homuraGrenadeTrigger=null
+    call TriggerRegisterAnyUnitEventBJ(homuraReworkTrigger,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call TriggerAddAction(homuraReworkTrigger,function HomuraReworkCast)
+    call TriggerRegisterAnyUnitEventBJ(homuraLearnTrigger,EVENT_PLAYER_HERO_SKILL)
+    call TriggerAddAction(homuraLearnTrigger,function HomuraLearn)
+    call TriggerRegisterAnyUnitEventBJ(homuraRecallDeathTrigger,EVENT_PLAYER_UNIT_DEATH)
+    call TriggerAddAction(homuraRecallDeathTrigger,function HomuraRecallDeath)
+    set homuraReworkTrigger=null
+    set homuraLearnTrigger=null
+    set homuraRecallDeathTrigger=null
     call TriggerRegisterAnyUnitEventBJ(homuraWeaponTrigger,EVENT_PLAYER_UNIT_SPELL_EFFECT)
     call TriggerAddCondition(homuraWeaponTrigger,Condition(function HomuraWeaponCond))
     call TriggerAddAction(homuraWeaponTrigger,function HomuraWeaponCast)
@@ -311509,13 +312831,13 @@ call LANG_A('HmQ1',0,1,"Homura’s Arsenal (|cffffcc00Q|r)")
 call LANG_A('HmQ1',0,2,"Homura’s Arsenal (|cffffcc00Q|r)")
 call LANG_A('HmQ1',0,3,"Homura’s Arsenal (|cffffcc00Q|r)")
 call LANG_A('HmQ1',0,4,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',1,0,"Test placeholder.")
-call LANG_A('HmQ1',1,1,"Test placeholder.")
-call LANG_A('HmQ1',1,2,"Test placeholder.")
-call LANG_A('HmQ1',1,3,"Test placeholder.")
-call LANG_A('HmQ1',1,4,"Test placeholder.")
+call LANG_A('HmQ1',1,0,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
+call LANG_A('HmQ1',1,1,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
+call LANG_A('HmQ1',1,2,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
+call LANG_A('HmQ1',1,3,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
+call LANG_A('HmQ1',1,4,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
 call LANG_A('HmQ1',2,0,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',3,0,"Test placeholder.")
+call LANG_A('HmQ1',3,0,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
 endfunction
 function LANG_Data52 takes nothing returns nothing
 call LANG_A('HmW1',0,0,"Uzi Burst (|cffffcc00W|r)")
@@ -311547,29 +312869,29 @@ call LANG_A('HmR1',0,1,"Grenade Barrage (|cffffcc00R|r)")
 call LANG_A('HmR1',0,2,"Grenade Barrage (|cffffcc00R|r)")
 call LANG_A('HmR1',0,3,"Grenade Barrage (|cffffcc00R|r)")
 call LANG_A('HmR1',0,4,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',1,0,"Test placeholder.")
-call LANG_A('HmR1',1,1,"Test placeholder.")
-call LANG_A('HmR1',1,2,"Test placeholder.")
-call LANG_A('HmR1',1,3,"Test placeholder.")
-call LANG_A('HmR1',1,4,"Test placeholder.")
+call LANG_A('HmR1',1,0,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1 × INT|nBlast radius: 245|nCast range: 1100|nMana: 150|nCooldown: 32 sec.|r")
+call LANG_A('HmR1',1,1,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.2 × INT|nBlast radius: 245|nCast range: 1100|nMana: 175|nCooldown: 32 sec.|r")
+call LANG_A('HmR1',1,2,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.4 × INT|nBlast radius: 245|nCast range: 1100|nMana: 200|nCooldown: 32 sec.|r")
+call LANG_A('HmR1',1,3,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.6 × INT|nBlast radius: 245|nCast range: 1100|nMana: 225|nCooldown: 32 sec.|r")
+call LANG_A('HmR1',1,4,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.8 × INT|nBlast radius: 245|nCast range: 1100|nMana: 250|nCooldown: 32 sec.|r")
 call LANG_A('HmR1',2,0,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',3,0,"Test placeholder.")
+call LANG_A('HmR1',3,0,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.")
 call LANG_A('HmT1',0,0,"Time Stop (|cffffcc00T|r)")
 call LANG_A('HmT1',1,0,"Test placeholder.")
 call LANG_A('HmT1',2,0,"Time Stop (|cffffcc00T|r)")
 call LANG_A('HmT1',3,0,"Test placeholder.")
-call LANG_A('HmD1',0,0,"Scenarios (|cffffcc00D|r)")
-call LANG_A('HmD1',1,0,"Test placeholder.")
-call LANG_A('HmD1',2,0,"Scenarios (|cffffcc00D|r)")
-call LANG_A('HmD1',3,0,"Test placeholder.")
-call LANG_A('HmF1',0,0,"Weapon Swap (|cffffcc00F|r)")
-call LANG_A('HmF1',1,0,"Test placeholder.")
-call LANG_A('HmF1',2,0,"Weapon Swap (|cffffcc00F|r)")
-call LANG_A('HmF1',3,0,"Test placeholder.")
-call LANG_A('HmG1',0,0,"Blink (|cffffcc00G|r)")
-call LANG_A('HmG1',1,0,"Test placeholder.")
-call LANG_A('HmG1',2,0,"Blink (|cffffcc00G|r)")
-call LANG_A('HmG1',3,0,"Test placeholder.")
+call LANG_A('HmD1',0,0,"For You (|cffffcc00D|r)")
+call LANG_A('HmD1',1,0,"Homura chooses one allied hero per round. If an enemy deals a lethal blow to them, Homura saves them at 30% health and becomes Devil Homura for the rest of the round. The bond breaks if Homura dies first.|n|nMadoka is chosen automatically and is saved at 45% health. Her ascension to Goddess also tra"+"nsforms Homura if Homura is alive. Either outcome consumes the bond.")
+call LANG_A('HmD1',2,0,"For You (|cffffcc00D|r)")
+call LANG_A('HmD1',3,0,"Homura chooses one allied hero per round. If an enemy deals a lethal blow to them, Homura saves them at 30% health and becomes Devil Homura for the rest of the round. The bond breaks if Homura dies first.|n|nMadoka is chosen automatically and is saved at 45% health. Her ascension to Goddess also tra"+"nsforms Homura if Homura is alive. Either outcome consumes the bond.")
+call LANG_A('HmF1',0,0,"Last Attempt (|cffffcc00F|r)")
+call LANG_A('HmF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HmF1',2,0,"Last Attempt (|cffffcc00F|r)")
+call LANG_A('HmF1',3,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HmG1',0,0,"Time Step (|cffffcc00G|r)")
+call LANG_A('HmG1',1,0,"Blinks toward the selected point and randomly rolls a different Q weapon. Cast on Homura to swap weapons without blinking or starting cooldown.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
+call LANG_A('HmG1',2,0,"Time Step (|cffffcc00G|r)")
+call LANG_A('HmG1',3,0,"Blinks toward the selected point and randomly rolls a different Q weapon. Cast on Homura to swap weapons without blinking or starting cooldown.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
 call LANG_A('HdQ1',0,0,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
 call LANG_A('HdQ1',0,1,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
 call LANG_A('HdQ1',0,2,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
@@ -311626,14 +312948,14 @@ call LANG_A('HdD1',0,0,"Scenarios (Devil) (|cffffcc00D|r)")
 call LANG_A('HdD1',1,0,"Test placeholder.")
 call LANG_A('HdD1',2,0,"Scenarios (Devil) (|cffffcc00D|r)")
 call LANG_A('HdD1',3,0,"Test placeholder.")
-call LANG_A('HdF1',0,0,"Weapon Swap (Devil) (|cffffcc00F|r)")
-call LANG_A('HdF1',1,0,"Test placeholder.")
-call LANG_A('HdF1',2,0,"Weapon Swap (Devil) (|cffffcc00F|r)")
-call LANG_A('HdF1',3,0,"Test placeholder.")
-call LANG_A('HdG1',0,0,"Blink (Devil) (|cffffcc00G|r)")
-call LANG_A('HdG1',1,0,"Test placeholder.")
-call LANG_A('HdG1',2,0,"Blink (Devil) (|cffffcc00G|r)")
-call LANG_A('HdG1',3,0,"Test placeholder.")
+call LANG_A('HdF1',0,0,"Last Attempt (|cffffcc00F|r)")
+call LANG_A('HdF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HdF1',2,0,"Last Attempt (|cffffcc00F|r)")
+call LANG_A('HdF1',3,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HdG1',0,0,"Time Step (|cffffcc00G|r)")
+call LANG_A('HdG1',1,0,"Blinks Devil Homura toward the selected point.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
+call LANG_A('HdG1',2,0,"Time Step (|cffffcc00G|r)")
+call LANG_A('HdG1',3,0,"Blinks Devil Homura toward the selected point.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
