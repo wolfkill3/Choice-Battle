@@ -24496,7 +24496,6 @@ function WaveUnregister takes handle waveFront,boolean waveDestroyVisuals return
     call RemoveSavedBoolean(HH,waveKey,StringHash("WavePriorInvulnerability"))
     call RemoveSavedReal(HH,waveKey,StringHash("WavePriorHeight"))
     call RemoveSavedReal(HH,waveKey,StringHash("WavePriorTimeScale"))
-    call RemoveSavedHandle(HH,waveKey,StringHash("WaveCaptive"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveUnit"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveEffect"))
     call RemoveSavedHandle(HH,waveKey,StringHash("WaveWarning"))
@@ -24546,28 +24545,6 @@ function WaveReleaseCaster takes unit waveFront returns nothing
     set waveCaster=null
 endfunction
 
-function WaveReleaseCaptive takes unit captiveWave returns nothing
-    local integer captiveKey=GetHandleId(captiveWave)
-    local unit captiveUnit=LoadUnitHandle(HH,captiveKey,StringHash("WaveCaptive"))
-    local unit captiveCaster
-    if captiveUnit!=null then
-        set captiveCaster=LoadUnitHandle(HH,captiveKey,StringHash("WaveReleaseCaster"))
-        call RemoveSavedHandle(HH,captiveKey,StringHash("WaveCaptive"))
-        call WaveReleaseCaster(captiveWave)
-        if UnitIsAlive(captiveCaster) then
-            call SetUnitTurnSpeed(captiveCaster,1.)
-            call SetUnitAnimation(captiveCaster,"Stand")
-        endif
-        call SaveBoolean(HH,GetHandleId(captiveUnit),TARGET_ABILITY,false)
-        if UnitIsAlive(captiveUnit) then
-            call MapPauseUnit(captiveUnit,false)
-            call SetUnitInvulnerable(captiveUnit,false)
-        endif
-    endif
-    set captiveUnit=null
-    set captiveCaster=null
-endfunction
-
 function WaveCancelCleanup takes nothing returns nothing
     local timer waveCleanup=GetExpiredTimer()
     local integer waveCleanupId=GetHandleId(waveCleanup)
@@ -24600,7 +24577,6 @@ function WaveCancelCleanup takes nothing returns nothing
                 call DestroyEffect(waveWarning)
             endif
         else
-            call WaveReleaseCaptive(waveFront)
             call WaveReleaseCaster(waveFront)
             call WaveUnregister(waveFront,true)
             call RemoveUnit(waveFront)
@@ -24684,7 +24660,6 @@ function WaveRedirectInternal takes handle waveFront,unit waveNewSource,real wav
         call SaveReal(HH,waveFrontId,StringHash("DeflectWaveZ"),GetUnitFlyHeight(waveUnit))
         call SetUnitOwner(waveUnit,OwnerOf(waveNewSource),false)
         call SetUnitFacingInstant(waveUnit,waveHeading*bj_RADTODEG)
-        call WaveReleaseCaptive(waveUnit)
     else
         call SetSpecialEffectYaw(waveModel,waveHeading*bj_RADTODEG)
     endif
@@ -149832,26 +149807,6 @@ local real dist=LoadReal(h,id,8)
 local real time=LoadReal(h,id,9)
 local group g=LoadGroupHandle(h,id,10)
 local integer l__idg=GetHandleId(g)
-local unit friezaOrbSource=WaveRedirectedSource(l__d)
-local unit friezaOrbVictim
-local real friezaOrbBest=221.
-local real friezaOrbDistance
-if WaveCancelled(l__d) then
-set p=null
-set l__d=null
-set c=null
-set t=null
-set u=null
-set g=null
-set friezaOrbSource=null
-return
-endif
-if friezaOrbSource!=null then
-set p=OwnerOf(friezaOrbSource)
-set x1=x
-set y1=y
-set a=WaveRedirectedAngle(l__d)
-endif
 if time>=0 then
 call SaveReal(h,id,9,time-1)
 elseif dist>0 then
@@ -149862,29 +149817,27 @@ else
 set x=x-speed*Cos(a)
 set y=y-speed*Sin(a)
 endif
-if dist<700 and friezaOrbSource==null then
+if dist<700 then
 set x2=x2+speed*Cos(a)
 set y2=y2+speed*Sin(a)
 call SetUnitAnimation(u,"walk")
 call SetUnitFacing(u,a*bj_RADTODEG)
 if GetUnitTypeId(u)=='H248' then
-set n=WaveTrackVisual(l__d,CreateUnit(p,'e1QV',x2,y2,a*bj_DEGTORAD))
+set n=CreateUnit(p,'e1QV',x2,y2,a*bj_DEGTORAD)
 else
-set n=WaveTrackVisual(l__d,CreateUnit(p,'e0QV',x2,y2,a*bj_DEGTORAD))
+set n=CreateUnit(p,'e0QV',x2,y2,a*bj_DEGTORAD)
 endif
 call UnitApplyTimedLife(n,'BTLF',0.14)
 call SetUnitVertexColor(n,255,255,255,50)
 call SetUnitAnimation(n,"walk")
 endif
 call SetUnitXY_1(l__d,x,y, false)
-if friezaOrbSource==null then
 call SetUnitXY_1(c,x,y, false)
 call SetUnitXY_1(u,x2,y2, false)
-call SetUnitTurnSpeed(u,1)
-endif
 call SetUnitFacing(l__d,a*bj_RADTODEG)
 call SaveReal(h,id,8,dist-speed)
-set n=WaveTrackVisual(l__d,CreateUnit(p,'e0TI',x1,y1,GetRandomReal(0,359)))
+call SetUnitTurnSpeed(u,1)
+set n=CreateUnit(p,'e0TI',x1,y1,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',1)
 call SetUnitScale(n,1,1,1)
 call SetUnitVertexColor(n,255,230,100,100)
@@ -149893,69 +149846,35 @@ loop
 set E=FirstOfGroup(g)
 set ide=GetHandleId(E)
 exitwhen E==null
-if not WaveCancelled(l__d) and Condition_Base(p,E) and (friezaOrbSource!=null or E!=c) then
+if Condition_Base(p,E) and E!=c then
 if E!=LoadUnitHandle(h,l__idg,ide) then
-if friezaOrbSource==null then
 call myCustomDamage(u,E,LoadReal(h,id,5)*0.2,false,false,null,null,null)
-else
-call myCustomDamage(friezaOrbSource,E,LoadReal(h,id,5)*0.2,false,false,null,null,null)
 endif
-endif
-if not WaveCancelled(l__d) then
 call Push(E,20,Atan2(GetUnitY(E)-y1,GetUnitX(E)-x1),40)
 call SaveUnitHandle(h,l__idg,ide,E)
-endif
 endif
 call GroupRemoveUnit(g,E)
 endloop
 else
-if friezaOrbSource==null then
 call MapPauseUnit(u,false)
 call SetUnitTimeScale(u,1)
 call SetUnitInvulnerable(u,false)
 call SetUnitAnimation(u,"Stand")
-endif
 call UnitApplyTimedLife(CreateUnit(p,'e0NJ',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 //call UnitApplyTimedLife(CreateUnit(p,'e0NK',x1,y1,GetRandomReal(0,359)),'BTLF',6)
 call UnitApplyTimedLife(CreateUnit(p,'e0NI',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NL',x1,y1,GetRandomReal(0,359)),'BTLF',3)
 call UnitApplyTimedLife(CreateUnit(p,'e0NM',x1,y1,GetRandomReal(0,359)),'BTLF',3)
-if friezaOrbSource==null then
 call MapPauseUnit(c,false)
 call SaveBoolean(HH,GetHandleId(c),TARGET_ABILITY,false)
 call SetUnitInvulnerable(c,false)
-set friezaOrbVictim=c
-set friezaOrbSource=u
-else
-call GroupEnumUnitsInRange(g,x1,y1,220.,Base)
-loop
-    set E=FirstOfGroup(g)
-    exitwhen E==null
-    call GroupRemoveUnit(g,E)
-    if Condition_Base(p,E) then
-        set friezaOrbDistance=SR1(x1,y1,GetUnitX(E),GetUnitY(E))
-        if friezaOrbDistance<friezaOrbBest then
-            set friezaOrbBest=friezaOrbDistance
-            set friezaOrbVictim=E
-        endif
-    endif
-endloop
-endif
-if friezaOrbVictim!=null then
-call myCustomDamage(friezaOrbSource,friezaOrbVictim,LoadReal(h,id,5),false,false,null,null,null)
-if not WaveCancelled(l__d) then
-call SetControlToUnit(friezaOrbSource,friezaOrbVictim,3,"stun")
-endif
-endif
-if not WaveCancelled(l__d) then
-call WaveUnregister(l__d,false)
-call FlushChildHashtable(h,l__idg)
+call myCustomDamage(u,c,LoadReal(h,id,5),false,false,null,null,null)
+call SetControlToUnit(u,c,3, "stun")
 call DestroyGroup(LoadGroupHandle(h,id,10)) // утечка группы (12 окт)
 call FlushChildHashtable(h,id)
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call KillUnit(l__d)
-endif
 endif
 set p=null
 set l__d=null
@@ -149963,8 +149882,6 @@ set c=null
 set t=null
 set u=null
 set g=null
-set friezaOrbVictim=null
-set friezaOrbSource=null
 endfunction
 function MissleMoveFriezaCombo takes unit u,unit c,unit l__d,real speed,real dmg returns nothing
 local timer t=CreateTimer()
@@ -149985,9 +149902,6 @@ set soundplay=SndN(2009) // Sound\Music\mp3Music\Frieza\FriezaW2-jap.mp3
 endif
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call WaveRegister(l__d,t,LoadGroupHandle(h,id,10),null)
-call WaveKeepCasterState(l__d,u,false,false,GetUnitFlyHeight(u),1.)
-call SaveUnitHandle(HH,GetHandleId(l__d),StringHash("WaveCaptive"),c)
 call TSE_TimerStart(t,0.02,true,function MissleMoveFriezaCombo2)
 set t=null
 endfunction
