@@ -13608,6 +13608,7 @@ call SND_Add(5017,8,"Sound\\Homura\\Homura_E_Hit.mp3",12700)
 call SND_Add(5025,2,"Sound\\Homura\\Homura_Mode_1.mp3",12700)
 call SND_Add(5027,2,"Sound\\Homura\\Homura_Mode_2.mp3",12700)
 call SND_Add(5029,2,"Sound\\Homura\\Homura_Mode_3.mp3",12700)
+call SND_Add(5033,2,"Sound\\Homura\\Homura_RocketLaunch.mp3",12700)
 call SND_Add(5031,2,"Sound\\Homura\\Homura_T.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
@@ -58423,35 +58424,78 @@ function HomuraSyncBlink takes unit homuraBlinkUnit returns nothing
     endif
     set homuraLinkedBlink=null
 endfunction
+
+function HomuraQModeId takes integer homuraQMode returns integer
+if homuraQMode==1 then
+return 'HmP0'
+elseif homuraQMode==2 then
+return 'HmB0'
+elseif homuraQMode==3 then
+return 'HmN0'
+elseif homuraQMode==4 then
+return 'HmA0'
+endif
+return 'HmQ1'
+endfunction
+
+function HomuraIsQ takes integer homuraQSpell returns boolean
+return homuraQSpell=='HmQ1' or homuraQSpell=='HmP0' or homuraQSpell=='HmB0' or homuraQSpell=='HmN0' or homuraQSpell=='HmA0'
+endfunction
+
 function HomuraRefreshQ takes unit homuraMover returns nothing
-    local ability homuraQ=GetUnitAbility(homuraMover,'HmQ1')
-    local integer homuraMode=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))
-    local integer homuraArt
-    local integer homuraLevel=GetUnitAbilityLevel(homuraMover,'HmQ1')-1
-    call HomuraSyncBlink(homuraMover)
-    if homuraQ!=null and homuraLevel>=0 then
-        if homuraMode==0 then
-            set homuraArt='HmS0'
-            call CBS_SetTT(homuraQ,homuraLevel,0)
-            call SetAbilityRealLevelField(homuraQ,ABILITY_RLF_CASTING_TIME,homuraLevel,0.)
-        else
-            if homuraMode==1 then
-                set homuraArt='HmP0'
-            elseif homuraMode==2 then
-                set homuraArt='HmB0'
-            elseif homuraMode==3 then
-                set homuraArt='HmN0'
-            else
-                set homuraArt='HmA0'
-            endif
-            call CBS_SetTT(homuraQ,homuraLevel,2)
-            call SetAbilityRealLevelField(homuraQ,ABILITY_RLF_CASTING_TIME,homuraLevel,0.15)
-        endif
-        call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById(homuraArt,ABILITY_SF_ICON_NORMAL))
-        call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel,GetAbilityBaseStringLevelFieldById(homuraArt,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel))
-        call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraLevel,GetAbilityBaseStringLevelFieldById(homuraArt,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraLevel))
-    endif
-    set homuraQ=null
+local ability homuraQ=GetUnitAbility(homuraMover,'HmQ1')
+local integer homuraMode=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))
+local integer homuraRank=GetUnitAbilityLevel(homuraMover,'HmQ1')
+local integer homuraFront=HomuraQModeId(homuraMode)
+local integer homuraPrevious=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraQFront"))
+local ability homuraOld
+local ability homuraNew
+local real homuraLeft
+local integer homuraScan=1
+local integer homuraScanId
+call HomuraSyncBlink(homuraMover)
+if homuraQ!=null and homuraRank>0 then
+if homuraPrevious==0 then
+set homuraPrevious='HmQ1'
+endif
+set homuraOld=GetUnitAbility(homuraMover,homuraPrevious)
+set homuraLeft=GetAbilityRemainingCooldown(homuraQ)
+if homuraOld!=null then
+set homuraLeft=RMaxBJ(homuraLeft,GetAbilityRemainingCooldown(homuraOld))
+endif
+if homuraFront!='HmQ1' and GetUnitAbility(homuraMover,homuraFront)==null then
+call UnitAddAbility(homuraMover,homuraFront)
+endif
+set homuraNew=GetUnitAbility(homuraMover,homuraFront)
+if homuraFront!=homuraPrevious or GetUnitAbilityLevel(homuraMover,homuraFront)!=homuraRank then
+call SetUnitAbilityLevel(homuraMover,homuraFront,homuraRank)
+call SetAbilityRemainingCooldown(homuraNew,homuraLeft)
+call SetAbilityRemainingCooldown(homuraQ,homuraLeft)
+endif
+loop
+exitwhen homuraScan>4
+set homuraScanId=HomuraQModeId(homuraScan)
+if homuraScanId!=homuraFront and GetUnitAbility(homuraMover,homuraScanId)!=null then
+call UnitRemoveAbility(homuraMover,homuraScanId)
+endif
+set homuraScan=homuraScan+1
+endloop
+call ShowAbility(homuraQ,homuraFront=='HmQ1')
+call ShowAbility(homuraNew,true)
+call SaveInteger(HH,GetHandleId(homuraMover),StringHash("HomuraQFront"),homuraFront)
+if homuraFront=='HmQ1' then
+call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('HmS0',ABILITY_SF_ICON_NORMAL))
+call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL,homuraRank-1,GetAbilityBaseStringLevelFieldById('HmS0',ABILITY_SLF_TOOLTIP_NORMAL,homuraRank-1))
+call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraRank-1,GetAbilityBaseStringLevelFieldById('HmS0',ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraRank-1))
+else
+call SetAbilityStringField(homuraNew,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById(homuraFront,ABILITY_SF_ICON_NORMAL))
+call SetAbilityStringLevelField(homuraNew,ABILITY_SLF_TOOLTIP_NORMAL,homuraRank-1,GetAbilityBaseStringLevelFieldById(homuraFront,ABILITY_SLF_TOOLTIP_NORMAL,homuraRank-1))
+call SetAbilityStringLevelField(homuraNew,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraRank-1,GetAbilityBaseStringLevelFieldById(homuraFront,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraRank-1))
+endif
+endif
+set homuraOld=null
+set homuraNew=null
+set homuraQ=null
 endfunction
 
 function HomuraAttackModel takes integer homuraMode returns string
@@ -63396,6 +63440,9 @@ if cbP>9 or Hero[cbP]==null then
 return
 endif
 set cbU=Hero[cbP]
+if HomuraIsQ(cbId) then
+set cbId=HomuraQModeId(LoadInteger(HH,GetHandleId(cbU),StringHash("HomuraWeapon")))
+endif
 set cbA=GetUnitAbility(cbU,cbId)
 // уровень 0 — способность не применить, а поля уровня -1 читают мусор (крит при спаме, 15 окт)
 if cbA!=null and (GetUnitAbilityLevel(cbU,cbId)<1 or not IsUnitAbilityVisible(cbU,cbId)) then
@@ -63407,7 +63454,7 @@ endif
 if cbA!=null then
 // код приказа (Channel — поле Ncl6 из таблицы способности): CBS_QcOrd
 set cbO=CBS_QcOrd(cbU,cbId)
-if cbId=='HmQ1' then
+if HomuraIsQ(cbId) then
 if cbO!=0 then
 if LoadInteger(HH,GetHandleId(cbU),StringHash("HomuraWeapon"))==0 then
 call IssueImmediateOrderById(cbU,cbO)
@@ -144285,8 +144332,10 @@ call SaveStr(HH,SH_ShnChanO,'HerT',"tornado")
 call SaveInteger(HH,SH_ShnChanT,'HerT',1)
 call SaveStr(HH,SH_ShnChanO,'HiW1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'HiW1',2)
-call SaveStr(HH,SH_ShnChanO,'HmA0',"channel")
-call SaveStr(HH,SH_ShnChanO,'HmB0',"channel")
+call SaveStr(HH,SH_ShnChanO,'HmA0',"flamestrike")
+call SaveInteger(HH,SH_ShnChanT,'HmA0',2)
+call SaveStr(HH,SH_ShnChanO,'HmB0',"shockwave")
+call SaveInteger(HH,SH_ShnChanT,'HmB0',2)
 call SaveStr(HH,SH_ShnChanO,'HmD1',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'HmD1',1)
 call SaveStr(HH,SH_ShnChanO,'HmE1',"clusterrockets")
@@ -144295,8 +144344,10 @@ call SaveStr(HH,SH_ShnChanO,'HmF1',"innerfire")
 call SaveInteger(HH,SH_ShnChanT,'HmF1',1)
 call SaveStr(HH,SH_ShnChanO,'HmG1',"blink")
 call SaveInteger(HH,SH_ShnChanT,'HmG1',3)
-call SaveStr(HH,SH_ShnChanO,'HmN0',"channel")
-call SaveStr(HH,SH_ShnChanO,'HmP0',"channel")
+call SaveStr(HH,SH_ShnChanO,'HmN0',"breathoffrost")
+call SaveInteger(HH,SH_ShnChanT,'HmN0',2)
+call SaveStr(HH,SH_ShnChanO,'HmP0',"carrionswarm")
+call SaveInteger(HH,SH_ShnChanT,'HmP0',2)
 call SaveStr(HH,SH_ShnChanO,'HmQ1',"channel")
 call SaveStr(HH,SH_ShnChanO,'HmR1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'HmR1',2)
@@ -146569,16 +146620,16 @@ call SaveStr(HH,SH_AbOrd,'HerF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'HerG',"charm")
 call SaveStr(HH,SH_AbOrd,'HerT',"tornado")
 call SaveStr(HH,SH_AbOrd,'HiW1',"clusterrockets")
-call SaveStr(HH,SH_AbOrd,'HmA0',"channel")
-call SaveStr(HH,SH_AbOrd,'HmB0',"channel")
+call SaveStr(HH,SH_AbOrd,'HmA0',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'HmB0',"shockwave")
 call SaveStr(HH,SH_AbOrd,'HmD1',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'HmE1',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'HmF1',"innerfire")
 call SaveStr(HH,SH_AbOrd,'HmG1',"blink")
 call SaveStr(HH,SH_AbOrd,'HmM1',"bearform")
 call SaveStr(HH,SH_AbOrd,'HmM2',"bearform")
-call SaveStr(HH,SH_AbOrd,'HmN0',"channel")
-call SaveStr(HH,SH_AbOrd,'HmP0',"channel")
+call SaveStr(HH,SH_AbOrd,'HmN0',"breathoffrost")
+call SaveStr(HH,SH_AbOrd,'HmP0',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'HmQ1',"channel")
 call SaveStr(HH,SH_AbOrd,'HmR1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'HmS0',"channel")
@@ -261741,7 +261792,7 @@ function HomuraFireBullet takes unit homuraGunner,real homuraAim,real homuraBull
     if homuraShotStyle==3 then
         call SetUnitScale(homuraFlash,0.48,0.48,0.48)
     elseif homuraShotStyle==1 then
-        call SetUnitScale(homuraFlash,0.32,0.32,0.32)
+        call SetUnitScale(homuraFlash,0.16,0.16,0.16)
     else
         call SetUnitScale(homuraFlash,0.24,0.24,0.24)
     endif
@@ -261925,8 +261976,13 @@ function HomuraRocketTick takes nothing returns nothing
     endif
     if I2R(homuraRocketFrame)>=homuraFrameLimit and not WaveCancelled(homuraRocket) then
         call WaveUnregister(homuraRocket,false)
-        call SetSpecialEffectVisible(homuraRocket,false)
-        call DestroyEffect(homuraRocket)
+        if LoadBoolean(h,homuraRocketId,17) then
+            call SetSpecialEffectVisible(homuraRocket,false)
+            call DestroyEffect(homuraRocket)
+        else
+            call SetSpecialEffectAnimation(homuraRocket,"death")
+            call RemoveEffect(homuraRocket,0.7,false,CreateTimer())
+        endif
         if homuraWarning!=null then
             call SetSpecialEffectVisible(homuraWarning,false)
             call DestroyEffect(homuraWarning)
@@ -261961,14 +262017,13 @@ function HomuraLaunchArc takes unit homuraCaster,real homuraTargetX,real homuraT
         call SetSpecialEffectScale(homuraCastRocket,0.55)
         call SetSpecialEffectAnimation(homuraCastRocket,"stand")
     else
-        call SetSpecialEffectScale(homuraCastRocket,1.15)
+        call SetSpecialEffectScale(homuraCastRocket,1.5)
         call SetSpecialEffectAnimation(homuraCastRocket,"stand")
     endif
     if homuraIsGrenade then
         call StartSound(SndN(5015))
     else
-        call StartSound(SndN(4979))
-        call HomuraBurstLayer("Homura\\HomuraGunFlash.mdx",homuraStartX+65.*Cos(homuraShotAngle),homuraStartY+65.*Sin(homuraShotAngle),GetUnitZ(homuraCaster)+85.,homuraShotAngle*bj_RADTODEG,0.,0.62,2.4,195,0.4)
+        call StartSound(SndN(5033))
     endif
     set homuraGround=Location(homuraTargetX,homuraTargetY)
     if not homuraStopOnEnemy then
@@ -262281,7 +262336,9 @@ function HomuraQCast takes unit homuraQCaster returns nothing
     local real homuraQDmg
     local timer homuraQTimer
     local integer homuraQId
+    if homuraMode!=2 then
     call HomuraPlayVoice(homuraQCaster,4987,1.8)
+    endif
     if homuraMode==0 then
         call HomuraCombatAnim(homuraQCaster,33,6)
         call HomuraShieldStart(homuraQCaster)
@@ -262532,8 +262589,11 @@ function HomuraReworkCast takes nothing returns nothing
                 call HomuraBarrageCast(homuraMover)
                 call HomuraCutBlink(homuraMover)
             endif
-        elseif (homuraCastSpell=='HmQ1' or homuraCastSpell=='HmW1' or homuraCastSpell=='HmE1') then
-            if homuraCastSpell=='HmQ1' then
+        elseif (HomuraIsQ(homuraCastSpell) or homuraCastSpell=='HmW1' or homuraCastSpell=='HmE1') then
+            if HomuraIsQ(homuraCastSpell) then
+if homuraCastSpell!='HmQ1' then
+call SetAbilityRemainingCooldown(GetUnitAbility(homuraMover,'HmQ1'),RMaxBJ(GetAbilityRemainingCooldown(GetUnitAbility(homuraMover,homuraCastSpell)),GetAbilityRealLevelField(GetUnitAbility(homuraMover,homuraCastSpell),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(homuraMover,'HmQ1')-1)))
+endif
                 call HomuraQCast(homuraMover)
             endif
             call HomuraCutBlink(homuraMover)
