@@ -58433,6 +58433,7 @@ function HomuraRefreshQ takes unit homuraMover returns nothing
         if homuraMode==0 then
             set homuraArt='HmS0'
             call CBS_SetTT(homuraQ,homuraLevel,0)
+            call SetAbilityRealLevelField(homuraQ,ABILITY_RLF_CASTING_TIME,homuraLevel,0.)
         else
             if homuraMode==1 then
                 set homuraArt='HmP0'
@@ -58444,6 +58445,7 @@ function HomuraRefreshQ takes unit homuraMover returns nothing
                 set homuraArt='HmA0'
             endif
             call CBS_SetTT(homuraQ,homuraLevel,2)
+            call SetAbilityRealLevelField(homuraQ,ABILITY_RLF_CASTING_TIME,homuraLevel,0.15)
         endif
         call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById(homuraArt,ABILITY_SF_ICON_NORMAL))
         call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel,GetAbilityBaseStringLevelFieldById(homuraArt,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel))
@@ -262085,7 +262087,7 @@ function HomuraBlinkCast takes unit homuraMover returns nothing
     local real homuraDist=SR1(homuraX,homuraY,homuraTX,homuraTY)
     local real homuraTime=33.-3.*IMinBJ(5,IMaxBJ(1,GetUnitAbilityLevel(homuraMover,'HmQ1')))
     call HomuraSyncBlink(homuraMover)
-    if GetHeroLevel(homuraMover)>=12 and HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
+    if HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
         if GetSpellTargetUnit()==homuraMover then
             call HomuraRefundMana(homuraMover,'HmG1')
             call SetAbilityRemainingCooldown(homuraBlink,2.)
@@ -262440,20 +262442,26 @@ set homuraTClock=null
 set homuraTCaster=null
 set homuraTTimer=null
 endfunction
-function HomuraTCast takes unit homuraTCaster returns nothing
+function HomuraTStart takes nothing returns nothing
+local timer homuraTPrepare=GetExpiredTimer()
+local integer homuraTPrepareId=GetHandleId(homuraTPrepare)
+local unit homuraTCaster=LoadUnitHandle(h,homuraTPrepareId,0)
 local integer homuraTLevel=GetHeroLevel(homuraTCaster)
-local real homuraTDuration=RMinBJ(7.,5.+0.1*I2R(IMaxBJ(0,homuraTLevel-25)))
+local real homuraTDuration=RMinBJ(5.,4.+0.05*I2R(IMaxBJ(0,homuraTLevel-25)))
 local real homuraTCooldown=RMaxBJ(90.,110.-I2R(IMaxBJ(0,homuraTLevel-25)))
 local ability homuraTBlink=HomuraBlinkAbility(homuraTCaster)
 local effect homuraTClock
 local timer homuraTTimer
 local integer homuraTId
-if homuraTLevel<25 or not HomuraTravelAllowed(homuraTCaster) then
-call HomuraRefundMana(homuraTCaster,'HmT1')
+call FlushChildHashtable(h,homuraTPrepareId)
+call TSE_DestroyTimer(homuraTPrepare)
+set homuraTPrepare=null
+if homuraTCaster==null or not UnitIsAlive(homuraTCaster) or not udg_B or not DU2 or not HomuraTravelAllowed(homuraTCaster) then
+set homuraTCaster=null
+set homuraTBlink=null
 return
 endif
 call SaveBoolean(HH,GetHandleId(homuraTCaster),StringHash("HomuraTShare"),homuraTLevel>=35)
-call HomuraCombatAnim(homuraTCaster,33,6)
 call TSE_Start(homuraTCaster,homuraTDuration)
 if homuraTBlink!=null and GetAbilityRemainingCooldown(homuraTBlink)>1.5 then
 call SetAbilityRemainingCooldown(homuraTBlink,1.5)
@@ -262463,7 +262471,6 @@ set homuraTClock=AddSpecialEffect("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraTC
 call SaveBoolean(HH,GetHandleId(homuraTClock),StringHash("TSEOwnFx"),true)
 call SetSpecialEffectScale(homuraTClock,1.3)
 call SetSpecialEffectVertexColour(homuraTClock,200,180,255,150)
-call StartSound(SndN(5031))
 set homuraTTimer=CreateTimer()
 set homuraTId=GetHandleId(homuraTTimer)
 call SaveUnitHandle(h,homuraTId,0,homuraTCaster)
@@ -262472,6 +262479,22 @@ call TimerStart(homuraTTimer,0.05,true,function HomuraTWatch)
 set homuraTBlink=null
 set homuraTClock=null
 set homuraTTimer=null
+endfunction
+
+function HomuraTCast takes unit homuraTCaster returns nothing
+local timer homuraTPrepare
+local integer homuraTPrepareId
+if GetHeroLevel(homuraTCaster)<25 or not HomuraTravelAllowed(homuraTCaster) then
+call HomuraRefundMana(homuraTCaster,'HmT1')
+return
+endif
+call HomuraCombatAnim(homuraTCaster,33,6)
+call StartSound(SndN(5031))
+set homuraTPrepare=CreateTimer()
+set homuraTPrepareId=GetHandleId(homuraTPrepare)
+call SaveUnitHandle(h,homuraTPrepareId,0,homuraTCaster)
+call TSE_TimerStartOwned(homuraTPrepare,0.3,false,function HomuraTStart,OwnerOf(homuraTCaster))
+set homuraTPrepare=null
 endfunction
 
 function HomuraReworkCast takes nothing returns nothing
@@ -297689,7 +297712,6 @@ local timer htvc=CreateTimer()
 local timer htwatch=CreateTimer()
 local effect htice
 local real htia=Atan2(GetUnitY(hte)-GetUnitY(htu),GetUnitX(hte)-GetUnitX(htu))
-call HitBlueAura(htu,true,"HitTAura")
 call SaveBoolean(h,GetHandleId(htt),14,IsUnitInvulnerable(htu))
 call SaveBoolean(h,GetHandleId(htt),15,IsUnitInvulnerable(hte))
 call SaveBoolean(h,GetHandleId(htt),16,IsUnitPaused(htu))
@@ -297699,7 +297721,6 @@ call SetUnitInvulnerable(htu,true)
 call SetUnitInvulnerable(hte,true)
 call HitSnd("HitSeichoAttack")
 call SaveSoundHandle(h,GetHandleId(htt),13,soundplay)
-call HitVo("HitT1")
 call TSE_StartEx(htu,htd,false,GetUnitX(htu),GetUnitY(htu),0.)
 if TSE_On and TSE_Src==htu then
 call PauseTimer(TSE_End)
@@ -297775,6 +297796,16 @@ call HitApproachBlink(htpau,htpae,htpaa)
 endif
 if not ReverseIntercept(htpau,htpae) then
 call HitTBegin(htpau,htpae)
+else
+call HitBlueAura(htpau,false,"HitTAura")
+if UnitIsAlive(htpau) then
+call SetUnitAnimationByIndex(htpau,9)
+endif
+endif
+else
+call HitBlueAura(htpau,false,"HitTAura")
+if htpau!=null and UnitIsAlive(htpau) then
+call SetUnitAnimationByIndex(htpau,9)
 endif
 endif
 call FlushChildHashtable(h,htpai)
@@ -297784,6 +297815,18 @@ set htpau=null
 set htpae=null
 set htpat=null
 endfunction
+
+function HitTLaunch takes nothing returns nothing
+local timer hitTLaunchTimer=GetExpiredTimer()
+local unit hitTLaunchUnit=LoadUnitHandle(h,GetHandleId(hitTLaunchTimer),0)
+if hitTLaunchUnit!=null and UnitIsAlive(hitTLaunchUnit) then
+call SetUnitAnimationByIndex(hitTLaunchUnit,11)
+endif
+call TSE_TimerStart(hitTLaunchTimer,0.01,true,function HitTApproach)
+set hitTLaunchUnit=null
+set hitTLaunchTimer=null
+endfunction
+
 function HitTCast takes nothing returns nothing
 local unit htpcu=GetTriggerUnit()
 local unit htpce=GetSpellTargetUnit()
@@ -297797,8 +297840,11 @@ call MapPauseUnit(htpcu,true)
 call HitFRefresh(htpcu)
 call SetUnitInvulnerable(htpcu,true)
 call SaveInteger(HH,GetHandleId(htpcu),HitK("AnN"),LoadInteger(HH,GetHandleId(htpcu),HitK("AnN"))+1)
-call SetUnitAnimationByIndex(htpcu,11)
-call TSE_TimerStart(htpct,0.01,true,function HitTApproach)
+call SetUnitTimeScale(htpcu,1.)
+call SetUnitAnimationByIndex(htpcu,23)
+call HitBlueAura(htpcu,true,"HitTAura")
+call HitVo("HitT1")
+call TSE_TimerStartOwned(htpct,0.2,false,function HitTLaunch,OwnerOf(htpcu))
 set htpcu=null
 set htpce=null
 set htpct=null
@@ -313147,8 +313193,8 @@ call LANG_A('HtR1',1,3,"Hit closes in and traps his opponent in time. Only Hit c
 call LANG_A('HtR1',1,4,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 2.50 sec. (+1 sec. after W)|nStored damage on release: +30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange: 600|nCooldown: 22 sec.|r")
 call LANG_A('HtR1',2,0,"Time Cage, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('HtR1',3,0,"Hit closes in and traps his opponent in time. Only Hit can damage the target; stored damage is dealt when the trap ends.|n|n|cFF00A5FF|nDuration: 1.5\\1.75\\2\\2.25\\2.5 sec. (+1 sec. after W)|nStored damage on release: +10\\15\\20\\25\\30%|nDelay after approach: 0.5 sec.|nBreak distance: 400|nRange"+": 600|nCooldown: 30\\28\\26\\24\\22 sec.|r")
-call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 50 sec.|r")
-call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.5 sec.|nRange: 700|nCooldown: 50 sec.|r")
+call LANG_A('HtT1',1,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.35 sec.|nDelay before dash: 0.2 sec.|nRange: 700|nCooldown: 50 sec.|r")
+call LANG_A('HtT1',3,0,"Hit stops time and attacks his opponent with a rapid series of strikes. The finishing blow deals all the damage.|n|n|cFF00A5FF|nFinal blow damage: 11*|r|c003CFF3CAGI|r|cFF00A5FF|nTime stop: 6.0 sec.|nStun: 1.5 sec.|nCast time: 0.35 sec.|nDelay before dash: 0.2 sec.|nRange: 700|nCooldown: 50 sec.|r")
 call LANG_A('HtD1',1,0,"• Hitting an enemy hero or training dummy with an ability grants a charge, at most one per cast. Maximum: 10 charges.|n• Each charge grants +4 AGI and +0.1 seconds to Hit's time stops, except T.|n• Activating reduces Q/W/E/F cooldowns by 1 second per charge, up to 5 seconds, without consuming "+"charges.|n• Charges reset after 10 seconds out of combat.|n|cFF00A5FFCooldown: 30 seconds|r")
 call LANG_A('HtD1',3,0,"• Hitting an enemy hero or training dummy with an ability grants a charge, at most one per cast. Maximum: 10 charges.|n• Each charge grants +4 AGI and +0.1 seconds to Hit's time stops, except T.|n• Activating reduces Q/W/E/F cooldowns by 1 second per charge, up to 5 seconds, without consuming "+"charges.|n• Charges reset after 10 seconds out of combat.|n|cFF00A5FFCooldown: 30 seconds|r")
 call LANG_A('HtF1',1,0,"Hit takes a combat stance, unlocking three enhanced techniques. He cannot move or attack during the stance and may leave it early.|n|n|cFF00A5FF|nStance: 3 sec.|nCooldown: 13 sec. (7 sec. without a follow-up)|r")
@@ -313226,8 +313272,8 @@ call LANG_A('HmR1',1,2,"Blinks around the target area and throws six grenades. E
 call LANG_A('HmR1',1,3,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.75*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 10.5*|r|c0077FFFFINT|r|cFF0"+"0A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 28 sec.|r")
 call LANG_A('HmR1',1,4,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 12*|r|c0077FFFFINT|r|cFF00A5FF"+"|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 26 sec.|r")
 call LANG_A('HmR1',3,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1/1.25/1.5/1.75/2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6/7.5/9/10.5/1"+"2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34/32/30/28/26 sec.|r")
-call LANG_A('HmT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
-call LANG_A('HmT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HmT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HmT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
 call LANG_A('HmD1',1,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and becomes the Devil until the round ends. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Goddess transformation also transforms Homura while"+" she is alive. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
 call LANG_A('HmD1',3,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and becomes the Devil until the round ends. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Goddess transformation also transforms Homura while"+" she is alive. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
 call LANG_A('HmF1',1,0,"Homura records a living allied hero’s position. Cast on that hero again to return them to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFMark duration: 3 sec.|nRange: 1200|nCooldown after recall: 20 sec.|r")
@@ -313262,8 +313308,8 @@ call LANG_A('HdR1',1,2,"Blinks around the target area and throws six grenades. E
 call LANG_A('HdR1',1,3,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.75*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 10.5*|r|c0077FFFFINT|r|cFF0"+"0A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 28 sec.|r")
 call LANG_A('HdR1',1,4,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 12*|r|c0077FFFFINT|r|cFF00A5FF"+"|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 26 sec.|r")
 call LANG_A('HdR1',3,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1/1.25/1.5/1.75/2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6/7.5/9/10.5/1"+"2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34/32/30/28/26 sec.|r")
-call LANG_A('HdT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
-call LANG_A('HdT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HdT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HdT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
 call LANG_A('HdD1',1,0,"Test placeholder.")
 call LANG_A('HdD1',3,0,"Test placeholder.")
 call LANG_A('HdF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
