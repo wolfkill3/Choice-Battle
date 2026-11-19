@@ -3212,6 +3212,11 @@ function TSE_PlayerExempt takes player p returns boolean
 if TSE_Src!=null and p==OwnerOf(TSE_Src) then
 return true
 endif
+if TSE_Src!=null and LoadBoolean(HH,GetHandleId(TSE_Src),StringHash("HomuraTShare")) and LoadUnitHandle(HH,GetHandleId(TSE_Src),StringHash("HomuraTimePartner"))!=null then
+if p==OwnerOf(LoadUnitHandle(HH,GetHandleId(TSE_Src),StringHash("HomuraTimePartner"))) then
+return true
+endif
+endif
 // 30 окт: класс «остановитель времени» (способность TSkr) — тоже исключение
 return LoadBoolean(TSE_HT,-1,GetUnitTypeId(Hero[PId(p)])) or GetUnitAbilityLevel(Hero[PId(p)],'TSkr')>0
 endfunction
@@ -3239,6 +3244,49 @@ endfunction
 // GetExpiredTimer — только в колбэке таймера (нет триггера) или в триггере с событием таймера: в остальных событиях
 // (кнопка диалога «Standard Mode» и т.п.) натив 1.26 читает данные события как таймер — краш Game.dll+0x430C91 (23 окт).
 // До конца инициализации карты владелец не определяется (TSE_Ready).
+function TSE_CasterOrder takes unit tsoUnit returns integer
+local integer tsoCurrent=GetUnitCurrentOrder(tsoUnit)
+if HaveSavedInteger(HH,GetHandleId(tsoUnit),StringHash("TSEChannelOrder")) then
+if IsUnitStunned(tsoUnit) then
+call RemoveSavedInteger(HH,GetHandleId(tsoUnit),StringHash("TSEChannelOrder"))
+else
+return LoadInteger(HH,GetHandleId(tsoUnit),StringHash("TSEChannelOrder"))
+endif
+endif
+return tsoCurrent
+endfunction
+function TSE_OrderChanged takes nothing returns nothing
+local unit tsoUnit=GetTriggerUnit()
+if HaveSavedInteger(HH,GetHandleId(tsoUnit),StringHash("TSEChannelOrder")) and not IsUnitInGroup(tsoUnit,TSE_G) then
+call RemoveSavedInteger(HH,GetHandleId(tsoUnit),StringHash("TSEChannelOrder"))
+endif
+set tsoUnit=null
+endfunction
+function TSE_ShouldPauseTimer takes timer tstTimer,player tstOwner returns boolean
+local integer tstId=GetHandleId(tstTimer)
+local unit tstFront=LoadUnitHandle(TSE_HT,tstId,StringHash("TSEWaveUnit"))
+local effect tstEffect=LoadEffectHandle(TSE_HT,tstId,StringHash("TSEWaveEffect"))
+local real tstX
+local real tstY
+local boolean tstWorld=LoadBoolean(TSE_HT,tstId,StringHash("TSEWorldTimer"))
+local boolean tstInside=false
+if tstFront!=null then
+set tstX=GetUnitX(tstFront)
+set tstY=GetUnitY(tstFront)
+elseif tstEffect!=null then
+set tstX=GetSpecialEffectX(tstEffect)
+set tstY=GetSpecialEffectY(tstEffect)
+endif
+if tstFront!=null or tstEffect!=null then
+set tstInside=not TSE_Area or (tstX-TSE_AX)*(tstX-TSE_AX)+(tstY-TSE_AY)*(tstY-TSE_AY)<=TSE_AR*TSE_AR
+elseif tstWorld then
+set tstInside=not TSE_Area
+endif
+set tstFront=null
+set tstEffect=null
+return tstInside or TSE_PlayerStopped(tstOwner)
+endfunction
+
 function TSE_Owner takes nothing returns player
 local timer et=null
 local unit u=null
@@ -3329,7 +3377,25 @@ set et=null
 endfunction
 function TSE_TimerStartOwned takes timer tm,real dur,boolean per,code f,player p returns nothing
 local integer k
+local unit tstCaster
 call TimerStart(tm,dur,per,f)
+if TSE_Ready and LoadUnitHandle(TSE_HT,GetHandleId(tm),StringHash("TSEWaveUnit"))==null and LoadEffectHandle(TSE_HT,GetHandleId(tm),StringHash("TSEWaveEffect"))==null then
+set tstCaster=LoadUnitHandle(h,GetHandleId(tm),1)
+if tstCaster!=null and GetUnitAbilityLevel(tstCaster,'Aloc')>0 and not IsUnitType(tstCaster,UNIT_TYPE_HERO) then
+call SaveUnitHandle(TSE_HT,GetHandleId(tm),StringHash("TSEWaveUnit"),tstCaster)
+endif
+set tstCaster=null
+endif
+if p==null and TSE_Ready then
+set tstCaster=LoadUnitHandle(h,GetHandleId(tm),0)
+if tstCaster==null then
+set tstCaster=LoadUnitHandle(HH,GetHandleId(tm),0)
+endif
+if tstCaster!=null then
+set p=OwnerOf(tstCaster)
+endif
+set tstCaster=null
+endif
 if p==null then
 return
 endif
@@ -3349,7 +3415,7 @@ call SaveInteger(TSE_HT,GetHandleId(tm),10,k)
 endif
 set TSE_TP[k-1]=p
 // запущен во время остановки не исключённым игроком — сразу на паузу до конца остановки
-if TSE_On and TSE_PlayerStopped(p) and TSE_PN<8190 then
+if TSE_On and TSE_ShouldPauseTimer(tm,p) and TSE_PN<8190 then
 call TSE_TPause(tm)
 set TSE_PT[TSE_PN]=tm
 set TSE_PN=TSE_PN+1
@@ -3374,6 +3440,9 @@ else
 set i=i+1
 endif
 endloop
+call RemoveSavedHandle(TSE_HT,GetHandleId(tm),StringHash("TSEWaveUnit"))
+call RemoveSavedHandle(TSE_HT,GetHandleId(tm),StringHash("TSEWaveEffect"))
+call RemoveSavedBoolean(TSE_HT,GetHandleId(tm),StringHash("TSEWorldTimer"))
 call DestroyTimer(tm)
 endfunction
 function ItemP takes item it returns player
@@ -7406,7 +7475,7 @@ local timer tm
 loop
 exitwhen i>=TSE_TN or TSE_PN>=8190
 set tm=TSE_TL[i]
-if tm!=null and (p==null or TSE_TP[i]==p) and TSE_PlayerStopped(TSE_TP[i]) and not TimerIsPaused(tm) and TimerGetRemaining(tm)>0 then
+if tm!=null and (p==null or TSE_TP[i]==p) and TSE_ShouldPauseTimer(tm,TSE_TP[i]) and not TimerIsPaused(tm) and TimerGetRemaining(tm)>0 then
 call TSE_TPause(tm)
 set TSE_PT[TSE_PN]=tm
 set TSE_PN=TSE_PN+1
@@ -7504,6 +7573,9 @@ local integer cnt
 local buff b
 local ability a
 local item it
+if IsUnitType(u,UNIT_TYPE_HERO) and not HaveSavedInteger(HH,id,StringHash("TSEChannelOrder")) then
+call SaveInteger(HH,id,StringHash("TSEChannelOrder"),GetUnitCurrentOrder(u))
+endif
 call SaveInteger(TSE_HT,id,100,GetUnitCurrentAnimationId(u))
 call SaveReal(TSE_HT,id,101,GetUnitAnimationOffsetPercent(u))
 call SaveStr(TSE_HT,id,103,GetUnitModel(u))
@@ -7715,8 +7787,8 @@ set u=FirstOfGroup(TSE_Tmp)
 exitwhen u==null
 call GroupRemoveUnit(TSE_Tmp,u)
 // 29 окт: умирающие и мёртвые (анимация смерти, даммики с истёкшим временем жизни) не замораживаются — их смерть зависала
-if not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
-if TSE_PlayerResistant(OwnerOf(u)) then
+if not IsUnitInGroup(u,TSE_G) and (not TSE_PlayerExempt(OwnerOf(u)) or (GetUnitAbilityLevel(u,'Aloc')>0 and not IsUnitType(u,UNIT_TYPE_HERO))) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+if TSE_PlayerResistant(OwnerOf(u)) and (IsUnitType(u,UNIT_TYPE_HERO) or GetUnitAbilityLevel(u,'Aloc')==0) then
 call TSE_ResUnit(u)
 else
 call TSE_FreezeUnit(u)
@@ -7737,8 +7809,8 @@ set k=0
 loop
 exitwhen k>=cnt
 set u=HandleListGetUnitByIndex(l,k)
-if u!=null and not IsUnitInGroup(u,TSE_G) and not TSE_PlayerExempt(OwnerOf(u)) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
-if TSE_PlayerResistant(OwnerOf(u)) then
+if u!=null and not IsUnitInGroup(u,TSE_G) and (not TSE_PlayerExempt(OwnerOf(u)) or (GetUnitAbilityLevel(u,'Aloc')>0 and not IsUnitType(u,UNIT_TYPE_HERO))) and not IsUnitType(u,UNIT_TYPE_DEAD) and (not TSE_Area or IsUnitInRangeXY(u,TSE_AX,TSE_AY,TSE_AR)) then
+if TSE_PlayerResistant(OwnerOf(u)) and (IsUnitType(u,UNIT_TYPE_HERO) or GetUnitAbilityLevel(u,'Aloc')==0) then
 call TSE_ResUnit(u)
 else
 call TSE_FreezeUnit(u)
@@ -7804,7 +7876,7 @@ endfunction
 function TSE_EffFreeze takes effect e returns nothing
 local real ex=GetSpecialEffectX(e)
 local real ey=GetSpecialEffectY(e)
-if LoadBoolean(HH,GetHandleId(e),StringHash("HitOwnFx")) then
+if LoadBoolean(HH,GetHandleId(e),StringHash("HitOwnFx")) or LoadBoolean(HH,GetHandleId(e),StringHash("TSEOwnFx")) then
 return
 endif
 if TSE_Area then
@@ -8051,6 +8123,8 @@ set TSE_TickN=TSE_TickN+1
 call ForGroup(TSE_RG,function TSE_ResRefresh)
 call TSE_ScanUnits()
 call TSE_ScanProjectiles()
+call TSE_ScanEffects()
+call TSE_PauseTimers(null)
 call ForGroup(TSE_G,function TSE_ZeroScale)
 // затемнение могла снять чужая маска (DisplayCineFilter(false) в коде способностей) — вернуть без появления
 if TSE_FiltOn and not IsCineFilterDisplayed() then
@@ -8085,6 +8159,9 @@ call SaveReal(HH,id,StringHash("HitFzTs"),tsurs)
 call SetUnitTimeScale(u,0.001)
 else
 call SetUnitTimeScale(u,tsurs)
+endif
+if not IsUnitType(u,UNIT_TYPE_DEAD) and LoadInteger(HH,id,StringHash("TSEChannelOrder"))==OrderId("channel") and LoadInteger(TSE_HT,id,100)>=0 and GetUnitModel(u)==LoadStr(TSE_HT,id,103) then
+call SetUnitAnimationByIndex(u,LoadInteger(TSE_HT,id,100))
 endif
 if not IsUnitType(u,UNIT_TYPE_DEAD) and LoadInteger(TSE_HT,id,100)>=0 and GetUnitModel(u)==LoadStr(TSE_HT,id,103) and GetUnitCurrentAnimationId(u)==LoadInteger(TSE_HT,id,100) then
 call SetUnitAnimationOffsetPercent(u,LoadReal(TSE_HT,id,101))
@@ -8314,6 +8391,7 @@ call DestroyTimer(GetExpiredTimer())
 endfunction
 function TSE_Init takes nothing returns nothing
 local trigger tr=CreateTrigger()
+local trigger tsoTrigger=CreateTrigger()
 call TimerStart(CreateTimer(),0.,false,function TSE_ReadyF)
 set TSE_CDG=CreateGroup()
 set TSE_CDT=CreateTimer()
@@ -8333,6 +8411,11 @@ set TSE_End=CreateTimer()
 set TSE_Tick=CreateTimer()
 call TRPCE(tr,PlayerV(0),"-ts",false)
 call TriggerAddAction(tr,function TSE_Chat)
+call TriggerRegisterAnyUnitEventBJ(tsoTrigger,EVENT_PLAYER_UNIT_ISSUED_ORDER)
+call TriggerRegisterAnyUnitEventBJ(tsoTrigger,EVENT_PLAYER_UNIT_ISSUED_POINT_ORDER)
+call TriggerRegisterAnyUnitEventBJ(tsoTrigger,EVENT_PLAYER_UNIT_ISSUED_TARGET_ORDER)
+call TriggerAddAction(tsoTrigger,function TSE_OrderChanged)
+set tsoTrigger=null
 set tr=null
 endfunction
 // ===== -perf (3.8.1): диагностика просадок FPS =====
@@ -13520,6 +13603,12 @@ call SND_Add(5007,2,"Sound\\Homura\\Homura_Q_Shield.mp3",510)
 call SND_Add(5009,2,"Sound\\Homura\\Homura_Q_ShieldHit.mp3",300)
 call SND_Add(5011,2,"Sound\\Homura\\Homura_E_Hit.mp3",950)
 call SND_Add(5013,2,"Sound\\Homura\\Homura_R.mp3",3100)
+call SND_Add(5015,2,"Sound\\Homura\\Homura_Grenade_Throw.mp3",12700)
+call SND_Add(5017,8,"Sound\\Homura\\Homura_E_Hit.mp3",12700)
+call SND_Add(5025,2,"Sound\\Homura\\Homura_Mode_1.mp3",12700)
+call SND_Add(5027,2,"Sound\\Homura\\Homura_Mode_2.mp3",12700)
+call SND_Add(5029,2,"Sound\\Homura\\Homura_Mode_3.mp3",12700)
+call SND_Add(5031,2,"Sound\\Homura\\Homura_T.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -15291,7 +15380,7 @@ return id=='HtF1' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=
 //A0J8 / A0JB / A0J9 — до 22 окт (v3: W / R / T меняются вместе с E2)
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
-return id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
+return id=='HmQ1' or id=='A0YX' or id=='A0Z0' or id=='KkR1' or id=='KkR2' or id=='BRRS' or id=='BRSS' or id=='IcF2' or id=='IcF5' or id=='GKF1' or id=='VGF1' or id=='GKG1' or id=='GKBS' or id=='GKSS' or id=='GKS2' or id=='GKS3' or id=='GKS4' or id=='GKSR' or id=='GKSB' or id=='GKUI' or id=='GKMI' or id=='GKQ1' or id=='GKW1' or id=='GKE1' or id=='GKT1' or id=='JNF1' or id=='JNF4' or id=='GSQ1' or id=='GSQ2' or id=='GSE1' or id=='GSE2' or id=='GST1' or id=='GST3' or id=='GSF1' or id=='GSF2' or id=='GSF2'
 endfunction
 function Condition_AbilityString takes integer id returns boolean
 return Condition_AbilityString2(id) or Condition_AbilityString3(id) or id=='SaW1' or id=='SaE1' or id=='SaR1' or id=='SaT1' or id=='TMW0' or id=='A0P6' or id=='A1D7' or id=='HSW1' or id=='HST1' or id=='KHG1' or id=='A2DJ' or id=='IcQ1' or id=='IcT1' or id=='MadF' or id=='A0N1' or id=='A2CZ' or id=='A0CZ' or id=='DSW1' or id=='Ad02' or id=='BGW1' or id=='KaA6' or id=='KaAF' or id=='BGG1' or id=='ASQ1' or id=='ASW1' or id=='ASE1' or id=='AST1' or id=='A1BO' or id=='A1BT' or id=='A1BW' or id=='A085' or id=='A08J' or id=='MiQ1' or id=='MiE1' or id=='MiR1' or id=='A0FN' or id=='WE03' or id=='WE06' or id=='A1AJ' or id=='A1ER' or id=='A0QK' or id=='A1HO' or id=='AlFS'
@@ -24397,6 +24486,7 @@ endfunction
 // Scripted projectile adapters register their timer and active visuals after launch.
 function WaveRegister takes unit waveFront,timer waveMotion,group waveTargets,group waveVisuals returns nothing
     local integer waveKey=GetHandleId(waveFront)
+    call SaveUnitHandle(TSE_HT,GetHandleId(waveMotion),StringHash("TSEWaveUnit"),waveFront)
     call SaveUnitHandle(HH,waveKey,StringHash("WaveUnit"),waveFront)
     call SaveTimerHandle(HH,waveKey,StringHash("WaveMotion"),waveMotion)
     call SaveGroupHandle(HH,waveKey,StringHash("WaveTargets"),waveTargets)
@@ -24449,6 +24539,7 @@ endfunction
 
 function WaveRegisterEffect takes effect waveModel,timer waveMotion,effect waveWarning returns nothing
     local integer waveKey=GetHandleId(waveModel)
+    call SaveEffectHandle(TSE_HT,GetHandleId(waveMotion),StringHash("TSEWaveEffect"),waveModel)
     call SaveEffectHandle(HH,waveKey,StringHash("WaveEffect"),waveModel)
     call SaveEffectHandle(HH,waveKey,StringHash("WaveWarning"),waveWarning)
     call SaveTimerHandle(HH,waveKey,StringHash("WaveMotion"),waveMotion)
@@ -34005,6 +34096,102 @@ call ShowFrame(InfoTavernText,true)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",1), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",1))+0.03)
                     call SetFrameSize( GetFrameByName("TavernAbilityTooltip",6), .26, GetFrameHeight( GetFrameByName("TavernAbilityTooltipText",6))+0.03)
                 endif
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if j>=8 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                endif
+                set j=j+1
+                exitwhen j>40
+                endloop
+
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('HmQ1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==false and i==GetFrameContext(but) then
+                call ShowFrame( InfoTavernText, false )
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), true )
+                set j=0
+                loop
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityTooltip",j), false )
+                call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
+                if (j>0 and j<7) or (j>7 and j<14) or (j>14 and j<21) or (j>21 and j<28) or j>28 then
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),false)
+                else
+                call ShowFrame(GetFrameByName("TavernAdditionalAbility",j),true)
+                call SetFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",j), "     " )
+                endif
+                set j=j+1
+                exitwhen j>40
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "HmS0" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "HmS0" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "HmP0" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "HmP0" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "HmB0" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "HmB0" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",21), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "HmN0" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "HmN0" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",21), "/")
+                    set j=j+1
+                endloop
+                set j=0
+                loop
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",28), "|cffffcc00"+I2S(GetAbilityBaseIntegerLevelFieldById( String2Id( "HmA0" ), ABILITY_ILF_MANA_COST, j ))+"|r")
+                    exitwhen j==GetAbilityBaseIntegerFieldById(String2Id( "HmA0" ), ABILITY_IF_LEVELS)-1
+                    call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",28), "/")
+                    set j=j+1
+                endloop
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "HmS0" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "HmS0" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",0), GetAbilityBaseStringFieldById( String2Id( "HmS0" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "HmP0" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "HmP0" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",7), GetAbilityBaseStringFieldById( String2Id( "HmP0" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "HmB0" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "HmB0" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",14), GetAbilityBaseStringFieldById( String2Id( "HmB0" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",21), GetAbilityBaseStringFieldById( String2Id( "HmN0" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",21), GetAbilityBaseStringFieldById( String2Id( "HmN0" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",21), GetAbilityBaseStringFieldById( String2Id( "HmN0" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",28), GetAbilityBaseStringFieldById( String2Id( "HmA0" ), ABILITY_SF_ICON_NORMAL ), 0, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",28), GetAbilityBaseStringFieldById( String2Id( "HmA0" ), ABILITY_SF_ICON_NORMAL ), 1, true )
+                call SetFrameTexture( GetFrameByName("TavernAdditionalAbility",28), GetAbilityBaseStringFieldById( String2Id( "HmA0" ), ABILITY_SF_ICON_NORMAL ), 2, true )
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",0), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmS0" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmS0" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",7), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmP0" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmP0" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",14), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmB0" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmB0" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",21), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmN0" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmN0" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call AddFrameText( GetFrameByName("TavernAdditionalAbilityTooltipText",28), "\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmA0" ), ABILITY_SF_NAME )+"\n\n"+GetAbilityBaseStringFieldById( String2Id( "HmA0" ), ABILITY_SLF_TOOLTIP_LEARN_EXTENDED ))
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",0), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",0))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",7), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",7))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",14), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",14))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",21), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",21))+0.03)
+                call SetFrameSize( GetFrameByName("TavernAdditionalAbilityTooltip",28), .26, GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",28))+0.03)
+                set j=0
+                loop
+                    call SetFrameTextAlignment( GetFrameByName("TavernAdditionalAbilityTooltipText",j), TEXT_JUSTIFY_LEFT, TEXT_JUSTIFY_LEFT )
+                    call SetFrameRelativePoint( GetFrameByName("TavernAdditionalAbilityTooltip",j), FRAMEPOINT_CENTER, GetFrameByName("TavernAdditionalAbility",j), FRAMEPOINT_CENTER,  .13, (-0.5*GetFrameHeight( GetFrameByName("TavernAdditionalAbilityTooltipText",j)))-.02  )
+                    exitwhen j>40
+                    set j=j+1
+                endloop
+            elseif GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('HmQ1',ABILITY_SF_ICON_NORMAL) and IsFrameVisible(GetFrameByName("TavernBarAdditionalAbilityList",0))==true and i==GetFrameContext(but) then
+                call ShowFrame( GetFrameByName("TavernBarAdditionalAbilityList",0), false )
+                call ShowFrame( InfoTavernText, true )
                 set j=0
                 loop
                 call ShowFrame( GetFrameByName("TavernAdditionalAbilityBorderOpenable",j), false )
@@ -45686,8 +45873,12 @@ if ItemP(it)==p and udg_test==false and (udg_B==false or DU2==false) then
     if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
-            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+            if GetUnitTypeId(u)=='HHom' then
+                call CheckUnitBonusRange(u)
+            else
+                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+            endif
         endif
     endif
     //
@@ -45695,8 +45886,12 @@ elseif ItemP(it)==p then
     if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 then
         // call BJDebugMsg(I2S(LoadInteger(HH,GetHandleId(it),'slot')))
         if LoadInteger(HH,GetHandleId(it),'slot')<6 then
-            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+            if GetUnitTypeId(u)=='HHom' then
+                call CheckUnitBonusRange(u)
+            else
+                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+            endif
         endif
     endif
 endif
@@ -45782,8 +45977,12 @@ if ItemP(it)==PlayerV(15) or ItemP(it)==p or udg_test==true then
                 set count=count+1
             endif
             if count==1 then
-                call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
-                call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                if GetUnitTypeId(u)=='HHom' then
+                    call CheckUnitBonusRange(u)
+                else
+                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                endif
             endif
         endif
     endif
@@ -45968,8 +46167,12 @@ else
                 call ItemDisableOwn(it,25)
                 call SetItemRemainingCooldown(it,cd)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==1 and GetItemTypeId(ittarg) !=  'ISPB' and GetItemTypeId(ittarg) !=  'IPRB' then
-                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+                    if GetUnitTypeId(u)=='HHom' then
+                        call CheckUnitBonusRange(u)
+                    else
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+                    endif
                 endif
             endif
         else
@@ -45977,8 +46180,12 @@ else
                 call ItemEnableOwn(it,25)
                 call SetItemRemainingCooldown(it,5)
                 if (GetItemTypeId(it) ==  'ISPB' or GetItemTypeId(it) ==  'IPRB') and count==0  then
-                    call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
-                    call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                    if GetUnitTypeId(u)=='HHom' then
+                        call CheckUnitBonusRange(u)
+                    else
+                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                    endif
                 endif
             endif
         endif
@@ -45989,8 +46196,12 @@ else
                     call SetItemRemainingCooldown(ittarg,cdtar)
                     call SetItemRemainingCooldown(it,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==1 and GetItemTypeId(it) !=  'ISPB' and GetItemTypeId(it) !=  'IPRB' then
-                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
-                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+                        if GetUnitTypeId(u)=='HHom' then
+                            call CheckUnitBonusRange(u)
+                        else
+                            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)-GetUnitBaseRealFieldById(GetUnitTypeId(u),UNIT_RF_ACQUISITION_RANGE)*0.3-50)
+                            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)-HomuraBaseAttackRange(u)*0.3-50)
+                        endif
                     endif
                 endif
             else
@@ -45998,8 +46209,12 @@ else
                     call ItemEnableOwn(ittarg,25)
                     call SetItemRemainingCooldown(ittarg,5)
                     if (GetItemTypeId(ittarg) ==  'ISPB' or GetItemTypeId(ittarg) ==  'IPRB') and count==0  then
-                        call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
-                        call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                        if GetUnitTypeId(u)=='HHom' then
+                            call CheckUnitBonusRange(u)
+                        else
+                            call SetUnitAcquireRange(u, GetUnitAcquireRange(u)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                            call SetUnitAttackRangeByIndex(u, 0, GetUnitAttackRangeByIndex(u,0)+GetUnitAttackRangeByIndex(u,0)*0.3+50)
+                        endif
                     endif
                 endif
             endif
@@ -58054,6 +58269,68 @@ function HomuraFxAt takes string homuraFxModel,real homuraFxX,real homuraFxY,rea
     set homuraVisual=null
 endfunction
 
+function HomuraBurstLayer takes string hvModel,real hvX,real hvY,real hvZ,real hvYaw,real hvPitch,real hvScale,real hvSpeed,integer hvAlpha,real hvLife returns nothing
+    local effect hvEffect=AddSpecialEffect(hvModel,hvX,hvY)
+    if hvEffect!=null then
+        call SetSpecialEffectPositionWithZ(hvEffect,hvX,hvY,hvZ)
+        call SetSpecialEffectOrientation(hvEffect,hvYaw,hvPitch,0.)
+        call SetSpecialEffectScale(hvEffect,hvScale)
+        call SetSpecialEffectTimeScale(hvEffect,hvSpeed)
+        call SetSpecialEffectAlpha(hvEffect,hvAlpha)
+        call RemoveEffect(hvEffect,hvLife,true,CreateTimer())
+    endif
+    set hvEffect=null
+endfunction
+
+function HomuraBlastAfter takes nothing returns nothing
+    local timer hvTimer=GetExpiredTimer()
+    local integer hvKey=GetHandleId(hvTimer)
+    local real hvX=LoadReal(h,hvKey,0)
+    local real hvY=LoadReal(h,hvKey,1)
+    local real hvZ=LoadReal(h,hvKey,2)
+    local real hvYaw=LoadReal(h,hvKey,3)
+    local integer hvKind=LoadInteger(h,hvKey,4)
+    if udg_B and DU2 then
+        if hvKind==3 then
+            call HomuraFxAt("DustWave.mdx",hvX,hvY,hvZ+8.,hvYaw,1.3,1.05,198,177,153,120)
+            call HomuraFxAt("Others\\SmokeFuzzy1.mdx",hvX,hvY,hvZ+24.,hvYaw,1.12,1.15,184,167,152,115)
+        elseif hvKind==1 then
+            call HomuraFxAt("DustWave.mdx",hvX,hvY,hvZ+8.,hvYaw,0.66,0.7,211,193,171,95)
+        elseif hvKind==2 then
+            call HomuraFxAt("Others\\SmokeFuzzy1.mdx",hvX,hvY,hvZ+18.,hvYaw,0.5,0.78,194,181,165,90)
+        else
+            call HomuraFxAt("DustWave.mdx",hvX,hvY,hvZ+7.,hvYaw,0.43,0.62,211,193,171,75)
+        endif
+    endif
+    call FlushChildHashtable(h,hvKey)
+    call TSE_DestroyTimer(hvTimer)
+    set hvTimer=null
+endfunction
+
+function HomuraBlastFx takes unit hvSource,real hvX,real hvY,real hvZ,real hvYaw,integer hvKind returns nothing
+    local timer hvTimer=CreateTimer()
+    local integer hvKey=GetHandleId(hvTimer)
+    if hvKind==1 then
+        call HomuraBurstLayer("Homura\\HomuraRocketBurst.mdx",hvX,hvY,hvZ+14.,hvYaw,0.,0.78,1.8,225,1.05)
+        call HomuraBurstLayer("WindVectorPush.mdx",hvX,hvY,hvZ+60.,hvYaw,0.,0.42,1.7,105,0.36)
+    elseif hvKind==2 then
+        call HomuraBurstLayer("Homura\\HomuraGrenadeBurst.mdx",hvX,hvY,hvZ+10.,hvYaw,0.,0.72,1.55,220,1.2)
+    elseif hvKind==3 then
+        call HomuraBurstLayer("Homura\\HomuraHeavyBurst.mdx",hvX,hvY,hvZ+8.,hvYaw,0.,1.18,1.2,225,1.65)
+        call HomuraBurstLayer("CirclePulse_White.mdx",hvX,hvY,hvZ+12.,hvYaw,0.,1.25,1.7,105,0.45)
+    else
+        call HomuraBurstLayer("Homura\\HomuraGrenadeBurst.mdx",hvX,hvY,hvZ+10.,hvYaw,0.,0.58,1.8,190,1.05)
+    endif
+    call SaveReal(h,hvKey,0,hvX)
+    call SaveReal(h,hvKey,1,hvY)
+    call SaveReal(h,hvKey,2,hvZ)
+    call SaveReal(h,hvKey,3,hvYaw)
+    call SaveInteger(h,hvKey,4,hvKind)
+    call TSE_TimerStartOwned(hvTimer,0.075,false,function HomuraBlastAfter,OwnerOf(hvSource))
+    set hvTimer=null
+endfunction
+
+
 function HomuraPlayVoice takes unit homuraSpeaking,integer homuraSoundId,real homuraVoiceGap returns nothing
     local integer homuraVoiceKey=GetHandleId(homuraSpeaking)
     local real homuraVoiceNow=TimerGetElapsed(ShnClock)
@@ -58096,15 +58373,16 @@ function HomuraShieldStart takes unit homuraShielded returns nothing
     local integer homuraShieldKey=GetHandleId(homuraShielded)
     local timer homuraShieldTimer=CreateTimer()
     local effect homuraShieldFx
+    local real homuraShieldDuration=0.75+0.25*GetUnitAbilityLevel(homuraShielded,'HmQ1')
     call HomuraShieldFinish(homuraShielded,false)
     set homuraShieldFx=AddSpecialEffectTarget("EnergyShield_Full.mdx",homuraShielded,"origin")
     call SetSpecialEffectVertexColour(homuraShieldFx,158,112,255,120)
     call SetSpecialEffectScale(homuraShieldFx,0.65)
     call SaveEffectHandle(HH,homuraShieldKey,StringHash("HomuraShieldFX"),homuraShieldFx)
     call SaveTimerHandle(HH,homuraShieldKey,StringHash("HomuraShieldTimer"),homuraShieldTimer)
-    call SaveReal(HH,homuraShieldKey,StringHash("HomuraShieldUntil"),TimerGetElapsed(ShnClock)+1.25)
+    call SaveReal(HH,homuraShieldKey,StringHash("HomuraShieldUntil"),TimerGetElapsed(ShnClock)+homuraShieldDuration)
     call SaveUnitHandle(h,GetHandleId(homuraShieldTimer),0,homuraShielded)
-    call TimerStart(homuraShieldTimer,1.25,false,function HomuraShieldExpire)
+    call TimerStart(homuraShieldTimer,homuraShieldDuration,false,function HomuraShieldExpire)
     call HomuraFxAt("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraShielded),GetUnitY(homuraShielded),GetUnitZ(homuraShielded)+10.,GetUnitFacing(homuraShielded),0.92,0.34,200,141,248,165)
     call StartSound(SndN(5007))
     set homuraShieldFx=null
@@ -58125,32 +58403,77 @@ function HomuraWeaponAnimation takes unit homuraAnimUnit,integer homuraAnimMode 
     endif
 endfunction
 
+function HomuraRefundMana takes unit homuraRefundUnit,integer homuraRefundId returns nothing
+    local ability homuraRefundAbility=GetUnitAbility(homuraRefundUnit,homuraRefundId)
+    local integer homuraRefundLevel=GetUnitAbilityLevel(homuraRefundUnit,homuraRefundId)-1
+    if homuraRefundAbility!=null and homuraRefundLevel>=0 then
+        call SetWidgetMana(homuraRefundUnit,RMinBJ(GetWidgetMaxMana(homuraRefundUnit),GetWidgetMana(homuraRefundUnit)+GetAbilityIntegerLevelField(homuraRefundAbility,ABILITY_ILF_MANA_COST,homuraRefundLevel)))
+    endif
+    set homuraRefundAbility=null
+endfunction
+
+function HomuraSyncBlink takes unit homuraBlinkUnit returns nothing
+    local integer homuraBlinkRank=IMinBJ(5,IMaxBJ(1,GetUnitAbilityLevel(homuraBlinkUnit,'HmQ1')))
+    local ability homuraLinkedBlink=GetUnitAbility(homuraBlinkUnit,'HmG1')
+    local real homuraBlinkRemaining
+    if homuraLinkedBlink!=null and GetUnitAbilityLevel(homuraBlinkUnit,'HmG1')!=homuraBlinkRank then
+        set homuraBlinkRemaining=GetAbilityRemainingCooldown(homuraLinkedBlink)
+        call SetUnitAbilityLevel(homuraBlinkUnit,'HmG1',homuraBlinkRank)
+        call SetAbilityRemainingCooldown(homuraLinkedBlink,homuraBlinkRemaining)
+    endif
+    set homuraLinkedBlink=null
+endfunction
 function HomuraRefreshQ takes unit homuraMover returns nothing
     local ability homuraQ=GetUnitAbility(homuraMover,'HmQ1')
     local integer homuraMode=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))
     local integer homuraArt
     local integer homuraLevel=GetUnitAbilityLevel(homuraMover,'HmQ1')-1
+    call HomuraSyncBlink(homuraMover)
     if homuraQ!=null and homuraLevel>=0 then
         if homuraMode==0 then
-            set homuraArt='A0BG'
+            set homuraArt='HmS0'
             call CBS_SetTT(homuraQ,homuraLevel,0)
         else
             if homuraMode==1 then
-                set homuraArt='HmW1'
+                set homuraArt='HmP0'
             elseif homuraMode==2 then
-                set homuraArt='HmE1'
+                set homuraArt='HmB0'
             elseif homuraMode==3 then
-                set homuraArt='A270'
+                set homuraArt='HmN0'
             else
-                set homuraArt='A19Q'
+                set homuraArt='HmA0'
             endif
             call CBS_SetTT(homuraQ,homuraLevel,2)
         endif
         call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById(homuraArt,ABILITY_SF_ICON_NORMAL))
+        call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel,GetAbilityBaseStringLevelFieldById(homuraArt,ABILITY_SLF_TOOLTIP_NORMAL,homuraLevel))
+        call SetAbilityStringLevelField(homuraQ,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraLevel,GetAbilityBaseStringLevelFieldById(homuraArt,ABILITY_SLF_TOOLTIP_NORMAL_EXTENDED,homuraLevel))
     endif
     set homuraQ=null
 endfunction
 
+function HomuraAttackModel takes integer homuraMode returns string
+    if homuraMode==2 then
+        return "Homura\\HomuraRocket.mdx"
+    elseif homuraMode==3 then
+        return "war3mapImported\\TracerBullet v 1-03.mdx"
+    elseif homuraMode==4 then
+        return "Grenade.mdx"
+    elseif homuraMode==1 then
+        return "Sinon_Bullet.mdx"
+    endif
+    return ""
+endfunction
+function HomuraAttackSpeed takes integer homuraMode returns real
+    if homuraMode==2 then
+        return 1100.
+    elseif homuraMode==3 then
+        return 3200.
+    elseif homuraMode==4 then
+        return 800.
+    endif
+    return 2200.
+endfunction
 function HomuraApplyWeapon takes unit homuraMover,integer homuraMode returns nothing
     local integer homuraKey=GetHandleId(homuraMover)
     local integer homuraBonus=0
@@ -58181,6 +58504,12 @@ function HomuraApplyWeapon takes unit homuraMover,integer homuraMode returns not
         call SetUnitWeaponTypeByIndex(homuraMover,0,ConvertWeaponType(1))
     else
         call SetUnitWeaponTypeByIndex(homuraMover,0,ConvertWeaponType(5))
+    endif
+    call SetUnitWeaponStringField(homuraMover,UNIT_WEAPON_SF_ATTACK_PROJECTILE_ART,0,HomuraAttackModel(homuraMode))
+    call SetUnitWeaponRealField(homuraMover,UNIT_WEAPON_RF_ATTACK_PROJECTILE_SPEED,0,HomuraAttackSpeed(homuraMode))
+    call SetUnitWeaponRealField(homuraMover,UNIT_WEAPON_RF_ATTACK_PROJECTILE_ARC,0,0.)
+    if homuraMode==4 then
+        call SetUnitWeaponRealField(homuraMover,UNIT_WEAPON_RF_ATTACK_PROJECTILE_ARC,0,0.25)
     endif
     call SaveReal(HH,homuraKey,StringHash("HomuraAttackRange"),homuraReach)
     if UnitHasBow(homuraMover) then
@@ -58324,13 +58653,14 @@ function HomuraVowBind takes unit homuraKeeper,unit homuraVowAlly returns boolea
     local integer homuraVowKey=GetHandleId(homuraKeeper)
     local effect homuraVowMark
     local ability homuraVowButton=GetUnitAbility(homuraKeeper,'HmD1')
-    if GetUnitTypeId(homuraKeeper)!='HHom' or homuraVowButton==null or not UnitIsAlive(homuraKeeper) or LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round or not UnitIsAlive(homuraVowAlly) or not HomuraVowTeammates(homuraKeeper,homuraVowAlly) then
+    if GetHeroLevel(homuraKeeper)<25 or GetUnitTypeId(homuraKeeper)!='HHom' or homuraVowButton==null or not UnitIsAlive(homuraKeeper) or LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round or not UnitIsAlive(homuraVowAlly) or not HomuraVowTeammates(homuraKeeper,homuraVowAlly) then
         set homuraVowButton=null
         return false
     endif
     call HomuraVowClear(homuraKeeper)
     call SaveInteger(HH,homuraVowKey,StringHash("HomuraVowRound"),round)
     call SaveUnitHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"),homuraVowAlly)
+    call SaveUnitHandle(HH,homuraVowKey,StringHash("HomuraTimePartner"),homuraVowAlly)
     set homuraVowMark=AddSpecialEffectTarget("Homura\\HomuraTimeDial.mdx",homuraVowAlly,"origin")
     call SetSpecialEffectScale(homuraVowMark,0.63)
     call SetSpecialEffectVertexColour(homuraVowMark,228,137,231,142)
@@ -58343,7 +58673,7 @@ endfunction
 
 function HomuraVowReady takes unit homuraKeeper,unit homuraVowAlly returns boolean
     local integer homuraVowKey=GetHandleId(homuraKeeper)
-    return GetUnitTypeId(homuraKeeper)=='HHom' and UnitIsAlive(homuraKeeper) and LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round and LoadUnitHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"))==homuraVowAlly and HomuraVowTeammates(homuraKeeper,homuraVowAlly)
+    return GetHeroLevel(homuraKeeper)>=25 and GetUnitTypeId(homuraKeeper)=='HHom' and UnitIsAlive(homuraKeeper) and LoadInteger(HH,homuraVowKey,StringHash("HomuraVowRound"))==round and LoadUnitHandle(HH,homuraVowKey,StringHash("HomuraVowTarget"))==homuraVowAlly and HomuraVowTeammates(homuraKeeper,homuraVowAlly)
 endfunction
 
 function HomuraVowGoddess takes unit homuraGoddess returns nothing
@@ -58363,7 +58693,8 @@ endfunction
 
 function HomuraVowAuto takes unit homuraKeeper returns nothing
     local unit homuraVowAlly=HomuraVowMadoka(homuraKeeper)
-    if homuraVowAlly!=null and HomuraVowBind(homuraKeeper,homuraVowAlly) then
+    if GetHeroLevel(homuraKeeper)>=25 and GetWidgetMana(homuraKeeper)>=30. and homuraVowAlly!=null and HomuraVowBind(homuraKeeper,homuraVowAlly) then
+        call SetWidgetMana(homuraKeeper,GetWidgetMana(homuraKeeper)-30.)
         call HomuraVowGoddess(homuraVowAlly)
     endif
     set homuraVowAlly=null
@@ -58392,6 +58723,7 @@ endfunction
 
 function HomuraVowRoundReset takes unit homuraKeeper returns nothing
     local ability homuraVowAbility
+    call RemoveSavedHandle(HH,GetHandleId(homuraKeeper),StringHash("HomuraTimePartner"))
     if GetUnitTypeId(homuraKeeper)=='HHDv' then
         call HomuraChangeForm(homuraKeeper,'HHom')
     endif
@@ -63073,6 +63405,18 @@ endif
 if cbA!=null then
 // код приказа (Channel — поле Ncl6 из таблицы способности): CBS_QcOrd
 set cbO=CBS_QcOrd(cbU,cbId)
+if cbId=='HmQ1' then
+if cbO!=0 then
+if LoadInteger(HH,GetHandleId(cbU),StringHash("HomuraWeapon"))==0 then
+call IssueImmediateOrderById(cbU,cbO)
+else
+call IssuePointOrderById(cbU,cbO,cbX,cbY)
+endif
+endif
+set cbA=null
+set cbU=null
+return
+endif
 // E Хаку: после проверки готовности отдаём приказ в координаты курсора. Резервный каст срабатывает только внутри дальности 1000.
 if cbId=='HaG1' then
 set cbLv=GetUnitAbilityLevel(cbU,cbId)
@@ -76952,7 +77296,7 @@ call TriggerAddCondition(gg_trg_SunStrike,Condition(function SunStrikeCond))
 call TriggerAddAction(gg_trg_SunStrike,function SunStrikeCast)
 endfunction
 function AkatsukiSetCond takes nothing returns boolean
-return GetSpellAbilityId()!='MaTc' and GetSpellAbilityId()!='IsQc' and GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
+return GetSpellAbilityId()!='HmG1' and GetSpellAbilityId()!='HdG1' and GetSpellAbilityId()!='HmD1' and GetSpellAbilityId()!='HdD1' and GetSpellAbilityId()!='MaTc' and GetSpellAbilityId()!='IsQc' and GetHeroPrimaryAttribute(GetTriggerUnit())==HERO_ATTRIBUTE_INT and  GetSpellAbilityId()!='ASGG' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A11G' and GetSpellAbilityId()!='A1G2' and GetSpellAbilityId()!='A1G1' and GetSpellAbilityId()!='A16E' and GetSpellAbilityId()!='A1AA' and GetSpellAbilityId()!='A1AB' and GetSpellAbilityId()!='A11E' and GetSpellAbilityId()!='A11D' and GetSpellAbilityId()!='A11F' and UnitHasItemOfTypeBJ(GetTriggerUnit(),'I040')and GetSpellAbilityId()!='A0N1' and GetSpellAbilityId()!='A0N2' and GetSpellAbilityId()!='A0A2' and GetSpellAbilityId()!='A0EH' and GetSpellAbilityId()!='A0UG' and GetSpellAbilityId()!='AaS0' and GetSpellAbilityId()!='A1I3' and GetSpellAbilityId()!='A0X6'  and GetSpellAbilityId()!='A0B3' and GetSpellAbilityId()!='A0N0' and GetSpellAbilityId()!='A40C' and GetSpellAbilityId()!='A30C' and GetSpellAbilityId()!='MadD' and GetSpellAbilityId()!='TMF0' and GetSpellAbilityId()!='TMF2' and GetSpellAbilityId()!='A06J' and GetSpellAbilityId()!='A0VQ' and GetSpellAbilityId()!='A0HX' and GetSpellAbilityId()!='A2HX' and GetSpellAbilityId()!='A14T' and GetSpellAbilityId()!='A19O' and GetSpellAbilityId()!='MrF2' and GetSpellAbilityId()!='MrG1' and GetSpellAbilityId()!='MrG2' and udg_B==true // and GetSpellAbilityId()!='LawQ' and GetSpellAbilityId()!='LawW'
 endfunction
 // 28 окт (3.8.2): стаки "Мастерства" (+8 INT на 10 с) — зарядами на Комплекте Акацки; d — изменение числа стаков
 function AkatsukiSetStk takes unit u,integer scope_AkatsukiSetStk_d returns nothing
@@ -80091,7 +80435,7 @@ local real dmg=GetHeroStr(u,true)*0.5
 if GetUnitAbilityLevel(u,'LamS')>0 then
 set dmg=1.45*dmg
 endif
-if GetUnitCurrentOrder(u)==OrderId("channel")then
+if TSE_CasterOrder(u)==OrderId("channel")then
 call GroupEnumUnitsInRange(G,x,y,500,Base)
 call UnitApplyTimedLife(CreateUnit(p,'e0BA',x,y,GetRandomReal(0,359)),'BTLF',0.4)
 loop
@@ -80662,7 +81006,7 @@ function Trig_X_Banner_Actions2 takes nothing returns nothing
     local real angle = AU(u, dummy)
     local real caster_facing = GetUnitFacing(u)*bj_DEGTORAD
     local real turn_speed = (36 / 13.3) // первое значение - градусы в секунду 
-    if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04 and OrderId2String(GetUnitCurrentOrder(u))=="channel" and GetWidgetLife(LoadUnitHandle(HH, GetHandleId(u), TsunaR_Circle))>1.0 then
+    if GetUnitState(u,UNIT_STATE_MANA)>GetUnitState(u,UNIT_STATE_MAX_MANA)*0.04 and OrderId2String(TSE_CasterOrder(u))=="channel" and GetWidgetLife(LoadUnitHandle(HH, GetHandleId(u), TsunaR_Circle))>1.0 then
         //call SetUnitInvulnerable(u, true)
         //call MapPauseUnit(u, true)
         if IsLocalCtl(OwnerOf(u)) then
@@ -80867,7 +81211,8 @@ function Trig_X_Banner_Actions takes nothing returns nothing
     call StartSound(soundplay)
     //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
     endif
-    call TSE_TimerStart(t,0.075,true,function Trig_X_Banner_Actions2)
+    call SaveBoolean(TSE_HT,id,StringHash("TSEWorldTimer"),true)
+call TSE_TimerStartOwned(t,0.075,true,function Trig_X_Banner_Actions2,OwnerOf(u))
         set n = CreateUnit(OwnerOf(u), 'd135', x, y, 0)
         call SetUnitFlyHeight(n, 250, 0)
         call SetUnitTimeScale(n, 3.5)
@@ -81184,7 +81529,7 @@ local integer njide=0
 local integer njidg=0
 set njidg=GetHandleId(g)
 call SaveReal(h,id,7,time+0.05)
-if GetUnitCurrentOrder(u)==OrderId("root") then
+if TSE_CasterOrder(u)==OrderId("root") then
 call SetUnitScale(LoadUnitHandle(h,id,8),1.6,1.6,1.6)
 call SetUnitVertexColor(LoadUnitHandle(h,id,8),70,70,250,220)
 call SetUnitXY_1(LoadUnitHandle(h,id,8),x,y,false)
@@ -81398,7 +81743,7 @@ local group g=LoadGroupHandle(h,id,2)
 local integer l__idg=GetHandleId(g)
 local integer l__ide
 local real dmg=(GetUnitAbilityLevel(u,'A0G2'))*(GetHeroAgi(u,true)+75)
-if GetUnitCurrentOrder(u)==OrderId("root")then
+if TSE_CasterOrder(u)==OrderId("root")then
 call GroupEnumUnitsInRange(g,x,y,350,Base)
 call UnitApplyTimedLife(CreateUnit(p,'h021',x,y,GetRandomReal(0,359)),'BTLF',0.1)
 set n=CreateUnit(p,'h022',x,y,GetRandomReal(0,359))
@@ -82045,6 +82390,7 @@ else
 call FlushChildHashtable(h,id)
 call FlushChildHashtable(h,l__idg)
 call PauseTimer(t)
+call WaveUnregister(l__d,false)
 call TSE_DestroyTimer(t)
 call DestroyGroup(g)
 call RemoveUnit(l__d)
@@ -82084,7 +82430,8 @@ call SetUnitFacing(n,a*bj_RADTODEG)
 set soundplay=SndN(860) // Sound\Music\mp3Music\WhiteDragon.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TSE_TimerStart(t,0.015,true,function WhiteDragonCast2)
+call WaveRegister(LoadUnitHandle(h,id,1),t,LoadGroupHandle(h,id,4),null)
+call TSE_TimerStartOwned(t,0.015,true,function WhiteDragonCast2,OwnerOf(u))
 set u=null
 set t=null
 endfunction
@@ -82206,7 +82553,7 @@ function Trig_Final_Shot_Actions2 takes nothing returns nothing
     local player p=OwnerOf(u)
     local real dmg=GetHeroInt(u,true)*1.0
     local real mm=GetUnitState(u,UNIT_STATE_MAX_MANA)*0.0125
-    if OrderId2String(GetUnitCurrentOrder(u))=="channel"and GetUnitState(u,UNIT_STATE_MANA)>20 then
+    if OrderId2String(TSE_CasterOrder(u))=="channel"and GetUnitState(u,UNIT_STATE_MANA)>20 then
         call SetUnitXY_1(u,x1,y1, false)
         call SetUnitFacingInstant(u,f)
         call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MANA)-mm)
@@ -82288,7 +82635,8 @@ call SaveGroupHandle(h,id,27,CreateGroup())
 set soundplay=SndN(864) // Sound\Music\mp3Music\BlackBurning.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TSE_TimerStart(t,.25,true,function Trig_Final_Shot_Actions2)
+call SaveBoolean(TSE_HT,id,StringHash("TSEWorldTimer"),true)
+call TSE_TimerStartOwned(t,.25,true,function Trig_Final_Shot_Actions2,OwnerOf(u))
 set u=null
 set l__d=null
 set t=null
@@ -87150,7 +87498,7 @@ call FlushChildHashtable(h,id)
 endif
 
 if i<138 then
-if(OrderId2String(GetUnitCurrentOrder(u))!="channel") then
+if(OrderId2String(TSE_CasterOrder(u))!="channel") then
 call SaveReal(h,id,1,148)
 call SaveReal(HH,GetHandleId( u ),SH_ShanaTR,i*0.025)
 
@@ -94221,7 +94569,7 @@ function DanceMCast2 takes nothing returns nothing //dante R
         if GetUnitAbilityLevel(u,'A28U')>0 then
                 set dmg=dmg+dmg*.1
         endif
-        if GetUnitCurrentOrder(u)==OrderId("root") or GetUnitCurrentOrder(u)==OrderId("rainoffire") then
+        if TSE_CasterOrder(u)==OrderId("root") or TSE_CasterOrder(u)==OrderId("rainoffire") then
             set n=CreateUnit(p,'e0GJ',x,y,0)
             call UnitApplyTimedLife(n,'BTLF',0.2)
             call SetUnitTimeScale(n,0)
@@ -94466,7 +94814,7 @@ local group g=LoadGroupHandle(h,id,4)
 if GetUnitAbilityLevel(u,'A28U')>0 then
         set dmg=dmg+dmg*.1
 endif
-        if GetUnitCurrentOrder(u)==OrderId("channel")then
+        if TSE_CasterOrder(u)==OrderId("channel")then
                 //call SetUnitInvulnerable(u, true)
         if IsTerrainPathable(x+30*Cos(a),y+30*Sin(a),PATHING_TYPE_FLYABILITY)==false then
         call SetUnitXY_1(u,x+30*Cos(a),y+30*Sin(a),false)
@@ -95836,7 +96184,7 @@ call SetUnitVertexColor(n,75,25,255,50)
 set n=CreateUnit(p,'e0RR',x,y,GetRandomReal(0,359))
 call UnitApplyTimedLife(n,'BTLF',0.01)
 call SetUnitVertexColor(n,255,255,255,50)
-if GetUnitCurrentOrder(u)==OrderId("charm")then
+if TSE_CasterOrder(u)==OrderId("charm")then
 call GroupEnumUnitsInRect(G,WorldBoundsR(),Base)
 loop
 set E=FirstOfGroup(G)
@@ -101909,7 +102257,7 @@ call SetUnitX(E,x2-70*Cos(a2))
 call SetUnitY(E,y2-70*Sin(a2))
 endif
 // «стоп» только если у цели есть приказ: каждый приказ запускает все триггеры приказов карты
-if GetUnitCurrentOrder(E)!=0 then
+if TSE_CasterOrder(E)!=0 then
 call IssueImmediateOrder(E,"stop")
 endif
 if GetUnitFlyHeight(E)<500 then
@@ -114400,7 +114748,7 @@ local real dmg=LoadReal(h,id,6)+(0.8+0.2*GetUnitAbilityLevel(u,'A0KH'))*GetHeroI
 local real time=LoadReal(h, id, TIME_HASH)+0.04
 local player p=OwnerOf(u)
 call SaveReal(h, id, TIME_HASH, time)
-if GetUnitCurrentOrder(u)==OrderId("channel") and time<4 then
+if TSE_CasterOrder(u)==OrderId("channel") and time<4 then
 call SetUnitInvulnerable(u, true)
 call GroupEnumUnitsInRange(G,x1,y1,450,Base)
 set n=CreateUnit(p,0x65304650,x1,y1,GetRandomReal(0,359))
@@ -117702,7 +118050,7 @@ local real a=0
 local group g=LoadGroupHandle(h,id,2)
 local integer l__idg=GetHandleId(g)
 local integer l__ide
-if GetUnitCurrentOrder(u)==OrderId("heal")then
+if TSE_CasterOrder(u)==OrderId("heal")then
 call GroupEnumUnitsInRange(g,x,y,275,Base)
 call SetUnitFacing(u,GetRandomReal(0,359))
 call UnitApplyTimedLife(CreateUnit(p,'e0H0',x,y,GetRandomReal(0,359)),'BTLF',0.2)
@@ -120583,7 +120931,7 @@ local real r=LoadReal(h,id,10)
 local real f=LoadReal(h,id,11)
 local integer i=0
 local lightning l=LoadLightningHandle(h,id,2)
-if(OrderId2String(GetUnitCurrentOrder(u))=="channel")then
+if(OrderId2String(TSE_CasterOrder(u))=="channel")then
 call GroupEnumUnitsInRange(G,x,y,100000000,Base)
 set n=CreateUnit(p,'e019',x,y,GetRandomReal(0,359))
 call SetUnitScale(n,2+r,2+r,2+r)
@@ -120670,7 +121018,7 @@ local real y=LoadReal(h,id,2)
 local player p=OwnerOf(u)
 local real a=GetRandomReal(0,359)
 local real dmg=GetHeroAgi(u,true)*1
-if GetUnitCurrentOrder(u)==OrderId("curse")then
+if TSE_CasterOrder(u)==OrderId("curse")then
     set x=x+GetRandomReal(-600,600)
     set y=y+GetRandomReal(-600,600)
     call DestroyEffect(AddSpecialEffect("war3mapImported\\BlackBlink.mdx",x,y))
@@ -120768,7 +121116,7 @@ local real x=GetUnitX(u)
 local real y=GetUnitY(u)
 local player p=OwnerOf(u)
 local real dmg=(1.5+.3*GetUnitAbilityLevel(u,'A0MC'))*(GetHeroAgi(u,true))*0.2
-if GetUnitCurrentOrder(u)==OrderId("curse")then
+if TSE_CasterOrder(u)==OrderId("curse")then
 call GroupEnumUnitsInRange(G,x,y,800,Base)
 call SetUnitInvulnerable(u,true)
 call UnitApplyTimedLife(CreateUnit(p,'e0J9',x,y,GetRandomReal(0,359)),'BTLF',1)
@@ -143923,7 +144271,7 @@ call SaveStr(HH,SH_ShnChanO,'HdE1',"clusterrockets")
 call SaveStr(HH,SH_ShnChanO,'HdF1',"innerfire")
 call SaveInteger(HH,SH_ShnChanT,'HdF1',1)
 call SaveStr(HH,SH_ShnChanO,'HdG1',"blink")
-call SaveInteger(HH,SH_ShnChanT,'HdG1',2)
+call SaveInteger(HH,SH_ShnChanT,'HdG1',3)
 call SaveStr(HH,SH_ShnChanO,'HdQ1',"carrionswarm")
 call SaveStr(HH,SH_ShnChanO,'HdR1',"rainoffire")
 call SaveStr(HH,SH_ShnChanO,'HdT1',"starfall")
@@ -143935,6 +144283,8 @@ call SaveStr(HH,SH_ShnChanO,'HerT',"tornado")
 call SaveInteger(HH,SH_ShnChanT,'HerT',1)
 call SaveStr(HH,SH_ShnChanO,'HiW1',"clusterrockets")
 call SaveInteger(HH,SH_ShnChanT,'HiW1',2)
+call SaveStr(HH,SH_ShnChanO,'HmA0',"channel")
+call SaveStr(HH,SH_ShnChanO,'HmB0',"channel")
 call SaveStr(HH,SH_ShnChanO,'HmD1',"faeriefire")
 call SaveInteger(HH,SH_ShnChanT,'HmD1',1)
 call SaveStr(HH,SH_ShnChanO,'HmE1',"clusterrockets")
@@ -143943,9 +144293,12 @@ call SaveStr(HH,SH_ShnChanO,'HmF1',"innerfire")
 call SaveInteger(HH,SH_ShnChanT,'HmF1',1)
 call SaveStr(HH,SH_ShnChanO,'HmG1',"blink")
 call SaveInteger(HH,SH_ShnChanT,'HmG1',3)
-call SaveStr(HH,SH_ShnChanO,'HmQ1',"carrionswarm")
+call SaveStr(HH,SH_ShnChanO,'HmN0',"channel")
+call SaveStr(HH,SH_ShnChanO,'HmP0',"channel")
+call SaveStr(HH,SH_ShnChanO,'HmQ1',"channel")
 call SaveStr(HH,SH_ShnChanO,'HmR1',"rainoffire")
 call SaveInteger(HH,SH_ShnChanT,'HmR1',2)
+call SaveStr(HH,SH_ShnChanO,'HmS0',"channel")
 call SaveStr(HH,SH_ShnChanO,'HmT1',"starfall")
 call SaveStr(HH,SH_ShnChanO,'HmW1',"breathoffire")
 call SaveInteger(HH,SH_ShnChanT,'HmW1',2)
@@ -146214,14 +146567,19 @@ call SaveStr(HH,SH_AbOrd,'HerF',"thunderclap")
 call SaveStr(HH,SH_AbOrd,'HerG',"charm")
 call SaveStr(HH,SH_AbOrd,'HerT',"tornado")
 call SaveStr(HH,SH_AbOrd,'HiW1',"clusterrockets")
+call SaveStr(HH,SH_AbOrd,'HmA0',"channel")
+call SaveStr(HH,SH_AbOrd,'HmB0',"channel")
 call SaveStr(HH,SH_AbOrd,'HmD1',"faeriefire")
 call SaveStr(HH,SH_AbOrd,'HmE1',"clusterrockets")
 call SaveStr(HH,SH_AbOrd,'HmF1',"innerfire")
 call SaveStr(HH,SH_AbOrd,'HmG1',"blink")
 call SaveStr(HH,SH_AbOrd,'HmM1',"bearform")
 call SaveStr(HH,SH_AbOrd,'HmM2',"bearform")
-call SaveStr(HH,SH_AbOrd,'HmQ1',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'HmN0',"channel")
+call SaveStr(HH,SH_AbOrd,'HmP0',"channel")
+call SaveStr(HH,SH_AbOrd,'HmQ1',"channel")
 call SaveStr(HH,SH_AbOrd,'HmR1',"rainoffire")
+call SaveStr(HH,SH_AbOrd,'HmS0',"channel")
 call SaveStr(HH,SH_AbOrd,'HmT1',"starfall")
 call SaveStr(HH,SH_AbOrd,'HmW1',"breathoffire")
 call SaveStr(HH,SH_AbOrd,'HtD1',"thunderclap")
@@ -146623,10 +146981,14 @@ endfunction
 //ABORD_DATA_END
 function ShinjiFcAbOk takes unit e,integer id returns boolean
 local integer by=GetAbilityBaseIntegerFieldById(id,ABILITY_IF_BUTTON_POSITION_NORMAL_Y)
-if id=='AInv' or id=='Aatk' or id=='Amov' or id=='Ahar' or id=='Aloc' then
-return false
+local ability shnForceAbility=GetUnitAbility(e,id)
+local integer shnForceLevel=GetUnitAbilityLevel(e,id)
+local boolean shnForceReady=false
+if id!='AInv' and id!='Aatk' and id!='Amov' and id!='Ahar' and id!='Aloc' and id!='HtFc' and id!='HtWc' and id!='SnT1' and shnForceAbility!=null and shnForceLevel>0 then
+set shnForceReady=(by==1 or by==2) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) and IsAbilityEnabled(shnForceAbility) and IsAbilityOrderEnabled(shnForceAbility) and GetAbilityRemainingCooldown(shnForceAbility)<=0. and GetUnitState(e,UNIT_STATE_MANA)>=GetAbilityIntegerLevelField(shnForceAbility,ABILITY_ILF_MANA_COST,shnForceLevel-1)
 endif
-return (by==1 or by==2) and not GetAbilityBaseBooleanFieldById(id,ABILITY_BF_ITEM_ABILITY) and IsUnitAbilityVisible(e,id) and GetUnitAbilityLevel(e,id)>0
+set shnForceAbility=null
+return shnForceReady
 endfunction
 // GetAbilityOrderId только у активных баз с приказом: на ауре AHad (предмет «Кольцо Ада 666») — крит Game.dll+0xD6066 (16 окт)
 function ShinjiFcBaseOk takes integer b returns boolean
@@ -146802,6 +147164,9 @@ if os!=null and os!="" then
 call ShinjiDbg("  Ncl6 = "+os+" — тип цели")
 set o=OrderId(os)
 set tt=LoadInteger(HH,SH_ShnChanT,id)
+if HaveSavedInteger(HH,StringHash("QcTT"),GetHandleId(ab)) then
+set tt=LoadInteger(HH,StringHash("QcTT"),GetHandleId(ab))
+endif
 endif
 else
 // не Channel: приказ способности на герое, цель — пробуем юнит, точку, без цели
@@ -152861,7 +153226,7 @@ local real y=GetUnitY(u)
 local real dmg=GetHeroAgi(u,true)*0.6
 local sound l__s=LoadSoundHandle(h,id,4)
 local player p=OwnerOf(u)
-if(OrderId2String(GetUnitCurrentOrder(u))!="channel")then
+if(OrderId2String(TSE_CasterOrder(u))!="channel")then
 call PauseTimer(t)
 call TSE_DestroyTimer(t)
 call FlushChildHashtable(h,id)
@@ -153158,7 +153523,7 @@ local real dist10=0
 // шлейф (2 юнита-эффекта) — раз в 3 тика (0.03 с), раньше каждые 0.01 с: 200 юнитов в секунду
 local integer tk=LoadInteger(HH,id,10)+1
 call SaveInteger(HH,id,10,tk)
-if GodspeedRunOrder(GetUnitCurrentOrder(u)) and SR(x,y,x1,y1)>50+speed*0.001 and speed>30 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and IsUnitPaused(u)==false then
+if GodspeedRunOrder(TSE_CasterOrder(u)) and SR(x,y,x1,y1)>50+speed*0.001 and speed>30 and GetUnitAbilityLevel(u, 'CBC2')==0 and GetUnitAbilityLevel(u, 'CBC1')==0 and GetUnitAbilityLevel(u, 'cbc4')==0 and GetUnitAbilityLevel(u, 'cbc6')==0 and GetUnitAbilityLevel(u, 'cbc5')==0  and GetUnitAbilityLevel(u, 'cbc7')==0 and GetUnitAbilityLevel(u, 'cbc8')==0 and GetUnitAbilityLevel(u, 'cbc9')==0 and IsUnitPaused(u)==false then
 set dist10=speed*0.034
 if dist10<39 then
 set x=x+dist10*(1+SpeedRes*0.01)*Cos(a)
@@ -153405,7 +153770,7 @@ endloop
 set n=CreateUnit(p,'e0RW',x,y,f*bj_RADTODEG)
 call UnitApplyTimedLife(n,'BTLF',0.3)
 call SetUnitTimeScale(n,2)
-if GetUnitCurrentOrder(c)!=0 then
+if TSE_CasterOrder(c)!=0 then
 call IssueImmediateOrder(c,"stop")
 endif
 call SaveReal(h,id,101,dist+0.04)
@@ -162512,7 +162877,7 @@ local real a2=0
 local real a=0
 local player p=OwnerOf(u)
 local integer idn='e003'
-if GetUnitCurrentOrder(u)==OrderId("channel") and UnitIsAlive(c) and ReverseActiveId(GetHandleId(E))==false then
+if TSE_CasterOrder(u)==OrderId("channel") and UnitIsAlive(c) and ReverseActiveId(GetHandleId(E))==false then
 if GetUnitAbilityLevel(u,'S004')>0 then
 set idn='e0N3'
 endif
@@ -176949,7 +177314,7 @@ call UnitApplyTimedLife(n,'BTLF',0.5)
 call SetUnitTimeScale(n,2)
 else
 call RemoveSavedHandle(h,id,1)
-if GetUnitCurrentOrder(l__d)==null then
+if TSE_CasterOrder(l__d)==null then
 call IssuePointOrder(l__d,"move",x+GetRandomReal(-1500,1500),y+GetRandomReal(-1500,1500))
 endif
 endif
@@ -214460,7 +214825,7 @@ function BelfW_Periodic takes nothing returns nothing
         endif
         call SaveInteger(h,id,TIME_HASH,time+1)
     else
-        if GetUnitCurrentOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("charm")then
+        if TSE_CasterOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("charm")then
             set bjLCU=LoadUnitHandle(h,id,DummyHash)
             call BelfW_Push(LoadUnitHandle(h,id,CasterHash),GetUnitX(bjLCU),GetUnitY(bjLCU))
             call IssueImmediateOrder(LoadUnitHandle(h,id,CasterHash),"stop")
@@ -215485,7 +215850,7 @@ local real full_dmg=LoadReal(h,id,SH_Damage)+add_dmg
 local real stun_dur=LoadReal(h,id,SH_StunDur)+1.25*0.01
 local integer eff_period=LoadInteger(h,id,SH_EffPeriod)
 call SaveReal(h,id,SH_StunDur,stun_dur)
-if time<=2.0 and GetUnitCurrentOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("channel")then
+if time<=2.0 and TSE_CasterOrder(LoadUnitHandle(h,id,CasterHash))==OrderId("channel")then
 call SaveReal(h,id,TIME_HASH,time)
 call SaveReal(h,id,SH_Damage,full_dmg)
 set bjLCE=LoadEffectHandle(h,id,Effect1Hash)
@@ -256156,7 +256521,7 @@ function IchigoVasterE_Periodic takes nothing returns nothing
 	local real y=GetUnitY(u)
 	local player p=OwnerOf(u)
 	local real dmg=(1.3+.2*5)*(GetHeroStr(u,true))*0.2
-	if GetUnitCurrentOrder(u)==OrderId("curse")then
+	if TSE_CasterOrder(u)==OrderId("curse")then
 		call GroupEnumUnitsInRange(G,x,y,800,Base)
 		call SetUnitInvulnerable(u,true)
 		call SetUnitAnimation(u,"stand")
@@ -261331,10 +261696,11 @@ function HomuraBulletTick takes nothing returns nothing
         if homuraVictim!=null then
             call StartSound(SndN(4973))
             if LoadInteger(h,homuraId,7)==3 then
-                call HomuraFxAt("WindVectorPush.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.66,0.33,214,177,255,155)
-                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+62.,homuraAngle*bj_RADTODEG,0.55,0.3,242,212,255,180)
+                call HomuraFxAt("WindVectorPush.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.48,0.28,224,213,255,125)
+                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+62.,homuraAngle*bj_RADTODEG,0.42,0.22,242,225,255,175)
             else
-                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.28,0.22,255,209,160,135)
+                call HomuraBurstLayer("Others\\hit-juhuang-lizi.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+62.,homuraAngle*bj_RADTODEG,0.,0.45,2.1,180,0.32)
+                call HomuraFxAt("az_hitheavy.mdx",GetUnitX(homuraVictim),GetUnitY(homuraVictim),GetUnitZ(homuraVictim)+60.,homuraAngle*bj_RADTODEG,0.19,0.17,255,224,175,120)
             endif
             call myCustomDamage(homuraShooter,homuraVictim,LoadReal(h,homuraId,5),false,false,null,null,null)
         endif
@@ -261367,15 +261733,15 @@ function HomuraFireBullet takes unit homuraGunner,real homuraAim,real homuraBull
     set homuraOriginY=GetUnitY(homuraGunner)+55.*Sin(homuraAim)
     set homuraFlash=CreateUnit(OwnerOf(homuraGunner),'d237',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
     call SetUnitFlyHeight(homuraFlash,85.,0.)
-    if homuraShotStyle!=0 then
-        call SetUnitModel(homuraFlash,"Hit\\PurpleMuzzle.mdx")
-        call SetUnitAnimationByIndex(homuraFlash,0)
-        call SetUnitTimeScale(homuraFlash,2.3)
-        if homuraShotStyle==3 then
-            call SetUnitScale(homuraFlash,0.62,0.62,0.62)
-        else
-            call SetUnitScale(homuraFlash,0.36,0.36,0.36)
-        endif
+    call SetUnitModel(homuraFlash,"Homura\\HomuraGunFlash.mdx")
+    call SetUnitAnimationByIndex(homuraFlash,0)
+    call SetUnitTimeScale(homuraFlash,3.)
+    if homuraShotStyle==3 then
+        call SetUnitScale(homuraFlash,0.48,0.48,0.48)
+    elseif homuraShotStyle==1 then
+        call SetUnitScale(homuraFlash,0.32,0.32,0.32)
+    else
+        call SetUnitScale(homuraFlash,0.24,0.24,0.24)
     endif
     call MyRemoveUnit(homuraFlash,0.35)
     set homuraTracer=CreateUnit(OwnerOf(homuraGunner),'d236',homuraOriginX,homuraOriginY,homuraAim*bj_RADTODEG)
@@ -261457,7 +261823,7 @@ function HomuraRocketTick takes nothing returns nothing
     local real homuraArcY
     local group homuraBlastGroup
     local unit homuraBlastTarget
-    local effect homuraBlast
+    local integer homuraBlastKind
     local unit homuraRocketSource=WaveRedirectedSource(homuraRocket)
     local real homuraFlightStart=0.
     local real homuraNewX
@@ -261519,20 +261885,23 @@ function HomuraRocketTick takes nothing returns nothing
             endif
         endif
         if I2R(homuraRocketFrame)>=homuraFrameLimit and not WaveCancelled(homuraRocket) then
-            set homuraBlast=AddSpecialEffect("war3mapImported\\explode.mdx",homuraDestinationX,homuraDestinationY)
             set homuraImpactZ=GetTerrainHeightAt(homuraDestinationX,homuraDestinationY)
             if LoadBoolean(h,homuraRocketId,17) then
-                call SetSpecialEffectScale(homuraBlast,0.51)
-                call HomuraFxAt("Others\\SmokeFuzzy1.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+28.,0.,0.62,0.72,255,221,203,145)
-                call StartSound(SndN(5011))
+                if homuraFrameLimit==24. then
+                    set homuraBlastKind=4
+                else
+                    set homuraBlastKind=2
+                endif
+                call StartSound(SndN(5017))
             else
-                call SetSpecialEffectScale(homuraBlast,0.75)
-                call HomuraFxAt("CirclePulse_White.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+18.,0.,homuraRadius/235.,0.33,255,174,110,167)
-                call HomuraFxAt("az_hitheavy.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+43.,0.,0.70,0.23,255,197,136,185)
-                call HomuraFxAt("Others\\SmokeFuzzy1.mdx",homuraDestinationX,homuraDestinationY,homuraImpactZ+36.,0.,1.18,1.13,217,174,155,160)
+                if homuraStopOnEnemy then
+                    set homuraBlastKind=1
+                else
+                    set homuraBlastKind=3
+                endif
                 call StartSound(SndN(4981))
             endif
-            call RemoveEffect(homuraBlast,1.,false,CreateTimer())
+            call HomuraBlastFx(homuraRocketSource,homuraDestinationX,homuraDestinationY,homuraImpactZ,Atan2(homuraDestinationY-homuraRocketStartY,homuraDestinationX-homuraRocketStartX)*bj_RADTODEG,homuraBlastKind)
             set homuraBlastGroup=CreateGroup()
             call GroupEnumUnitsInRange(homuraBlastGroup,homuraDestinationX,homuraDestinationY,homuraRadius,null)
             loop
@@ -261566,7 +261935,6 @@ function HomuraRocketTick takes nothing returns nothing
     set homuraRocketSource=null
     set homuraBlastTarget=null
     set homuraBlastGroup=null
-    set homuraBlast=null
     set homuraRocket=null
     set homuraWarning=null
     set homuraLauncher=null
@@ -261587,12 +261955,18 @@ function HomuraLaunchArc takes unit homuraCaster,real homuraTargetX,real homuraT
     set homuraCastRocket=AddSpecialEffect(homuraRocketModel,homuraStartX,homuraStartY)
     call SetSpecialEffectZ(homuraCastRocket,GetUnitZ(homuraCaster)+85.)
     call SetSpecialEffectYaw(homuraCastRocket,homuraShotAngle*bj_RADTODEG)
-    call SetSpecialEffectScale(homuraCastRocket,0.55)
     if homuraIsGrenade then
-        call StartSound(SndN(5003))
+        call SetSpecialEffectScale(homuraCastRocket,0.55)
+        call SetSpecialEffectAnimation(homuraCastRocket,"stand")
+    else
+        call SetSpecialEffectScale(homuraCastRocket,1.15)
+        call SetSpecialEffectAnimation(homuraCastRocket,"stand")
+    endif
+    if homuraIsGrenade then
+        call StartSound(SndN(5015))
     else
         call StartSound(SndN(4979))
-        call HomuraFxAt("Hit\\PurpleMuzzle.mdx",homuraStartX+65.*Cos(homuraShotAngle),homuraStartY+65.*Sin(homuraShotAngle),GetUnitZ(homuraCaster)+85.,homuraShotAngle*bj_RADTODEG,0.72,0.37,255,210,180,175)
+        call HomuraBurstLayer("Homura\\HomuraGunFlash.mdx",homuraStartX+65.*Cos(homuraShotAngle),homuraStartY+65.*Sin(homuraShotAngle),GetUnitZ(homuraCaster)+85.,homuraShotAngle*bj_RADTODEG,0.,0.62,2.4,195,0.4)
     endif
     set homuraGround=Location(homuraTargetX,homuraTargetY)
     if not homuraStopOnEnemy then
@@ -261608,7 +261982,7 @@ function HomuraLaunchArc takes unit homuraCaster,real homuraTargetX,real homuraT
     call SaveReal(h,homuraCastId,5,homuraStartX)
     call SaveReal(h,homuraCastId,6,homuraStartY)
     call SaveReal(h,homuraCastId,7,GetUnitZ(homuraCaster)+85.)
-    call SaveReal(h,homuraCastId,8,GetLocationZ(homuraGround))
+    call SaveReal(h,homuraCastId,8,GetLocationZ(homuraGround)+85.*B2I(homuraStopOnEnemy))
     call SaveReal(h,homuraCastId,10,homuraArcDamage)
     call SaveReal(h,homuraCastId,12,homuraFrames)
     call SaveReal(h,homuraCastId,13,homuraArcSize)
@@ -261649,12 +262023,12 @@ function HomuraWeaponCast takes nothing returns nothing
         set homuraCastId=GetHandleId(homuraCastTimer)
         call SaveUnitHandle(h,homuraCastId,0,homuraCaster)
         call SaveReal(h,homuraCastId,2,homuraShotAngle)
-        call SaveReal(h,homuraCastId,3,(1.+homuraRank)*0.1*GetHeroInt(homuraCaster,true))
+        call SaveReal(h,homuraCastId,3,(2.+homuraRank)*0.1*GetHeroInt(homuraCaster,true))
         call TSE_TimerStartOwned(homuraCastTimer,0.08,true,function HomuraUziTick,OwnerOf(homuraCaster))
     else
         call HomuraCombatAnim(homuraCaster,35,5)
         call HomuraPlayVoice(homuraCaster,4991,1.5)
-        call HomuraLaunchArc(homuraCaster,homuraTargetX,homuraTargetY,"Others\\Rocket1.mdx",(2.+homuraRank)*GetHeroInt(homuraCaster,true),350.,80.,1600.,false,false)
+        call HomuraLaunchArc(homuraCaster,homuraTargetX,homuraTargetY,"Homura\\HomuraRocket.mdx",(4.+homuraRank)*GetHeroInt(homuraCaster,true),350.,80.,1600.,false,false)
     endif
     set homuraCastTimer=null
     set homuraCaster=null
@@ -261676,6 +262050,7 @@ function HomuraSwapWeapon takes unit homuraMover returns nothing
     local integer homuraMode=ModuloInteger(LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))+GetRandomInt(1,4),5)
     call HomuraApplyWeapon(homuraMover,homuraMode)
     call HomuraRefreshQ(homuraMover)
+    call HomuraPlayVoice(homuraMover,5025+2*GetRandomInt(0,2),1.85)
 endfunction
 
 function HomuraTravelAllowed takes unit homuraMover returns boolean
@@ -261708,18 +262083,20 @@ function HomuraBlinkCast takes unit homuraMover returns nothing
     local real homuraTX=GetSpellTargetX()
     local real homuraTY=GetSpellTargetY()
     local real homuraDist=SR1(homuraX,homuraY,homuraTX,homuraTY)
-    local real homuraTime=12.
-    if HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
+    local real homuraTime=33.-3.*IMinBJ(5,IMaxBJ(1,GetUnitAbilityLevel(homuraMover,'HmQ1')))
+    call HomuraSyncBlink(homuraMover)
+    if GetHeroLevel(homuraMover)>=12 and HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
         if GetSpellTargetUnit()==homuraMover then
+            call HomuraRefundMana(homuraMover,'HmG1')
+            call SetAbilityRemainingCooldown(homuraBlink,2.)
             if GetUnitTypeId(homuraMover)=='HHom' then
                 call HomuraSwapWeapon(homuraMover)
                 call HomuraFxAt("Homura\\HomuraTimeDial.mdx",homuraX,homuraY,GetUnitZ(homuraMover)+14.,GetUnitFacing(homuraMover),0.56,0.27,206,139,255,155)
-                call StartSound(SndN(5003))
             endif
         elseif homuraDist>=1. then
-            if homuraDist>750. then
-                set homuraTX=homuraX+(homuraTX-homuraX)*750./homuraDist
-                set homuraTY=homuraY+(homuraTY-homuraY)*750./homuraDist
+            if homuraDist>700. then
+                set homuraTX=homuraX+(homuraTX-homuraX)*700./homuraDist
+                set homuraTY=homuraY+(homuraTY-homuraY)*700./homuraDist
             endif
             if HomuraLandingAllowed(homuraTX,homuraTY) then
                 call HomuraTeleport(homuraMover,homuraTX,homuraTY)
@@ -261727,7 +262104,6 @@ function HomuraBlinkCast takes unit homuraMover returns nothing
                 if GetUnitTypeId(homuraMover)=='HHom' then
                     call HomuraSwapWeapon(homuraMover)
                     call SetUnitAnimationByIndex(homuraMover,39)
-                    call HomuraPlayVoice(homuraMover,4993,1.65)
                 else
                     call SetUnitAnimationByIndex(homuraMover,17)
                     call HomuraPlayVoice(homuraMover,4999,1.65)
@@ -261785,7 +262161,7 @@ function HomuraRecallCast takes unit homuraRecallCaster,integer homuraCastSpell 
     if GetUnitTypeId(homuraRecallCaster)=='HHDv' then
         set homuraRecallAnimation=18
     endif
-    if HomuraTravelAllowed(homuraRecallCaster) and UnitIsAlive(homuraRecallAlly) and homuraRecallAlly!=homuraRecallCaster and IsUnitType(homuraRecallAlly,UNIT_TYPE_HERO) and not IsUnitIllusion(homuraRecallAlly) and IsUnitAlly(homuraRecallAlly,OwnerOf(homuraRecallCaster)) then
+    if GetHeroLevel(homuraRecallCaster)>=12 and HomuraTravelAllowed(homuraRecallCaster) and UnitIsAlive(homuraRecallAlly) and homuraRecallAlly!=homuraRecallCaster and IsUnitType(homuraRecallAlly,UNIT_TYPE_HERO) and not IsUnitIllusion(homuraRecallAlly) and IsUnitAlly(homuraRecallAlly,OwnerOf(homuraRecallCaster)) then
         if homuraRecallTimer!=null and LoadUnitHandle(h,homuraRecallId,1)==homuraRecallAlly then
             set homuraSavedX=LoadReal(h,homuraRecallId,2)
             set homuraSavedY=LoadReal(h,homuraRecallId,3)
@@ -261861,6 +262237,17 @@ function HomuraRecallDeath takes nothing returns nothing
     set homuraDead=null
 endfunction
 
+function HomuraRefreshDescriptions takes nothing returns nothing
+    local integer homuraUiSlot=0
+    loop
+        exitwhen homuraUiSlot>=12
+        if GetUnitAbilityLevel(Hero[homuraUiSlot],'HmQ1')>0 then
+            call HomuraRefreshQ(Hero[homuraUiSlot])
+        endif
+        set homuraUiSlot=homuraUiSlot+1
+    endloop
+endfunction
+
 function HomuraLearn takes nothing returns nothing
     if GetLearnedSkill()=='HmQ1' then
         call HomuraRefreshQ(GetTriggerUnit())
@@ -261899,7 +262286,7 @@ function HomuraQCast takes unit homuraQCaster returns nothing
     else
         call SetUnitFacingInstant(homuraQCaster,homuraQA*bj_RADTODEG)
         if homuraMode==1 then
-            set homuraQDmg=(0.65+0.20*homuraRank)*homuraInt
+            set homuraQDmg=(0.5+0.5*homuraRank)*homuraInt
             call HomuraCombatAnim(homuraQCaster,34,15)
             call HomuraFireBullet(homuraQCaster,homuraQA,homuraQDmg,600.,1)
             set homuraQTimer=CreateTimer()
@@ -261910,17 +262297,17 @@ function HomuraQCast takes unit homuraQCaster returns nothing
             call TSE_TimerStartOwned(homuraQTimer,0.12,false,function HomuraSecondPistolShot,OwnerOf(homuraQCaster))
         elseif homuraMode==2 then
             call HomuraCombatAnim(homuraQCaster,35,5)
-            call HomuraLaunchArc(homuraQCaster,homuraQX+900.*Cos(homuraQA),homuraQY+900.*Sin(homuraQA),"Others\\Rocket1.mdx",(1.5+0.55*homuraRank)*homuraInt,225.,20.,0.,false,true)
+            call HomuraLaunchArc(homuraQCaster,homuraQX+900.*Cos(homuraQA),homuraQY+900.*Sin(homuraQA),"Homura\\HomuraRocket.mdx",(2.+homuraRank)*homuraInt,225.,20.,0.,false,true)
         elseif homuraMode==3 then
             call HomuraCombatAnim(homuraQCaster,36,4)
-            call HomuraFireBullet(homuraQCaster,homuraQA,(2.+0.60*homuraRank)*homuraInt,1700.,3)
+            call HomuraFireBullet(homuraQCaster,homuraQA,(3.+homuraRank)*homuraInt,1700.,3)
         else
             if SR1(homuraQX,homuraQY,homuraTX,homuraTY)>750. then
                 set homuraTX=homuraQX+750.*Cos(homuraQA)
                 set homuraTY=homuraQY+750.*Sin(homuraQA)
             endif
             call HomuraCombatAnim(homuraQCaster,37,16)
-            call HomuraLaunchArc(homuraQCaster,homuraTX,homuraTY,"Grenade.mdx",(1.25+0.5*homuraRank)*homuraInt,250.,32.,850.,false,false)
+            call HomuraLaunchArc(homuraQCaster,homuraTX,homuraTY,"Grenade.mdx",(2.+homuraRank)*homuraInt,250.,32.,850.,false,false)
         endif
     endif
     set homuraQTimer=null
@@ -261928,7 +262315,7 @@ endfunction
 
 function HomuraGrenadeOrder takes nothing returns boolean
     local unit homuraThrower=GetTriggerProjectileSource()
-    local boolean homuraThrows=udg_B and DU2 and GetUnitTypeId(homuraThrower)=='HHom' and not IsUnitIllusion(homuraThrower) and LoadInteger(HH,GetHandleId(homuraThrower),StringHash("HomuraWeapon"))==4 and GetTriggerProjectileTargetUnit()!=null and GetProjectileSourceAbility(GetTriggerProjectile())==null
+    local boolean homuraThrows=udg_B and DU2 and GetUnitTypeId(homuraThrower)=='HHom' and not IsUnitIllusion(homuraThrower) and GetTriggerProjectileTargetUnit()!=null and GetProjectileSourceAbility(GetTriggerProjectile())==null
     set homuraThrower=null
     return homuraThrows
 endfunction
@@ -261937,12 +262324,19 @@ function HomuraGrenadeLaunch takes nothing returns nothing
     local projectile homuraAttack=GetTriggerProjectile()
     local unit homuraThrower=GetTriggerProjectileSource()
     local unit homuraAimUnit=GetTriggerProjectileTargetUnit()
+    local integer homuraAttackMode=LoadInteger(HH,GetHandleId(homuraThrower),StringHash("HomuraWeapon"))
     local real homuraDamage=GetProjectileDamage(homuraAttack,0)
     if homuraDamage<=0. then
         set homuraDamage=GetUnitTotalDamage(homuraThrower)
     endif
+    if homuraAttackMode==4 then
     call KillProjectile(homuraAttack)
     call HomuraLaunchArc(homuraThrower,GetUnitX(homuraAimUnit),GetUnitY(homuraAimUnit),"Grenade.mdx",homuraDamage,225.,32.,850.,true,false)
+    else
+        call SetProjectileModel(homuraAttack,HomuraAttackModel(homuraAttackMode))
+        call SetProjectileSpeed(homuraAttack,HomuraAttackSpeed(homuraAttackMode))
+        call SetProjectileArc(homuraAttack,0.)
+    endif
     set homuraAttack=null
     set homuraThrower=null
     set homuraAimUnit=null
@@ -262016,7 +262410,7 @@ function HomuraBarrageCast takes unit homuraBarrageCaster returns nothing
     call SaveReal(h,homuraBarrageId,1,homuraBarrageX)
     call SaveReal(h,homuraBarrageId,2,homuraBarrageY)
     call SaveReal(h,homuraBarrageId,3,Atan2(GetUnitY(homuraBarrageCaster)-homuraBarrageY,GetUnitX(homuraBarrageCaster)-homuraBarrageX))
-    call SaveReal(h,homuraBarrageId,4,(0.8+0.2*GetUnitAbilityLevel(homuraBarrageCaster,'HmR1'))*GetHeroInt(homuraBarrageCaster,true))
+    call SaveReal(h,homuraBarrageId,4,(0.75+0.25*GetUnitAbilityLevel(homuraBarrageCaster,'HmR1'))*GetHeroInt(homuraBarrageCaster,true))
     call HomuraPlayVoice(homuraBarrageCaster,5013,3.1)
     call TSE_TimerStartOwned(homuraBarrageTimer,0.16,true,function HomuraBarrageTick,OwnerOf(homuraBarrageCaster))
     call HomuraBarrageAdvance(homuraBarrageTimer)
@@ -262025,24 +262419,90 @@ function HomuraBarrageCast takes unit homuraBarrageCaster returns nothing
 endfunction
 
 
+function HomuraTWatch takes nothing returns nothing
+local timer homuraTTimer=GetExpiredTimer()
+local integer homuraTId=GetHandleId(homuraTTimer)
+local unit homuraTCaster=LoadUnitHandle(h,homuraTId,0)
+local effect homuraTClock=LoadEffectHandle(h,homuraTId,1)
+if not TSE_On or TSE_Src!=homuraTCaster or not UnitIsAlive(homuraTCaster) or not udg_B or not DU2 then
+if TSE_On and TSE_Src==homuraTCaster then
+call TSE_Stop()
+endif
+call RemoveSavedBoolean(HH,GetHandleId(homuraTCaster),StringHash("HomuraTShare"))
+call RemoveSavedBoolean(HH,GetHandleId(homuraTClock),StringHash("TSEOwnFx"))
+call DestroyEffect(homuraTClock)
+call FlushChildHashtable(h,homuraTId)
+call TSE_DestroyTimer(homuraTTimer)
+else
+call SetSpecialEffectPositionWithZ(homuraTClock,GetUnitX(homuraTCaster),GetUnitY(homuraTCaster),GetUnitZ(homuraTCaster)+12.)
+endif
+set homuraTClock=null
+set homuraTCaster=null
+set homuraTTimer=null
+endfunction
+function HomuraTCast takes unit homuraTCaster returns nothing
+local integer homuraTLevel=GetHeroLevel(homuraTCaster)
+local real homuraTDuration=RMinBJ(7.,5.+0.1*I2R(IMaxBJ(0,homuraTLevel-25)))
+local real homuraTCooldown=RMaxBJ(90.,110.-I2R(IMaxBJ(0,homuraTLevel-25)))
+local ability homuraTBlink=HomuraBlinkAbility(homuraTCaster)
+local effect homuraTClock
+local timer homuraTTimer
+local integer homuraTId
+if homuraTLevel<25 or not HomuraTravelAllowed(homuraTCaster) then
+call HomuraRefundMana(homuraTCaster,'HmT1')
+return
+endif
+call SaveBoolean(HH,GetHandleId(homuraTCaster),StringHash("HomuraTShare"),homuraTLevel>=35)
+call HomuraCombatAnim(homuraTCaster,33,6)
+call TSE_Start(homuraTCaster,homuraTDuration)
+if homuraTBlink!=null and GetAbilityRemainingCooldown(homuraTBlink)>1.5 then
+call SetAbilityRemainingCooldown(homuraTBlink,1.5)
+endif
+call SetAbilityRemainingCooldown(GetUnitAbility(homuraTCaster,'HmT1'),homuraTCooldown)
+set homuraTClock=AddSpecialEffect("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraTCaster),GetUnitY(homuraTCaster))
+call SaveBoolean(HH,GetHandleId(homuraTClock),StringHash("TSEOwnFx"),true)
+call SetSpecialEffectScale(homuraTClock,1.3)
+call SetSpecialEffectVertexColour(homuraTClock,200,180,255,150)
+call StartSound(SndN(5031))
+set homuraTTimer=CreateTimer()
+set homuraTId=GetHandleId(homuraTTimer)
+call SaveUnitHandle(h,homuraTId,0,homuraTCaster)
+call SaveEffectHandle(h,homuraTId,1,homuraTClock)
+call TimerStart(homuraTTimer,0.05,true,function HomuraTWatch)
+set homuraTBlink=null
+set homuraTClock=null
+set homuraTTimer=null
+endfunction
+
 function HomuraReworkCast takes nothing returns nothing
     local unit homuraMover=GetTriggerUnit()
     local integer homuraType=GetUnitTypeId(homuraMover)
     local integer homuraCastSpell=GetSpellAbilityId()
     local unit homuraVowAlly
     if udg_B and DU2 and (homuraType=='HHom' or homuraType=='HHDv') then
-        if homuraCastSpell=='HmG1' then
+        if homuraCastSpell=='HmT1' then
+            call HomuraTCast(homuraMover)
+        elseif homuraCastSpell=='HmG1' then
             call HomuraBlinkCast(homuraMover)
         elseif homuraCastSpell=='HmF1' then
             if HomuraRecallCast(homuraMover,homuraCastSpell) then
                 call HomuraCutBlink(homuraMover)
+            else
+                call HomuraRefundMana(homuraMover,'HmF1')
             endif
-        elseif homuraCastSpell=='HmD1' and homuraType=='HHom' and DU and HomuraTravelAllowed(homuraMover) then
+        elseif homuraCastSpell=='HmD1' and homuraType=='HHom' and GetHeroLevel(homuraMover)>=25 and DU and HomuraTravelAllowed(homuraMover) then
             set homuraVowAlly=HomuraVowMadoka(homuraMover)
             if homuraVowAlly!=null then
-                call HomuraVowAuto(homuraMover)
+                if HomuraVowBind(homuraMover,homuraVowAlly) then
+                    call HomuraVowGoddess(homuraVowAlly)
+                    call HomuraCutBlink(homuraMover)
+                else
+                    call HomuraRefundMana(homuraMover,'HmD1')
+                endif
             elseif HomuraVowBind(homuraMover,GetSpellTargetUnit()) then
                 call HomuraCutBlink(homuraMover)
+            else
+                call HomuraRefundMana(homuraMover,'HmD1')
             endif
         elseif homuraCastSpell=='HmR1' then
             if HomuraTravelAllowed(homuraMover) then
@@ -282653,7 +283113,7 @@ local real y0=GetUnitY(caster)
 local real damage=LoadReal(HH,id,15)
 set time=time+0.02
 call SaveReal(HH,id,5,time)
-if GetUnitCurrentOrder(caster)!=OrderId("channel")then
+if TSE_CasterOrder(caster)!=OrderId("channel")then
 call RemoveUnit(LoadUnitHandle(HH,id,20))
 call GroupClear(G)
 call GroupEnumUnitsInRange(G,x0,y0,350,Base)
@@ -312740,136 +313200,110 @@ call LANG_A('IsQc',0,0,"Cancel Licht Regen (|cffffcc00Q|r)")
 call LANG_A('IsQc',1,0,"Stops firing and restores normal Q. Its cooldown continues from the start of the barrage.")
 call LANG_A('MaTc',0,0,"Aim poison (|cffffcc00T|r)")
 call LANG_A('MaTc',1,0,"Choose the center of the poison spray, up to 1300 away. The zanpakuto moves into position. Does not extend its duration.")
-call LANG_A('HmQ1',0,0,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',0,1,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',0,2,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',0,3,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',0,4,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',1,0,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
-call LANG_A('HmQ1',1,1,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
-call LANG_A('HmQ1',1,2,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
-call LANG_A('HmQ1',1,3,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
-call LANG_A('HmQ1',1,4,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
-call LANG_A('HmQ1',2,0,"Homura’s Arsenal (|cffffcc00Q|r)")
-call LANG_A('HmQ1',3,0,"Uses the current weapon. Time Shield absorbs the next enemy hit within 1.25 sec. The pistol fires twice, the bazooka fires in the chosen direction, the sniper rifle fires a long-range shot and the grenade explodes in the marked area.|n|nG swaps the weapon and attack profile. Casting Q reduces G cool"+"down by 3 sec.")
+call LANG_A('HmQ1',1,0,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1 sec.|nPistol damage (2 shots): 2*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 4*|r|c0"+"077FFFFINT|r|cFF00A5FF|nGrenade damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 16 sec.|r")
+call LANG_A('HmQ1',1,1,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.25 sec.|nPistol damage (2 shots): 3*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 5*|r"+"|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 15 sec.|r")
+call LANG_A('HmQ1',1,2,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.5 sec.|nPistol damage (2 shots): 4*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 6*|r|"+"c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 14 sec.|r")
+call LANG_A('HmQ1',1,3,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.75 sec.|nPistol damage (2 shots): 5*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 7*|r"+"|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 13 sec.|r")
+call LANG_A('HmQ1',1,4,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 2 sec.|nPistol damage (2 shots): 6*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 8*|r|c0"+"077FFFFINT|r|cFF00A5FF|nGrenade damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 12 sec.|r")
+call LANG_A('HmQ1',3,0,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1/1.25/1.5/1.75/2 sec.|nPistol damage (2 shots): 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 3/4/5/6/7*|r|c0077FFFFINT|r|"+"cFF00A5FF|nRifle damage: 4/5/6/7/8*|r|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HmW1',1,0,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 14 sec.|r")
+call LANG_A('HmW1',1,1,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 13 sec.|r")
+call LANG_A('HmW1',1,2,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 12 sec.|r")
+call LANG_A('HmW1',1,3,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 11 sec.|r")
+call LANG_A('HmW1',1,4,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 10 sec.|r")
+call LANG_A('HmW1',3,0,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 14"+"/13/12/11/10 sec.|r")
 endfunction
 function LANG_Data52 takes nothing returns nothing
-call LANG_A('HmW1',0,0,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',0,1,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',0,2,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',0,3,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',0,4,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',1,0,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.2 × INT per bullet|nRange: 1100|nMana: 70|nCooldown: 12 sec.|r")
-call LANG_A('HmW1',1,1,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.3 × INT per bullet|nRange: 1100|nMana: 85|nCooldown: 12 sec.|r")
-call LANG_A('HmW1',1,2,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.4 × INT per bullet|nRange: 1100|nMana: 100|nCooldown: 12 sec.|r")
-call LANG_A('HmW1',1,3,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.5 × INT per bullet|nRange: 1100|nMana: 115|nCooldown: 12 sec.|r")
-call LANG_A('HmW1',1,4,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.6 × INT per bullet|nRange: 1100|nMana: 130|nCooldown: 12 sec.|r")
-call LANG_A('HmW1',2,0,"Uzi Burst (|cffffcc00W|r)")
-call LANG_A('HmW1',3,0,"Homura fires 10 bullets in the chosen direction. Each bullet stops at the first enemy it hits. Moving or issuing another order interrupts the burst.|n|n|cFF00A5FFDamage: 0.2/0.3/0.4/0.5/0.6 × INT per bullet|nRange: 1100|nMana: 70/85/100/115/130|nCooldown: 12 sec.|r")
-call LANG_A('HmE1',0,0,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',0,1,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',0,2,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',0,3,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',0,4,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',1,0,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 3 × INT|nRange: 1200|nArea: 350|nMana: 110|nCooldown: 20 sec.|r")
-call LANG_A('HmE1',1,1,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 4 × INT|nRange: 1200|nArea: 350|nMana: 135|nCooldown: 20 sec.|r")
-call LANG_A('HmE1',1,2,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 5 × INT|nRange: 1200|nArea: 350|nMana: 160|nCooldown: 20 sec.|r")
-call LANG_A('HmE1',1,3,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 6 × INT|nRange: 1200|nArea: 350|nMana: 185|nCooldown: 20 sec.|r")
-call LANG_A('HmE1',1,4,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 7 × INT|nRange: 1200|nArea: 350|nMana: 210|nCooldown: 20 sec.|r")
-call LANG_A('HmE1',2,0,"Bazooka Shot (|cffffcc00E|r)")
-call LANG_A('HmE1',3,0,"Homura marks an area and launches a rocket in an arc. After 2 sec., it explodes, damaging enemies in the marked area.|n|n|cFF00A5FFDamage: 3/4/5/6/7 × INT|nRange: 1200|nArea: 350|nMana: 110/135/160/185/210|nCooldown: 20 sec.|r")
-call LANG_A('HmR1',0,0,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',0,1,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',0,2,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',0,3,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',0,4,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',1,0,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1 × INT|nBlast radius: 245|nCast range: 1100|nMana: 150|nCooldown: 32 sec.|r")
-call LANG_A('HmR1',1,1,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.2 × INT|nBlast radius: 245|nCast range: 1100|nMana: 175|nCooldown: 32 sec.|r")
-call LANG_A('HmR1',1,2,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.4 × INT|nBlast radius: 245|nCast range: 1100|nMana: 200|nCooldown: 32 sec.|r")
-call LANG_A('HmR1',1,3,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.6 × INT|nBlast radius: 245|nCast range: 1100|nMana: 225|nCooldown: 32 sec.|r")
-call LANG_A('HmR1',1,4,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.|n|n|cFF00A5FFDamage per grenade: 1.8 × INT|nBlast radius: 245|nCast range: 1100|nMana: 250|nCooldown: 32 sec.|r")
-call LANG_A('HmR1',2,0,"Grenade Barrage (|cffffcc00R|r)")
-call LANG_A('HmR1',3,0,"Homura blinks around the target area and throws six grenades. Each grenade explodes separately. Enemies can step out of the marked circles before they explode.")
-call LANG_A('HmT1',0,0,"Time Stop (|cffffcc00T|r)")
-call LANG_A('HmT1',1,0,"Test placeholder.")
-call LANG_A('HmT1',2,0,"Time Stop (|cffffcc00T|r)")
-call LANG_A('HmT1',3,0,"Test placeholder.")
-call LANG_A('HmD1',0,0,"For You (|cffffcc00D|r)")
-call LANG_A('HmD1',1,0,"Homura chooses one allied hero per round. If an enemy deals a lethal blow to them, Homura saves them at 30% health and becomes Devil Homura for the rest of the round. The bond breaks if Homura dies first.|n|nMadoka is chosen automatically and is saved at 45% health. Her ascension to Goddess also tra"+"nsforms Homura if Homura is alive. Either outcome consumes the bond.")
-call LANG_A('HmD1',2,0,"For You (|cffffcc00D|r)")
-call LANG_A('HmD1',3,0,"Homura chooses one allied hero per round. If an enemy deals a lethal blow to them, Homura saves them at 30% health and becomes Devil Homura for the rest of the round. The bond breaks if Homura dies first.|n|nMadoka is chosen automatically and is saved at 45% health. Her ascension to Goddess also tra"+"nsforms Homura if Homura is alive. Either outcome consumes the bond.")
-call LANG_A('HmF1',0,0,"Last Attempt (|cffffcc00F|r)")
-call LANG_A('HmF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
-call LANG_A('HmF1',2,0,"Last Attempt (|cffffcc00F|r)")
-call LANG_A('HmF1',3,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
-call LANG_A('HmG1',0,0,"Time Step (|cffffcc00G|r)")
-call LANG_A('HmG1',1,0,"Blinks toward the selected point and randomly rolls a different Q weapon. Cast on Homura to swap weapons without blinking or starting cooldown.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
-call LANG_A('HmG1',2,0,"Time Step (|cffffcc00G|r)")
-call LANG_A('HmG1',3,0,"Blinks toward the selected point and randomly rolls a different Q weapon. Cast on Homura to swap weapons without blinking or starting cooldown.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
-call LANG_A('HdQ1',0,0,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',0,1,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',0,2,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',0,3,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',0,4,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',1,0,"Test placeholder.")
-call LANG_A('HdQ1',1,1,"Test placeholder.")
-call LANG_A('HdQ1',1,2,"Test placeholder.")
-call LANG_A('HdQ1',1,3,"Test placeholder.")
-call LANG_A('HdQ1',1,4,"Test placeholder.")
-call LANG_A('HdQ1',2,0,"Homura’s Arsenal (Devil) (|cffffcc00Q|r)")
-call LANG_A('HdQ1',3,0,"Test placeholder.")
-call LANG_A('HdW1',0,0,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',0,1,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',0,2,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',0,3,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',0,4,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',1,0,"Test placeholder.")
-call LANG_A('HdW1',1,1,"Test placeholder.")
-call LANG_A('HdW1',1,2,"Test placeholder.")
-call LANG_A('HdW1',1,3,"Test placeholder.")
-call LANG_A('HdW1',1,4,"Test placeholder.")
-call LANG_A('HdW1',2,0,"Uzi Burst (Devil) (|cffffcc00W|r)")
-call LANG_A('HdW1',3,0,"Test placeholder.")
-call LANG_A('HdE1',0,0,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',0,1,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',0,2,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',0,3,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',0,4,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',1,0,"Test placeholder.")
-call LANG_A('HdE1',1,1,"Test placeholder.")
-call LANG_A('HdE1',1,2,"Test placeholder.")
-call LANG_A('HdE1',1,3,"Test placeholder.")
-call LANG_A('HdE1',1,4,"Test placeholder.")
-call LANG_A('HdE1',2,0,"Bazooka Shot (Devil) (|cffffcc00E|r)")
-call LANG_A('HdE1',3,0,"Test placeholder.")
-call LANG_A('HdR1',0,0,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',0,1,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',0,2,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',0,3,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',0,4,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',1,0,"Test placeholder.")
-call LANG_A('HdR1',1,1,"Test placeholder.")
-call LANG_A('HdR1',1,2,"Test placeholder.")
-call LANG_A('HdR1',1,3,"Test placeholder.")
-call LANG_A('HdR1',1,4,"Test placeholder.")
-call LANG_A('HdR1',2,0,"Grenade Barrage (Devil) (|cffffcc00R|r)")
-call LANG_A('HdR1',3,0,"Test placeholder.")
-call LANG_A('HdT1',0,0,"Time Stop (Devil) (|cffffcc00T|r)")
-call LANG_A('HdT1',1,0,"Test placeholder.")
-call LANG_A('HdT1',2,0,"Time Stop (Devil) (|cffffcc00T|r)")
-call LANG_A('HdT1',3,0,"Test placeholder.")
-call LANG_A('HdD1',0,0,"Scenarios (Devil) (|cffffcc00D|r)")
+call LANG_A('HmE1',1,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 24 sec.|r")
+call LANG_A('HmE1',1,1,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 23 sec.|r")
+call LANG_A('HmE1',1,2,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 22 sec.|r")
+call LANG_A('HmE1',1,3,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 21 sec.|r")
+call LANG_A('HmE1',1,4,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 9*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('HmE1',3,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5/6/7/8/9*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 24/23/22/21/20 sec.|r")
+call LANG_A('HmR1',1,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6*|r|c0077FFFFINT|r|cFF00A5FF|"+"nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34 sec.|r")
+call LANG_A('HmR1',1,1,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.25*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 7.5*|r|c0077FFFFINT|r|cFF00"+"A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 32 sec.|r")
+call LANG_A('HmR1',1,2,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.5*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 9*|r|c0077FFFFINT|r|cFF00A5F"+"F|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 30 sec.|r")
+call LANG_A('HmR1',1,3,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.75*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 10.5*|r|c0077FFFFINT|r|cFF0"+"0A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 28 sec.|r")
+call LANG_A('HmR1',1,4,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 12*|r|c0077FFFFINT|r|cFF00A5FF"+"|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 26 sec.|r")
+call LANG_A('HmR1',3,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1/1.25/1.5/1.75/2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6/7.5/9/10.5/1"+"2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34/32/30/28/26 sec.|r")
+call LANG_A('HmT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HmT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HmD1',1,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and becomes the Devil until the round ends. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Goddess transformation also transforms Homura while"+" she is alive. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
+call LANG_A('HmD1',3,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and becomes the Devil until the round ends. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Goddess transformation also transforms Homura while"+" she is alive. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
+call LANG_A('HmF1',1,0,"Homura records a living allied hero’s position. Cast on that hero again to return them to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFMark duration: 3 sec.|nRange: 1200|nCooldown after recall: 20 sec.|r")
+call LANG_A('HmF1',3,0,"Homura records a living allied hero’s position. Cast on that hero again to return them to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFMark duration: 3 sec.|nRange: 1200|nCooldown after recall: 20 sec.|r")
+call LANG_A('HmG1',1,0,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 30 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HmG1',1,1,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 27 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HmG1',1,2,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 24 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HmG1',1,3,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 21 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HmG1',1,4,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 18 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HmG1',3,0,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 30/27/24/21/18 sec.|nWeapon change"+" on self: 2 sec.|r")
+call LANG_A('HdQ1',1,0,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1 sec.|nPistol damage (2 shots): 2*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 4*|r|c0"+"077FFFFINT|r|cFF00A5FF|nGrenade damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 16 sec.|r")
+call LANG_A('HdQ1',1,1,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.25 sec.|nPistol damage (2 shots): 3*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 5*|r"+"|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 15 sec.|r")
+call LANG_A('HdQ1',1,2,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.5 sec.|nPistol damage (2 shots): 4*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 6*|r|"+"c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 14 sec.|r")
+call LANG_A('HdQ1',1,3,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1.75 sec.|nPistol damage (2 shots): 5*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 7*|r"+"|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 13 sec.|r")
+call LANG_A('HdQ1',1,4,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 2 sec.|nPistol damage (2 shots): 6*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRifle damage: 8*|r|c0"+"077FFFFINT|r|cFF00A5FF|nGrenade damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 12 sec.|r")
+call LANG_A('HdQ1',3,0,"Uses her selected weapon: shield, pistol, bazooka, rifle, or grenade. D changes her weapon and basic attack.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFShield: 1/1.25/1.5/1.75/2 sec.|nPistol damage (2 shots): 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nBazooka damage: 3/4/5/6/7*|r|c0077FFFFINT|r|"+"cFF00A5FF|nRifle damage: 4/5/6/7/8*|r|c0077FFFFINT|r|cFF00A5FF|nGrenade damage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HdW1',1,0,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 14 sec.|r")
+call LANG_A('HdW1',1,1,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 13 sec.|r")
+call LANG_A('HdW1',1,2,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 12 sec.|r")
+call LANG_A('HdW1',1,3,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 11 sec.|r")
+call LANG_A('HdW1',1,4,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 10 sec.|r")
+call LANG_A('HdW1',3,0,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 14"+"/13/12/11/10 sec.|r")
+call LANG_A('HdE1',1,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 24 sec.|r")
+call LANG_A('HdE1',1,1,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 23 sec.|r")
+call LANG_A('HdE1',1,2,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 22 sec.|r")
+call LANG_A('HdE1',1,3,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 21 sec.|r")
+call LANG_A('HdE1',1,4,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 9*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 20 sec.|r")
+call LANG_A('HdE1',3,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5/6/7/8/9*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nDelay: 2 sec.|nCooldown: 24/23/22/21/20 sec.|r")
+call LANG_A('HdR1',1,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6*|r|c0077FFFFINT|r|cFF00A5FF|"+"nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34 sec.|r")
+call LANG_A('HdR1',1,1,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.25*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 7.5*|r|c0077FFFFINT|r|cFF00"+"A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 32 sec.|r")
+call LANG_A('HdR1',1,2,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.5*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 9*|r|c0077FFFFINT|r|cFF00A5F"+"F|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 30 sec.|r")
+call LANG_A('HdR1',1,3,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1.75*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 10.5*|r|c0077FFFFINT|r|cFF0"+"0A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 28 sec.|r")
+call LANG_A('HdR1',1,4,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 12*|r|c0077FFFFINT|r|cFF00A5FF"+"|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 26 sec.|r")
+call LANG_A('HdR1',3,0,"Blinks around the target area and throws six grenades. Each explodes separately. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage per grenade: 1/1.25/1.5/1.75/2*|r|c0077FFFFINT|r|cFF00A5FF|nMaximum damage (6 grenades): 6/7.5/9/10.5/1"+"2*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1100|nBlast radius: 245|nGrenade delay: 0.6 sec.|nCooldown: 34/32/30/28/26 sec.|r")
+call LANG_A('HdT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
+call LANG_A('HdT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 5 sec. at level 25, +0.1 sec. per hero level (max 7 s"+"ec.)|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
 call LANG_A('HdD1',1,0,"Test placeholder.")
-call LANG_A('HdD1',2,0,"Scenarios (Devil) (|cffffcc00D|r)")
 call LANG_A('HdD1',3,0,"Test placeholder.")
-call LANG_A('HdF1',0,0,"Last Attempt (|cffffcc00F|r)")
-call LANG_A('HdF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
-call LANG_A('HdF1',2,0,"Last Attempt (|cffffcc00F|r)")
-call LANG_A('HdF1',3,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces G cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
-call LANG_A('HdG1',0,0,"Time Step (|cffffcc00G|r)")
-call LANG_A('HdG1',1,0,"Blinks Devil Homura toward the selected point.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
-call LANG_A('HdG1',2,0,"Time Step (|cffffcc00G|r)")
-call LANG_A('HdG1',3,0,"Blinks Devil Homura toward the selected point.|n|n|cFF00A5FFBlink distance 750|nCooldown 12 sec.|r")
+call LANG_A('HdF1',1,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HdF1',3,0,"Records a living allied hero’s position for 3 sec. Cast on that hero again to bring them back to the mark. A successful cast reduces D cooldown by 3 sec.|n|n|cFF00A5FFRange 1200|nCooldown after recall 20 sec.|r")
+call LANG_A('HdG1',1,0,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 30 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HdG1',1,1,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 27 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HdG1',1,2,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 24 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HdG1',1,3,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 21 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HdG1',1,4,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 18 sec.|nWeapon change on self: 2 "+"sec.|r")
+call LANG_A('HdG1',3,0,"Blinks to the selected point and changes Q to a different weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q.|nQ/W/E/R and successful G/F casts reduce D cooldown by 3 sec.|n|n|cFF00A5FFBlink distance: 700|nCooldown: 30/27/24/21/18 sec.|nWeapon change"+" on self: 2 sec.|r")
+call LANG_A('HmS0',1,0,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 1 sec.|nCooldown: 16 sec.|r")
+call LANG_A('HmS0',1,1,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 1.25 sec.|nCooldown: 15 sec.|r")
+call LANG_A('HmS0',1,2,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 1.5 sec.|nCooldown: 14 sec.|r")
+call LANG_A('HmS0',1,3,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 1.75 sec.|nCooldown: 13 sec.|r")
+call LANG_A('HmS0',1,4,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 2 sec.|nCooldown: 12 sec.|r")
+call LANG_A('HmS0',3,0,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDuration: 1/1.25/1.5/1.75/2 sec.|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HmP0',1,0,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 2*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 16 sec.|r")
+call LANG_A('HmP0',1,1,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 15 sec.|r")
+call LANG_A('HmP0',1,2,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 14 sec.|r")
+call LANG_A('HmP0',1,3,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 13 sec.|r")
+call LANG_A('HmP0',1,4,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 12 sec.|r")
+call LANG_A('HmP0',3,0,"Fires two pistol shots. Each bullet hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFTotal damage: 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 2|nRange: 600|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HmB0',1,0,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 16 sec.|r")
+call LANG_A('HmB0',1,1,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 15 sec.|r")
+call LANG_A('HmB0',1,2,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 14 sec.|r")
+call LANG_A('HmB0',1,3,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 13 sec.|r")
+call LANG_A('HmB0',1,4,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 12 sec.|r")
+call LANG_A('HmB0',3,0,"Fires a rocket forward. It explodes on the first enemy hit or at the end of its flight.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 900|nBlast radius: 225|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HmN0',1,0,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 16 sec.|r")
+call LANG_A('HmN0',1,1,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 15 sec.|r")
+call LANG_A('HmN0',1,2,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 14 sec.|r")
+call LANG_A('HmN0',1,3,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 13 sec.|r")
+call LANG_A('HmN0',1,4,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 12 sec.|r")
+call LANG_A('HmN0',3,0,"Fires a long-range rifle shot that hits the first enemy in its path.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 4/5/6/7/8*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1700|nCooldown: 16/15/14/13/12 sec.|r")
+call LANG_A('HmA0',1,0,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 16 sec.|r")
+call LANG_A('HmA0',1,1,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 15 sec.|r")
+call LANG_A('HmA0',1,2,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 14 sec.|r")
+call LANG_A('HmA0',1,3,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 13 sec.|r")
+call LANG_A('HmA0',1,4,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 12 sec.|r")
+call LANG_A('HmA0',3,0,"Throws a grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 3 sec.|n|n|cFF00A5FFDamage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nDelay: 0.8 sec.|nCooldown: 16/15/14/13/12 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -313004,8 +313438,6 @@ call LANG_It('I00Y',2,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aur
 call LANG_It('I00Y',3,"Increase |c003CFF3CAGI|r by 15 and AS by 20% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 15% and absorbs 13% of any incoming damage.")
 call LANG_It('I00Z',0,"Vongola Rain Ring, Rank B")
 call LANG_It('I00Z',1,"Vongola Rain Ring, Rank B")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I00Z',2,"Increase |c003CFF3CAGI|r by 20 and AS by 30% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
 call LANG_It('I00Z',3,"Increase |c003CFF3CAGI|r by 20 and AS by 30% , \"Rain Aura\" - slows all enemies within a radius of 1000 by 20% and absorbs 16% of any incoming damage.")
 call LANG_It('I010',0,"Vongola Rain Ring, Rank A")
@@ -313032,6 +313464,8 @@ call LANG_It('I015',0,"Vongola Thunder Ring, Rank B")
 call LANG_It('I015',1,"Vongola Thunder Ring, Rank B")
 call LANG_It('I015',2,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
 call LANG_It('I015',3,"Increase |c0077FFFFINT|r by 15, DEF by 6 and HP by 700.")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I016',0,"Vongola Thunder Ring, Rank A")
 call LANG_It('I016',1,"Vongola Thunder Ring, Rank A")
 call LANG_It('I016',2,"Increase |c0077FFFFINT|r by 20, DEF by 8 and HP by 900.")
@@ -313256,8 +313690,6 @@ call LANG_It('I02P',2,"Increases DEF by 15, HP regen by 28, HP 400, |c00FFFF66Al
 call LANG_It('I02P',3,"Increases DEF by 15, HP regen by 28, HP 400, |c00FFFF66AllStat|r by 20.")
 call LANG_It('I02Q',0,"Hell Ring: \"Demonic Eye\"")
 call LANG_It('I02Q',1,"Hell Ring: \"Demonic Eye\"")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I02Q',2,"Increases DEF by 20, HP regen by 40, HP 500, |c00FFFF66AllStat|r by 30.|n|nActive: \"Demonic Defense\" - immunity to physical attacks.|nDuration: 5 sec.|nCooldown: 15 seconds after end.")
 call LANG_It('I02Q',3,"Increases DEF by 20, HP regen by 40, HP 500, |c00FFFF66AllStat|r by 30.|n|nActive: \"Demonic Defense\" - immunity to physical attacks.|nDuration: 5 sec.|nCooldown: 15 seconds after end.")
 call LANG_It('I02R',0,"Fire Sphere")
@@ -313284,6 +313716,8 @@ call LANG_It('I02W',0,"Fire Boots")
 call LANG_It('I02W',1,"Fire Boots")
 call LANG_It('I02W',2,"Increase MS by 200, increase |c00FFFF66AllStat|r by 30.|n|nActive: \"Fiery Run\" - allows you to overcome the maximum MS, each |c003CFF3CAGI|r gives 0.5 MS, also creates a fire trail.|n|nCooldown: 60 sec.")
 call LANG_It('I02W',3,"Increase MS by 200, increase |c00FFFF66AllStat|r by 30.|n|nActive: \"Fiery Run\" - allows you to overcome the maximum MS, each |c003CFF3CAGI|r gives 0.5 MS, also creates a fire trail.|n|nCooldown: 60 sec.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I02X',0,"Fire Boots (Recipe)")
 call LANG_It('I02X',1,"Fire Boots (Recipe)")
 call LANG_It('I02X',2,"Increase MS by 200, increase |c00FFFF66AllStat|r by 30.|nActive: Fire Run|n|nCooldown: 60 sec.|n|nRequires: Boots of Speed, Fire Sphere, Medal of Courage, Recipe.")
@@ -313508,8 +313942,6 @@ call LANG_It('I048',2,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear 
 call LANG_It('I048',3,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear that deals 5*|c00FF5555STR|r pure, unblockable damage.|n|nCD: 30 sec.")
 call LANG_It('IGn0',0,"Gungnir (Recipe)")
 call LANG_It('IGn0',1,"Gungnir (Recipe)")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('IGn0',2,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear that deals 5*|c00FF5555STR|r pure, unblockable damage.|n|nCD: 30 sec.|n|nRequires: Saiyan Gloves, Master's Tank Top x2, Recipe.")
 call LANG_It('IGn0',3,"Increase |c00FF5555STR|r by 50.|n|nThrow - Throw a spear that deals 5*|c00FF5555STR|r pure, unblockable damage.|n|nCD: 30 sec.|n|nRequires: Saiyan Gloves, Master's Tank Top x2, Recipe.")
 call LANG_It('I049',0,"Hell Ring: \"666\", Rank D")
@@ -313536,6 +313968,8 @@ call LANG_It('I04E',0,"Hell Ring: \"666\"")
 call LANG_It('I04E',1,"Hell Ring: \"666\"")
 call LANG_It('I04E',2,"Increases damage dealt by 60, |c00FFFF66AllStat|r by 24, reduces DEF of enemies within 1100 radius by 15.|n|nPassive: \"Cursed Hit\" - 35% not to miss and stun for 0.06 sec.|n|nActive: \"Curse Overwhelm\" - Increases the chance of activating \"Cursed Hit\" to 100% for the next 4 sec.|n|nCD: 25 secon"+"ds after the end.")
 call LANG_It('I04E',3,"Increases damage dealt by 60, |c00FFFF66AllStat|r by 24, reduces DEF of enemies within 1100 radius by 15.|n|nPassive: \"Cursed Hit\" - 35% not to miss and stun for 0.06 sec.|n|nActive: \"Curse Overwhelm\" - Increases the chance of activating \"Cursed Hit\" to 100% for the next 4 sec.|n|nCD: 25 secon"+"ds after the end.")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I04F',0,"Excalibur")
 call LANG_It('I04F',1,"Excalibur")
 call LANG_It('I04F',2,"Increases |c00FFFF66AllStat|r by 30, attacks by 125, and restores 20% of damage dealt on each attack (melee only)|nEach attack reduces armor by 3 for 10 seconds.|n|nActive: \"Excalibur Slash\" - performs a swing that deals 200% of attack to enemies in front of him in an AoE of 500. Counts as a norma"+"l attack, but cannot trigger Dark Excalibur's Bloodlust, Li Shuwen's Q, or Shigan Lucci's.|n|nCD: 3 sec.")
@@ -313760,8 +314194,6 @@ call LANG_It('I05Y',0,"Fake Mist Mare Ring")
 call LANG_It('I05Y',1,"Fake Mist Mare Ring")
 call LANG_It('I05Y',2,"Increase |c0077FFFFINT|r by 30 and |c00FF5555STR|r by 25.")
 call LANG_It('I05Y',3,"Increase |c0077FFFFINT|r by 30 and |c00FF5555STR|r by 25.")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_It('I05Z',0,"True Mist Mare Ring")
 call LANG_It('I05Z',1,"True Mist Mare Ring")
 call LANG_It('I05Z',2,"Increase |c0077FFFFINT|r by 40 and |c00FF5555STR|r by 40, DEF by 10.|n|n[|c0077FFFFShadow Cover|r] - If the hero does not move or receive damage for 4 seconds, he becomes invisible as long as he meets the conditions.|n|nActive: For 6 seconds, the hero has a chance to be reborn with 35% HP and MP, Ne"+"crosis and Ice Essence Frostbite are removed (if they were present - only 17.5% HP). Respawn time 5 sec.|nCannot be bought with Anbu Set!|n|nCooldown: 40 sec.")
@@ -313788,6 +314220,8 @@ call LANG_It('I064',2,"Increase |c00FF5555STR|r by 30, reduces physical damage t
 call LANG_It('I064',3,"Increase |c00FF5555STR|r by 30, reduces physical damage to the owner by 100 damage")
 call LANG_It('I065',0,"True Cloud Mare Ring")
 call LANG_It('I065',1,"True Cloud Mare Ring")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_It('I065',2,"Increase |c00FF5555STR|r by 35, MS increase by 10%, reduces physical damage to the owner by 120 damage, for every 5% Max HP lost during damage, the hero gains 5 |c003CFF3CAGI|r and 100 HP for 15 seconds.|n|nIndependence: Enemies within a 900 radius lose their block ability for 5 seconds. 25 DEF to a"+"llies, for 5 sec. within 900 Does not work against magic defenses and misses.|nCD: 30 sec.")
 call LANG_It('I065',3,"Increase |c00FF5555STR|r by 35, MS increase by 10%, reduces physical damage to the owner by 120 damage, for every 5% Max HP lost during damage, the hero gains 5 |c003CFF3CAGI|r and 100 HP for 15 seconds.|n|nIndependence: Enemies within a 900 radius lose their block ability for 5 seconds. 25 DEF to a"+"llies, for 5 sec. within 900 Does not work against magic defenses and misses.|nCD: 30 sec.")
 call LANG_It('I066',0,"Security Droid mk.III")
@@ -314012,8 +314446,6 @@ call LANG_It('IPlR',1,"Perfect Amulet (Recipe)")
 call LANG_It('IPlR',2,"Increases |c00FFFF66AllStat|r by 15, |c003CFF3CAGI|r and |c00FF5555STR|r by an additional 10, HP and MP by 1000, DEF by 5, MP recovery by 10%, and HP Regen by 5. When dealing damage, restores HP equal to 7.5% of the damage and MP equal to 10%.|nThis effect does not stack with other amulets or Blood "+"Sphere.|n|nRequires: Golden Amulet, Silver Amulet, Recipe.")
 call LANG_It('IPlR',3,"Increases |c00FFFF66AllStat|r by 15, |c003CFF3CAGI|r and |c00FF5555STR|r by an additional 10, HP and MP by 1000, DEF by 5, MP recovery by 10%, and HP Regen by 5. When dealing damage, restores HP equal to 7.5% of the damage and MP equal to 10%.|nThis effect does not stack with other amulets or Blood "+"Sphere.|n|nRequires: Golden Amulet, Silver Amulet, Recipe.")
 call LANG_It('ISt0',0,"Soul Talisman")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_It('ISt0',1,"Soul Talisman")
 call LANG_It('ISt0',2,"Increase HP and MP by 500|n")
 call LANG_It('ISt0',3,"Increase HP and MP by 500|n")
@@ -314040,6 +314472,8 @@ call LANG_It('IASA',1,"Seal of Alchemy (AGI)")
 call LANG_It('IASA',2,"Increases MP Regen by 50%, HP by 500, |c003CFF3CAGI|r by 35 + 5%. Cannot be stolen. Can be sold for full price.|nPassive: Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c003CFF3CAGI|r bonus to |c0077FFFFINT|r, replacing"+" the bonus MP Regen with 3 DEF.|nSingle press - disables Passive (together with the magic damage penalty).")
 call LANG_It('IASA',3,"Increases MP Regen by 50%, HP by 500, |c003CFF3CAGI|r by 35 + 5%. Cannot be stolen. Can be sold for full price.|nPassive: Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c003CFF3CAGI|r bonus to |c0077FFFFINT|r, replacing"+" the bonus MP Regen with 3 DEF.|nSingle press - disables Passive (together with the magic damage penalty).")
 call LANG_It('IASI',0,"Seal of Alchemy (INT)")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_It('IASI',1,"Seal of Alchemy (INT)")
 call LANG_It('IASI',2,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive: Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, replacing th"+"e bonus HP with 50% MP regeneration.|nSingle press - disables Passive (together with the magic damage penalty).")
 call LANG_It('IASI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive: Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, replacing th"+"e bonus HP with 50% MP regeneration.|nSingle press - disables Passive (together with the magic damage penalty).")
@@ -314264,8 +314698,6 @@ call LANG_U('H06B',3,"Nero - a former emperor, Nero's artistic nature is reflect
 call LANG_U('H06C',3,"Li Shuwen is a master of martial arts and stealth techniques.|n|nRole: Assassin, Caster|n|n")
 call LANG_U('H06D',3,"Ichigo is the temporary shinigami of Karakura City.|n|nRole: Carry|n|n")
 call LANG_U('H06E',3,"Enel, the god of Skypiea, ate the Goro Goro no Mi fruit and became Lightning Man.")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_U('H06F',3,"Alternate version of Joan of Arc.|n|nRole: Caster, Disabler|n|n")
 call LANG_U('H06G',3,"Atalanta is an Archer class servant of the red faction in the alternate version of the 4th Holy Grail War.|n|nRole: Caster, Carry, Exhauster|n|n")
 call LANG_U('H06L',3,"Atalanta is the archer of the red faction.|n|nRole: Caster, Carry, Exhauster|n|n")
@@ -314292,6 +314724,8 @@ call LANG_U('H075',3,"King Hassan - 1 assassins.|n|nRole: Caster, Durable, Assas
 call LANG_U('H076',3,"Jeanne D'Arc is a holy maiden of Orleans summoned to the Great Holy Grail War.|n|nRole: Support, Durable, Disabler|n|n")
 call LANG_U('H077',3,"Enkidu is the fantasy of the gods.|n|nRole: Caster, Disabler, Durable, Semi-Support|n|n")
 call LANG_U('H078',3,"Kirei Kotomine is a Master Assassin in the 4th Grail War.|n|nRole: Assassin, Exhauster, Caster, Escape|n|n")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_U('H10L',3,"Rob Lucci - current CP0 agent, former CP9 agent, ate the \"Neko Neko no Mi\" Devil Fruit.|n|nRole: Caster, Carry, Exhauster|n|n")
 call LANG_U('H112',3,"Deidara is a member of Akatsuki who uses explosive clay in battle to create various techniques.|n|nRole: Caster, Escape|n|n")
 call LANG_U('H116',3,"Hyuuga Neji is a Shinobi of the Hidden Leaf who wields the Byakugan.|n|nRole: Disabler, Exhauster|n|n")
@@ -314516,8 +314950,6 @@ call LANG_B('B067',1,"This warrior is caught")
 call LANG_B('B068',0,"Holy Grail")
 call LANG_B('B068',1,"Holy Grail")
 call LANG_B('B069',0,"Radiance of the Grail")
-endfunction
-function LANG_Data59 takes nothing returns nothing
 call LANG_B('B069',1,"Radiance of the Grail")
 call LANG_B('B06C',0,"Millefiore Independence")
 call LANG_B('B06C',1,"Millefiore Independence")
@@ -314544,6 +314976,8 @@ call LANG_B('B07C',0,"Byakuran Wings")
 call LANG_B('B07C',1,"Byakuran Wings")
 call LANG_B('B07D',0,"Prelati's Grimoire")
 call LANG_B('B07D',1,"Prelati's Grimoire")
+endfunction
+function LANG_Data59 takes nothing returns nothing
 call LANG_B('B14R',0,"Boros Armor")
 call LANG_B('B14R',1,"This unit cannot be targeted by spells.")
 call LANG_B('B14S',0,"Boros Armor")
