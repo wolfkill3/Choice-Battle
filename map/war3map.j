@@ -273365,8 +273365,8 @@ call SaveInteger(SG_DB,'H067',21,3)
 endfunction
 
 function SG_Data4 takes nothing returns nothing
-call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I036 I054 I018 I1S4 I043 IAoF I04V")
-call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I036 I054 I018 I1S4 I043 IAoF I04V")
+call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I018 I1S4 I03A I054 I043 I04V")
+call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I018 I1S4 I03A I054 IPlA IMDi")
 call SaveInteger(SG_DB,'H069',20,9)
 call SaveInteger(SG_DB,'H069',21,3)
 call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 I04V IBBi I00Q I02V I06Q I068 I043 I04T I1S4 I03P IPlA I042")
@@ -318253,7 +318253,7 @@ local integer enemyCarries
 if LoadBoolean(BOT_DB,bgPlayer,221) or bgSize<=0 then
 return
 endif
-// Nanaya buys a durable core first, then ice boots as his second full item.
+// Preserve Nanaya's guide order: Storm, Onizuka, Alastor, ice boots, sustain, defense.
 if bgHero=='H069' then
     loop
         exitwhen bgIndex>=bgSize or bgIndex>=7
