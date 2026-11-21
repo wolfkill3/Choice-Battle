@@ -81,6 +81,7 @@ integer array BOT_PublicPingUntil
 real array BOT_PublicPingX
 real array BOT_PublicPingY
 integer array BOT_Type
+constant integer BOT_PoolCount=32
 integer array BOT_Pool
 integer array BOT_Buy
 integer array BOT_Spell
@@ -273364,8 +273365,8 @@ call SaveInteger(SG_DB,'H067',21,3)
 endfunction
 
 function SG_Data4 takes nothing returns nothing
-call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I046 IMDi I012 I042 IPlA I06Q I068 I1S4 I04T I03A I03P I04L")
-call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I046 I04V I012 I042 IPlA I06Q I068 I04T I1S4 I03A I03P I04L")
+call SaveStr(SG_DB,'H069',0,"I01F I01M I01M I036 I054 I018 I1S4 I043 IAoF I04V")
+call SaveStr(SG_DB,'H069',1,"I01F I01M I01M I036 I054 I018 I1S4 I043 IAoF I04V")
 call SaveInteger(SG_DB,'H069',20,9)
 call SaveInteger(SG_DB,'H069',21,3)
 call SaveStr(SG_DB,'H06B',0,"I01F I01M I01M I046 I04V IBBi I00Q I02V I06Q I068 I043 I04T I1S4 I03P IPlA I042")
@@ -316783,6 +316784,13 @@ call SaveReal(BOT_DB,'A0XQ',1,0.)
 call SaveInteger(BOT_DB,'H04L',6,'A1EF')
 call SaveInteger(BOT_DB,'A1EF',0,9)
 call SaveReal(BOT_DB,'A1EF',1,1600.)
+set BOT_Pool[31]='H069'
+call SaveStr(BOT_DB,'H069',30,"Nanaya Shiki")
+call SaveInteger(BOT_DB,'H069',0,'A1BO')
+call SaveInteger(BOT_DB,'H069',1,'A1BS')
+call SaveInteger(BOT_DB,'H069',2,'A1BT')
+call SaveInteger(BOT_DB,'H069',3,'A1BW')
+call SaveInteger(BOT_DB,'H069',4,'A1BZ')
 set BOT_Pool[30]='H116'
 call SaveStr(BOT_DB,'H116',30,"Neji")
 call SaveInteger(BOT_DB,'H116',0,'A24E')
@@ -317373,6 +317381,8 @@ set BOT_Attack[slot]=null
 set BOT_MoveUnitId[slot]=0
 call SaveInteger(BOT_DB,slot,50,0)
 call RemoveSavedHandle(BOT_DB,slot,52)
+call RemoveSavedString(BOT_DB,slot,280)
+call RemoveSavedInteger(BOT_DB,slot,281)
 call RemoveSavedHandle(BOT_DB,slot,180)
 call RemoveSavedInteger(BOT_DB,slot,181)
 call SaveInteger(BOT_DB,slot,235,0)
@@ -317690,6 +317700,12 @@ if GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_EFFECT then
     if GetSpellAbilityId()=='RenQ' then
         call SaveInteger(BOT_DB,bi,182,BOT_Clock+1)
     endif
+    if BOT_Type[bi]=='H069' and LoadInteger(BOT_DB,bi,50)>0 and GetSpellAbilityId()==LoadInteger(BOT_DB,bi,281) then
+        call SaveInteger(BOT_DB,bi,50,LoadInteger(BOT_DB,bi,50)+1)
+        call SaveInteger(BOT_DB,bi,51,BOT_Clock+32)
+        call RemoveSavedInteger(BOT_DB,bi,281)
+        set BOT_Wait[bi]=BOT_Clock+1
+    endif
     return
 endif
 set BOT_Casting[bi]=GetTriggerEventId()==EVENT_PLAYER_UNIT_SPELL_CHANNEL
@@ -317729,7 +317745,9 @@ set brOther=null
 return brAllyHP<=0. and brEnemyHP>brOwnHP*1.8 and brEnemyHP<brOwnHP*5.
 endfunction
 function BOT_ComboMember takes unit bcUnit,integer bcAbility returns boolean
-if GetUnitTypeId(bcUnit)=='H02L' and GetUnitAbilityLevel(bcUnit,'A0JD')>0 and GetUnitAbilityLevel(bcUnit,'A0JF')>0 then
+if GetUnitTypeId(bcUnit)=='H069' then
+return true
+elseif GetUnitTypeId(bcUnit)=='H02L' and GetUnitAbilityLevel(bcUnit,'A0JD')>0 and GetUnitAbilityLevel(bcUnit,'A0JF')>0 then
 return bcAbility=='A0JD' or bcAbility=='A0JF'
 elseif GetUnitTypeId(bcUnit)=='HRen' and GetUnitAbilityLevel(bcUnit,'RenQ')>0 and GetUnitAbilityLevel(bcUnit,'RenW')>0 and GetUnitAbilityLevel(bcUnit,'RenE')>0 then
 return bcAbility=='RenQ' or bcAbility=='RenW' or bcAbility=='RenE'
@@ -318234,6 +318252,18 @@ local integer bgLimit=7
 local integer enemyCarries
 if LoadBoolean(BOT_DB,bgPlayer,221) or bgSize<=0 then
 return
+endif
+// Nanaya buys a durable core first, then ice boots as his second full item.
+if bgHero=='H069' then
+    loop
+        exitwhen bgIndex>=bgSize or bgIndex>=7
+        set bgType=String2Id(SubString(bgList,(bgStart+bgIndex)*4,(bgStart+bgIndex)*4+4))
+        call SaveInteger(BOT_DB,bgPlayer,200+bgIndex,bgType)
+        set bgIndex=bgIndex+1
+    endloop
+    call SaveInteger(BOT_DB,bgPlayer,220,bgIndex)
+    call SaveBoolean(BOT_DB,bgPlayer,221,true)
+    return
 endif
 set bgCounter=BOT_CounterItem(bgPlayer)
 set enemyCarries=BOT_EnemyCarryCount(bgPlayer)
@@ -319288,6 +319318,228 @@ set target=null
 set stun=null
 return result
 endfunction
+// Nanaya: 50 is the next combo letter, 52 the target, 280 the sequence,
+// 281 the queued spell. Only EVENT_PLAYER_UNIT_SPELL_EFFECT advances a step.
+function BOT_NanayaSpell takes unit caster,string key returns integer
+local integer first=0
+local integer second=0
+local integer third=0
+local integer spell
+local integer index=0
+local ability active
+if key=="q" then
+    set first='A1BP'
+    set second='A1BQ'
+    set third='A1BR'
+elseif key=="e" then
+    set first='A1BU'
+    set second='A23W'
+    set third='A1BV'
+elseif key=="r" then
+    set first='A1BX'
+    set second='A1BY'
+elseif key=="w" then
+    set first='A1BS'
+elseif key=="t" then
+    set first='A1BZ'
+endif
+loop
+    exitwhen index>=3
+    set spell=first
+    if index==1 then
+        set spell=second
+    elseif index==2 then
+        set spell=third
+    endif
+    set active=GetUnitAbility(caster,spell)
+    if spell!=0 and active!=null and GetUnitAbilityLevel(caster,spell)>0 and IsUnitAbilityVisible(caster,spell) and IsAbilityEnabled(active) and IsAbilityOrderEnabled(active) then
+        set active=null
+        return spell
+    endif
+    set index=index+1
+endloop
+set active=null
+return 0
+endfunction
+function BOT_NanayaFocused takes unit caster returns boolean
+local integer slot=0
+local integer threats=0
+local unit enemy
+loop
+    exitwhen slot>=10 or threats>=2
+    set enemy=Hero[slot]
+    if BOT_Enemy(caster,enemy) and BOT_Distance(caster,enemy)<700. and not IsUnitPaused(enemy) and not IsUnitStunned(enemy) and GetUnitTargetUnit(enemy)==caster then
+        set threats=threats+1
+    endif
+    set slot=slot+1
+endloop
+set enemy=null
+return threats>=2
+endfunction
+function BOT_NanayaStartReady takes unit caster,string sequence returns boolean
+local integer index=0
+local integer spell
+local integer rank
+local real mana=0.
+local string key
+loop
+    exitwhen index>=StringLength(sequence)
+    set key=SubString(sequence,index,index+1)
+    set spell=BOT_NanayaSpell(caster,key)
+    if not BOT_Ready(caster,spell) then
+        return false
+    endif
+    set rank=GetUnitAbilityLevel(caster,spell)
+    set mana=mana+I2R(GetAbilityBaseIntegerLevelFieldById(spell,ABILITY_ILF_MANA_COST,rank-1))+GetWidgetMaxMana(caster)*.005*I2R(index)
+    set index=index+1
+endloop
+// Reserve mana for the more expensive follow-ups and for disengagement.
+return GetWidgetMana(caster)>=mana+GetWidgetMaxMana(caster)*.08
+endfunction
+function BOT_NanayaCombo takes integer slot,unit enemy returns boolean
+local unit caster=Hero[slot]
+local unit target=LoadUnitHandle(BOT_DB,slot,52)
+local integer stage=LoadInteger(BOT_DB,slot,50)
+local string sequence=LoadStr(BOT_DB,slot,280)
+local string key
+local integer spell
+local integer rank
+local integer choice
+local real distance
+local real mana
+local real x
+local real y
+local real angle
+local real reach=750.
+local boolean result=false
+local boolean valid
+if stage==0 then
+    set target=enemy
+endif
+set valid=BOT_Enemy(caster,target) and not BOT_BlockedTarget(caster,target) and not BOT_ShouldRetreat(slot) and not BOT_NanayaFocused(caster)
+if valid and stage==0 then
+    if LoadReal(HH,GetHandleId(caster),ComboTimerHash)<=0. then
+        if GetUnitAbilityLevel(caster,'A1BW')>0 then
+            set choice=GetRandomInt(0,3)
+            if choice==0 then
+                set sequence="eqqeqrrqet"
+            elseif choice==1 then
+                set sequence="teqqeqrrqe"
+            elseif choice==2 then
+                set sequence="ewrq"
+            else
+                set sequence="eqqerrqewt"
+            endif
+        elseif GetUnitAbilityLevel(caster,'A1BT')>0 then
+            set sequence="eqqeqw"
+        else
+            set sequence="qqwq"
+        endif
+        if not BOT_Ready(caster,'A1BZ') then
+            if SubString(sequence,0,1)=="t" then
+                set sequence=SubString(sequence,1,StringLength(sequence))
+            endif
+            if SubString(sequence,StringLength(sequence)-1,StringLength(sequence))=="t" then
+                set sequence=SubString(sequence,0,StringLength(sequence)-1)
+            endif
+        endif
+        if not BOT_NanayaStartReady(caster,sequence) then
+            if GetUnitAbilityLevel(caster,'A1BT')>0 then
+                set sequence="eqqeqw"
+            else
+                set sequence="qqwq"
+            endif
+        endif
+        if BOT_NanayaStartReady(caster,sequence) then
+            set stage=1
+            call SaveStr(BOT_DB,slot,280,sequence)
+            call SaveInteger(BOT_DB,slot,50,stage)
+            call SaveInteger(BOT_DB,slot,51,BOT_Clock+32)
+            call SaveUnitHandle(BOT_DB,slot,52,target)
+        endif
+    endif
+elseif stage>0 then
+    set valid=valid and LoadInteger(BOT_DB,slot,51)>BOT_Clock and stage<=StringLength(sequence)
+    if stage>2 and LoadReal(HH,GetHandleId(caster),ComboTimerHash)<=0. then
+        set valid=false
+    endif
+endif
+if valid and stage>0 then
+    set key=SubString(sequence,stage-1,stage)
+    set spell=BOT_NanayaSpell(caster,key)
+    set rank=GetUnitAbilityLevel(caster,spell)
+    set distance=BOT_Distance(caster,target)
+    if spell==0 or rank<=0 then
+        set valid=false
+    elseif LoadInteger(BOT_DB,slot,281)!=0 then
+        set result=true
+    else
+        set mana=I2R(GetAbilityBaseIntegerLevelFieldById(spell,ABILITY_ILF_MANA_COST,rank-1))+GetWidgetMaxMana(caster)*.005*I2R(LoadInteger(HH,GetHandleId(caster),ComboCounterHash))
+        if GetWidgetMana(caster)<mana then
+            set valid=false
+        elseif not BOT_Ready(caster,spell) then
+            // Wait only for short cooldowns between stages, within the combo window.
+            set result=GetAbilityRemainingCooldown(GetUnitAbility(caster,spell))<=.5
+            set valid=result
+        else
+            if spell=='A1BQ' or spell=='A1BY' then
+                set reach=240.
+            elseif spell=='A1BR' or spell=='A23W' then
+                set valid=LoadUnitHandle(HH,GetHandleId(caster),SH_SKQ)==target or LoadUnitHandle(HH,GetHandleId(caster),SH_SKR)==target
+                set reach=1500.
+            elseif spell=='A1BX' then
+                set valid=LoadUnitHandle(HH,GetHandleId(caster),SH_Q3)==target or LoadUnitHandle(HH,PH(OwnerOf(caster)),SH_EW)==target or GetUnitFlyHeight(target)>150.
+                set reach=1500.
+            elseif spell=='A1BV' then
+                set reach=650.
+            elseif spell=='A1BZ' then
+                set reach=1400.
+            elseif spell=='A1BU' then
+                set reach=850.
+            endif
+            if valid and distance<=reach then
+                call SaveInteger(BOT_DB,slot,281,spell)
+                if spell=='A1BP' or spell=='A1BS' then
+                    set result=BOT_QueuePoint(caster,BOT_Order(caster,spell),GetUnitX(target),GetUnitY(target))
+                elseif spell=='A1BU' then
+                    set angle=Atan2(GetUnitY(caster)-GetUnitY(target),GetUnitX(caster)-GetUnitX(target))
+                    set x=GetUnitX(target)+100.*Cos(angle)
+                    set y=GetUnitY(target)+100.*Sin(angle)
+                    if not IsTerrainPathable(x,y,PATHING_TYPE_WALKABILITY) then
+                        set result=BOT_QueuePoint(caster,BOT_Order(caster,spell),x,y)
+                    endif
+                elseif spell=='A1BZ' and GetAbilityIntegerLevelField(GetUnitAbility(caster,spell),ABILITY_ILF_TARGET_TYPE,rank-1)==1 then
+                    set result=BOT_QueueTarget(caster,BOT_Order(caster,spell),target)
+                elseif spell=='A1BZ' then
+                    set result=BOT_QueuePoint(caster,BOT_Order(caster,spell),GetUnitX(target),GetUnitY(target))
+                else
+                    // Q2/R2 strike in front. Q3/E finishers use the captured target.
+                    set result=BOT_QueueAction(caster,1,BOT_Order(caster,spell),target,null,0.,0.,0)
+                endif
+                if result then
+                    set BOT_Wait[slot]=BOT_Clock+1
+                else
+                    call RemoveSavedInteger(BOT_DB,slot,281)
+                    set valid=false
+                endif
+            elseif valid and stage==1 and distance<=1400. then
+                set result=BOT_Move(caster,GetUnitX(target),GetUnitY(target))
+            else
+                set valid=false
+            endif
+        endif
+    endif
+endif
+if not valid or not result then
+    call SaveInteger(BOT_DB,slot,50,0)
+    call RemoveSavedHandle(BOT_DB,slot,52)
+    call RemoveSavedString(BOT_DB,slot,280)
+    call RemoveSavedInteger(BOT_DB,slot,281)
+endif
+set caster=null
+set target=null
+return result
+endfunction
 function BOT_Combo takes integer bcPlayer,unit bcEnemy returns boolean
 local unit bcUnit=Hero[bcPlayer]
 local unit bcTarget=LoadUnitHandle(BOT_DB,bcPlayer,52)
@@ -319301,6 +319553,11 @@ local integer bcStart=1
 local integer bcNext
 local integer bcMana
 local boolean bcResult=false
+if BOT_Type[bcPlayer]=='H069' then
+set bcUnit=null
+set bcTarget=null
+return BOT_NanayaCombo(bcPlayer,bcEnemy)
+endif
 if BOT_Type[bcPlayer]=='H04L' or BOT_Type[bcPlayer]=='H06B' then
 set bcUnit=null
 set bcTarget=null
@@ -319441,6 +319698,8 @@ elseif BOT_Type[bePlayer]=='H00J' then
 set beAbility='A09M'
 elseif BOT_Type[bePlayer]=='H116' then
 set beAbility='A24D'
+elseif BOT_Type[bePlayer]=='H069' and IsUnitAbilityVisible(beUnit,'A1BU') then
+set beAbility='A1BU'
 elseif BOT_Type[bePlayer]=='H04T' then
 set beAbility='A17G'
 endif
@@ -320141,6 +320400,10 @@ endfunction
 function BOT_AttackTarget takes integer slot,unit target returns boolean
 local unit caster=Hero[slot]
 local boolean attacking=BOT_Attack[slot]==target and GetUnitCurrentOrder(caster)==OrderId("attack")
+if BOT_Type[slot]=='H069' then
+    set caster=null
+    return false
+endif
 if not attacking or ModuloInteger(BOT_Clock,12)==ModuloInteger(slot,12) then
     if BOT_QueueTarget(caster,OrderId("attack"),target) then
         set BOT_Attack[slot]=target
@@ -320329,7 +320592,7 @@ return moved
 endfunction
 // 1: back line, 2: support, 3: front line. Use the tavern's roles for other tanks and supports.
 function BOT_PositionRole takes integer heroType returns integer
-if heroType=='H014' or heroType=='H00K' or heroType=='H00J' or heroType=='H04T' or heroType=='H018' then
+if heroType=='H014' or heroType=='H00K' or heroType=='H00J' or heroType=='H04T' or heroType=='H018' or heroType=='H069' then
 return 1
 elseif heroType=='H051' or heroType=='HAlb' or heroType=='H060' or heroType=='HGrp' or heroType=='H00Y' or heroType=='H02L' or LoadBoolean(TavRoleHT,heroType,9) then
 return 3
@@ -320363,7 +320626,7 @@ return false
 endif
 if enemy!=null then
 set enemyRange=BOT_Distance(caster,enemy)
-if enemyRange<=GetUnitAttackRangeByIndex(caster,0) and not BOT_BlockedTarget(caster,enemy) then
+if BOT_Type[slot]!='H069' and enemyRange<=GetUnitAttackRangeByIndex(caster,0) and not BOT_BlockedTarget(caster,enemy) then
     set zone=null
     return false
 endif
@@ -320413,7 +320676,9 @@ set occupy=true
 endif
 endif
 elseif role==1 then
-if rangedPressure then
+if BOT_Type[slot]=='H069' then
+set radius=650.
+elseif rangedPressure then
 set radius=GetUnitAttackRangeByIndex(caster,0)-150.
 elseif BOT_Type[slot]=='H00J' then
 set radius=560.
@@ -320469,6 +320734,9 @@ set occupy=true
 elseif BOT_BlockedTarget(caster,enemy) then
 set occupy=true
 endif
+if BOT_Type[slot]=='H069' then
+set occupy=true
+endif
 endif
 if occupy then
 set x=Bof_X(zone,x)
@@ -320477,7 +320745,7 @@ if SR(casterX,casterY,x,y)>120. then
 if BOT_Type[slot]!='H00J' or enemyRange>=430. or not BOT_Escape(slot,x,y) then
 set occupy=BOT_Move(caster,x,y)
 endif
-elseif enemy!=null and not BOT_BlockedTarget(caster,enemy) then
+elseif enemy!=null and BOT_Type[slot]!='H069' and not BOT_BlockedTarget(caster,enemy) then
 set occupy=false
 elseif currentOrder!=OrderId("holdposition") then
 call BOT_QueueImmediate(caster,OrderId("holdposition"))
@@ -320823,12 +321091,12 @@ endfunction
 
 function BOT_ChooseHero takes nothing returns integer
 local integer k=0
-local integer start=GetRandomInt(0,30)
+local integer start=GetRandomInt(0,BOT_PoolCount-1)
 local integer heroType
 local integer index
 loop
-exitwhen k>=31
-set heroType=BOT_Pool[ModuloInteger(start+k,31)]
+exitwhen k>=BOT_PoolCount
+set heroType=BOT_Pool[ModuloInteger(start+k,BOT_PoolCount)]
 if not BOT_HeroTaken(heroType) then
 set index=0
 loop
