@@ -46660,15 +46660,6 @@ if GetHeroLevel(u)>=25 and not LoadBoolean(HH,PH(OwnerOf(u)),StringHash("Lvl25Ma
 call SaveBoolean(HH,PH(OwnerOf(u)),StringHash("Lvl25Mark"),true)
 call CreateUnit(OwnerOf(u),'h03J',RX,RY,0)
 endif
-if GetHeroLevel(u)>=25 and (GetUnitTypeId(u)=='H02G' or GetUnitTypeId(u)=='H12G') then
-loop
-exitwhen i>=10
-if GetUnitTypeId(Hero[i])=='H054' and IsUnitAlly(Hero[i],OwnerOf(u))then
-call UnitAddAbility(u,'A139')
-endif
-set i=i+1
-endloop
-endif
 set i=0
 if GetUnitTypeId(u)=='HHit' then
 call ExecuteFunc("HitFLevelEvent")
@@ -102824,39 +102815,41 @@ set p=null
 set t=null
 endfunction
 function FlameOfRebukeCond takes nothing returns boolean
-return GetSpellAbilityId()=='A139'
+return GetSpellAbilityId()=='A139' and GetHeroLevel(GetTriggerUnit())>=25
 endfunction
 function FlameOfRebukeCast2 takes nothing returns nothing
-local timer t=GetExpiredTimer()
-local integer id=GetHandleId(t)
-local unit u=LoadUnitHandle(h,id,0)
-local real x=GetUnitX(u)
-local real y=GetUnitY(u)
-local player p=OwnerOf(u)
-call UnitRemoveAbility(u,'A13A')
-call UnitRemoveAbility(u,'A138')
-set p=null
-set t=null
-set u=null
+    local timer rebukeExpiry=GetExpiredTimer()
+    local integer rebukeTimerId=GetHandleId(rebukeExpiry)
+    local unit rebukeTarget=LoadUnitHandle(h,rebukeTimerId,0)
+    local integer rebukeUnitId=GetHandleId(rebukeTarget)
+    if LoadTimerHandle(HH,rebukeUnitId,StringHash("JellalRebuke"))==rebukeExpiry then
+        call UnitRemoveAbility(rebukeTarget,'A13A')
+        call UnitRemoveAbility(rebukeTarget,'A138')
+        call RemoveSavedHandle(HH,rebukeUnitId,StringHash("JellalRebuke"))
+    endif
+    call FlushChildHashtable(h,rebukeTimerId)
+    call TSE_DestroyTimer(rebukeExpiry)
+    set rebukeTarget=null
+    set rebukeExpiry=null
 endfunction
 function FlameOfRebukeCast takes nothing returns nothing
-local unit u=GetSpellTargetUnit()
-local unit c=GetTriggerUnit()
-local timer t=CreateTimer()
-local integer id=GetHandleId(t)
-local player p=OwnerOf(u)
-call UnitAddAbility(u,'A13A')
-call UnitAddAbility(u,'A138')
-call SaveUnitHandle(h,id,0,u)
-call SetUnitState(c,UNIT_STATE_MANA,GetWidgetMana(c)*0.65)
-set soundplay=SndN(1274) // Sound\Music\mp3Music\FlameOfRebuke.mp3
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-call TSE_TimerStart(t,60,false,function FlameOfRebukeCast2)
-set u=null
-set c=null
-set p=null
-set t=null
+    local unit rebukeTarget=GetSpellTargetUnit()
+    local integer rebukeUnitId=GetHandleId(rebukeTarget)
+    local timer rebukeExpiry
+    if rebukeTarget!=null then
+        set rebukeExpiry=LoadTimerHandle(HH,rebukeUnitId,StringHash("JellalRebuke"))
+        if rebukeExpiry==null then
+            set rebukeExpiry=CreateTimer()
+            call SaveUnitHandle(h,GetHandleId(rebukeExpiry),0,rebukeTarget)
+            call SaveTimerHandle(HH,rebukeUnitId,StringHash("JellalRebuke"),rebukeExpiry)
+        endif
+        call UnitAddAbility(rebukeTarget,'A13A')
+        call UnitAddAbility(rebukeTarget,'A138')
+        call StartSound(SndN(1274))
+        call TSE_TimerStart(rebukeExpiry,60.,false,function FlameOfRebukeCast2)
+    endif
+    set rebukeExpiry=null
+    set rebukeTarget=null
 endfunction
 function AltarisCond takes nothing returns boolean
 return GetSpellAbilityId()=='A0I2'
@@ -308638,9 +308631,8 @@ call LANG_A('A137',3,0,"Shiro pulls all heroes within a 1400 radius into a space
 call LANG_A('A237',0,0,"Cancel")
 call LANG_A('A237',1,0,"Cancel ability.")
 call LANG_A('A139',0,0,"Flame Of Rebuke, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
-call LANG_A('A139',1,0,"Jellal sacrifices 35% of current MP to give Natsu +60 all stats.|n|n|cFFFF0000Only works for Natsu|r|n|n|cFF00A5FF|nDuration: 60 sec.|nCooldown: 100 seconds|r")
-call LANG_A('A139',2,0,"Storm Shot, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
-call LANG_A('A139',3,0,"Gokudera shoots out hurricane flames, dealing damage and incapacitating abilities for 3 seconds.|n|n|cFF00A5FFDamage: 50\\100\\150\\200\\250+1\\2\\3\\4\\5*|r|c0077FFFFINT|r|cFF00A5FF|nCooldown: 20 seconds|r")
+call LANG_A('A139',1,0,"Grants the selected target +20 to all attributes for 60 sec. Can target self, allies or enemies.|n|n|cFF00A5FFAvailable from level 25.|nCooldown: 100 sec.|r")
+call LANG_A('A139',3,0,"Grants the selected target +20 to all attributes for 60 sec. Can target self, allies or enemies.|n|n|cFF00A5FFAvailable from level 25.|nCooldown: 100 sec.|r")
 call LANG_A('A13B',1,0,"Shiro pulls all heroes within a 1400 radius into a space where his abilities are improved. Any enemy, which tries to use spells will be immideatly stopped with a sword and gets stunned.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nCooldown of sword: 7 sec.|nMana Cost: 3% per s"+"econd|nCooldown: 45 seconds|r")
 call LANG_A('A13B',2,0,"Mamaragan, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
 call LANG_A('A13B',3,0,"Lightning strikes the map every half second, dealing massive damage and stunning.|n|n|cFF00A5FF|nDamage: 5\\6\\7\\8\\9*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 2 sec|nDuration: 15 sec.|nCooldown: 30 seconds|r")
@@ -308662,9 +308654,9 @@ call LANG_A('A13E',3,0,"Shiro creates a shield that blocks damage.|n|n|cFF00A5FF
 call LANG_A('A13F',0,0,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,1,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,2,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
+call LANG_A('A13F',0,3,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 endfunction
 function LANG_Data27 takes nothing returns nothing
-call LANG_A('A13F',0,3,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A13F',0,4,"Nine Lives Blade Works: The Shooting Hundred Heads, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
 call LANG_A('A13F',1,0,"Shirou uses Hercules' sword for a series of 9 devastating attacks.|n|n|cFF00A5FF|nDamage: 4(6)*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nAoE: 350|nCooldown: 25(20) seconds|r")
 call LANG_A('A13F',1,1,"Shirou uses Hercules' sword for a series of 9 devastating attacks.|n|n|cFF00A5FF|nDamage: 5(7)*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1000|nAoE: 350|nCooldown: 25(20) seconds|r")
@@ -308914,9 +308906,9 @@ call LANG_A('A15L',3,0,"Killua dashes in the specified direction, dealing damage
 call LANG_A('A15N',0,0,"Gravita, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,1,"Gravita, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,2,"Gravita, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
+call LANG_A('A15N',0,3,"Gravita, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data28 takes nothing returns nothing
-call LANG_A('A15N',0,3,"Gravita, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
 call LANG_A('A15N',0,4,"Gravita, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('A15N',1,0,"Fujitora increases gravity in the target area, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 2*|r|c0077FFFFINT|r|cFF00A5FF + 75|nRange: 1000|nAoE: 600|nStun: 2 sec|nCooldown: 20 seconds|r")
 call LANG_A('A15N',1,1,"Fujitora increases gravity in the target area, dealing damage and stunning enemies.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF + 75|nRange: 1000|nAoE: 600|nStun: 2 sec|nCooldown: 20 seconds|r")
@@ -309166,9 +309158,9 @@ call LANG_A('A17R',1,0,"Miss 50% Sinon")
 call LANG_A('A17S',1,0,"Kuuka creates an area, if the specified enemy leaves this area, he will receive serious damage, as well as periodic damage to all enemies inside.|n|n|cFF00A5FF|nDamage: 7 *|r|c0077FFFFINT|r|cFF00A5FF (Chaos damage/Unblockable)|nDamage (Internal): 2*|r|c0077FFFFINT|r|cFF00A5FF per second|nDuration: 6"+" sec.|nRange: 1000|nAoE: 1200|nCooldown: 35 seconds|r")
 call LANG_A('A17S',2,0,"Nodens Sokutei, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('A17S',3,0,"Kuuka creates an area, if the specified enemy leaves this area, he will receive serious damage, as well as periodic damage to all enemies inside.|n|n|cFF00A5FF|nDamage: 7 *|r|c0077FFFFINT|r|cFF00A5FF (Chaos damage/Unblockable)|nDamage (Internal): 2*|r|c0077FFFFINT|r|cFF00A5FF per second|nDuration: 6"+" sec.|nRange: 1000|nAoE: 1200|nCooldown: 35 seconds|r")
+call LANG_A('A17T',1,0,"Sabrak's weapons leave unhealed wounds, dealing pure damage. There are more of them with every hit. If the one-time damage from each of the wounds exceeds the limit of 25 damage, then the damage becomes equal to the limit.|nDoes not work with Yata's Mirror.|n|n|cFF00A5FFDamage: 0.09*|r|c003CFF3CAGI|"+"r|cFF00A5FF per second|nMinimum Damage: 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|r")
 endfunction
 function LANG_Data29 takes nothing returns nothing
-call LANG_A('A17T',1,0,"Sabrak's weapons leave unhealed wounds, dealing pure damage. There are more of them with every hit. If the one-time damage from each of the wounds exceeds the limit of 25 damage, then the damage becomes equal to the limit.|nDoes not work with Yata's Mirror.|n|n|cFF00A5FFDamage: 0.09*|r|c003CFF3CAGI|"+"r|cFF00A5FF per second|nMinimum Damage: 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|r")
 call LANG_A('A17T',2,0,"Bone Armor, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
 call LANG_A('A17T',3,0,"Kimimaro's bones reduce damage he takes.|n|n|cFF00A5FFDamage Absorbed: 5% - 10%\\20%\\30%\\40%\\50%|r")
 call LANG_A('A17U',0,0,"Fuiuchi, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
@@ -309418,9 +309410,9 @@ call LANG_A('A19R',1,4,"Frenda scatters bears in the specified area. They will a
 call LANG_A('A19R',2,0,"Toy Shop, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A19R',3,0,"Frenda scatters bears in the specified area. They will activate after 0.5 seconds.|n|n|cFF00A5FFDamage: 0.5*|r|c0077FFFFINT|r|cFF00A5FF + 0.02*|r|c0077FFFFINT|r|cFF00A5FF*Hero level + 50 + 2% of enemy's current HP|nQuantity: 5\\6\\7\\8\\9|nLifetime of bears: 80 seconds.|nRange: 1250|nCooldown: 25\\2"+"3\\21\\19\\17 sec|r")
 call LANG_A('A19S',0,0,"Bomb Rush, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
+call LANG_A('A19S',0,1,"Bomb Rush, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 endfunction
 function LANG_Data30 takes nothing returns nothing
-call LANG_A('A19S',0,1,"Bomb Rush, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,2,"Bomb Rush, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,3,"Bomb Rush, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('A19S',0,4,"Bomb Rush, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
@@ -309670,9 +309662,9 @@ call LANG_A('HSR1',1,2,"Hashirama creates a wood dragon underground that binds e
 call LANG_A('HSR1',1,3,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 16% Max|nStun: 2 sec|nDamage: 7*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 7% Max per second|nDamage: 100% received+7*|r|c00FF5555STR|"+"r|cFF00A5FF|nCooldown: 35 seconds")
 call LANG_A('HSR1',1,4,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 20% Max|nStun: 2 sec|nDamage: 8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 8% Max per second|nDamage: 100% received+8*|r|c00FF5555STR|"+"r|cFF00A5FF|nCooldown: 35 seconds")
 call LANG_A('HSR1',2,0,"Mokuryu No Jutsu, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
+call LANG_A('HSR1',3,0,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 4/8/12/16/20% Max|nStun: 2 sec|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 4\\5\\6\\7\\8% Max per second|nDamage"+": 100% taken+4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 se")
 endfunction
 function LANG_Data31 takes nothing returns nothing
-call LANG_A('HSR1',3,0,"Hashirama creates a wood dragon underground that binds everyone in the area by draining mana.|nWhen cast on self, creates a nearby dragon that binds the first enemy that deals damage to Hashirama.|n|cff2b95ff|n• Application per point|nPreparation: 0.5 sec|nConstriction: 0.7 seconds in a radius of "+"500|nMana Drain: 4/8/12/16/20% Max|nStun: 2 sec|nDamage: 4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|n• Application on yourself (reverse)|nPreparation: 1 sec|nDuration: up to 6 sec|nStun: 1 sec every 1 sec (max 3 sec.)|nReduce incoming damage by 50%|nMana Drain: 4\\5\\6\\7\\8% Max per second|nDamage"+": 100% taken+4\\5\\6\\7\\8*|r|c00FF5555STR|r|cFF00A5FF|nCooldown: 35 se")
 call LANG_A('HST1',0,0,"Mokujin No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
 call LANG_A('HST1',1,0,"Hashirama forms a tree golem that increases health from Hashirama's strength, grants additional attack damage by 2*|c00FF5555STR|r, and grants the ability to jump onto an area with a hit.|n|cff2b95ff|n• HP Increase: 250 for every 50 |c00FF5555STR|r|cff2b95ff|nDuration: 20 sec|nPreparation: 1 sec|n"+"Damage: 50|nArmor: 10|nCooldown: 50 seconds")
 call LANG_A('HST1',2,0,"Mokujin No Jutsu, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
@@ -309922,9 +309914,9 @@ call LANG_A('SaQ1',0,1,"Hystrix, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,2,"Hystrix, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,3,"Hystrix, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('SaQ1',0,4,"Hystrix, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
+call LANG_A('SaQ1',1,0,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 endfunction
 function LANG_Data32 takes nothing returns nothing
-call LANG_A('SaQ1',1,0,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,1,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 3.5x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 pe"+"r sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,2,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 4x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 per "+"sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
 call LANG_A('SaQ1',1,3,"Sabrac throws a knife that hits everyone along its flight path.|n• For every 5 collected swords, throws an additional sword with 80% speed, 75% hit area and 15% of the original damage.|nUp to 5 additional swords can be thrown.|n• From level 35 also removes debuffs from himself. |nIf Sabrac was i"+"nside the F zone at the moment of the throw, the swords explode on hitting the first target.|cFF00A5FF|nDamage: +20% of the base.  |nAoE (explosion): 400|n|r|nThe throw (once) consumes 10% of current HP. |cFF00A5FF|nDamage: 4.5x|r|c00FF5555STR|r|cFF00A5FF +10 per sword|nAoE: 135|nRange: 1600 + 35 pe"+"r sword (up to 5000)|nSpeed: 2000 per sec + 1% per sword|nCooldown: 10 sec.|n|r")
@@ -310174,9 +310166,9 @@ call LANG_A('A1C8',2,0,"Change Vector, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A1C8',3,0,"The accelerator changes the vector of the building and throws it in the specified direction.|n|n|cFF00A5FFDamage: 75\\150\\225\\300\\375 + 1\\2\\3\\4\\5*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 10 sec.")
 call LANG_A('A1C9',0,0,"Pari Tenu Blauserum, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,1,"Pari Tenu Blauserum, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
+call LANG_A('A1C9',0,2,"Pari Tenu Blauserum, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 endfunction
 function LANG_Data33 takes nothing returns nothing
-call LANG_A('A1C9',0,2,"Pari Tenu Blauserum, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,3,"Pari Tenu Blauserum, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',0,4,"Pari Tenu Blauserum, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
 call LANG_A('A1C9',1,0,"Nero dashes in the target direction and attacks with a series of strikes from the first enemy hit.|n|n|cFF00A5FF|nDamage: 75+2*|r|c003CFF3CAGI|r|cFF00A5FF|nRange: 1250|nCast time: +0.08 sec.|nCooldown: 19 seconds|r")
@@ -310426,9 +310418,9 @@ call LANG_A('A1DS',1,20,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF
 call LANG_A('A1DS',1,23,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
 call LANG_A('A1DS',1,26,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
 call LANG_A('A1DS',1,29,"Atalanta dashes, attacking the first enemy hit.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF. |nCooldown: 15 sec.|r")
+call LANG_A('A1DT',0,0,"Tauropolos: Bow of Heaven, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 endfunction
 function LANG_Data34 takes nothing returns nothing
-call LANG_A('A1DT',0,0,"Tauropolos: Bow of Heaven, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,1,"Tauropolos: Bow of Heaven, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,2,"Tauropolos: Bow of Heaven, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('A1DT',0,3,"Tauropolos: Bow of Heaven, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
@@ -310678,9 +310670,9 @@ call LANG_A('A1FC',0,4,"Gae Bolg Rush, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
 call LANG_A('A1FC',1,0,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,1,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 4.25*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,2,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 5.5*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
+call LANG_A('A1FC',1,3,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 6.75*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 endfunction
 function LANG_Data35 takes nothing returns nothing
-call LANG_A('A1FC',1,3,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 6.75*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',1,4,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
 call LANG_A('A1FC',2,0,"Gae Bolg Rush, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('A1FC',3,0,"Skath throws a Gae Bolg forward, dealing damage to the first enemy hit.|n|n|cFF00A5FF|nDamage: 3\\4.25\\5.5\\6.75\\8*|r|c003CFF3CAGI|r|cFF00A5FF|nCooldown: 20 sec.")
@@ -310930,9 +310922,9 @@ call LANG_A('A1GU',2,0,"Azrael: The Angel That Announces Death, [|cffffcc00Level
 call LANG_A('A1GU',3,0,"Hassan begins to chase the target, gradually increasing the damage from the ability, if the damage of the ability exceeds the target's health, then instantly kills him.|n|n|cFF00A5FF|nDamage: 10*|r|c00FF5555STR|r|cFF00A5FF|nDamage per second: 0.5*|r|c00FF5555STR|r|cFF00A5FF|nChase speed: +1% per sec"+".|nRange: 1200|nCooldown: 30 sec. after the end of ability")
 call LANG_A('A1GW',0,0,"God's Resolution, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,1,"God's Resolution, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('A1GW',0,2,"God's Resolution, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 endfunction
 function LANG_Data36 takes nothing returns nothing
-call LANG_A('A1GW',0,2,"God's Resolution, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,3,"God's Resolution, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',0,4,"God's Resolution, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('A1GW',1,0,"Jeanne stuns enemies in the target area, reducing them |c00FFFF66AllStat|r for 15 seconds|n|n|cFF00A5FF|nStun: 3 sec|n|c00FFFF66AllStat|r|cFF00A5FF: 10|nCooldown: 38 sec")
@@ -311182,9 +311174,9 @@ call LANG_A('A215',2,0,"Fire Shield, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A215',3,0,"Ace surrounds himself with flames, dealing heavy damage to all enemies around him and protecting him.|n|n|cFF00A5FFMana spent: 1%\\sec|nDamage Blocked: 5%\\10%\\15%\\20%\\25%.|nDamage: 0.25\\0.5\\0.75\\1\\1.25*|r|c003CFF3CAGI|r|cFF00A5FF sec|r")
 call LANG_A('A215',4,0,"Dispel ''Fire Shield'' (|cffffcc00F|r).")
 call LANG_A('A215',5,0,"Dispel ''Fire Shield'' .")
+call LANG_A('A21N',0,0,"Byakugan, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 endfunction
 function LANG_Data37 takes nothing returns nothing
-call LANG_A('A21N',0,0,"Byakugan, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
 call LANG_A('A21N',1,0,"Passive: Neji can detect invisible enemies that are close to him. Neji is also immune to Shortsight.|nActive: Increases sight range, detection range of invisible enemies, and any damage dealt by Neji burns mana from enemies hit.|n|n|cFF00A5FF|nBonus Vision Range: 1000|nInvisible Enemies Detection Ra"+"nge: 700(1500)|nAmount of burned mana: 0.25*Damage.|nDuration: 10 sec.|nCooldown: 35 seconds|r")
 call LANG_A('A21N',2,0,"Dragon Force, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('A21N',3,0,"Laxus uses the power of the thunder dragon.|n|n|cFF00A5FF|nHealth Boost: 500\\750\\1000\\1250\\1500|nIgnore Damage: 15%\\18%\\21%\\24%\\27%|nProtection: 5\\10\\15\\20\\25.|nCooldown: 60 sec.|nDuration: 15 seconds|r")
@@ -311434,9 +311426,9 @@ call LANG_A('A3G2',0,1,"Hakkeshō Kaiten, [|cffffcc00Level 2|r] (|cffffcc00E|r)"
 call LANG_A('A3G2',0,2,"Hakkeshō Kaiten, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('A3G2',0,3,"Hakkeshō Kaiten, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('A3G2',0,4,"Hakkeshō Kaiten, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('A3G2',1,0,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1 sec.|nCooldown: 23 sec.")
 endfunction
 function LANG_Data38 takes nothing returns nothing
-call LANG_A('A3G2',1,0,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,1,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 1.5 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,2,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 2 sec.|nCooldown: 23 sec.")
 call LANG_A('A3G2',1,3,"Neji spins rapidly, releasing chakra from his palms, protecting himself from enemies and dealing damage to all nearby enemies.|n|n|cFF00A5FFDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nDamage per second: 1*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 400|nDuration: 2.5 sec.|nCooldown: 23 sec.")
@@ -311686,9 +311678,9 @@ call LANG_A('Ao66',0,3,"Command Seal Reinforced Keys, [|cffffcc00Level 4|r] (|cf
 call LANG_A('Ao66',0,4,"Command Seal Reinforced Keys, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('Ao66',1,0,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 3*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 500|nSilence: 2 sec|nCooldown: 15 sec.")
 call LANG_A('Ao66',1,1,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 600|nSilence: 2 sec|nCooldown: 14 sec.")
+call LANG_A('Ao66',1,2,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 700|nSilence: 2 sec|nCooldown: 13 sec.")
 endfunction
 function LANG_Data39 takes nothing returns nothing
-call LANG_A('Ao66',1,2,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 5*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 700|nSilence: 2 sec|nCooldown: 13 sec.")
 call LANG_A('Ao66',1,3,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 6*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 800|nSilence: 2 sec|nCooldown: 12 sec.")
 call LANG_A('Ao66',1,4,"Kirei dashes for a short distance, if during the dash Kirei takes damage that is more than 7% of his Max HP, the dash will stop and Q cooldown will be reset. If an enemy is encountered on the way, Kirei will push him away, throw 4 black keys and finish him off.|n|n|cFF00A5FFDamage: 7*|r|c003CFF3CAGI"+"|r|cFF00A5FF|nRange: 900|nSilence: 2 sec|nCooldown: 11 sec.")
 call LANG_A('Ao66',2,0,"Command Seal Reinforced Keys, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
@@ -311938,9 +311930,9 @@ call LANG_A('GGS4',2,0,"Super Saiyan 4, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
 call LANG_A('GGS4',3,0,"Increase |c00FFFF66AllStat|r by 30. |c00FF5555STR|r an additional 8 pts. Grants access to the Soul Punisher after Ultimate Impact. Increases E damage by 50%.|n|n|cFF00A5FFMP Consumption: 1.05% per second|r")
 call LANG_A('GGSG',1,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 call LANG_A('GGSG',2,0,"Super Saiyan God Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
+call LANG_A('GGSG',3,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 endfunction
 function LANG_Data40 takes nothing returns nothing
-call LANG_A('GGSG',3,0,"Increase |c00FFFF66AllStat|r by 32. It also increases magic damage by an additional 10%. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 1.15% per second|r")
 call LANG_A('GGSS',1,0,"Increase |c00FFFF66AllStat|r by 8. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 0.3% per second|r")
 call LANG_A('GGSS',2,0,"Super Saiyan, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('GGSS',3,0,"Increase |c00FFFF66AllStat|r by 8. Grants access to the Soul Punisher after Ultimate Impact.|n|n|cFF00A5FFMP Consumption: 0.3% per second|r")
@@ -312190,9 +312182,9 @@ call LANG_A('LCQ1',0,1,"Rankyaku/Rankyaku Gaicho, [|cffffcc00Level 2|r] (|cffffc
 call LANG_A('LCQ1',0,2,"Rankyaku/Rankyaku Gaicho, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
 call LANG_A('LCQ1',0,3,"Rankyaku/Rankyaku Gaicho, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
 call LANG_A('LCQ1',0,4,"Rankyaku/Rankyaku Gaicho, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
+call LANG_A('LCQ1',1,0,"Lucci creates a flying projectile of compressed air in the form of a scythe. The enhanced version flies further and deals more damage.|n|n|cFF00A5FF|nDamage: 1*|c003CFF3CAGI|r|cFF00A5FF + 100 (+35%)|nRange: 2400 (3150)|nCooldown: 10 seconds.|r")
 endfunction
 function LANG_Data41 takes nothing returns nothing
-call LANG_A('LCQ1',1,0,"Lucci creates a flying projectile of compressed air in the form of a scythe. The enhanced version flies further and deals more damage.|n|n|cFF00A5FF|nDamage: 1*|c003CFF3CAGI|r|cFF00A5FF + 100 (+35%)|nRange: 2400 (3150)|nCooldown: 10 seconds.|r")
 call LANG_A('LCQ1',1,1,"Lucci creates a flying projectile of compressed air in the form of a scythe. The enhanced version flies further and deals more damage.|n|n|cFF00A5FF|nDamage: 2*|c003CFF3CAGI|r|cFF00A5FF + 100 (+35%)|nRange: 2400 (3150)|nCooldown: 11 seconds.|r")
 call LANG_A('LCQ1',1,2,"Lucci creates a flying projectile of compressed air in the form of a scythe. The enhanced version flies further and deals more damage.|n|n|cFF00A5FF|nDamage: 3*|c003CFF3CAGI|r|cFF00A5FF + 100 (+35%)|nRange: 2400 (3150)|nCooldown: 12 seconds.|r")
 call LANG_A('LCQ1',1,3,"Lucci creates a flying projectile of compressed air in the form of a scythe. The enhanced version flies further and deals more damage.|n|n|cFF00A5FF|nDamage: 4*|c003CFF3CAGI|r|cFF00A5FF + 100 (+35%)|nRange: 2400 (3150)|nCooldown: 13 seconds.|r")
@@ -312442,9 +312434,9 @@ call LANG_A('YoE0',0,3,"Raioken, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('YoE0',0,4,"Raioken, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('YoE0',1,0,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
 call LANG_A('YoE0',1,1,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
+call LANG_A('YoE0',1,2,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
 endfunction
 function LANG_Data42 takes nothing returns nothing
-call LANG_A('YoE0',1,2,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
 call LANG_A('YoE0',1,3,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
 call LANG_A('YoE0',1,4,"Yoruichi jumps to the nearest enemy within a certain radius around her, delivering multiple strikes, slamming into the ground.|n|n|cFF00A5FF|nDamage: 8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2 sec|nAoE: 900|nCast time: +0.14 sec.|nCooldown: 21 sec.|r")
 call LANG_A('YoE0',2,0,"Raioken, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
@@ -312694,9 +312686,9 @@ call LANG_A('WE02',3,0,"Wendy creates whirlwinds in her hands, sending them to t
 call LANG_A('WE03',0,0,"Heal, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('WE03',0,1,"Heal, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('WE03',0,2,"Heal, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('WE03',0,3,"Heal, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 endfunction
 function LANG_Data43 takes nothing returns nothing
-call LANG_A('WE03',0,3,"Heal, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('WE03',0,4,"Heal, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('WE03',1,0,"Wendy casts a healing spell on the target, restoring HP and MP over 5 seconds. while the target's HP is more than 75%, it also removes negative effects from it.|n|cFFFF0000Cannot heal himself!|r|n|cFF00A5FF|nRegen HP: 2.5% of Max HP per second|nRegen MP: 2.5% of Max MP per second|nRange: 700|nCooldo"+"wn: 19 sec.")
 call LANG_A('WE03',1,1,"Wendy casts a healing spell on the target, restoring HP and MP over 5 seconds. while the target's HP is more than 75%, it also removes negative effects from it.|n|cFFFF0000Cannot heal himself!|r|n|cFF00A5FF|nRegen HP: 3% of Max HP per second|nRegen MP: 3% of Max MP per second|nRange: 700|nCooldown: "+"19 sec.")
@@ -312946,9 +312938,9 @@ call LANG_A('KI48',2,0,"Vongola Sun Ring, Rank D")
 call LANG_A('KI48',3,0,"Increase |c00FF5555STR|r by 10 and HP Regen for 10.")
 call LANG_A('KI50',0,0,"Vongola Sun Ring, Rank C")
 call LANG_A('KI50',1,0,"Increase |c00FF5555STR|r by 15 and HP Regen for 15.")
+call LANG_A('KI50',2,0,"Vongola Sun Ring, Rank C")
 endfunction
 function LANG_Data44 takes nothing returns nothing
-call LANG_A('KI50',2,0,"Vongola Sun Ring, Rank C")
 call LANG_A('KI50',3,0,"Increase |c00FF5555STR|r by 15 and HP Regen for 15.")
 call LANG_A('KI52',0,0,"Vongola Sun Ring, Rank B")
 call LANG_A('KI52',1,0,"Increase |c00FF5555STR|r by 20 and HP Regen for 20.")
@@ -313198,9 +313190,9 @@ call LANG_A('KIH4',2,0,"Madao's Dog")
 call LANG_A('KIH4',3,0,"Increase Attack by 60.")
 call LANG_A('KIH6',0,0,"Madao's Box")
 call LANG_A('KIH6',1,0,"Increase |c00FFFF66AllStat|r by 15, DEF +4")
+call LANG_A('KIH6',2,0,"Madao's Box")
 endfunction
 function LANG_Data45 takes nothing returns nothing
-call LANG_A('KIH6',2,0,"Madao's Box")
 call LANG_A('KIH6',3,0,"Increase |c00FFFF66AllStat|r by 15, DEF +4")
 call LANG_A('KIH8',0,0,"Madao Set")
 call LANG_A('KIH8',1,0,"Increase |c00FFFF66AllStat|r by 25, HP by 1000, HP Regen by 20, MP Regen by 75%, Attack by 80, DEF by 10, and reduce control effects by 10%")
@@ -313450,9 +313442,9 @@ call LANG_A('KIU0',0,0,"Rain Mare Ring, Rank C")
 call LANG_A('KIU0',1,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 15, slows the AS of an enemy that attacks you by 60%.")
 call LANG_A('KIU0',2,0,"Rain Mare Ring, Rank C")
 call LANG_A('KIU0',3,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 15, slows the AS of an enemy that attacks you by 60%.")
+call LANG_A('KIU2',0,0,"Rain Mare Ring, Rank B")
 endfunction
 function LANG_Data46 takes nothing returns nothing
-call LANG_A('KIU2',0,0,"Rain Mare Ring, Rank B")
 call LANG_A('KIU2',1,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 20, slows the AS of an enemy that attacks you by 90%.")
 call LANG_A('KIU2',2,0,"Rain Mare Ring, Rank B")
 call LANG_A('KIU2',3,0,"Increase |c00FF5555STR|r, |c003CFF3CAGI|r by 20, slows the AS of an enemy that attacks you by 90%.")
@@ -313702,9 +313694,9 @@ call LANG_A('KaA6',1,3,"Karna creates 6 spears floating around him for 10 second
 call LANG_A('KaA6',1,4,"Karna creates 6 spears floating around him for 10 seconds. Spears replace Karna's basic attack with a basic attack ability. The ability is replaced.|n |n|cFF00A5FFDamage (auto attack): 50% AD + 1.0*|r|c003CFF3CAGI|r|cFF00A5FF per spear.|nDamage (ability): 50% AD + 0.8*|r|c003CFF3CAGI|r|cFF00A5FF per"+" spear.|nCooldown: 17 sec.|r")
 call LANG_A('KaA6',2,0,"Brahma, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
 call LANG_A('KaA6',3,0,"Karna creates 6 spears floating around him for 10 seconds. Spears replace Karna's basic attack with a basic attack ability. The ability is replaced.|n |n|cFF00A5FFDamage (auto attack): 30/35/40/45/50% AD + 0.2/0.4/0.6/0.8/1.0*|r|c003CFF3CAGI|r|cFF00A5FF per spear.|nDamage (ability):  50% AD + 0.2/0."+"35/0.5/0.65/0.8*|r|c003CFF3CAGI|r|cFF00A5FF per spear.|nCooldown: 25/23/21/19/17 sec.|r")
+call LANG_A('KaA7',0,0,"Brahma, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 endfunction
 function LANG_Data47 takes nothing returns nothing
-call LANG_A('KaA7',0,0,"Brahma, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
 call LANG_A('KaA7',0,1,"Brahma, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
 call LANG_A('KaA7',0,2,"Brahma, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
 call LANG_A('KaA7',0,3,"Brahma, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
@@ -313954,9 +313946,9 @@ call LANG_A('AKE1',0,2,"Yanagi no Mai, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
 call LANG_A('AKE1',0,3,"Yanagi no Mai, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
 call LANG_A('AKE1',0,4,"Yanagi no Mai, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
 call LANG_A('AKE1',1,0,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+3*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
+call LANG_A('AKE1',1,1,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+4*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
 endfunction
 function LANG_Data48 takes nothing returns nothing
-call LANG_A('AKE1',1,1,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+4*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
 call LANG_A('AKE1',1,2,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+5*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
 call LANG_A('AKE1',1,3,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+6*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
 call LANG_A('AKE1',1,4,"Kimimaro dashes forward, attacking the first enemy he meets.|n|cFF00A5FF|nDamage: 75+7*|r|c003CFF3CAGI|r|cFF00A5FF|nAoE: 150|nKnockback: 500|nRange: 1300 sec|nPreparation: 0.2 sec|nCooldown: 25 sec")
@@ -314206,9 +314198,9 @@ call LANG_A('RsR1',0,2,"Ichiren No Kame No Kogeki, [|cffffcc00Level 3|r] (|cffff
 call LANG_A('RsR1',0,3,"Ichiren No Kame No Kogeki, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
 call LANG_A('RsR1',0,4,"Ichiren No Kame No Kogeki, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
 call LANG_A('RsR1',1,0,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 4*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
+call LANG_A('RsR1',1,1,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
 endfunction
 function LANG_Data49 takes nothing returns nothing
-call LANG_A('RsR1',1,1,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
 call LANG_A('RsR1',1,2,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
 call LANG_A('RsR1',1,3,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
 call LANG_A('RsR1',1,4,"Roshi runs at the enemy and performs a series of attacks, dealing damage in an area of 300.|n|cFF00A5FF|nDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nStun: 1 sec|nRange: 1000|nDuration: 2 sec after reaching the target|nCast time: +0.2 sec.|nCooldown: 30 sec |r")
@@ -314458,9 +314450,9 @@ call LANG_A('FlT1',3,0,"A Flandre clone at a point: attacks nearby enemies on it
 call LANG_A('FlD1',1,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlD1',3,0,"A projectile flies to a point and becomes a clock. Whoever touches the clock returns to where they were 6 sec. ago: enemies take damage, allies are healed.|n|n|cFF00A5FF|nDamage / healing: 6*|r|c0077FFFFINT|r|cFF00A5FF|nClock duration: 5 sec.|nRange: 1200|nCast time: +0.1 sec.|nCooldown: 35 sec.|r")
 call LANG_A('FlF1',1,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
+call LANG_A('FlF1',3,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
 endfunction
 function LANG_Data50 takes nothing returns nothing
-call LANG_A('FlF1',3,0,"Flandre is invulnerable and hits everyone nearby on her own — steer her where you need. At the end, a final area strike with a stun.|n|n|cFF00A5FF|nDamage: 0.35*|r|c0077FFFFINT|r|cFF00A5FF every 0.3 sec. (AoE 250)|nFinal strike: 1.75*|r|c0077FFFFINT|r|cFF00A5FF (AoE 600)|nStun: 1 sec.|nDuration: 4"+" sec.|nCooldown: 45 sec.|r")
 call LANG_A('FlG1',1,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
 call LANG_A('FlG1',3,0,"A magic circle around Flandre: the line in front of her takes 16 hits over 1.5 sec.|nFor 8 sec. after G the button becomes QED \"Ripples of 495 Years\": a hit on the target with a stun.|n|n|cFF00A5FF|nDamage: 0.4*|r|c0077FFFFINT|r|cFF00A5FF per strike|nLine length: 2000|nCast time: +0.1 sec.|nCooldo"+"wn: 60 sec.|r")
 call LANG_A('FlW2',1,0,"Flandre forcefully swings the flaming sword Laevatein over an area.|n|n|cFF00A5FF|nDamage: 3*|r|c0077FFFFINT|r|cFF00A5FF per strike (6 strikes in a fan at 600 and one right in front of Flandre); once per target|nStun: 1 sec.|nCast time: +0.1 sec.|r")
@@ -314710,9 +314702,9 @@ call LANG_A('SnEc',1,4,"Cero like Ichigo's: a beam ahead stuns those hit.|n|n|cF
 call LANG_A('SnEc',2,0,"Cero, [|cffffcc00Level %d|r] (|cffffcc00D|r)")
 call LANG_A('SnEc',3,0,"Cero like Ichigo's: a beam ahead stuns those hit.|n|n|cFF00A5FF|nDamage: 3\\4\\5\\6\\7*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 2.5 sec.|nBeam length: 2200|nCooldown: 14 sec.|r")
 call LANG_A('ToEf',1,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 35% max MP + 120|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
+call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 35% max MP + 120|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
 endfunction
 function LANG_Data51 takes nothing returns nothing
-call LANG_A('ToEf',3,0,"After a 2.5 sec. charge Tōsen turns into the fly until the round ends: the mask stays on, stats +15%, Tōsen regains his sight (Blindness is removed). E becomes Flight, W Wing Chirr, R a double Cero (Hado is unavailable), T Los Nueve Aspectos, G Grillar Golpe.|n|n|cFF00A5FFAvailable: in the mask (E"+"), from level 25|nCharge: 2.5 sec.|nCost: 35% max MP + 120|nStats: +15% of total (bonuses included)|nMask bonuses: kept (move, attack, HP)|nRegeneration: 1.5% HP/sec., drops by 0.05% per sec. to 0|nDuration: until the round ends|r")
 call LANG_A('ToFE',0,0,"Flight, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,1,"Flight, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
 call LANG_A('ToFE',0,2,"Flight, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
@@ -314962,9 +314954,9 @@ call LANG_A('HmW1',1,2,"Fires ten bullets in the chosen direction. Each bullet h
 call LANG_A('HmW1',1,3,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFTotal damage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 11 sec.|r")
 call LANG_A('HmW1',1,4,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFTotal damage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 10 sec.|r")
 call LANG_A('HmW1',3,0,"Fires ten bullets in the chosen direction. Each bullet hits the first enemy in its path. Moving or issuing another order interrupts the burst.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFTotal damage: 3/4/5/6/7*|r|c0077FFFFINT|r|cFF00A5FF|nShots: 10|nRange: 1100|nBurst: 0.8 sec.|nCooldown: 14"+"/13/12/11/10 sec.|r")
+call LANG_A('HmE1',1,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nFlight: distance-dependent|nCooldown: 24 sec.|r")
 endfunction
 function LANG_Data52 takes nothing returns nothing
-call LANG_A('HmE1',1,0,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nFlight: distance-dependent|nCooldown: 24 sec.|r")
 call LANG_A('HmE1',1,1,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nFlight: distance-dependent|nCooldown: 23 sec.|r")
 call LANG_A('HmE1',1,2,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 7*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nFlight: distance-dependent|nCooldown: 22 sec.|r")
 call LANG_A('HmE1',1,3,"Launches a rocket toward the target point. It explodes after 2 sec., damaging enemies inside the marked area.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 8*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1600|nBlast radius: 350|nFlight: distance-dependent|nCooldown: 21 sec.|r")
@@ -315214,9 +315206,9 @@ call LANG_It('I018',2,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.
 call LANG_It('I018',3,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.|n|nActive: \"Thunder Shield\" - protects against any attack for 3 seconds. Can't remove Imagine Breaker.|n|nCooldown: 25 sec.")
 call LANG_It('I019',0,"Vongola Sky Ring, Rank D")
 call LANG_It('I019',1,"Vongola Sky Ring, Rank D")
+call LANG_It('I019',2,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
 endfunction
 function LANG_Data53 takes nothing returns nothing
-call LANG_It('I019',2,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
 call LANG_It('I019',3,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
 call LANG_It('I01A',0,"Vongola Sky Ring, Rank C")
 call LANG_It('I01A',1,"Vongola Sky Ring, Rank C")
@@ -315466,9 +315458,9 @@ call LANG_It('I02Z',2,"DEF +15, AS +50%, |c0077FFFFINT|r +35 counts, |c00FF5555S
 call LANG_It('I02Z',3,"DEF +15, AS +50%, |c0077FFFFINT|r +35, |c00FF5555STR|r +15.|nActive: \"Shield of Ice\" - DEF +10, reduces incoming damage by 0.2*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|n|nCooldown: 25 sec.|n|nRequires: Stylish Jacket, Ice Sphere, Recipe.")
 call LANG_It('I030',0,"Fallen Angel Wings")
 call LANG_It('I030',1,"Fallen Angel Wings")
+call LANG_It('I030',2,"Changes the appearance of the hero. |n|n|cFFFF0000Requires: at least 15 kills|r|n|nHeavenly Punishment: Stops time in a 500 radius around you for 5 seconds.")
 endfunction
 function LANG_Data54 takes nothing returns nothing
-call LANG_It('I030',2,"Changes the appearance of the hero. |n|n|cFFFF0000Requires: at least 15 kills|r|n|nHeavenly Punishment: Stops time in a 500 radius around you for 5 seconds.")
 call LANG_It('I030',3,"Changes the appearance of the hero. |n|n|cFFFF0000Requires: at least 15 kills|r|n|nHeavenly Punishment: Stops time in a 500 radius around you for 5 seconds.")
 call LANG_It('I031',0,"Patriot")
 call LANG_It('I031',1,"Patriot")
@@ -315718,9 +315710,9 @@ call LANG_It('I04H',2,"Increases |c00FFFF66AllStat|r by 9, mana regen by 25%, an
 call LANG_It('I04H',3,"Increases |c00FFFF66AllStat|r by 9, mana regen by 25%, and HP by 5. Active ability: \"Guard droid\" - places a ward in the specified area, for 60 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
 call LANG_It('I04I',0,"Security Droid mk.II")
 call LANG_It('I04I',1,"Security Droid mk.II")
+call LANG_It('I04I',2,"Increases |c00FFFF66AllStat|r by 20, mana regen by 50%, and HP by 10. Active ability: \"Guard droid\" - places a ward in the specified area, for 80 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
 endfunction
 function LANG_Data55 takes nothing returns nothing
-call LANG_It('I04I',2,"Increases |c00FFFF66AllStat|r by 20, mana regen by 50%, and HP by 10. Active ability: \"Guard droid\" - places a ward in the specified area, for 80 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
 call LANG_It('I04I',3,"Increases |c00FFFF66AllStat|r by 20, mana regen by 50%, and HP by 10. Active ability: \"Guard droid\" - places a ward in the specified area, for 80 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
 call LANG_It('I04J',0,"Security Droid mk.II (Recipe)")
 call LANG_It('I04J',1,"Security Droid mk.II (Recipe)")
@@ -315970,9 +315962,9 @@ call LANG_It('I068',0,"Holy Grail")
 call LANG_It('I068',1,"Holy Grail")
 call LANG_It('I068',2,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Healing\" - gradually restores 500 + Level * 10. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCooldown: 45 sec.")
 call LANG_It('I068',3,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Healing\" - gradually restores 500 + Level * 10. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
+call LANG_It('I069',0,"Holy Grail (Recipe)")
 endfunction
 function LANG_Data56 takes nothing returns nothing
-call LANG_It('I069',0,"Holy Grail (Recipe)")
 call LANG_It('I069',1,"Holy Grail (Recipe)")
 call LANG_It('I069',2,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Sphere of Fire, Box of Madao, Quincy Overcoat.")
 call LANG_It('I069',3,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Sphere of Fire, Box of Madao, Quincy Overcoat.")
@@ -316222,9 +316214,9 @@ call LANG_It('IAZA',3,"Increases MP Regen by 50%, HP by 500, |c003CFF3CAGI|r by 
 call LANG_It('IAZI',0,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',1,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',2,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
+call LANG_It('IAZI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
 endfunction
 function LANG_Data57 takes nothing returns nothing
-call LANG_It('IAZI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
 call LANG_It('IBBi',0,"Key of Bab-ilu")
 call LANG_It('IBBi',1,"Key of Bab-ilu")
 call LANG_It('IBBi',2,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\" - damage over 30 deals an additional 30 (chaos, blockable). Does not work with the Onizuka Set. CDR: 1 sec.|n|nPassive Ability: \"Treasury\" - gold for kills +20%, for the end of the round +10%.|n|nPassive A"+"bility: \"Execution\" - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
@@ -316474,9 +316466,9 @@ call LANG_U('H21N',3,"Dante is the main protagonist of the Devil May Cry series.
 call LANG_U('H244',3,"Misaka Mikoto is the 3th strongest esper in academy city, owns electromagnetic fields and electricity.|n|nRole: Caster, Assassin|n|n")
 call LANG_U('H248',3,"Frieza is a cruel tyrant, the leader of Frieza's army, and the self-proclaimed Emperor of the Universe.|n|nRole: Caster, Exhauster|n|n")
 call LANG_U('H26B',3,"Nero - a former emperor, Nero's artistic nature is reflected in her fighting style.|n|nRole: Caster, Durable, Disabler, Swordsman|n|n")
+call LANG_U('H34Z',3,"Tobirama is the 2th hokage of the village hidden in the leaves.|n|nRole: Caster, Assassin, Exhauster|n|n")
 endfunction
 function LANG_Data58 takes nothing returns nothing
-call LANG_U('H34Z',3,"Tobirama is the 2th hokage of the village hidden in the leaves.|n|nRole: Caster, Assassin, Exhauster|n|n")
 call LANG_U('H34X',3,"Tobirama is the 2th Hokage of the village hidden in the leaves.|n|nRole: Caster, Assassin, Exhauster|n|n")
 call LANG_U('H35Z',3,"Yoruichi is the former captain of the 2nd Division and the princess of the Shihōin clan.|n|nRole: Caster, Assassin, Exhauster|n|n")
 call LANG_U('H35X',3,"Yoruichi is the former captain of the 2nd Division and the princess of the Shihōin clan.|n|nRole: Caster, Assassin, Exhauster|n|n")
@@ -316726,9 +316718,9 @@ call LANG_B('BGiT',1,"In the body of this hero are fragments of Gin's Zanpakutō
 call LANG_B('BP01',0,"Exhaustion")
 call LANG_B('BP01',1,"Laxus is exhausted and deals 20% less damage.")
 call LANG_B('BP02',1,"Lucci's next auto-attack will deal additional damage to the enemy.")
+call LANG_B('BW01',1,"Increases: Magic Resist")
 endfunction
 function LANG_Data59 takes nothing returns nothing
-call LANG_B('BW01',1,"Increases: Magic Resist")
 call LANG_B('YoG2',1,"Raises the wearer's AGI and changes their Q ability.")
 call LANG_B('BHSF',1,"Incoming damage block")
 call LANG_B('BRR0',1,"Warrior slowed by 60% and all damage reduced by 80%.")
