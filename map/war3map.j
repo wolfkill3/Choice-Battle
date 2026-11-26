@@ -1,5 +1,6 @@
 ﻿//W3x2lni Data: 2021-11-04 17:40:09.089
 globals
+unit IoriReflectedSource=null
 integer SG_PackageStage=0
 integer SG_PackageTotal=0
 integer SG_PackageRead=0
@@ -82,6 +83,7 @@ real array BOT_PublicPingX
 real array BOT_PublicPingY
 integer array BOT_Type
 constant integer BOT_PoolCount=32
+constant integer HERO_ROSTER_LAST=149
 integer array BOT_Pool
 integer array BOT_Buy
 integer array BOT_Spell
@@ -13652,6 +13654,48 @@ call SND_Add(5101,2,"Sound\\Orihime\\Orihime_G_Dash.mp3",12700)
 call SND_Add(5103,2,"Sound\\Orihime\\Orihime_G_Hit.mp3",12700)
 call SND_Add(5105,2,"Sound\\Orihime\\Orihime_G_Seal.mp3",12700)
 call SND_Add(5107,2,"Sound\\Orihime\\Orihime_G_Charge.mp3",12700)
+call SND_Add(5109,2,"Sound\\Iori\\Iori_T1.mp3",12700)
+call SND_Add(5111,2,"Sound\\Iori\\Iori_Effect.mp3",12700)
+call SND_Add(5113,2,"Sound\\Iori\\Iori_Hit.mp3",12700)
+call SND_Add(5115,2,"Sound\\Iori\\Iori_Slash1.mp3",12700)
+call SND_Add(5117,2,"Sound\\Iori\\Iori_Hit2.mp3",12700)
+call SND_Add(5119,2,"Sound\\Iori\\Iori_T2.mp3",12700)
+call SND_Add(5121,2,"Sound\\Iori\\Iori_T3.mp3",12700)
+call SND_Add(5123,2,"Sound\\Iori\\Iori_T4.mp3",12700)
+call SND_Add(5125,2,"Sound\\Iori\\Iori_Slash3.mp3",12700)
+call SND_Add(5127,2,"Sound\\Iori\\Iori_Effect10.mp3",12700)
+call SND_Add(5129,2,"Sound\\Iori\\Iori_F_R.mp3",12700)
+call SND_Add(5131,2,"Sound\\Iori\\Iori_Effect11.mp3",12700)
+call SND_Add(5133,2,"Sound\\Iori\\Iori_G_R.mp3",12700)
+call SND_Add(5135,2,"Sound\\Iori\\Iori_Effect7.mp3",12700)
+call SND_Add(5137,2,"Sound\\Iori\\Iori_R1.mp3",12700)
+call SND_Add(5139,2,"Sound\\Iori\\Iori_Effect9.mp3",12700)
+call SND_Add(5141,2,"Sound\\Iori\\Iori_Effect4.mp3",12700)
+call SND_Add(5143,2,"Sound\\Iori\\Iori_T_F_F_G.mp3",12700)
+call SND_Add(5145,2,"Sound\\Iori\\Iori_T_F_F.mp3",12700)
+call SND_Add(5147,2,"Sound\\Iori\\Iori_Hit3.mp3",12700)
+call SND_Add(5149,2,"Sound\\Iori\\Iori_Effect8.mp3",12700)
+call SND_Add(5151,2,"Sound\\Iori\\Iori_Slash2.mp3",12700)
+call SND_Add(5153,2,"Sound\\Iori\\Iori_D0.mp3",12700)
+call SND_Add(5155,2,"Sound\\Iori\\Iori_D1.mp3",12700)
+call SND_Add(5157,2,"Sound\\Iori\\Iori_Hit1.mp3",12700)
+call SND_Add(5159,2,"Sound\\Iori\\Iori_E.mp3",12700)
+call SND_Add(5161,2,"Sound\\Iori\\Iori_E1.mp3",12700)
+call SND_Add(5163,2,"Sound\\Iori\\Iori_E2.mp3",12700)
+call SND_Add(5165,2,"Sound\\Iori\\Iori_E3.mp3",12700)
+call SND_Add(5167,2,"Sound\\Iori\\Iori_W.mp3",12700)
+call SND_Add(5169,2,"Sound\\Iori\\Iori_Q1.mp3",12700)
+call SND_Add(5171,2,"Sound\\Iori\\Iori_F_W.mp3",12700)
+call SND_Add(5173,2,"Sound\\Iori\\Iori_F_Q.mp3",12700)
+call SND_Add(5175,2,"Sound\\Iori\\Iori_Effect5.mp3",12700)
+call SND_Add(5177,2,"Sound\\Iori\\Iori_F_E.mp3",12700)
+call SND_Add(5179,2,"Sound\\Iori\\Iori_F_D.mp3",12700)
+call SND_Add(5181,2,"Sound\\Iori\\Iori_G_Q.mp3",12700)
+call SND_Add(5183,2,"Sound\\Iori\\Iori_G_W.mp3",12700)
+call SND_Add(5185,2,"Sound\\Iori\\Iori_G_E.mp3",12700)
+call SND_Add(5187,2,"Sound\\Iori\\Iori_Effect6.mp3",12700)
+call SND_Add(5189,2,"Sound\\Iori\\Iori_G_D.mp3",12700)
+call SND_Add(5191,2,"Voice\\Iori_Summon.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -28378,6 +28422,8 @@ if id=='HHom' then
 set l__s="HomuraSummon.mp3"
 elseif id=='HHDv' then
 set l__s="HomuraDevilSummon.mp3"
+elseif id=='HIor' then
+set l__s="Iori_Summon.mp3"
 elseif id=='H02M' or id=='H12M' then
 set l__s="Aizen.mp3"
 elseif id=='HIc1' then
@@ -29304,9 +29350,9 @@ set udg_RH[145]='HShn'//Hirako — на тест (3.7.10)
 set udg_RH[146]='HDMa'//Dead Master (3.8.2, из Choice Random 5.3)
 //DeadMaster1end
 //Hit1start
-// Хит (Dragon Ball Super, 29 окт): выключен — способностей ещё нет. Для включения раскомментировать и поднять exitwhen i>=147 до 148
 set udg_RH[147]='HHit'
 set udg_RH[148]='HHom'
+set udg_RH[149]='HIor'
 //Hit — на тест (30 окт)
 //Hit1end
 loop
@@ -29465,9 +29511,12 @@ set udg_RH2[144]="Suigintou"
 //Suigintou1end
 set udg_RH2[141]="Remilia"
 set udg_RH2[142]="Flandre"
-// set udg_RH2[143]="Escanor"
+set udg_RH2[143]="Escanor"
 set udg_RH2[145]="Hirako"
+set udg_RH2[146]="Dead Master"
+set udg_RH2[147]="Hit"
 set udg_RH2[148]="Homura Akemi"
+set udg_RH2[149]="Iori Yagami"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -32667,31 +32716,47 @@ if SDMode and i>=0 and i<10 and SD_Panel[i]!=null and GetLocalPlayer()==PlayerV(
 endif
 endfunction
 // Случайный индекс таверны: в Single Draft — из ещё свободных вариантов игрока, иначе (и если все заняты) — любой
-function SD_RandomId takes integer i returns integer
-local integer k=GetRandomInt(0,2)
-local integer sn=0
-if SDMode and i>=0 and i<10 then
+function HeroBanProtected takes integer rosterType returns boolean
+    return rosterType=='HHit' or rosterType=='HHom' or rosterType=='HIor'
+endfunction
+function RosterRandomAvailable takes integer rosterPlayer,boolean rosterBan returns integer
+    local integer rosterSlot=1
+    local integer rosterCount=0
+    local integer array rosterOptions
     loop
-        exitwhen sn>2
-        if SD_Opt[i*3+k]>0 and udg_RH[SD_Opt[i*3+k]]!=0 then
-            return SD_Opt[i*3+k]
+        exitwhen rosterSlot>HERO_ROSTER_LAST
+        if udg_RH[rosterSlot]!=0 and (not rosterBan or not HeroBanProtected(udg_RH[rosterSlot])) and (rosterPlayer<0 or not SD_Reserved(rosterPlayer,rosterSlot)) then
+            set rosterOptions[rosterCount]=rosterSlot
+            set rosterCount=rosterCount+1
         endif
-        set k=ModuloInteger(k+1,3)
-        set sn=sn+1
+        set rosterSlot=rosterSlot+1
     endloop
-endif
-// все три свои заняты — любой свободный, но не из чужих вариантов (герои закреплены за игроками)
-if SDMode then
-    set sn=0
-    loop
-        set k=GetRandomInt(0,146) // 30 окт: и новые — Хирако 145, Дезмастер 146, Хит 147 (тест)
-        exitwhen udg_RH[k]!=0 and not SD_Reserved(i,k)
-        set sn=sn+1
-        exitwhen sn>500
-    endloop
-    return k
-endif
-return GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+    if rosterCount==0 then
+        return 0
+    endif
+    return rosterOptions[GetRandomInt(0,rosterCount-1)]
+endfunction
+function SD_RandomId takes integer i returns integer
+    local integer rosterOption=0
+    local integer rosterCount=0
+    local integer rosterSlot
+    local integer array rosterOptions
+    if SDMode and i>=0 and i<10 then
+        loop
+            exitwhen rosterOption>=3
+            set rosterSlot=SD_Opt[i*3+rosterOption]
+            if rosterSlot>0 and udg_RH[rosterSlot]!=0 then
+                set rosterOptions[rosterCount]=rosterSlot
+                set rosterCount=rosterCount+1
+            endif
+            set rosterOption=rosterOption+1
+        endloop
+        if rosterCount>0 then
+            return rosterOptions[GetRandomInt(0,rosterCount-1)]
+        endif
+        return RosterRandomAvailable(i,false)
+    endif
+    return RosterRandomAvailable(-1,false)
 endfunction
 function OnButtonPickHeroId takes nothing returns nothing
     local player p = TrigP()
@@ -32765,20 +32830,11 @@ function OnButtonPickHeroId takes nothing returns nothing
             set p=null
             return
         endif
-        // антибан (12 окт): Ремилию и Фландре нельзя забанить — ни в Ban Mode, ни блокировкой в режиме капитанов
-        // 23 окт: антибан снят — их снова можно банить
-        //if (pick==3 or cmb==true) and (udg_RH[TavernHeroId[PId(p)]]=='HRem' or udg_RH[TavernHeroId[PId(p)]]=='HFla') and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
-        //    call DisplayTextToPlayer(p,0,0,GetUnitBaseStringFieldById(udg_RH[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" — этого героя нельзя забанить"," — this hero can't be banned"))
-        //    set p=null
-        //    return
-        //endif
-        // антибан (23 окт): Хирако и Суйгинто нельзя забанить — ни в Ban Mode, ни блокировкой в режиме капитанов
-        // 24 окт (3.8.1): антибан снят — их снова можно банить
-        //if (pick==3 or cmb==true) and (udg_RH[TavernHeroId[PId(p)]]=='HShn' or udg_RH[TavernHeroId[PId(p)]]=='HSui') and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
-            //call DisplayTextToPlayer(p,0,0,GetUnitBaseStringFieldById(udg_RH[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" — этого героя нельзя забанить"," — this hero can't be banned"))
-            //set p=null
-            //return
-        //endif
+        if (pick==3 or cmb) and PId(p)<10 and TavernPlayerPickAllow[PId(p)] and HeroBanProtected(udg_RH[TavernHeroId[PId(p)]]) then
+            call DisplayTextToPlayer(p,0,0,GetUnitBaseStringFieldById(udg_RH[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" — этого героя нельзя забанить"," — this hero cannot be banned"))
+            set p=null
+            return
+        endif
         if udg_RH[TavernHeroId[PId(p)]]!=null and TavernPlayerPickAllow[PId(p)]==true and PId(p)<10 then
             if p==GetLocalPlayer() then
                 call ShowFrame( SelectTavernHeroCheck, false )
@@ -32812,7 +32868,7 @@ function OnButtonPickHeroId takes nothing returns nothing
                 call SetFrameTexture( GetFrameByName("TavernCMHero",Globalpick), GetFrameTexture(TavernPickedHeroFrame[PId(p)],0), 2, true )
                 if cmb==false then
                 call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,GetUnitBaseStringFieldById(RH_Force[TavernHeroId[PId(p)]],UNIT_SF_NAME)+Lng(" был забанен "," has been banned by ")+GetPlayerName(p)+"!")
-                call W3MMD_Lite_Set_Integer(p,"Ban_hero", HeroSkin(udg_Hero[PId(p)+1]) )
+                call W3MMD_Lite_Set_Integer(p,"Ban_hero", RH_Force[TavernHeroId[PId(p)]] )
                 else
                 call CreateUnit(PlayerV(PId(p)),udg_RH[TavernHeroId[PId(p)]],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
                 endif
@@ -32887,6 +32943,7 @@ function OnButtonRandom takes nothing returns nothing
         endif
         loop
         set id=SD_RandomId(i)
+        exitwhen id==0
         if udg_RH[id]!=0 then
         set u[i+1]=CreateUnit(PlayerV(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
         call UnitInventorySetSize(u[i+1],10)
@@ -38895,7 +38952,7 @@ local integer array c
 local integer sn=0
 local integer id=1
 loop
-    exitwhen id>144
+    exitwhen id>HERO_ROSTER_LAST
     if udg_RH[id]!=0 and not SD_Used(id) and GetUnitBaseIntegerFieldById(udg_RH[id],UNIT_IF_PRIMARY_ATTRIBUTE)==a then
         set c[sn]=id
         set sn=sn+1
@@ -38908,7 +38965,7 @@ endif
 if sn==0 then
     set id=1
     loop
-        exitwhen id>144
+        exitwhen id>HERO_ROSTER_LAST
         if udg_RH[id]!=0 and not SD_Used(id) then
             set c[sn]=id
             set sn=sn+1
@@ -41380,7 +41437,8 @@ set rand[i]=true
 set udg_Repick[i+1]=0
 if GetPlayerSlotState(PlayerV(i))==PLAYER_SLOT_STATE_PLAYING and u[i+1]==null then
 loop
-set id=GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+set id=RosterRandomAvailable(-1,false)
+exitwhen id==0
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(PlayerV(i),udg_RH[id],x1,y1,0)
 call UnitInventorySetSize(u[i+1],10)
@@ -41851,6 +41909,7 @@ call TavRole_Set('HShn',2067)
 call TavRole_Set('HDMa',81)
 call TavRole_Set('HHit',22)
 call TavRole_Set('HHom',273)
+call TavRole_Set('HIor',6)
 endfunction
 //TAVROLE_DATA_END
 function TavRole_Name takes integer trB returns string
@@ -51163,22 +51222,31 @@ local group g=CreateGroup()
 local integer ty=GetUnitTypeId(u)
 local integer r=0
 local integer l__s
+if HeroBanProtected(ty) and ((not cmb and pick==3 and Hero[id]!=u) or (CPTModeON and cmb)) then
+    call DisplayTextToPlayer(p,0,0,GetUnitName(u)+Lng(" — этого героя нельзя забанить"," — this hero cannot be banned"))
+    call RemoveUnit(u)
+    call DestroyGroup(g)
+    set g=null
+    set p=null
+    set u=null
+    return
+endif
 if cmb!=true then
     if pick==3 and Hero[id]!=u then
         if IsUnitType(u,UNIT_TYPE_HERO)then
             set i=0
             loop
-            if GetUnitTypeId(u)==udg_RH[i] then
+            if ty==udg_RH[i] then
                 set udg_RH[i]=0
             endif
             set i=i+1
-            exitwhen i>=149 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+            exitwhen i>HERO_ROSTER_LAST
             endloop
             call RemoveUnit(u)
             call SetPlayerStateBJ(OwnerOf(u),PLAYER_STATE_FOOD_CAP_CEILING,0)
             call SetPlayerStateBJ(OwnerOf(u),PLAYER_STATE_RESOURCE_FOOD_CAP,0)
             call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng(GetUnitName(u)+" был забанен "+GetPlayerName(OwnerOf(u))+"!",GetPlayerName(OwnerOf(u))+" has banned "+GetUnitName(u)+"!"))
-            call W3MMD_Lite_Set_Integer(OwnerOf(u),"Ban_hero", HeroSkin(u) )
+            call W3MMD_Lite_Set_Integer(OwnerOf(u),"Ban_hero",ty)
             // call AddFrameText(TavernChat,GetUnitName(u)+" был забанен "+GetPlayerName(GetOwningPlayer(u))+"!")
             set bonus_repick[id]=0
         endif
@@ -51315,6 +51383,7 @@ if cmb!=true then
         call IH('HDMa',u,"ReplaceableTextures\\CommandButtons\\BTNDeadMasterIcon.blp")
         call IH('HHit',u,"ReplaceableTextures\\CommandButtons\\BTNHitHero.blp")
         call IH('HHom',u,"ReplaceableTextures\\CommandButtons\\BTNHomura.blp")
+        call IH('HIor',u,"ReplaceableTextures\\CommandButtons\\BTNIoriIcon.blp")
         call IH('HHDv',u,"ReplaceableTextures\\CommandButtons\\BTNDevilHomura.blp")
 //Shinji1end
 //Escanor1start
@@ -51421,11 +51490,11 @@ if cmb!=true then
             set i=0
             call GroupAddUnit(lrg,u)
             loop
-                if GetUnitTypeId(u)==udg_RH[i] then
+                if ty==udg_RH[i] then
                     set udg_RH[i]=0
                 endif
                 set i=i+1
-                exitwhen i>=149 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
+                exitwhen i>HERO_ROSTER_LAST
             endloop
         endif
         call SaveInteger(h,GetHandleId(u),'A1GS',0)
@@ -51438,8 +51507,8 @@ if IsUnitType(u,UNIT_TYPE_HERO) and CPTModeON and cmb==true then
         call RemoveUnit(u)
         set i=0
         loop
-        exitwhen i>=149 //139; 145 — Хирако (3.7.10), 146 — Дезмастер (3.8.2), 147 — Хит (3.8.2, тест)
-            if GetUnitTypeId(u)==udg_RH[i] then
+        exitwhen i>HERO_ROSTER_LAST
+            if ty==udg_RH[i] then
                 set udg_RH[i]=0
             endif
             set i=i+1
@@ -56824,7 +56893,8 @@ if bonus_repick[i]==2 then
         set udg_Repick[i+1]=-2
 endif
 loop
-set id=SD_RandomId(i) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+set id=SD_RandomId(i)
+exitwhen id==0
 if udg_RH[id]!=0 then
 set u[i+1]=CreateUnit(PlayerV(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u[i+1],10)
@@ -57155,6 +57225,11 @@ set p=null
 return
 endif
 if (rand[i-1]==true and udg_Repick[i]!=2) and udg_B==false then
+set id=SD_RandomId(i-1)
+if id==0 then
+    set p=null
+    return
+endif
 set sssb[i-1]=false
 loop
 set t1[j]=UnitRemoveItemFromSlot(udg_Hero[i],j)
@@ -57171,9 +57246,6 @@ set udg_Hero[i]=null
 if udg_Repick[i]<2 then
         set udg_Repick[i]=udg_Repick[i]+1
 endif
-loop
-set id=SD_RandomId(i-1) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
-if udg_RH[id]!=0 then
 set udg_Hero[i]=CreateUnit(p,udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(udg_Hero[i],10)
 call SetFrameTexture( GetFrameByName("SelectedHeroPlayer",i-1), GetFrameTexture(GetFrameByName("TavernBarHero",id),0), 0, true ) 
@@ -57195,9 +57267,6 @@ else
 call GroupAddUnit(udg_CG[4],udg_Hero[i])
 endif
 set udg_RH[id]=0
-endif
-exitwhen udg_Hero[i]!=null
-endloop
 call SetHeroLevel(udg_Hero[i],lvl,false)
 set j=0
 loop
@@ -58212,57 +58281,49 @@ function Trig_AutoE_Actions takes nothing returns nothing
         set AutoE[id]=false
     endif
 endfunction
-function Trig_idNew_Actions takes nothing returns nothing
-    local integer LvlS=S2I(SubString(GetEventPlayerChatString(),4,6))
-    if LvlS==1 then
-    set bj_forLoopAIndex=1
-    set bj_forLoopAIndexEnd=35
-    elseif LvlS==2 then
-    set bj_forLoopAIndex=36
-    set bj_forLoopAIndexEnd=70
-    elseif LvlS==3 then
-    set bj_forLoopAIndex=71
-    set bj_forLoopAIndexEnd=105 
-    elseif LvlS==4 then
-    set bj_forLoopAIndex=106
-    set bj_forLoopAIndexEnd=215   
-    endif  
-    loop
-    exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
-    call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
-    //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=142 and bj_forLoopAIndex<190 then //139
-    set bj_forLoopAIndex=200
-    else
-    set bj_forLoopAIndex=bj_forLoopAIndex+5
+function ShowHeroIdPage takes integer rosterPage returns nothing
+    local integer rosterSlot
+    local integer rosterLast
+    local integer rosterColumns=0
+    local string rosterLine=""
+    local string rosterName
+    if rosterPage<1 or rosterPage>4 then
+        return
     endif
+    set rosterSlot=(rosterPage-1)*35+1
+    set rosterLast=rosterPage*35
+    if rosterPage==4 then
+        set rosterLast=215
+    endif
+    loop
+        exitwhen rosterSlot>rosterLast
+        if RH_Force[rosterSlot]!=0 then
+            set rosterName=udg_RH2[rosterSlot]
+            if rosterName==null or rosterName=="" then
+                set rosterName=GetUnitBaseStringFieldById(RH_Force[rosterSlot],UNIT_SF_NAME)
+            endif
+            if rosterColumns>0 then
+                set rosterLine=rosterLine+"; "
+            endif
+            set rosterLine=rosterLine+I2S(rosterSlot)+"-"+rosterName
+            set rosterColumns=rosterColumns+1
+            if rosterColumns>=5 then
+                call DisplayTextToPlayer(GetLocalPlayer(),0,0,rosterLine)
+                set rosterLine=""
+                set rosterColumns=0
+            endif
+        endif
+        set rosterSlot=rosterSlot+1
     endloop
+    if rosterColumns>0 then
+        call DisplayTextToPlayer(GetLocalPlayer(),0,0,rosterLine)
+    endif
+endfunction
+function Trig_idNew_Actions takes nothing returns nothing
+    call ShowHeroIdPage(S2I(SubString(GetEventPlayerChatString(),4,6)))
 endfunction
 function Trig_id_Actions takes nothing returns nothing
-    local integer LvlS=S2I(SubString(GetEventPlayerChatString(),4,6))
-    if LvlS==1 then
-    set bj_forLoopAIndex=1
-    set bj_forLoopAIndexEnd=35
-    elseif LvlS==2 then
-    set bj_forLoopAIndex=36
-    set bj_forLoopAIndexEnd=70
-    elseif LvlS==3 then
-    set bj_forLoopAIndex=71
-    set bj_forLoopAIndexEnd=105 
-    elseif LvlS==4 then
-    set bj_forLoopAIndex=106
-    set bj_forLoopAIndexEnd=215   
-    endif  
-    loop
-    exitwhen bj_forLoopAIndex>bj_forLoopAIndexEnd
-    call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(bj_forLoopAIndex)+"-"+udg_RH2[bj_forLoopAIndex]+"; "+I2S(bj_forLoopAIndex+1)+"-"+udg_RH2[bj_forLoopAIndex+1]+"; "+I2S(bj_forLoopAIndex+2)+"-"+udg_RH2[bj_forLoopAIndex+2]+"; "+I2S(bj_forLoopAIndex+3)+"-"+udg_RH2[bj_forLoopAIndex+3]+"; "+I2S(bj_forLoopAIndex+4)+"-"+udg_RH2[bj_forLoopAIndex+4]+"; ")
-    //udg_RH[bj_forLoopAIndex]    
-    if bj_forLoopAIndex>=142 and bj_forLoopAIndex<190 then //139
-    set bj_forLoopAIndex=200
-    else
-    set bj_forLoopAIndex=bj_forLoopAIndex+5
-    endif
-    endloop
+    call ShowHeroIdPage(S2I(SubString(GetEventPlayerChatString(),4,6)))
 endfunction
 function InitTrig_LVL takes nothing returns nothing
 set gg_trg_LVL=CreateTrigger()
@@ -66461,7 +66522,8 @@ if bonus_repick[i]==2 then
 	set udg_Repick[i+1]=-2
 endif
 loop
-set id=SD_RandomId(i) // 145 (Хирако) — только из таверны, в случайный выбор не попадает
+set id=SD_RandomId(i)
+exitwhen id==0
 if udg_RH[id]!=0 then
     set u[i+1]=CreateUnit(PlayerV(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
     call UnitInventorySetSize(u[i+1],10)
@@ -66569,7 +66631,8 @@ else
     set i=pick1
 endif
 loop
-set id=GetRandomInt(0,146) // 30 окт: новые (Хирако 145, Дезмастер 146, Хит 147) тоже в случайном выборе — на тест
+set id=RosterRandomAvailable(-1,pick==3 or cmb)
+exitwhen id==0
 if udg_RH[id]!=0 then
 set u=CreateUnit(PlayerV(i),udg_RH[id],GetRectCenterX(gg_rct_Rect1),GetRectCenterY(gg_rct_Rect1),0)
 call UnitInventorySetSize(u,10)
@@ -145091,6 +145154,20 @@ call SaveStr(HH,SH_ShnChanO,'IcW2',"channel")
 call SaveInteger(HH,SH_ShnChanT,'IcW2',1)
 call SaveStr(HH,SH_ShnChanO,'IcW3',"cripple")
 call SaveInteger(HH,SH_ShnChanT,'IcW3',1)
+call SaveStr(HH,SH_ShnChanO,'IoD1',"curse")
+call SaveInteger(HH,SH_ShnChanT,'IoD1',1)
+call SaveStr(HH,SH_ShnChanO,'IoE1',"blizzard")
+call SaveInteger(HH,SH_ShnChanT,'IoE1',1)
+call SaveStr(HH,SH_ShnChanO,'IoF1',"acolyteharvest")
+call SaveStr(HH,SH_ShnChanO,'IoG3',"acidbomb")
+call SaveStr(HH,SH_ShnChanO,'IoQ1',"charm")
+call SaveInteger(HH,SH_ShnChanT,'IoQ1',2)
+call SaveStr(HH,SH_ShnChanO,'IoR1',"carrionscarabs")
+call SaveInteger(HH,SH_ShnChanT,'IoR1',2)
+call SaveStr(HH,SH_ShnChanO,'IoT1',"tornado")
+call SaveInteger(HH,SH_ShnChanT,'IoT1',1)
+call SaveStr(HH,SH_ShnChanO,'IoW1',"channel")
+call SaveInteger(HH,SH_ShnChanT,'IoW1',2)
 call SaveStr(HH,SH_ShnChanO,'IsQc',"roar")
 call SaveStr(HH,SH_ShnChanO,'JAE2',"cripple")
 call SaveStr(HH,SH_ShnChanO,'JAG1',"carrionswarm")
@@ -147364,6 +147441,14 @@ call SaveStr(HH,SH_AbOrd,'IcW2',"channel")
 call SaveStr(HH,SH_AbOrd,'IcW3',"cripple")
 call SaveStr(HH,SH_AbOrd,'IcW4',"drunkenhaze")
 call SaveStr(HH,SH_AbOrd,'InE1',"attributemodskill")
+call SaveStr(HH,SH_AbOrd,'IoD1',"curse")
+call SaveStr(HH,SH_AbOrd,'IoE1',"blizzard")
+call SaveStr(HH,SH_AbOrd,'IoF1',"acolyteharvest")
+call SaveStr(HH,SH_AbOrd,'IoG3',"acidbomb")
+call SaveStr(HH,SH_AbOrd,'IoQ1',"charm")
+call SaveStr(HH,SH_AbOrd,'IoR1',"carrionscarabs")
+call SaveStr(HH,SH_AbOrd,'IoT1',"tornado")
+call SaveStr(HH,SH_AbOrd,'IoW1',"channel")
 call SaveStr(HH,SH_AbOrd,'IsQc',"roar")
 call SaveStr(HH,SH_AbOrd,'JAE2',"cripple")
 call SaveStr(HH,SH_AbOrd,'JAG1',"carrionswarm")
@@ -295792,7 +295877,7 @@ if cmb!=true and u!=null then
             set udg_RH[i2]=0
         endif
         set i2=i2+1
-        exitwhen i2==147 //146 — Дезмастер (3.8.2); 139; было 142 — не доходило до Фландре (142) и Хирако (145)
+        exitwhen i2>HERO_ROSTER_LAST
         endloop
         call SetUnitPosition(u,GetRectCenterX(gg_rct_Resp7),GetRectCenterY(gg_rct_Resp7))
         set p=OwnerOf(u)
@@ -302040,6 +302125,4849 @@ call TriggerAddAction(t,function Trig_Execute_Actions2)
 call TSE_TimerStart(CreateTimer(),4.50,false,function Trig_Execute_Actions2b)
 set t=null
 endfunction
+// Iori
+function Iori_OriginalCaster takes hashtable ioriTable,integer ioriKey,integer ioriSlot returns unit
+    if HaveSavedHandle(ioriTable,ioriKey,StringHash("FixReflectOrig")) then
+        return LoadUnitHandle(ioriTable,ioriKey,StringHash("FixReflectOrig"))
+    endif
+    return LoadUnitHandle(ioriTable,ioriKey,ioriSlot)
+endfunction
+
+function Iori_ApplyWaveRedirect takes integer ioriId,unit ioriCaster,unit ioriWave returns boolean
+    local unit ioriNewOwner=WaveRedirectedSource(ioriWave)
+    local real ioriAngle
+    if ioriWave==null or ioriNewOwner==null then
+        return false
+    endif
+    set ioriAngle=WaveRedirectedAngle(ioriWave)*bj_RADTODEG
+    if ioriNewOwner==ioriCaster and LoadReal(HH,ioriId,3)==ioriAngle then
+        set ioriNewOwner=null
+        return false
+    endif
+    if not LoadBoolean(HH,ioriId,StringHash("FixReflect")) then
+        call SaveUnitHandle(HH,ioriId,StringHash("FixReflectOrig"),ioriCaster)
+        call SaveBoolean(HH,ioriId,StringHash("FixReflect"),true)
+    endif
+    call SaveUnitHandle(HH,ioriId,1,ioriNewOwner)
+    call SaveReal(HH,ioriId,3,ioriAngle)
+    set IoriReflectedSource=ioriNewOwner
+    set ioriNewOwner=null
+    return true
+endfunction
+
+function Iori_Heal takes unit caster returns nothing
+// настройки
+local real healAgi=0.5*GetHeroAgi(caster,true)         // лечение за способность в долях ловкости
+local integer healLevel=20                             // с какого уровня героя работает лечение
+
+ if UnitIsAlive(caster) and GetHeroLevel(caster)>=healLevel then
+   // call SaveBoolean(HH,id,StringHash("IoriHeal"),true)
+    call Bof_Heal(caster,caster,healAgi)
+endif
+endfunction
+
+function Iori_T_Alt_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real endAt=LoadReal(HH,id,7)            // когда способность заканчивается (считается в момент разреза)
+local integer hits=LoadInteger(HH,id,8)
+local real nextHit=LoadReal(HH,id,11)         // время следующего удара
+local boolean struck=LoadBoolean(HH,id,13)    // финальный разрез уже нанесён
+local real damage=LoadReal(HH,id,15)
+local real hpLock=LoadReal(HH,id,25)          // здоровье цели: до конца T оно не может стать выше этого значения
+local real lastHit=LoadReal(HH,id,16)         // время последнего удара, от него считается толчок
+local integer anim=LoadInteger(HH,id,17)      // первая анимация ударов 5-8
+local real dashDist=LoadReal(HH,id,18)        // сколько осталось до цели во время прыжка
+local boolean dashing=LoadBoolean(HH,id,19)   // кастер в прыжке к цели
+local real dashTotal=LoadReal(HH,id,23)       // длина всего прыжка
+local boolean crossed=LoadBoolean(HH,id,24)   // крест уже создан
+local boolean dead=GetUnitState(target,UNIT_STATE_LIFE)<=0.405
+local real side=0.
+local integer curAnim
+
+// настройки
+local real hitGap=0.3        // промежуток между ударами 1-8
+local real lastGap=0.05      // пауза после толчка 8-го удара перед замахом
+local real chaseDist=150.    // на каком расстоянии от цели кастер появляется при телепорте
+local real side1=180.        // с какой стороны удар 1 (угол от начального направления, 180 = со стороны кастера)
+local real side2=0.          // с какой стороны удар 2 (0 = за спиной цели)
+local real side3=90.         // с какой стороны удар 3
+local real side4=-90.        // с какой стороны удар 4
+local real side5=135.        // с какой стороны удар 5
+local real side6=-45.        // с какой стороны удар 6
+local real side7=45.         // с какой стороны удар 7
+local real side8=-135.       // с какой стороны удар 8
+local real pushTime=0.14     // сколько длится толчок после удара
+local real pushSpeed=20.     // скорость толчка за тик у ударов 1-4
+local integer pushHits=4     // сколько первых ударов толкают сильнее
+local real softPush=12.      // скорость толчка за тик у ударов 5-7
+local real farPush=600.      // на сколько 8-й удар отбрасывает цель
+local real farTime=0.4       // за сколько секунд цель отлетает от 8-го удара
+local real hitDmg=0.75       // множитель урона ударов 1-8
+local real finalDmg=5.       // множитель урона финального разреза
+local real windup=0.1        // сколько длится замах (анимация 17)
+local real windupSpeed=4.5   // скорость анимации 17
+local real cutSpeed=2.5      // скорость анимации 25 во время прыжка
+local real dashStep=80.      // на сколько кастер приближается к цели за тик
+local real dashEnd=120.      // на каком расстоянии от цели кастер останавливается
+local real jumpStart=1000.   // с какого расстояния от цели начинается прыжок
+local real jumpHeight=250.   // высота прыжка кастера
+local real finalTime=0.5     // сколько длится конец способности после разреза
+local real crossSize=1.55    // размер эффектов креста
+local real crossHeight=0.    // высота эффектов креста относительно кастера в прыжке
+local real crossAhead=250.   // на сколько впереди кастера появляется крест
+local real crossAt=400.      // за сколько до точки удара кастер делает замах крестом
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if struck and time>=endAt then
+    // ===== ЗАВЕРШЕНИЕ =====
+    call DestroyEffect(LoadEffectHandle(HH,id,21))
+    call DestroyEffect(LoadEffectHandle(HH,id,22))
+
+    call SetUnitFlyHeight(caster,0,0)
+    call SetUnitAnimation(caster,"stand")
+    if not dead then
+        call SetUnitAnimation(target,"stand")
+    endif
+    call UnitSpeed(caster,1)
+    call UnitSpeed(target,1)
+
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitPathing(caster,true)
+    call PauseUnit(target,false)
+    call SetUnitInvulnerable(target,false)
+    call SetUnitPathing(target,true)
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+    //FixIoriTAltClick: снова можно выбирать целью
+    call SetUnitTargetable(caster,true)
+    call SetUnitTargetable(target,true)
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    // кастер на паузе и неуязвим всё время способности
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitPathing(caster,false)
+    //FixIoriTAltClick: кастера нельзя выбрать целью всё время способности
+    call SetUnitTargetable(caster,false)
+
+    if time==0.02 then
+        call sound_play("Sound\\Iori\\Iori_T1.mp3",127)
+        call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+        call UnitSpeed(caster,1)
+        call SetUnitAnimationByIndex(caster,22)
+
+        // эффект на обеих руках на всё время способности
+        call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand right"))
+        call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand left"))
+
+        call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1,1.25,0.5,100,80,80,20,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,150,caster,0,facing)
+        call EffectCreateAndMove(true,"Akame\\FSAEff (53).mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Iori\\Iori (59).mdl",facing,1.5,1.75,1,100,100,100,0,100,caster,0,facing)
+        call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\FSAEff (27).mdl",facing,1.5,2.25,1.5,100,100,100,0,0,caster,0,0)
+    endif
+
+    // цель на паузе и неуязвима с первого удара
+    if hits>0 then
+        call PauseUnit(target,true)
+        call SetUnitPathing(target,false)
+        call SetUnitTargetable(target,false) //FixIoriTAltClick: цель нельзя выбрать целью с первого удара
+        if not struck then
+            call SetUnitInvulnerable(target,true)
+        endif
+    endif
+
+    // ===== УДАРЫ 1-8 И ФИНАЛЬНЫЙ ЗАМАХ =====
+    if hits<9 and time>=nextHit then
+        set hits=hits+1
+        set lastHit=time
+        call SaveInteger(HH,id,8,hits)
+        call SaveReal(HH,id,16,lastHit)
+
+        if hits<9 then
+            if hits==1 then
+                set side=side1
+                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+                call UnitStop(target)
+            elseif hits==2 then
+                set side=side2
+            elseif hits==3 then
+                set side=side3
+            elseif hits==4 then
+                set side=side4
+            elseif hits==5 then
+                set side=side5
+            elseif hits==6 then
+                set side=side6
+            elseif hits==7 then
+                set side=side7
+            else
+                set side=side8
+            endif
+
+            // телепорт: если точка за стороной непроходима, кастер встаёт прямо на цель
+            call EffectCreateAndMove(true,"Iori\\Iori (59).mdl",facing,1.5,1.25,0.5,100,100,100,0,100,caster,0,facing)
+            call MoveUnit(target,caster,chaseDist,LoadReal(HH,id,9)+side)
+            if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))>chaseDist+50 then
+                call MoveUnit(target,caster,0,0)
+            endif
+            set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+            call SaveReal(HH,id,3,facing)
+            call SetUnitFacing(caster,facing)
+            call EffectCreateAndMove(true,"Iori\\Iori (59).mdl",facing,1.5,1.25,0.5,100,100,100,0,100,caster,0,facing)
+
+            call UnitSpeed(caster,1)
+            call SetUnitAnimation(target,"death")
+
+            call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.6,100,100,100,60,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,100,60,0,caster,0,facing)
+
+            if hits<=pushHits then
+                // ===== УДАРЫ 1-4: красный вариант эффектов =====
+                call SetUnitAnimationByIndex(caster,GetRandomInt(8,9))
+                call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1.75,100,100,100,40,150,target,0,facing)
+                call EffectCreateAndMove(true,"Others\\red-zhendi-shanguang.mdl",GetRandomReal(0,36),1.25,1,0.5,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Others\\hit-juhuang-lizi.mdl",GetRandomReal(0,36),1.25,1.75,0.8,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1,1.5,0.75,100,100,100,0,150,target,50,facing,1)
+                call EffectCreateAndMove90(true,"Guts\\az_siwen3.mdl",facing,1.5,0.8,0.75,100,100,100,0,100,target,50,facing)
+                call sound_play("Sound\\Iori\\Iori_Hit.mp3",127)
+            else
+                // ===== УДАРЫ 5-8: анимации 23 и 24 по очереди, красные эффекты =====
+                if hits==5 then
+                    set anim=GetRandomInt(23,24)
+                    call SaveInteger(HH,id,17,anim)
+                endif
+                if ModuloInteger(hits,2)==1 then
+                    set curAnim=anim
+                else
+                    set curAnim=47-anim
+                endif
+                call SetUnitAnimationByIndex(caster,curAnim)
+
+                call EffectCreateAndMove(true,"Iori\\Iori (56).mdl",facing,1,1.5,0.8,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Iori\\Iori (58).mdl",GetRandomReal(0,360),1,2.5,1,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Iori\\Iori (58).mdl",GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Iori\\Iori (57).mdl",GetRandomReal(0,360),1,2,0.6,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Others\\red-zhendi-shanguang.mdl",GetRandomReal(0,36),1.25,1,0.5,100,100,100,0,150,target,50,facing)
+                call EffectCreateAndMove(true,"Iori\\Iori (60).mdl",GetRandomReal(0,36),1.25,1.75,0.8,100,100,100,0,150,target,50,facing)
+                if curAnim==24 then
+                    call EffectCreateAndMoveAn(true,"Iori\\Iori (55).mdl",facing,1.25,1.5,1,100,100,100,0,50,target,-150,facing,3)
+                else
+                    call EffectCreateAndMoveAn(true,"Iori\\Iori (55).mdl",facing,1.25,1.5,1,100,100,100,0,50,target,-150,facing,1)
+                endif
+                call sound_play("Sound\\Iori\\Iori_Slash1.mp3",127)
+            endif
+
+            if hits==1 then
+                call sound_play("Sound\\Iori\\Iori_Hit2.mp3",127)
+            endif
+            if hits==2 then
+                call sound_play("Sound\\Iori\\Iori_T2.mp3",127)
+            endif
+            if hits==6 then
+                call sound_play("Sound\\Iori\\Iori_T3.mp3",127)
+            endif
+            if hits==8 then
+                call sound_play("Sound\\Iori\\Iori_T4.mp3",127)
+            endif
+
+            // здоровье цели не восстанавливается: перед ударом откат к запомненному, после удара запоминаем новое
+            if GetUnitState(target,UNIT_STATE_LIFE)>hpLock then
+                call SetUnitState(target,UNIT_STATE_LIFE,hpLock)
+            endif
+            // удары 1-8 урона не наносят: весь урон в финальном разрезе, как у Kenshiro_T_Act2_Kill
+            set hpLock=GetUnitState(target,UNIT_STATE_LIFE)
+            call SaveReal(HH,id,25,hpLock)
+
+            if hits==8 then
+                set nextHit=time+farTime+lastGap
+            else
+                set nextHit=time+hitGap
+            endif
+        else
+            // ===== ФИНАЛ: отскок на дистанцию прыжка и замах, анимация 17 =====
+            set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+            call SaveReal(HH,id,3,facing)
+            if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))<jumpStart then
+                call EffectCreateAndMove(true,"Iori\\Iori (59).mdl",facing,1.5,1.25,0.5,100,100,100,0,100,caster,0,facing)
+                call MoveUnit(target,caster,-jumpStart,facing)
+            endif
+            call SetUnitFacing(caster,facing)
+            call UnitSpeed(caster,windupSpeed)
+            call SetUnitAnimationByIndex(caster,17)
+            call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+            call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.75,1.75,100,100,100,40,100,caster,0,facing)
+            call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+            set nextHit=time+windup
+        endif
+        call SaveReal(HH,id,11,nextHit)
+    endif
+
+    // ===== ТОЛЧОК ЦЕЛИ: 1-4 сильнее, 5-7 обычный, 8-й отбрасывает далеко =====
+    if hits==8 then
+        if time-lastHit<farTime then
+            call MoveUnit(target,target,farPush*0.02/farTime,facing)
+        endif
+    elseif hits>0 and hits<8 and time-lastHit<pushTime then
+        if hits<=pushHits then
+            call MoveUnit(target,target,pushSpeed,facing)
+        else
+            call MoveUnit(target,target,softPush,facing)
+        endif
+    endif
+
+    // ===== ПРЫЖОК К ЦЕЛИ: анимация 25, дуга по высоте =====
+    if hits==9 and not struck and time>=nextHit then
+        if not dashing then
+            set dashing=true
+            call EffectCreateAndMove(true,"Others\\FSAEff (27).mdl",facing,1.5,2.25,1.5,100,100,100,0,0,caster,0,0)
+            call EffectCreateAndMove(true,"Sabrac\\red-yumao-zhendiLord.mdl",facing,1.5,1.25,1.5,100,100,100,0,0,caster,0,0)
+            set dashDist=SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+            set dashTotal=dashDist
+            call SaveBoolean(HH,id,19,true)
+            call SaveReal(HH,id,23,dashTotal)
+            call UnitAddAbility(caster,'Amrf')
+            call UnitRemoveAbility(caster,'Amrf')
+            call UnitSpeed(caster,cutSpeed)
+            call SetUnitAnimationByIndex(caster,25)
+        endif
+
+        set dashDist=dashDist-dashStep
+        if dashDist<dashEnd then
+            set dashDist=dashEnd
+        endif
+        call SaveReal(HH,id,18,dashDist)
+        call MoveUnit(target,caster,-dashDist,facing)
+        call SetUnitFlyHeight(caster,ParabolaZ(jumpHeight,dashTotal-dashEnd,dashDist-dashEnd),0)
+
+        // замах: крест создаётся впереди кастера незадолго до удара
+        if not crossed and dashDist<=dashEnd+crossAt then
+            set crossed=true
+            call SaveBoolean(HH,id,24,true)
+            call EffectCreateAndMove(true,"Iori\\Iori (53).mdl",facing,1.5,crossSize,0.75,100,100,100,0,crossHeight,caster,crossAhead,facing)
+            call EffectCreateAndMove(true,"Iori\\Iori (54).mdl",facing,1.5,crossSize,0.75,100,100,100,0,crossHeight,caster,crossAhead,facing)
+        endif
+
+        // ===== ФИНАЛЬНЫЙ РАЗРЕЗ =====
+        if dashDist==dashEnd then
+            set struck=true
+            call SaveBoolean(HH,id,13,true)
+            call SaveReal(HH,id,7,time+finalTime)
+
+            call SetUnitFlyHeight(caster,0,0)
+            call SetUnitAnimation(target,"death")
+
+            call EffectCreateAndMove(true,"Akame\\FSAEff (53).mdl",facing,1.5,1.875,1,100,100,100,40,0,target,0,facing)
+            call EffectCreateAndMove(true,"Others\\FSAEff (27).mdl",facing,1.5,2.25,1.5,100,100,100,40,0,target,0,0)
+            call EffectCreateAndMove(true,"Sabrac\\red-yumao-zhendiLord.mdl",facing,1.5,1.25,1.5,100,100,100,40,0,target,0,0)
+//
+            call EffectCreateAndMove(true,"Iori\\Iori (59).mdl",facing,1.5,2,0.4,100,100,100,0,100,target,0,facing)
+
+            // эффекты ударов 1-4
+            call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,2,1.75,100,100,100,40,150,target,0,facing)
+            call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.75,1.75,100,100,100,40,150,target,0,facing)
+            call EffectCreateAndMove(true,"Others\\red-zhendi-shanguang.mdl",GetRandomReal(0,36),1.25,1.5,0.5,100,100,100,0,150,target,50,facing)
+            call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1.5,2,0.5,100,100,100,0,150,target,50,facing,1)
+          // call EffectCreateAndMove90(true,EffectID[45],facing,1.5,1.5,0.5,100,100,100,30,100,target,50,facing)
+
+            // эффекты ударов 5-8, кроме пореза 2680
+         //   call EffectCreateAndMove(true,EffectID[2681],facing,1.5,3,0.5,100,100,100,0,150,target,50,facing)
+          //  call EffectCreateAndMove(true,EffectID[2683],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,150,target,50,facing)
+          //  call EffectCreateAndMove(true,EffectID[2682],GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,150,target,50,facing)
+            call EffectCreateAndMove(true,"Iori\\Iori (60).mdl",GetRandomReal(0,36),1.5,1.5,0.5,100,100,100,0,150,target,50,facing)
+
+            // кровь
+            call EffectCreateAndMove(true,"Others\\blood-rou.mdl",GetRandomReal(0,360),1.5,1.25,0.7,100,100,100,60,50,target,0,facing)
+            call EffectCreateAndMove(true,"Others\\jin xia.mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,0,target,0,facing)
+            call EffectCreateAndMove(true,"Aizen\\red-blood-ball.mdl",GetRandomReal(0,360),1.25,2,1,100,100,100,0,100,target,0,facing)
+            call EffectCreateAndMove(true,"Others\\File00003933.mdl",GetRandomReal(0,360),1.5,2.5,0.6,100,100,100,0,0,target,0,facing)
+
+            call sound_play("Sound\\Iori\\Iori_Slash3.mp3",127)
+            call sound_play("Sound\\Iori\\Iori_Effect10.mp3",127)
+
+            // добивание как у Kenshiro_T_Act2_Kill: здоровье опускается ниже урона разреза, спасти могут щиты, но не резисты
+            if GetUnitState(target,UNIT_STATE_LIFE)>hpLock then
+                call SetUnitState(target,UNIT_STATE_LIFE,hpLock)
+            endif
+            if GetUnitState(target,UNIT_STATE_LIFE)>damage*(8*hitDmg+finalDmg) then
+                call SetUnitState(target,UNIT_STATE_LIFE,RMaxBJ(damage*(8*hitDmg+finalDmg)-500,1))
+            endif
+            call UnitAddAbility(caster,'GST4')
+            call SetUnitInvulnerable(target,false)
+            call myCustomDamage(caster,target,damage*(8*hitDmg+finalDmg),false,false,null,DAMAGE_TYPE_UNIVERSAL,null)
+            call UnitRemoveAbility(caster,'GST4')
+            call Iori_Heal(caster) // ХИЛ: один раз, на финальном разрезе
+        endif
+    endif
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_Burn_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real damage=LoadReal(HH,id,15)
+local integer left=LoadInteger(HH,id,8)      // сколько тиков осталось
+local integer tick=LoadInteger(HH,id,9)      // счётчик до следующего удара
+local integer tickEvery=LoadInteger(HH,id,10) // тиков между ударами
+local boolean hasAbil=LoadBoolean(HH,id,11)  // true: IoG2 на цели, её снятие гасит поджог
+local boolean inv
+
+if left<=0 or not UnitIsAlive(target) or (hasAbil and GetUnitAbilityLevel(target,'IoG2')==0) or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')>0 or GetUnitAbilityLevel(target,'CE04')>0 then
+    // ===== ЗАВЕРШЕНИЕ =====
+    call UnitRemoveAbility(target,'IoG2')
+    call RemoveSavedHandle(HH,GetHandleId(target),'IoG2')
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    set left=left-1
+    set tick=tick+1
+    call SaveInteger(HH,id,8,left)
+
+    if tick==tickEvery then
+        set tick=0
+
+        // на время удара снимаем неуязвимость, иначе урон не пройдёт
+        set inv=GetUnitAbilityLevel(target,'Avul')>0
+        if inv then
+            call SetUnitInvulnerable(target,false)
+        endif
+
+        call UnitAddAbility(caster,'GST4')
+        call DamageU(false,caster,target,damage)
+        call UnitRemoveAbility(caster,'GST4')
+
+        if inv then
+            call SetUnitInvulnerable(target,true)
+        endif
+    endif
+    call SaveInteger(HH,id,9,tick)
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_Burn takes unit caster,unit target returns nothing
+local timer t=LoadTimerHandle(HH,GetHandleId(target),'IoG2')
+local integer id
+
+// настройки
+local real burnAgi=1            // урон в секунду в долях ловкости
+local real burnDur=2.             // сколько секунд добавляет один поджог
+local real burnEvery=0.5          // интервал между ударами в секундах
+local integer burnLevel=12        // с какого уровня героя работает поджог
+
+//call BJDebugMsg("Iori_Burn: вызов") // отладка, потом удали
+
+// цель уже горит: таймер тот же, только добавляем длительность
+// до burnLevel уровня героя поджог не накладывается
+if GetHeroLevel(caster)<burnLevel then
+    set t=null
+    return
+endif
+if t==null then
+    set t=CreateTimer()
+    set id=GetHandleId(t)
+    call SaveTimerHandle(HH,GetHandleId(target),'IoG2',t)
+    call SaveUnitHandle(HH,id,2,target)
+    call SaveInteger(HH,id,10,R2I(burnEvery/0.02+0.5))
+
+    call UnitAddAbility(target,'IoG2')
+    call UnitMakeAbilityPermanent(target,true,'IoG2')
+    call SaveBoolean(HH,id,11,GetUnitAbilityLevel(target,'IoG2')>0)
+    if GetUnitAbilityLevel(target,'IoG2')==0 then
+    //    call BJDebugMsg("Iori_Burn: IoG2 не добавилась на цель") // отладка, потом удали
+    endif
+
+    call TSE_TimerStart(t,0.02,true,function Iori_Burn_Act2)
+endif
+
+set id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,15,GetHeroAgi(caster,true)*burnAgi*burnEvery)
+call SaveInteger(HH,id,8,LoadInteger(HH,id,8)+R2I(burnDur/0.02+0.5))
+set t=null
+endfunction
+
+function Iori_Clear_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local integer abil_id=LoadInteger(HH,id,5)
+
+if abil_id==2 then
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("WU"))
+endif
+if abil_id==3 then
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("EU"))
+endif
+if abil_id==4 then
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("RU"))
+endif
+if abil_id==5 then
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("DU"))
+endif
+if abil_id==6 then
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+endif
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+set caster=null
+endfunction
+
+function Iori_Clear takes unit caster0,unit target0,integer abil_id returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster0)
+
+call SaveInteger(HH,id,5,abil_id)
+if abil_id==2 then
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("WU"),target0)
+endif
+
+if abil_id==3 then
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("EU"),target0)
+endif
+
+if abil_id==4 then
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("RU"),target0)
+endif
+
+if abil_id==5 then
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("DU"),target0)
+endif
+if abil_id==6 then
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster0)),StringHash("TU"),target0)
+endif
+call TSE_TimerStart(t,3,false,function Iori_Clear_Act)
+set t=null
+endfunction
+
+function Iori_F_R_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)    // дамми с эффектами, следует за кастером
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)      // кто уже получил урон за этот рывок
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real flown=LoadReal(HH,id,19)
+local boolean hit=false                      // задет ли кто-то на этом тике
+
+// настройки
+local real damageMul=2          // множитель урона: 2 AGI из Iori_F_Act * 1.5 = 3 AGI, как у R+G
+local real flySpeed=55.           // скорость полёта кастера за тик
+local real maxRange=1500.         // дальность полёта
+local real hitRadius=200.         // радиус урона вокруг кастера
+local real trailEvery=0.08        // интервал эффектов шлейфа
+
+local real damage=LoadReal(HH,id,15)*damageMul
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if flown>=maxRange or GetUnitState(caster,UNIT_STATE_LIFE)<=0.405 then
+    // ===== ЗАВЕРШЕНИЕ =====
+    call DestroyEffect(LoadEffectHandle(HH,id,21))
+    call DestroyEffect(LoadEffectHandle(HH,id,22))
+    call DestroyEffect(LoadEffectHandle(HH,id,23))
+    call DestroyEffect(LoadEffectHandle(HH,id,24))
+    call DestroyEffect(LoadEffectHandle(HH,id,25))
+    call DestroyEffect(LoadEffectHandle(HH,id,26))
+    if Dummy!=null then
+        call MyRemoveUnit(Dummy,1)
+    endif
+
+    call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+    call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,caster,0,facing)
+
+    call SetUnitAnimation(caster,"stand")
+    call UnitSpeed(caster,1)
+    call PauseUnit(caster,false)
+    call SetUnitInvulnerable(caster,false)
+    call SetUnitPathing(caster,true)
+
+    call DestroyGroup(gr)
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    // кастер на паузе и неуязвим всё время способности
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitPathing(caster,false)
+    call SetUnitFacing(caster,facing)
+
+    // старт: кастер сразу бежит, модели снаряда R+G висят на нём самом
+    if time==0.02 then
+        call sound_play("Sound\\Iori\\Iori_F_R.mp3",127)
+      //  call sound_play("Sound\\Iori\\Iori_Effect11.mp3",127)
+        call UnitSpeed(caster,1)
+        call SetUnitAnimationByIndex(caster,3)
+
+        // дамми с эффектами, как в Iori_W_Act2
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+        call SetUnitModel(n0,"war3mapImported\\Dummy.mdx")
+        //call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+        call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Aizen\\AZ_LCDark_W2_buff.mdl",n0,"origin"))
+        call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Iori\\Iori (13).mdl",n0,"origin"))
+        call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("Iori\\Iori (21).mdl",n0,"origin"))
+        call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",n0,"origin"))
+
+
+        call UnitSize(n0,1.5,1.5,1.5)
+        call UnitSpeed(n0,1)
+        call UnitColor(n0,100,100,100,0)
+        call SetUnitFlyHeight(n0,100,0)
+        call SetUnitAnimationByIndex(n0,0)
+        call SaveUnitHandle(HH,id,20,n0)
+        set Dummy=n0
+        set n0=null
+
+        call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Iori\\Iori (13) small.mdl",caster,"hand right"))
+        call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Iori\\Iori (13) small.mdl",caster,"hand left"))
+
+        call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1.6,0.75,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing+180,1,1.6,0.75,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,30,150,caster,0,facing)
+    endif
+
+    call MoveUnit(caster,caster,flySpeed,facing)
+    call MoveUnit(caster,Dummy,0,facing)
+    set flown=flown+flySpeed
+    call SaveReal(HH,id,19,flown)
+
+    // шлейф
+
+    set time1=time1+0.02
+    if time1>=trailEvery then
+        set time1=0
+
+        call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing+180,1,GetRandomReal(1,1.25),GetRandomReal(1.5,1.75),100,100,100,60,150,caster,0,facing)
+        call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.25,1.55),100,100,100,60,100,caster,0,facing)
+        call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.75,100,100,100,0,100,caster,0,facing)
+        //call EffectCreateAndMove(true,EffectID[1697],facing,1,1,1,100,100,100,0,100,caster,0,facing)
+        //call EffectCreateAndMove90(true,EffectID[1080],facing+180,1,1.5,1,100,100,100,0,100,caster,0,facing)
+        call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1,1.25,1,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Iori\\Iori (50).mdl",facing,1,1.25,1,100,100,100,0,0,caster,0,facing)
+    endif
+    call SaveReal(HH,id,6,time1)
+
+    // урон всем задетым: каждый враг получает его один раз за рывок
+    call UnitAddAbility(caster,'GST4')
+    call GroupClear(G)
+    call GroupEnumUnitsInRange(G,GetUnitX(caster),GetUnitY(caster),hitRadius,null)
+    loop
+        set n0=FirstOfGroup(G)
+        exitwhen n0==null
+        if UnitIsAlive(n0) and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 and not IsUnitInGroup(n0,gr) then
+            call GroupAddUnit(gr,n0)
+            call DamageU(false,caster,n0,damage)
+            call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (49).mdl",n0,"chest"))
+            call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (46).mdl",n0,"chest"))
+            set hit=true
+        endif
+        call GroupRemoveUnit(G,n0)
+    endloop
+    call GroupClear(G)
+    call UnitRemoveAbility(caster,'GST4')
+    set n0=null
+
+    if hit then
+        call sound_play("Sound\\Iori\\Iori_Hit2.mp3",127)
+
+        if not LoadBoolean(HH,id,32) then
+            call SaveBoolean(HH,id,32,true)
+            call Iori_Heal(caster) // ХИЛ: один раз, при первом попадании
+        endif
+    endif
+endif
+set caster=null
+set Dummy=null
+set gr=null
+endfunction
+
+function Iori_G_R_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit uo=Iori_OriginalCaster(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local group gr=LoadGroupHandle(HH,id,4)      // кто уже загорелся от этого снаряда
+local real time=LoadReal(HH,id,5)
+local real damage=LoadReal(HH,id,15)
+local real flown=LoadReal(HH,id,19)
+local unit Dummy=LoadUnitHandle(HH,id,20)    // основной снаряд
+local unit Side=LoadUnitHandle(HH,id,21)     // побочный снаряд
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local boolean need_heal=LoadBoolean(HH,id,32)
+// настройки
+local real launchDelay=0.3        // через сколько вылетает снаряд и кастер выходит из паузы
+local real flySpeed=50.           // скорость снаряда за тик
+local real maxRange=2000.         // дальность снаряда
+local real hitRadius=250.         // радиус поджога вокруг снаряда
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if flown>=maxRange or (Dummy!=null and (WaveCancelled(Dummy) or GetUnitTypeId(Dummy)==0)) or GetUnitState(caster,UNIT_STATE_LIFE)<=0.405 then
+    // ===== ЗАВЕРШЕНИЕ =====
+    if need_heal and LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+    call Iori_Heal(caster)
+    endif
+
+    if Dummy!=null then
+        call WaveUnregister(Dummy,false)
+        call SetUnitAnimationByIndex(Dummy,1)
+        call MyRemoveUnit(Dummy,1)
+    endif
+
+    if Side!=null then
+        call SetUnitAnimationByIndex(Side,1)
+        call MyRemoveUnit(Side,1)
+    endif
+
+    call UnitSpeed(uo,1)
+    call PauseUnit(uo,false)
+    call SetUnitInvulnerable(uo,false)
+    call SetUnitPathing(uo,true)
+
+    call DestroyGroup(gr)
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    if time==0.02 then
+        call SetUnitFacing(caster,facing)
+        call UnitSpeed(uo,1.5)
+        call SetUnitAnimationByIndex(uo,15)
+
+        call sound_play("Sound\\Iori\\Iori_G_R.mp3",127)
+               call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1.6,0.75,100,100,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,30,150,caster,0,facing)
+
+    endif
+
+    // кастер на паузе до вылета снаряда
+    if time<launchDelay then
+        call PauseUnit(uo,true)
+        call SetUnitInvulnerable(uo,true)
+        call SetUnitPathing(uo,false)
+    elseif Dummy==null then
+        // выход из паузы
+        call UnitSpeed(uo,1)
+        call PauseUnit(uo,false)
+        call SetUnitInvulnerable(uo,false)
+        call SetUnitPathing(uo,true)
+
+        call sound_play("Sound\\Iori\\Iori_Effect11.mp3",127)
+
+
+   call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,20,100,caster,120,facing)
+call EffectCreateAndMove(true,"Others\\wind4.mdl",facing,1.5,1,0.4,80,20,100,20,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,1.5,1.5,80,20,100,20,100,caster,120,facing)
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.6,40,100,40,20,0,caster,120,facing)
+call EffectCreateAndMove90(true,"rasengan_eff4.mdl",facing+180,1.25,0.5,1,80,20,100,20,100,caster,350,facing)
+
+
+        // основной снаряд
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+        call SetUnitModel(n0,"Iori\\Iori (13) purple fire.mdx")
+        call MoveUnit(n0,n0,100,facing)
+        call SetUnitFlyHeight(n0,150,0)
+        call UnitSize(n0,1.5,1.5,1.5)
+        call SaveUnitHandle(HH,id,20,n0)
+call WaveRegisterShared(n0,GetExpiredTimer())
+        set Dummy=n0
+
+        // побочный снаряд, следует за основным
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+        call SetUnitModel(n0,"Iori\\Iori (13) medium.mdx")
+        call MoveUnit(n0,n0,100,facing)
+        call SetUnitFlyHeight(n0,150,0)
+        call UnitSize(n0,1.5,1.5,1.5)
+        call SaveUnitHandle(HH,id,21,n0)
+        call WaveTrackVisual(Dummy,n0)
+        set Side=n0
+        set n0=null
+    endif
+
+    // полёт сквозь врагов: каждый загорается один раз за бросок
+    if Dummy!=null then
+if Iori_ApplyWaveRedirect(id,caster,Dummy) then
+set caster=IoriReflectedSource
+set facing=LoadReal(HH,id,3)
+endif
+        call MoveUnit(Dummy,Dummy,flySpeed,facing)
+        call MoveUnit(Dummy,Side,0,facing)
+        set flown=flown+flySpeed
+        call SaveReal(HH,id,19,flown)
+
+        call GroupClear(G)
+        call GroupEnumUnitsInRange(G,GetUnitX(Dummy),GetUnitY(Dummy),hitRadius,null)
+        loop
+            set n0=FirstOfGroup(G)
+            exitwhen n0==null
+            if UnitIsAlive(n0) and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 and not IsUnitInGroup(n0,gr) then
+                call GroupAddUnit(gr,n0)
+                call UnitAddAbility(caster,'GST4')
+                call DamageU(false,caster,n0,damage)
+                call UnitRemoveAbility(caster,'GST4')
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+                call Iori_Burn(caster,n0)
+endif
+                call SaveBoolean(HH,id,32,true)
+            endif
+            call GroupRemoveUnit(G,n0)
+        endloop
+
+
+        call GroupClear(G)
+        set n0=null
+    endif
+endif
+set uo=null
+set caster=null
+set gr=null
+set Dummy=null
+set Side=null
+endfunction
+
+function Iori_G_R_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer cid=GetHandleId(caster)
+local real facing=GetUnitFacing(caster)
+local real damage=GetHeroAgi(caster,true)*3
+// угол от текущего положения кастера до точки попадания R
+if HaveSavedReal(HH,cid,'IoRX') then
+    set facing=Angle2(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,cid,'IoRX'),LoadReal(HH,cid,'IoRY'))
+    call RemoveSavedReal(HH,cid,'IoRX')
+    call RemoveSavedReal(HH,cid,'IoRY')
+endif
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Iori_G_R_Act2)
+set t=null
+endfunction
+
+function Iori_R_Pause_Act takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)-0.02
+
+call SaveReal(HH,id,5,time)
+
+if time<=0 or not UnitIsAlive(target) or GetUnitAbilityLevel(target,'B05G')>0 or GetUnitAbilityLevel(target,'ISWC')>0 or GetUnitAbilityLevel(target,'CE04')>0 then
+    call PauseUnit(target,false)
+    call UnitColor(target,100,100,100,0)
+    // метку 100% урона снимаем, только если её ставила эта пауза
+    if LoadBoolean(HH,id,31) then
+        call UnitRemoveAbility(target,'Sle0')
+    endif
+    call RemoveSavedHandle(HH,GetHandleId(target),'IoRP')
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    call PauseUnit(target,true)
+endif
+set target=null
+endfunction
+
+function Iori_R_Pause takes unit caster0,unit target,real dur returns nothing
+local timer t=LoadTimerHandle(HH,GetHandleId(target),'IoRP')
+//Iori_Burn(caster,target)
+// цель уже на паузе: новый таймер не нужен, только продлеваем
+
+call Iori_Burn(caster0,target)
+
+if t==null then
+    set t=CreateTimer()
+    call SaveTimerHandle(HH,GetHandleId(target),'IoRP',t)
+    call SaveUnitHandle(HH,GetHandleId(t),2,target)
+    call PauseUnit(target,true)
+    call UnitColor(target,65,25,100,0)
+    // в паузе цель получает 100% урона от всех: метка Sle0, как сон Кабуто на W
+    if GetUnitAbilityLevel(target,'Sle0')==0 then
+        call UnitAddAbility(target,'Sle0')
+        call SaveBoolean(HH,GetHandleId(t),31,true)
+    endif
+    call TSE_TimerStart(t,0.02,true,function Iori_R_Pause_Act)
+endif
+
+if dur>LoadReal(HH,GetHandleId(t),5) then
+    call SaveReal(HH,GetHandleId(t),5,dur)
+endif
+set t=null
+endfunction
+
+function Iori_R_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit uo=Iori_OriginalCaster(HH,id,1)
+local unit hitU=LoadUnitHandle(HH,id,2)     // первый враг, в которого попал снаряд
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local integer beams=LoadInteger(HH,id,8)
+local integer beamsMax=LoadInteger(HH,id,9)  // считается в момент броска по времени канала
+local real damage=LoadReal(HH,id,15)
+local real damage1=LoadReal(HH,id,16)
+local real charge=LoadReal(HH,id,17)
+local real maxRange=LoadReal(HH,id,18)       // считается в момент броска по времени канала
+local real flown=LoadReal(HH,id,19)
+local real ix=LoadReal(HH,id,11)
+local real iy=LoadReal(HH,id,12)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real px
+local real py
+
+// настройки
+local string orderName="carrionscarabs" // order string базовой способности R (у Carrion Scarabs именно так), поменяй под свою базу
+local real maxChannel=3.          // максимум канала в секундах
+local real launchDelay=0.3        // через сколько после конца канала вылетает снаряд и кастер выходит из паузы
+local real rangeMin=1000.         // дальность снаряда при минимальном канале
+local real rangeMax=2000.         // дальность снаряда при полном канале
+local integer beamsBase=3         // сколько лучей без канала
+local integer beamsPerSec=2       // сколько лучей добавляется за каждую полную секунду канала
+local real flySpeed=55.           // скорость снаряда за тик
+local real hitRadius=200.         // на каком расстоянии от снаряда враг считается первым на пути (как у Q)
+local real hitArea=300.           // радиус урона при попадании снаряда
+local real beamEvery=0.1          // интервал между лучами
+local real beamStep=300.          // прыжок: на сколько каждый следующий луч дальше предыдущего
+local real beamFirst=0.           // где первый луч относительно места попадания (минус = ближе к кастеру)
+local real beamRadius=200.        // радиус урона одного луча
+local real pauseBase=1.           // пауза от луча без канала
+local real pausePerSec=0.7        // добавка к паузе от луча за каждую секунду канала
+local boolean hitOnce=true        // true: каждый враг получает урон от лучей только один раз за каст
+local real endTime=9.8            // конец способности
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if time>=endTime or (Dummy!=null and (WaveCancelled(Dummy) or GetUnitTypeId(Dummy)==0)) or GetUnitState(caster,UNIT_STATE_LIFE)<=0.405 then
+    call WaveUnregister(Dummy,false)
+    // ===== ЗАВЕРШЕНИЕ =====
+    call DestroyEffect(LoadEffectHandle(HH,id,21))
+    call DestroyEffect(LoadEffectHandle(HH,id,22))
+    if Dummy!=null then
+        call SetUnitAnimationByIndex(Dummy,1)
+        call MyRemoveUnit(Dummy,1)
+    endif
+
+    if LoadUnitHandle(HH,id,23)!=null then
+        call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),1)
+        call MyRemoveUnit(LoadUnitHandle(HH,id,23),1)
+    endif
+    call UnitSpeed(uo,1)
+    call PauseUnit(uo,false)
+    call SetUnitInvulnerable(uo,false)
+    call SetUnitPathing(uo,true)
+
+   // if hitU!=null then
+   //     call Iori_Clear(caster,hitU,4) // первый враг доступен для комбо (RU)
+   // endif
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    // ===== КАНАЛ (до 5): держится, пока кастер выполняет приказ способности =====
+    if time<5 then
+        if time==0.02 then
+            call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+            call sound_play("Sound\\Iori\\Iori_Effect7.mp3",127)
+            call sound_play("Sound\\Iori\\Iori_R1.mp3",127)
+            call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Iori\\Iori (15).mdl",caster,"hand left"))
+            call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Iori\\Iori (13) small.mdl",caster,"hand left"))
+            call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1.6,0.75,100,100,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.5,1,100,100,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,30,150,caster,0,facing)
+            call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+            call UnitSpeed(uo,1)
+            call SetUnitAnimationByIndex(uo,14)
+        endif
+
+        // кастер смотрит в сторону точки
+        call SetUnitPathing(uo,false)
+        call SetUnitFacing(caster,facing)
+
+        // накопление силы канала
+        set charge=charge+0.02
+        call SaveReal(HH,id,17,charge)
+
+        // эффекты канала
+        set time1=time1+0.02
+        if time1>=0.4 then
+            set time1=0
+            call DestroyEffect(AddSpecialEffectTarget("Signum\\fadespearpurple.mdl",caster,"hand left"))
+            call EffectCreateAndMove(true,"Iori\\Iori (16).mdl",GetRandomReal(0,360),1.5,1.25,0.5,100,80,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.5,100,80,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,1.25,0.5,100,100,100,0,50,caster,0,facing)
+        endif
+        call SaveReal(HH,id,6,time1)
+
+        // конец канала: приказ сменился или вышло максимальное время
+        if (time>0.1 and GetUnitCurrentOrder(caster)!=OrderId(orderName)) or time>=maxChannel then
+            call SaveReal(HH,id,5,5)
+        endif
+    endif
+
+    // ===== БРОСОК И ПОЛЁТ СНАРЯДА (5 - 8) =====
+    if time>=5 and time<8 then
+        // начало броска: по времени канала считаем дальность и количество лучей
+        if time==5.02 then
+            if charge>maxChannel then
+                set charge=maxChannel
+            endif
+            set maxRange=rangeMin+(rangeMax-rangeMin)*charge/maxChannel
+            set beamsMax=beamsBase+beamsPerSec*R2I(charge+0.05)
+            call SaveReal(HH,id,17,charge)
+            call SaveReal(HH,id,18,maxRange)
+            call SaveInteger(HH,id,9,beamsMax)
+
+            call DestroyEffect(LoadEffectHandle(HH,id,21))
+            call DestroyEffect(LoadEffectHandle(HH,id,22))
+            call SetUnitFacing(caster,facing)
+
+            call UnitSpeed(uo,1.5)
+            call SetUnitAnimationByIndex(uo,15)
+        endif
+
+        // кастер на паузе до вылета снаряда
+        if time<5+launchDelay then
+            call PauseUnit(uo,true)
+            call SetUnitInvulnerable(uo,true)
+            call SetUnitPathing(uo,false)
+        elseif Dummy==null then
+            // выход из паузы
+            call UnitSpeed(uo,1)
+            call PauseUnit(uo,false)
+            call SetUnitInvulnerable(uo,false)
+            call SetUnitPathing(uo,true)
+
+            call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+            call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,80,20,100,0,0,caster,0,facing)
+
+
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,20,100,caster,120,facing)
+//call EffectCreateAndMove(true,EffectID[11],facing,1.5,1,0.4,80,20,100,20,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,1.5,1.5,80,20,100,20,100,caster,120,facing)
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.6,40,100,40,20,0,caster,120,facing)
+call EffectCreateAndMove90(true,"rasengan_eff4.mdl",facing+180,1.25,0.5,1,80,20,100,20,100,caster,350,facing)
+
+
+            // снаряд (основной юнит, он летит и проверяет попадание)
+            set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+            call SetUnitModel(n0,"Iori\\Iori (30).mdx")
+            call MoveUnit(n0,n0,50,facing)
+            call SetUnitFlyHeight(n0,150,0)
+            call UnitSize(n0,1.5,1.5,1.5)
+            call UnitSpeed(n0,2)
+            call SaveUnitHandle(HH,id,20,n0)
+call WaveRegisterShared(n0,GetExpiredTimer())
+            set Dummy=n0
+
+            // второй юнит снаряда, следует за основным
+            set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+            call SetUnitModel(n0,"Iori\\Iori (15).mdx")
+            call MoveUnit(n0,n0,50,facing)
+            call SetUnitFlyHeight(n0,150,0)
+            call UnitSize(n0,1.5,1.5,1.5)
+            call SaveUnitHandle(HH,id,23,n0)
+            call WaveTrackVisual(Dummy,n0)
+            call sound_play("Sound\\Iori\\Iori_Effect11.mp3",127)
+            set n0=null
+        endif
+
+        // полёт снаряда прямо в сторону точки, остановка на первом враге
+        if Dummy!=null then
+if Iori_ApplyWaveRedirect(id,caster,Dummy) then
+set caster=IoriReflectedSource
+set facing=LoadReal(HH,id,3)
+call SetUnitFacingInstant(LoadUnitHandle(HH,id,23),facing)
+endif
+            call MoveUnit(Dummy,Dummy,flySpeed,facing)
+            call MoveUnit(Dummy,LoadUnitHandle(HH,id,23),0,facing)
+            set flown=flown+flySpeed
+            call SaveReal(HH,id,19,flown)
+
+            set hitU=First_Target_Skill(caster,null,GetUnitX(Dummy),GetUnitY(Dummy),hitRadius)
+
+            // попадание: нашёлся первый враг или вышла дальность
+            if hitU!=null or flown>=maxRange then
+                call WaveUnregister(Dummy,false)
+                set ix=GetUnitX(Dummy)
+                set iy=GetUnitY(Dummy)
+                call SaveReal(HH,id,11,ix)
+                call SaveReal(HH,id,12,iy)
+
+
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+                call SaveReal(HH,GetHandleId(caster),'IoRX',ix) // точка для комбо R+G
+endif
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+                call SaveReal(HH,GetHandleId(caster),'IoRY',iy)
+endif
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+                call Iori_Clear(caster,caster,4) // первый враг доступен для комбо (RU)
+endif
+
+                call sound_play("Sound\\Iori\\Iori_Effect9.mp3",127)
+
+                call SetUnitAnimationByIndex(Dummy,1)
+                call MyRemoveUnit(Dummy,1)
+
+                call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),1)
+                call MyRemoveUnit(LoadUnitHandle(HH,id,23),1)
+
+                call RemoveSavedHandle(HH,id,20)
+                call RemoveSavedHandle(HH,id,23)
+                set Dummy=null
+
+                // эффекты попадания на невидимом носителе
+                set n0=CreateUnit(GetOwningPlayer(caster),'e000',ix,iy,facing)
+                call UnitColor(n0,100,100,100,100)
+                call MyRemoveUnit(n0,2)
+                call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,0.75,100,100,100,0,100,n0,0,facing)
+                call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,n0,0,facing)
+                call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1.5,1.5,0.75,100,100,100,40,100,n0,0,facing,1)
+                set n0=null
+
+                // первый враг запоминается для комбо
+                if hitU!=null then
+                    call SaveUnitHandle(HH,id,2,hitU)
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+               call Iori_Heal(caster)
+endif
+                endif
+
+
+                // переход к лучам
+                call SaveReal(HH,id,5,8)
+                set time=8
+            endif
+        endif
+    endif
+
+    // ===== ЛУЧИ по линии в направлении броска (с 8) =====
+    if time>=8 and beams<beamsMax and time>=8+beamEvery*beams then
+        set beams=beams+1
+        call SaveInteger(HH,id,8,beams)
+
+        set px=PolX(ix,beamFirst+beamStep*(beams-1),facing)
+        set py=PolY(iy,beamFirst+beamStep*(beams-1),facing)
+
+       // call sound_play("Sound\\Iori\\Iori_Effect4.mp3",127)
+
+        // невидимый носитель эффектов луча
+        set n0=CreateUnit(GetOwningPlayer(caster),'e000',px,py,facing)
+        call UnitColor(n0,100,100,100,100)
+        call MyRemoveUnit(n0,2)
+        call EffectCreateAndMove(true,"Iori\\Iori (51).mdl",facing,1,0.65,0.75,100,100,100,0,0,n0,0,facing)
+        call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,0.75,100,100,100,0,100,n0,0,facing)
+        call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,0,n0,0,facing)
+        call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,n0,0,facing)
+        call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1.5,100,100,100,40,0,n0,0,facing)
+
+        // урон по площади и пауза с фиолетовым цветом (растут с временем канала)
+        call UnitAddAbility(caster,'GST4')
+        call GroupClear(G)
+        call GroupEnumUnitsInRange(G,px,py,beamRadius,Base)
+        loop
+            set n0=FirstOfGroup(G)
+            exitwhen n0==null
+            if UnitIsAlive(n0) and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+                if not hitOnce or not LoadBoolean(HH,id,GetHandleId(n0)) then
+                    call SaveBoolean(HH,id,GetHandleId(n0),true)
+                    call DamageU(false,caster,n0,(damage+damage1*charge))
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+                    call Iori_R_Pause(caster,n0,pauseBase+pausePerSec*charge)
+endif
+                endif
+            endif
+            call GroupRemoveUnit(G,n0)
+        endloop
+        call GroupClear(G)
+        call UnitRemoveAbility(caster,'GST4')
+        set n0=null
+    endif
+endif
+set uo=null
+set caster=null
+set hitU=null
+set Dummy=null
+endfunction
+
+function Iori_R_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=4*GetHeroAgi(caster,true) // подставь id своей способности
+local real damage1=GetHeroAgi(caster,true)*1 // добавка к урону за каждую секунду канала
+
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,15,damage)
+call SaveReal(HH,id,16,damage1)
+call SaveReal(HH,id,17,0)
+
+call TSE_TimerStart(t,0.02,true,function Iori_R_Act2)
+set t=null
+endfunction
+
+function Iori_G_T_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real holdH=LoadReal(HH,id,6)
+local integer hits=LoadInteger(HH,id,8)
+local integer gType=LoadInteger(HH,id,9)          // 6 = T+G или T+F+G, 7 = T+F+F+G
+local boolean impacted=LoadBoolean(HH,id,10)
+local boolean released=LoadBoolean(HH,id,11)      // кастер вышел из паузы, а цель из неуязвимости
+local boolean tFree=LoadBoolean(HH,id,12)         // цель вышла из паузы
+local real baseDmg=LoadReal(HH,id,15)
+local boolean dead=GetUnitState(target,UNIT_STATE_LIFE)<=0.405
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real dist=SR(x0,y0,x1,y1)
+local real q
+local real hT
+local real topH
+local real step
+
+// настройки
+local real dashDist=170.     // если dashSpeed больше 0: на каком расстоянии от цели кастер останавливается
+local real dashSpeed=0.      // подбег кастера к цели за тик (0 = кастер стоит на месте и бьёт издалека)
+local real barrageFrom=0.3   // когда начинается серия ударов
+local real hitStep=0.1       // интервал ударов серии
+local integer hitsMax=6      // сколько ударов в серии
+local real hitDmg=0.5        // доля урона одного удара серии
+local real riseExtra=400.    // на сколько цель медленно поднимается вверх, пока идёт серия ударов (0 = не поднимается)
+local real maxH=2000.        // потолок высоты цели (выше потолка F, чтобы подъём работал и после двух F)
+local real slamAt=0.9        // начало падения
+local real releaseAt=0.9     // когда цель начинает падать: кастер выходит из паузы, цель из неуязвимости
+local real slamTime=0.5      // за сколько цель падает на землю (больше = медленнее)
+local real slamDmg=2.        // множитель урона удара об землю (по площади), только для T+F+F+G
+local real slamRadius=300.   // радиус удара об землю
+local real endTime=1.8       // конец способности (заметно дольше F)
+local real targetFreeAt=releaseAt // когда цель выходит из паузы (для T+F+F+G ставится на момент приземления)
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+// T+F+F+G: цель остаётся на паузе до приземления, остальные комбо отпускают её в releaseAt
+if gType==7 then
+    set targetFreeAt=slamAt+slamTime
+endif
+
+// флаги на всё время G: F_T, T и T_Fly отдают цель, F не найдёт её по TU/FU
+call SaveBoolean(HH,GetHandleId(target),StringHash("IoriG"),true)
+call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),true)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("FU"))
+
+if time>=endTime or dead then
+    // ===== КОНЕЦ =====
+    call SetUnitFlyHeight(target,0,0)
+    call UnitSpeed(caster,1)
+    call UnitSpeed(target,1)
+
+    if not released then
+        // досрочный конец (цель погибла до падения): отпускаем обоих
+        call SetUnitAnimation(caster,"stand")
+        if not dead then
+            call SetUnitAnimation(target,"stand")
+        endif
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(target,false)
+        call SetUnitInvulnerable(target,false)
+        call SetUnitPathing(target,true)
+    elseif not tFree then
+        // цель ещё на паузе (конец раньше приземления): отпускаем её
+        call PauseUnit(target,false)
+        call SetUnitPathing(target,true)
+    endif
+
+    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriG"),false)
+    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),false)
+    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriTAir"),false)
+    call UnitRemoveAbility(target,'IoT2')
+
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+else
+    // цель начала падать: кастер выходит из паузы, цель из неуязвимости
+    if time>=releaseAt and not released then
+        set released=true
+        call SaveBoolean(HH,id,11,true)
+
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call SetUnitInvulnerable(target,false)
+    endif
+
+    // до падения кастер и цель на паузе и неуязвимы
+    if not released then
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call PauseUnit(target,true)
+        call SetUnitInvulnerable(target,true)
+        call SetUnitPathing(target,false)
+    endif
+
+    // цель выходит из паузы в targetFreeAt: сразу в releaseAt, а при T+F+F+G только в момент приземления
+    if released and not tFree then
+        if time>=targetFreeAt then
+            set tFree=true
+            call SaveBoolean(HH,id,12,true)
+            call PauseUnit(target,false)
+            call Iori_R_Pause(caster,target,1)
+            call SetUnitPathing(target,true)
+            call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+        else
+            call PauseUnit(target,true)
+            call SetUnitPathing(target,false)
+        endif
+    endif
+
+    // начало: запоминаем высоту цели, звуки, эффекты, анимация
+    if time<0.03 then
+
+    call Iori_Heal(caster)
+        set holdH=GetUnitFlyHeight(target)
+        call SaveReal(HH,id,6,holdH)
+
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+        call UnitStop(target)
+
+        call UnitAddAbility(target,'Amrf')
+        call UnitRemoveAbility(target,'Amrf')
+
+        call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+        call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+
+        // голос: для T+F+F+G Bashen-D1, для остальных Bashen-D0
+        if gType==7 then
+            call sound_play("Sound\\Iori\\Iori_T_F_F_G.mp3",127)
+        else
+            call sound_play("Sound\\Iori\\Iori_T_F_F.mp3",127)
+        endif
+        call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+
+        call UnitSpeed(caster,1)
+        //call SetUnitAnimationByIndex(caster,19)
+         call SetUnitAnimationByIndex(caster,25)
+    endif
+
+    // до падения кастер смотрит на цель (и подбегает, только если dashSpeed больше 0)
+    if time<slamAt and not released then
+        set facing=Angle2(x0,y0,x1,y1)
+        call SaveReal(HH,id,3,facing)
+        call SetUnitFacing(caster,facing)
+
+        if dashSpeed>0 and dist>dashDist then
+            set step=dashSpeed
+            if dist-dashDist<step then
+                set step=dist-dashDist
+            endif
+            call MoveUnit(caster,caster,step,facing)
+        endif
+    endif
+
+    // высота, на которую цель поднимается за время серии ударов
+    set topH=holdH+riseExtra
+    if topH>maxH then
+        set topH=maxH
+    endif
+    if topH<holdH then
+        set topH=holdH
+    endif
+
+    // высота: цель висит, плавно поднимается пока идёт урон, потом медленно и мягко падает на землю
+    if time<barrageFrom then
+        call SetUnitFlyHeight(target,holdH,0)
+    elseif time<slamAt then
+        set q=(time-barrageFrom)/(slamAt-barrageFrom)
+        call SetUnitFlyHeight(target,holdH+(topH-holdH)*(0.5-0.5*Cos(q*bj_PI)),0)
+    elseif time<slamAt+slamTime then
+        set q=(time-slamAt)/slamTime
+        set hT=topH*(0.5+0.5*Cos(q*bj_PI)) // медленный старт и мягкая посадка
+        call SetUnitFlyHeight(target,hT,0)
+    else
+        call SetUnitFlyHeight(target,0,0)
+    endif
+
+    // серия ударов
+    if hits<hitsMax and time>=barrageFrom+hitStep*hits and time<slamAt then
+        set hits=hits+1
+        call SaveInteger(HH,id,8,hits)
+
+        if hits==1 then
+           // call SetUnitAnimationByIndex(caster,25)
+
+                    call sound_play("Sound\\Iori\\Iori_Effect9.mp3",127)
+
+        //call EffectCreateAndMove45(true,EffectID[997],facing,1.5,1.75,0.2,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"Iori\\Iori (51).mdl",facing,1.5,1.6,0.8,100,100,100,0,-2000,target,-150,facing)
+         call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1.5,1.5,0.75,100,100,100,80,100,target,0,facing,1)
+        call EffectCreateAndMove45(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,0.75,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove45(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,0,target,0,facing)
+       call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+
+
+      call EffectCreateAndMove90(true,"Iori\\Iori (45).mdl",facing,1.5,1,0.8,100,100,100,0,100,target,50,facing)
+       call EffectCreateAndMove(true,"Iori\\Iori (46).mdl",GetRandomReal(0,36),1.25,1.75,0.8,100,100,100,0,150,target,50,facing)
+
+
+        endif
+
+        // GST4 перед уроном и снимается сразу после него
+        call UnitAddAbility(caster,'GST4')
+        call SetUnitInvulnerable(target,false)
+        call DamageU(false,caster,target,baseDmg*hitDmg)
+        call UnitRemoveAbility(caster,'GST4')
+        if not released then
+            call SetUnitInvulnerable(target,true)
+        endif
+
+    endif
+
+    // начало падения
+    if time>=slamAt-0.01 and time<slamAt+0.01 then
+        call UnitSpeed(caster,1.5)
+    //    call SetUnitAnimationByIndex(caster,18)
+    endif
+
+    // приземление: урон по площади и оглушение только при T+F+F+G
+    if time>=slamAt+slamTime and not impacted then
+        set impacted=true
+        call SaveBoolean(HH,id,10,true)
+
+        set x1=GetUnitX(target)
+        set y1=GetUnitY(target)
+
+       // call sound_play("Sound\\Iori\\Iori_Hit3.mp3",127)
+        //call sound_play("Sound\\Iori\\Iori_Effect8.mp3",127)
+
+
+        if gType==7 then
+
+
+call EffectCreateAndMove(true,"Iori\\fire-boom-new-zisepurple.mdl",facing,1.5,1,0.75,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+        call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.25,1,100,100,100,0,0,target,0,facing)
+        call EffectCreateAndMove(true,"Iori\\[A]TohkaExp.mdl",facing,1,0.5,0.75,100,100,100,20,100,target,0,facing)
+
+          call UnitAddAbility(caster,'GST4')
+            call GroupClear(G)
+            call GroupEnumUnitsInRange(G,x1,y1,slamRadius,Base)
+            loop
+                set n0=FirstOfGroup(G)
+                exitwhen n0==null
+                if UnitIsAlive(n0) and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+                    // GST4 перед уроном каждой цели и снимается сразу после него
+
+                    call DamageU(false,caster,n0,baseDmg*slamDmg)
+
+                    call SetControlToUnit(n0,n0,1,"stun")
+                endif
+                call GroupRemoveUnit(G,n0)
+            endloop
+
+               call UnitRemoveAbility(caster,'GST4')
+            call GroupClear(G)
+            set n0=null
+        endif
+    endif
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_T_Fly_Act takes nothing returns nothing
+    local integer id=GetHandleId(GetExpiredTimer())
+    local unit target0=LoadUnitHandle(HH,id,1)
+    local real facing=LoadReal(HH,id,3)
+    local real time=LoadReal(HH,id,5)
+    local real h0=LoadReal(HH,id,6)
+    local real q
+    local real hNow
+
+    // настройки полёта
+    local real riseTime=0.3   // подъём
+    local real hangTime=0.1    // зависание наверху
+    local real fallTime=0.5    // падение (плавный старт и мягкая посадка)
+    local real peak=600.       // на сколько цель поднимается выше стартовой высоты
+    local real flyPush=400.    // на сколько цель улетает вперёд за весь полёт
+    local real flyTime=riseTime+hangTime+fallTime
+    local real pushStep=flyPush*0.02/flyTime
+
+    set time=time+0.02
+    call SaveReal(HH,id,5,time)
+
+    if LoadBoolean(HH,GetHandleId(target0),StringHash("IoriFT")) then
+        // F_T перехватил цель: высоту не трогаем, F_T продолжит с текущей
+        call SaveBoolean(HH,GetHandleId(target0),StringHash("IoriTAir"),false)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(GetExpiredTimer())
+    elseif time>=flyTime then
+        call SetUnitFlyHeight(target0,h0,0)
+        call SaveBoolean(HH,GetHandleId(target0),StringHash("IoriTAir"),false)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(GetExpiredTimer())
+    else
+        if time<riseTime then
+            set q=time/riseTime
+            set hNow=peak*(1-(1-q)*(1-q))       // подъём: быстрый старт, мягко к вершине
+        elseif time<riseTime+hangTime then
+            set hNow=peak                       // зависание
+        else
+            set q=(time-riseTime-hangTime)/fallTime
+            set hNow=peak*(0.5+0.5*Cos(q*bj_PI)) // падение: медленный старт, мягкая посадка
+        endif
+        call SetUnitFlyHeight(target0,h0+hNow,0)
+        call MoveUnit(target0,target0,pushStep,facing)
+    endif
+    set target0=null
+endfunction
+
+function Iori_T_Fly takes unit target0,real facing0 returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    call SaveUnitHandle(HH,id,1,target0)
+    call SaveReal(HH,id,3,facing0)
+    call SaveReal(HH,id,6,GetUnitFlyHeight(target0))
+
+    // пока цель в полёте от T, комбо-способность F_T может её перехватить
+    call SaveBoolean(HH,GetHandleId(target0),StringHash("IoriTAir"),true)
+
+    call UnitAddAbility(target0,'Amrf')
+    call UnitRemoveAbility(target0,'Amrf')
+
+    call TSE_TimerStart(t,0.02,true,function Iori_T_Fly_Act)
+    set t=null
+endfunction
+
+function Iori_F_T_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real h0=LoadReal(HH,id,6)
+local real top=LoadReal(HH,id,7)
+local real landFrom=LoadReal(HH,id,8)
+local real damage=LoadReal(HH,id,15)
+local integer hitNo=LoadInteger(HH,id,9)          // номер подъёма: 1 или 2
+local boolean again=LoadBoolean(HH,id,10)         // F нажали второй раз
+local boolean landing=LoadBoolean(HH,id,11)       // цель падает
+local boolean free=LoadBoolean(HH,id,12)          // кастер уже освобождён от паузы
+local boolean dead=GetUnitState(target,UNIT_STATE_LIFE)<=0.405
+local boolean taken=LoadBoolean(HH,GetHandleId(target),StringHash("IoriG")) // на будущее: G перехватил цель
+local real q
+local real hNow
+local real lf
+
+// настройки
+local real lift=300.         // на сколько один подъём F поднимает цель выше
+local real maxH=1000.        // потолок высоты
+local real lockTime=0.05     // сколько кастер на паузе после нажатия F (потом сразу можно жать F снова)
+local real hitTime=0.2       // момент удара
+local real liftFrom=0.1      // с какого времени первый подъём начинается
+local real liftTo=0.4        // подъём заканчивается, это и есть окно второго нажатия F
+local real gWindow=0.15      // сколько после второго подъёма цель висит для G
+local real fallTime=0.4      // за сколько цель падает после комбо
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+
+if taken then
+    // ===== G ПЕРЕХВАТИЛ ЦЕЛЬ: F_T отдаёт её без посадки =====
+    call UnitRemoveAbility(target,'IoT2')
+    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),false)
+    call SaveInteger(HH,GetHandleId(target),StringHash("IoriFTid"),0)
+    call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+
+    call PauseTimer(GetExpiredTimer())
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+elseif landing or dead then
+    // ===== ПАДЕНИЕ И КОНЕЦ =====
+    if dead then
+        set q=1
+    else
+        set q=(time-landFrom)/fallTime
+    endif
+
+    if q>=1 then
+        call SetUnitFlyHeight(target,0,0)
+        if not dead then
+            call SetUnitAnimation(target,"stand")
+        endif
+
+        call UnitRemoveAbility(target,'IoT2')
+        call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),false)
+        call SaveInteger(HH,GetHandleId(target),StringHash("IoriFTid"),0)
+        call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+        call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("FU"))
+
+        call UnitSpeed(caster,1)
+        if not free then
+            call PauseUnit(caster,false)
+            call SetUnitInvulnerable(caster,false)
+        endif
+
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(GetExpiredTimer())
+    else
+        set hNow=top*(0.5+0.5*Cos(q*bj_PI)) // мягкий старт и мягкая посадка
+        call SetUnitFlyHeight(target,hNow,0)
+    endif
+else
+    // ===== ОДИН ПОДЪЁМ =====
+    // кастер на паузе только lockTime, дальше свободен и может нажать F снова
+    if time<lockTime then
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call SetUnitFacing(caster,facing)
+    elseif not free then
+        set free=true
+        call SaveBoolean(HH,id,12,true)
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+    endif
+
+    // цель на паузе до удара
+    if time<hitTime then
+        call PauseUnit(target,true)
+    endif
+
+    // начало подъёма: запоминаем высоту, считаем потолок, анимация
+    if time<0.03 then
+    call Iori_Heal(caster)
+        call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),true)
+
+        set h0=GetUnitFlyHeight(target)
+        if hitNo==1 then
+            set top=h0+lift
+        else
+            set top=top+lift // второй подъём продолжает от потолка первого
+        endif
+        if top>maxH then
+            set top=maxH
+        endif
+        if top<h0 then
+            set top=h0
+        endif
+        call SaveReal(HH,id,6,h0)
+        call SaveReal(HH,id,7,top)
+
+        call UnitAddAbility(target,'Amrf')
+        call UnitRemoveAbility(target,'Amrf')
+
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1,1.25,0.5,100,80,100,20,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,150,caster,0,facing)
+call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.75,1,100,100,100,0,100,caster,0,facing)
+
+
+        if hitNo==1 then
+            call SetUnitAnimationByIndex(caster,23)
+            call UnitAddAbilityTimed(target,liftTo,'IoT2') // метка окна второго F
+            call AbilityCD(caster,'IoF1',0.1)             // откат F сбрасывается отсюда, чтобы можно было сразу нажать F снова
+        else
+            call SetUnitAnimationByIndex(caster,24)
+        endif
+        call UnitSpeed(caster,1.5)
+    endif
+
+    // момент удара
+    if time>=hitTime-0.01 and time<hitTime+0.01 then
+        call sound_play("Sound\\Iori\\Iori_Slash2.mp3",127)
+        call UnitSpeed(caster,1)
+        if GetUnitAbilityLevel(caster,'IoT2')>0 then
+        call EffectCreateAndMove45(true,"Others\\FSAeff (178).mdl",facing+45,1.5,1.25,0.75,100,100,100,0,100,target,0,facing)
+        else
+        call EffectCreateAndMove45(true,"Others\\FSAeff (178).mdl",facing-45,1.5,1.25,0.75,100,100,100,0,100,target,0,facing)
+        endif
+        call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing,1)
+
+        call EffectCreateAndMove(true,"Iori\\Iori (46).mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+
+        call EffectCreateAndMove(true,"Iori\\Iori (48).mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+        call PauseUnit(target,false)
+        call SetUnitInvulnerable(target,false)
+        call UnitAddAbility(caster,'GST4')
+        call DamageU(false,caster,target,damage)
+        call UnitRemoveAbility(caster,'GST4')
+        call PushTimed(target,facing,10,10)
+
+        if hitNo==1 and not again then
+            call AbilityCD(caster,'IoF1',0.01) // повторный сброс отката, пока второй F ещё не нажат
+        endif
+        if hitNo==2 then
+            // второй подъём: цель доступна для G
+            call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("FU"),target)
+        endif
+    endif
+
+    // подъём: плавно от текущей высоты до top (второй подъём стартует сразу)
+    set lf=liftFrom
+    if hitNo==2 then
+        set lf=0
+    endif
+    if time>lf and time<=liftTo then
+        set q=(time-lf)/(liftTo-lf)
+        set hNow=h0+(top-h0)*(0.5-0.5*Cos(q*bj_PI))
+        call SetUnitFlyHeight(target,hNow,0)
+    endif
+
+    // что дальше
+    if hitNo==1 then
+        if again and time>=hitTime then
+            // второй F нажат: сразу второй подъём, как только нанесён первый удар
+            set hitNo=2
+            set again=false
+            set free=false
+            set time=0
+            call SaveInteger(HH,id,9,2)
+            call SaveBoolean(HH,id,10,false)
+            call SaveBoolean(HH,id,12,false)
+            call SaveReal(HH,id,5,0)
+            call UnitRemoveAbility(target,'IoT2')
+            set facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+            call SaveReal(HH,id,3,facing)
+        elseif time>=liftTo then
+            // F не нажали: цель сразу падает
+            set landing=true
+            call SaveBoolean(HH,id,11,true)
+            call SaveReal(HH,id,8,time)
+            call UnitRemoveAbility(target,'IoT2')
+        endif
+    elseif time>=liftTo+gWindow then
+        // после второго подъёма G не нажали: цель падает
+        set landing=true
+        call SaveBoolean(HH,id,11,true)
+        call SaveReal(HH,id,8,time)
+    endif
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_T_Act2 takes nothing returns nothing
+    local integer id=GetHandleId(GetExpiredTimer())
+    local unit caster=LoadUnitHandle(HH,id,1)
+    local unit target=LoadUnitHandle(HH,id,2)
+    local real facing=LoadReal(HH,id,3)
+    local real time=LoadReal(HH,id,5)
+    local real time1=LoadReal(HH,id,6)
+    local integer hits=LoadInteger(HH,id,8)
+    local boolean caught=LoadBoolean(HH,id,10)
+    local real lastHit=LoadReal(HH,id,11)
+    local integer anim=LoadInteger(HH,id,12)
+    local boolean struck=LoadBoolean(HH,id,13)
+    local boolean released=LoadBoolean(HH,id,14)
+    local real damage=LoadReal(HH,id,15)
+    local boolean casterFree=LoadBoolean(HH,id,16)
+    local boolean runStarted=LoadBoolean(HH,id,17)
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real dist=SR(x0,y0,x1,y1)
+    local real step
+    local real gap
+    local real p
+    local integer curAnim
+
+    // настройки
+    local real startDelay=0.3    // сколько играет анимация 22 в самом начале, до бега
+    local real hitGap=0.1        // промежуток между ударами
+    local real lastGap=0.3       // промежуток перед 9-м ударом
+    local real pushTime=0.14      // сколько длится толчок после удара
+    local real pushSpeed=12     // скорость толчка за тик у ударов 1-4 (~165 за удар)
+    local integer pushHits=4     // сколько первых ударов толкают нормально
+    local real softPush=3       // скорость толчка у ударов 5-8 (~45 за удар)
+    local real chasePause=0.1    // пауза после окончания толчка, прежде чем кастер побежит к цели
+    local real chaseDelay=pushTime+chasePause // через сколько после удара кастер начинает догонять
+    local real chaseDist=150.    // расстояние между кастером и целью в момент ударов
+    local real windupSpeed=2.5   // скорость анимации 17 (замах)
+    local real finalSpeed=3.     // скорость анимации 18 (удар)
+    local real windup=0.3        // сколько длится замах (анимация 17) до удара
+    local real finalTime=0.75    // всё время от начала 9-го удара до выхода цели из паузы
+    local real launchTime=finalTime-windup // сколько цель взлетает после удара (0.45)
+    local real fallTime=0.5      // за сколько секунд цель приземляется после выхода из паузы
+    local real launchHeight=600. // на какую высоту подбрасывается цель
+    local real finalPush=0.      // дальность и высоту теперь считает T_Fly, поэтому здесь 0 (иначе цель двигается дважды)
+    local real pushStep=finalPush*0.02/(launchTime+fallTime) // дистанция за один тик, скорость полёта вперёд постоянная
+
+
+    local integer randomAnim=0
+    local boolean yielded=LoadBoolean(HH,id,18)
+    set time=time+0.02
+    call SaveReal(HH,id,5,time)
+
+    // F_T (способность после T) ставит на цель флаг IoriFT, как только перехватывает её
+    if not yielded and LoadBoolean(HH,GetHandleId(target),StringHash("IoriFT")) then
+        set yielded=true
+        call SaveBoolean(HH,id,18,true)
+    endif
+
+    if yielded then
+        // ===== F_T ПЕРЕХВАТИЛ ЦЕЛЬ: T отдаёт управление и завершается =====
+
+        call Iori_Clear(caster,target,6)
+        call SetUnitPathing(target,true)
+        call UnitSpeed(target,1)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(GetExpiredTimer())
+    elseif released then
+        // ===== ПОЛЁТ ЦЕЛИ ВПЕРЁД ПОКА ОНА ПАДАЕТ =====
+        if time>lastHit+finalTime+fallTime then
+
+            call PauseTimer(GetExpiredTimer())
+            call FlushChildHashtable(HH,id)
+            call TSE_DestroyTimer(GetExpiredTimer())
+        else
+            call MoveUnit(target,target,pushStep,facing)
+        endif
+    elseif (caught and ((hits>=9 and time>lastHit+finalTime) or time>8)) or (not caught and time>startDelay+4) then
+        // ===== ВЫХОД ЦЕЛИ ИЗ ПАУЗЫ =====
+        call Iori_Clear(caster,target,6) // подставь свой номер, если нужен другой
+       // call DestroyEffect(LoadEffectHandle(HH,id,21))
+       // call DestroyEffect(LoadEffectHandle(HH,id,22))
+       // call DestroyEffect(LoadEffectHandle(HH,id,23))
+       // call DestroyEffect(LoadEffectHandle(HH,id,24))
+       // call DestroyEffect(LoadEffectHandle(HH,id,25))
+       // call DestroyEffect(LoadEffectHandle(HH,id,26))
+       // call DestroyEffect(LoadEffectHandle(HH,id,27))
+       // call DestroyEffect(LoadEffectHandle(HH,id,28))
+
+        // цель падает сама: скорость = высота / fallTime, значит приземлится ровно за fallTime сек
+      //  call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target)/fallTime)
+
+        // если кастер уже свободен, его анимацию не трогаем
+        if not casterFree then
+            call SetUnitAnimation(caster,"stand")
+        endif
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call UnitSpeed(target,1)
+
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call PauseUnit(target,false)
+        call SetUnitInvulnerable(target,false)
+        call SetUnitPathing(target,true)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+
+        if hits>=9 and finalPush>0 then
+            // таймер живёт дальше: цель продолжает лететь вперёд, пока падает (флаг IoriTAir остаётся)
+            call SaveBoolean(HH,id,14,true)
+        else
+
+            call PauseTimer(GetExpiredTimer())
+            call FlushChildHashtable(HH,id)
+            call TSE_DestroyTimer(GetExpiredTimer())
+        endif
+    else
+        // спам паузы и неуязвимости кастера на каждом тике, пока он не нанёс удар 18
+        if not casterFree then
+            call PauseUnit(caster,true)
+            call SetUnitInvulnerable(caster,true)
+            call SetUnitPathing(caster,false)
+        endif
+
+        if not caught then
+            // ===== СТАРТ (анимация 22) И БЕГ К ЦЕЛИ =====
+            if time<0.03 then
+                call sound_play("Sound\\Iori\\Iori_T1.mp3",127)
+                call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+
+              //  call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget(EffectID[959],caster,"hand right"))
+             //   call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget(EffectID[959],caster,"hand left"))
+              //  call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget(EffectID[959],caster,"origin"))
+              //  call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget(EffectID[959],caster,"chest"))
+              //  call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget(EffectID[393],caster,"hand right"))
+              //  call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget(EffectID[393],caster,"hand left"))
+               // call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget(EffectID[1924],caster,"hand right"))
+               // call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget(EffectID[1924],caster,"hand left"))
+
+                call UnitSpeed(caster,1)
+                call SetUnitAnimationByIndex(caster,22)
+
+
+                call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+call EffectCreateAndMove(true,"Iori\\Iori (45).mdl",facing,1,1,1,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1,1.25,0.5,100,80,100,20,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,150,caster,0,facing)
+call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.75,1,100,100,100,0,100,caster,0,facing)
+
+
+            endif
+
+            set facing=Angle2(x0,y0,x1,y1)
+            call SaveReal(HH,id,3,facing)
+            call SetUnitFacing(caster,facing)
+
+            // после startDelay начинается бег с анимацией 3
+            if time>=startDelay then
+                if not runStarted then
+                    set runStarted=true
+                    call SaveBoolean(HH,id,17,true)
+                    call UnitSpeed(caster,1)
+                    call SetUnitAnimationByIndex(caster,3)
+
+call EffectCreateAndMove(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",facing,1,2.5,0.75,100,100,100,30,100,caster,0,facing)
+call EffectCreateAndMove(true,"Madara\\EffecthPush.mdl",facing+180,1,0.5,0.75,100,100,100,20,100,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.5,0.75,60,60,100,20,100,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1,1.75,100,100,100,20,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.75,1.75,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1.75,100,100,100,40,150,caster,0,facing)
+
+
+                endif
+
+                if dist<200 then
+                    // догнал: time обнуляется, дальше серия ударов с нуля
+                    call SaveBoolean(HH,id,10,true)
+                    call SaveReal(HH,id,5,0)
+
+                    call PauseUnit(target,true)
+                    call SetUnitInvulnerable(target,true)
+                    call SetUnitPathing(target,false)
+                    call UnitStop(target)
+                    call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+
+                    // сброс залипших флагов комбо с прошлых использований
+                    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),false)
+                    call SaveInteger(HH,GetHandleId(target),StringHash("IoriFTid"),0)
+                    call SaveBoolean(HH,GetHandleId(target),StringHash("IoriTAir"),false)
+
+                    call UnitAddAbility(target,'Amrf')
+                    call UnitRemoveAbility(target,'Amrf')
+
+                else
+                    call MoveUnit(caster,caster,25+dist*0.01,facing)
+
+                    set time1=time1+0.02
+            if time1>0 then
+            set time1=-0.1
+call EffectCreateAndMove(true,"Aizen\\File0000 (644).mdl",facing,1,GetRandomReal(1.25,1.5),GetRandomReal(1.25,1.5),100,100,100,30,-200,caster,100,facing)
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.5,1.75),100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.5,1.75),100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.75,100,100,100,0,100,caster,0,facing)
+                    endif
+                    call SaveReal(HH,id,6,time1)
+
+
+                endif
+            endif
+        else
+            // ===== СЕРИЯ УДАРОВ =====
+            // до 9-го удара направление всегда от героя к цели (если цель откинули, герой развернётся к ней)
+            if hits<9 then
+                set facing=Angle2(x0,y0,x1,y1)
+                call SaveReal(HH,id,3,facing)
+            endif
+            if not casterFree then
+                call SetUnitFacing(caster,facing)
+            endif
+
+            // спам паузы и неуязвимости цели на каждом тике (после удара 18 цель уязвима, но на паузе)
+            call PauseUnit(target,true)
+            call SetUnitPathing(target,false)
+            if not struck then
+                call SetUnitInvulnerable(target,true)
+            endif
+
+            // промежуток: перед последним ударом он другой
+            set gap=hitGap
+            if hits==8 then
+                set gap=lastGap
+            endif
+
+            // удар только когда герой стоит ровно на chaseDist от цели и прошла пауза после прошлого удара
+            if hits<9 and dist<=chaseDist+3 and (hits==0 or time>=lastHit+gap) then
+                set hits=hits+1
+                set lastHit=time
+                call SaveInteger(HH,id,8,hits)
+                call SaveReal(HH,id,11,lastHit)
+
+                if hits<9 then
+                    call UnitSpeed(caster,1)
+
+                    if hits<=4 then
+
+
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.6,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,60,150,caster,0,facing)
+       call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1.75,100,100,100,40,150,target,0,facing)
+
+
+                        // удары 1-4: случайная анимация 8 или 9
+                        set randomAnim=GetRandomInt(8,9)
+                        call SetUnitAnimationByIndex(caster,randomAnim)
+                        //if randomAnim==8
+                        //call EffectCreateAndMove(true,EffectID[0],facing+180,1,1.5,1,100,100,100,0,100,target,50,facing)
+                        // else
+                        //call EffectCreateAndMove(true,EffectID[1],facing,1,0.75,1,100,100,100,0,100,target,50,facing)
+                        //endif
+
+
+                       // call EffectCreateAndMove(true,EffectID[74],GetRandomReal(0,36),1.25,1.5,0.75,100,100,100,0,100,target,50,facing)
+
+
+                      // call EffectCreateAndMove(true,EffectID[75],GetRandomReal(0,36),1.25,1.5,0.75,100,100,100,0,100,target,50,facing)
+                       // call EffectCreateAndMove(true,EffectID[205],facing,0.5,1,1,100,100,100,0,100,target,50,facing)
+                        // call EffectCreateAndMove(true,EffectID[205],facing,0.5,1,1,100,100,100,0,100,target,50,facin
+                        //call EffectCreateAndMove(true,EffectID[40],GetRandomReal(0,36),1.25,1.5,0.5,100,100,100,0,150,target,50,facing)
+                       // call EffectCreateAndMoveAn(true,EffectID[42],GetRandomReal(0,36),1.25,2,0.5,100,100,100,0,100,target,0,facing,1)
+
+
+                        //call EffectCreateAndMove(true,EffectID[9],facing,1,1,1,100,100,100,0,50,target,0,facing)
+               //фиолте вариант начало
+                       call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1,1.75,0.8,100,100,100,0,150,target,50,facing)
+
+
+                          call EffectCreateAndMove(true,"Iori\\Iori (47).mdl",GetRandomReal(0,36),1.25,1,0.5,100,100,100,0,150,target,50,facing)
+                         call EffectCreateAndMove(true,"Iori\\Iori (46).mdl",GetRandomReal(0,36),1.25,1.75,0.8,100,100,100,0,150,target,50,facing)
+
+                         call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1,1.65,0.75,100,100,100,0,150,target,50,facing,1)
+                         //1695 //786
+                         call EffectCreateAndMove90(true,"Iori\\Iori (45).mdl",facing,1.5,1,0.8,100,100,100,0,100,target,50,facing)
+                         //фиолте вариант конец
+
+
+                         //красный вариант начало
+                         //  call EffectCreateAndMove(true,EffectID[79],GetRandomReal(0,36),1.25,1,0.5,100,100,100,0,150,target,50,facing)
+                         // call EffectCreateAndMove(true,EffectID[425],GetRandomReal(0,36),1.25,1.75,0.8,100,100,100,0,150,target,50,facing)
+                       //  call EffectCreateAndMoveAn(true,EffectID[1143],facing,1,1.5,0.75,100,100,100,0,150,target,50,facing,1)
+                       // call EffectCreateAndMove90(true,EffectID[45],facing,1.5,0.8,0.75,100,100,100,0,100,target,50,facing)
+                    //красный вариант конец
+                    else
+                        // удары 5-8: анимации 23 и 24 по очереди (первая случайная)
+                        if hits==5 then
+                            set anim=GetRandomInt(23,24)
+                            call SaveInteger(HH,id,12,anim)
+                        endif
+                        if ModuloInteger(hits,2)==1 then
+                            set curAnim=anim
+                        else
+                            set curAnim=47-anim
+                        endif
+                        call SetUnitAnimationByIndex(caster,curAnim)
+
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",GetRandomReal(0,360),1.5,1,0.6,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,100,60,0,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,60,150,caster,0,facing)
+
+
+                       // call EffectCreateAndMove(true,EffectID[210],facing+180,1,2,0.6,100,100,100,0,0,target,50,facing)
+                       call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1,1.5,0.8,100,100,100,0,150,target,50,facing)
+                         call EffectCreateAndMove(true,"Iori\\Iori (49).mdl",GetRandomReal(0,360),1,2.5,1,100,100,100,0,150,target,50,facing)
+                       call EffectCreateAndMove(true,"Iori\\Iori (49).mdl",GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,150,target,50,facing)
+                        call EffectCreateAndMove(true,"Iori\\Iori (49).mdl",GetRandomReal(0,360),1,1,0.6,100,100,100,0,150,target,50,facing)
+
+
+                        call EffectCreateAndMove(true,"Iori\\Iori (48).mdl",GetRandomReal(0,360),1,2,0.6,100,100,100,0,150,target,50,facing)
+                       //  call EffectCreateAndMove(true,EffectID[823],GetRandomReal(0,360),1,2.5,1,100,100,100,0,150,target,50,facing)
+                     //  call EffectCreateAndMove(true,EffectID[823],GetRandomReal(0,360),1,1.5,0.8,100,100,100,0,150,target,50,facing)
+                       // call EffectCreateAndMove(true,EffectID[823],GetRandomReal(0,360),1,1,0.6,100,100,100,0,150,target,50,facing)
+                        //call EffectCreateAndMove(true,EffectID[348],GetRandomReal(0,360),1,2,0.6,100,100,100,0,150,target,50,facing)
+
+                        if curAnim==24 then
+                            call EffectCreateAndMoveAn(true,"Iori\\Iori (25).mdl",facing,1.25,1.5,1,100,100,100,0,50,target,-150,facing,3)
+
+                        endif
+                        if curAnim==23 then
+                            call EffectCreateAndMoveAn(true,"Iori\\Iori (25).mdl",facing,1.25,1.5,1,100,100,100,0,50,target,-150,facing,1)
+
+
+                        endif
+                    endif
+
+                    call SetUnitAnimation(target,"death") // анимация смерти у цели на каждом ударе
+
+                    //call EffectCreateAndMove(true,EffectID[6],facing,1,0.35,0.5,100,100,100,40,50,caster,0,facing)
+                    //call EffectCreateAndMove(true,EffectID[66],facing,1,1,1.5,100,100,100,30,0,caster,-50,facing)
+
+                    call UnitAddAbility(caster,'GST4')
+
+                    if hits<=4 then
+                        call sound_play("Sound\\Iori\\Iori_Hit.mp3",127)
+                    endif
+                    if hits>4 then
+                        call sound_play("Sound\\Iori\\Iori_Slash1.mp3",127)
+                    endif
+
+                    call SetUnitInvulnerable(target,false)
+                    call DamageU(false,caster,target,damage)
+                    call SetUnitInvulnerable(target,true)
+                    call UnitRemoveAbility(caster,'GST4')
+
+                   // call EffectCreateAndMove(true,EffectID[168],facing,1.5,1.5,0.75,100,100,100,0,100,target,100,facing)
+                  //  call EffectCreateAndMove(true,EffectID[169],facing,1.5,1.75,0.75,100,100,100,0,100,target,100,facing)
+                  //  call EffectCreateAndMoveAn(true,EffectID[1077],facing,1.5,1,0.75,100,100,100,0,100,target,100,facing,1)
+
+                    if hits==1 then
+                        call sound_play("Sound\\Iori\\Iori_Hit2.mp3",127)
+                    endif
+                    if hits==2 then
+                        call sound_play("Sound\\Iori\\Iori_T2.mp3",127)
+                    endif
+                    if hits==5 then
+                        call sound_play("Sound\\Iori\\Iori_T3.mp3",127)
+                    endif
+                    if hits==8 then
+                        call sound_play("Sound\\Iori\\Iori_T4.mp3",127)
+                    endif
+                else
+                    // 9-й удар, начало: замах (анимация 17)
+                    call UnitSpeed(caster,windupSpeed)
+                    call SetUnitAnimationByIndex(caster,17)
+
+
+call MoveUnit(target,caster,-120,facing)
+
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.75,1.75,100,100,100,40,100,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+call EffectCreateAndMove(true,"Iori\\Iori (45).mdl",facing,1,1,1,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1,1.25,0.5,100,80,100,20,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,40,150,caster,0,facing)
+call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.75,1,100,100,100,0,100,caster,0,facing)
+
+
+                endif
+            endif
+
+            // 9-й удар: после замаха анимация 18, урон, эффекты, подброс цели
+            if hits==9 and not struck and time-lastHit>=windup then
+                set struck=true
+                call SaveBoolean(HH,id,13,true)
+
+                call UnitSpeed(caster,finalSpeed)
+                call SetUnitAnimationByIndex(caster,18)
+
+                call SetUnitAnimation(target,"death")
+
+                //call EffectCreateAndMove(true,EffectID[6],facing,1,0.35,0.5,100,100,100,40,50,caster,0,facing)
+                //call EffectCreateAndMove(true,EffectID[66],facing,1,1,1.5,100,100,100,30,0,caster,-50,facing)
+
+
+                //call EffectCreateAndMove(true,EffectID[287],facing,1.25,1,1,100,100,100,0,150,target,0,facing)
+
+
+  call EffectCreateAndMove45(true,"Iori\\NanohaExp1.mdl",facing,1,1,1.5,100,100,100,0,150,target,50,facing)
+
+                call EffectCreateAndMove45(true,"Iori\\Iori (44).mdl",facing,1.25,1,1,100,100,100,0,150,target,0,facing)
+call EffectCreateAndMove45(true,"Others\\[A]earthdom(nocolor)_new.mdl",facing,1.5,1.75,1.25,100,80,100,40,100,target,50,facing)
+call EffectCreateAndMove45(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1.5,2,1,100,80,100,20,150,target,50,facing)
+call EffectCreateAndMove45(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.8,100,100,100,0,150,target,50,facing)
+call EffectCreateAndMove45(true,"Signum\\fadespearpurple.mdl",facing,1.5,2,0.8,100,100,100,0,150,target,50,facing)
+call EffectCreateAndMove45(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,1.5,0.8,100,100,100,0,150,target,50,facing)
+
+call EffectCreateAndMoveAn(true,"Others\\AFB_hudie.mdl",GetRandomReal(0,360),1,1.5,1.5,100,100,100,50,150,target,50,facing,3)
+
+//call EffectCreateAndMove45(true,EffectID[438],facing,1.5,1.5,0.75,100,100,100,0,150,target,50,facing)
+ call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1,2,0.5,100,100,100,0,150,target,50,facing,1)
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,"Iori\\flowerMoonEff (83).mdx")///[1680])//1658
+call MoveUnit(n0,n0,50,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitColor(n0,100,100,100,100)
+call UnitSize(n0,2,2,2)
+call MyRemoveUnit(n0,2)
+call SetUnitAnimationByIndex(n0,2)
+set n0=null
+
+
+                // после этого удара цель остаётся уязвимой, пока подбрасывается
+                call UnitAddAbility(caster,'GST4')
+                call SetUnitInvulnerable(target,false)
+                call DamageU(false,caster,target,damage*2)
+                call UnitRemoveAbility(caster,'GST4')
+                call sound_play("Sound\\Iori\\Iori_Effect10.mp3",127)
+                // финальный удар: взрыв эффектов
+            //    call EffectCreateAndMove90(true,EffectID[12],facing,1,1,1.5,100,100,100,40,150,target,150,facing)
+               // call EffectCreateAndMove(true,EffectID[0],facing+180,1.5,2,0.75,100,100,100,40,100,target,150,facing)
+          //      call EffectCreateAndMove90(true,EffectID[1080],facing,1.5,1.5,0.75,100,100,100,0,100,caster,150,facing)
+
+                // цель в полёте: запускаем T_Fly и сразу делаем её доступной для F (метка TU)
+                call Iori_T_Fly(target,facing)
+                call Iori_Clear(caster,target,6)
+                 call Iori_Heal(caster)
+                // кастер выходит из паузы в момент подброса цели
+                set casterFree=true
+                call SaveBoolean(HH,id,16,true)
+                call PauseUnit(caster,false)
+                call SetUnitInvulnerable(caster,false)
+                call SetUnitPathing(caster,true)
+            endif
+
+            // толчок цели вперёд: удары 1-4 толкают сильно, 5-8 слабее
+            if hits>0 and hits<9 and time-lastHit<pushTime then
+                if hits<=pushHits then
+                    call MoveUnit(target,target,pushSpeed,facing)
+                else
+                    call MoveUnit(target,target,softPush,facing)
+                endif
+            endif
+
+            // герой стартует после окончания толчка + небольшая пауза и догоняет цель до chaseDist (после 9-го удара стоит на месте)
+            if hits<9 then
+                if hits==0 or time-lastHit>=chaseDelay then
+                    if dist>chaseDist then
+                        set step=22.
+                        if dist-chaseDist<step then
+                            set step=dist-chaseDist
+                        endif
+                        call MoveUnit(caster,caster,step,facing)
+                    endif
+                endif
+            endif
+        endif
+    endif
+
+    set caster=null
+    set target=null
+endfunction
+
+function Iori_T_Act takes unit caster,unit target returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real facing=Angle2(x0,y0,x1,y1)
+    local real damage=GetHeroAgi(caster,true)
+
+    // настройки
+    local real killAgi=10.       // альтернативный T, если здоровье цели не больше killAgi*AGI с учётом её защиты (как у Кенширо)
+    local real startDelay=0.3    // через сколько после нажатия идёт первый телепорт в альтернативном T
+
+    call SaveUnitHandle(HH,id,1,caster)
+    call SaveUnitHandle(HH,id,2,target)
+    call SaveReal(HH,id,3,facing)
+    call SaveReal(HH,id,15,damage)
+
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitPathing(caster,false)
+
+    if GetUnitState(target,UNIT_STATE_LIFE)<=killAgi*damage*myCustomDamage2(target,1) then
+        call SaveReal(HH,id,9,facing)       // начальное направление, от него считаются стороны телепорта
+        call SaveReal(HH,id,11,startDelay)  // время первого удара
+        call SaveReal(HH,id,15,damage*(1.00+(0.05*passedTime))) // урон добивания как у Kenshiro_T_Act2_Kill
+        call SaveReal(HH,id,25,GetUnitState(target,UNIT_STATE_LIFE)) // здоровье цели в момент нажатия
+        call TSE_TimerStart(t,0.02,true,function Iori_T_Alt_Act2)
+    else
+        call TSE_TimerStart(t,0.02,true,function Iori_T_Act2)
+    endif
+    set t=null
+endfunction
+
+function Iori_D_Act2 takes nothing returns nothing
+    local integer id=GetHandleId(GetExpiredTimer())
+    local unit caster=LoadUnitHandle(HH,id,1)
+    local unit target=LoadUnitHandle(HH,id,2)
+    local real facing=LoadReal(HH,id,3)
+    local real time=LoadReal(HH,id,5)
+    local real time1=LoadReal(HH,id,6)
+    local boolean caught=LoadBoolean(HH,id,10)
+    local real damage=LoadReal(HH,id,15)
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real dist=SR(x0,y0,x1,y1)
+    set time=time+0.02
+    call SaveReal(HH,id,5,time)
+
+    if (caught and time>5.6) or (not caught and time>4) then
+        // ===== ЗАВЕРШЕНИЕ =====
+
+
+        call Iori_Clear(caster,target,5)
+
+        call DestroyEffect(LoadEffectHandle(HH,id,21))
+        call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call DestroyEffect(LoadEffectHandle(HH,id,23))
+        call DestroyEffect(LoadEffectHandle(HH,id,24))
+
+        call SetUnitAnimation(caster,"stand")
+        call SetUnitAnimation(target,"stand")
+        call UnitSpeed(caster,1)
+        call UnitSpeed(target,1)
+
+        call PauseUnit(caster,false)
+        call SetUnitInvulnerable(caster,false)
+        call SetUnitPathing(caster,true)
+        call SetUnitPathing(target,true)
+        call PauseUnit(target,false)
+        call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call Iori_Heal(caster)
+        call PauseTimer(GetExpiredTimer())
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(GetExpiredTimer())
+    else
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call SetUnitPathing(caster,false)
+
+        if not caught then
+            // ===== БЕГ К ЦЕЛИ =====
+            if time==0.02 then
+            call EffectCreateAndMove90(true,"Guts\\AfbRedCharge.mdl",facing+180,1,1.75,0.5,100,60,00,0,100,caster,0,facing)
+
+            call EffectCreateAndMove(true,"Akame\\FSAEff (53).mdl",GetRandomReal(0,360),1.5,1,1.5,100,100,100,0,0,caster,0,facing)
+
+            call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1,1.75,100,100,100,20,100,caster,0,facing)
+                call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand right"))
+                call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand left"))
+
+                call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"origin"))
+                call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"chest"))
+
+                call UnitSpeed(caster,1)
+                call SetUnitAnimationByIndex(caster,3)
+                call sound_play("Sound\\Iori\\Iori_D0.mp3",127)
+                             call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+
+            call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+            endif
+
+            set facing=Angle2(x0,y0,x1,y1)
+            call SaveReal(HH,id,3,facing)
+            call SetUnitFacing(caster,facing)
+
+                 set time1=time1+0.02
+            if time1>=0 then
+            set time1=-0.1
+                 call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1,1.5,100,100,100,60,100,caster,0,facing)
+                call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.5,100,100,100,40,50,caster,0,facing)
+                call EffectCreateAndMove(true,"BlackGoku\\satomiwind.mdl",facing,1,1,1.5,100,100,100,30,0,caster,-50,facing)
+            endif
+            call SaveReal(HH,id,6,time1)
+
+            if dist<200 then
+                // схватил: time обнуляется, дальше таймлайн с нуля
+                call SaveBoolean(HH,id,10,true)
+                call SaveReal(HH,id,5,0)
+
+                call PauseUnit(target,true)
+                call SetUnitPathing(target,false)
+                call UnitStop(target)
+                call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+                call SaveReal(HH,id,5,5)
+
+                call PushTimed(target,facing,5,20)
+            else
+                call MoveUnit(caster,caster,25+dist*0.01,facing)
+            endif
+
+
+        else
+            // ===== ТАЙМЛАЙН ПОСЛЕ ЗАХВАТА =====
+            call SetUnitFacing(caster,facing)
+            call PauseUnit(target,true)
+
+
+            // захват: анимация 40
+            if time==5.02 then
+               // call EffectCreateAndMove(true,EffectID[205],facing,0.75,1.5,0.75,100,100,100,0,50,target,0,facing)
+                call EffectCreateAndMove(true,"Others\\AZ_hit-red.mdl",facing+180,1.5,1.75,0.75,100,100,100,0,0,target,0,facing)
+                call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1,1.75,0.75,100,100,100,0,50,target,0,facing,1)
+                //call EffectCreateAndMove(true,EffectID[9],facing,1,1,1,100,100,100,0,50,target,0,facing)
+
+               call EffectCreateAndMove(true,"Others\\red-lizi-shunjian.mdl",facing,1,1.5,0.5,100,100,100,0,150,target,0,facing)
+                call UnitSpeed(caster,1.5)
+
+                call SetUnitAnimationByIndex(caster,40)
+                call sound_play("Sound\\Iori\\Iori_D1.mp3",127)
+
+             call sound_play("Sound\\Iori\\Iori_Hit1.mp3",127)
+
+
+            call UnitAddAbility(caster,'GST4')
+            call DamageU(false,caster,target,damage*0.5)
+            call UnitRemoveAbility(caster,'GST4')
+            call SetControlToUnit(target,target, 0.5, "stun")
+
+            endif
+
+            // анимация 41 и первый удар при контакте
+            if time==5.2 then
+                call UnitSpeed(caster,1)
+                call SetUnitAnimationByIndex(caster,41)
+            endif
+            if time==5.3 then
+                call EffectCreateAndMove(true,"Iori\\Iori (32).mdl",facing+180,1.5,1.25,1,100,100,100,0,50,target,0,facing)
+            endif
+
+
+            // переброс 0.5 сек (0.2–0.7): цель отлетает назад, быстро в начале и с замедлением в конце.
+            // Скорость 32 -> 8 за тик, в сумме ~500 (было 10 за тик, ~150).
+            if time>5.2 and time<5.6 then
+                call MoveUnit(target,target,30-(time-5.2)*40,facing+180)
+                call MoveUnit(caster,caster,4,facing)
+            endif
+
+            if time==5.5 then
+                  call EffectCreateAndMove(true,"Others\\AZ_hit-red.mdl",facing+180,1,1,1,100,100,100,0,50,target,0,facing)
+
+                call EffectCreateAndMove(true,"Guts\\AfbRedCharge.mdl",facing,1.5,1.75,0.75,100,100,100,0,50,target,0,facing)
+                call EffectCreateAndMove(true,"Others\\AZ_hit-red.mdl",facing+180,1.5,2,0.75,100,100,100,0,0,target,0,facing)
+                call EffectCreateAndMoveAn(true,"Others\\Lamboaz-zidan.mdl",facing,1.5,2.5,0.75,100,100,100,0,50,target,0,facing,1)
+
+
+               call EffectCreateAndMove(true,"Others\\red-zhendi-shanguang.mdl",facing,1.5,1.5,0.5,100,100,100,0,50,target,0,facing)
+
+                  call EffectCreateAndMove(true,"Others\\jin xia.mdl",facing,1.5,2.5,0.75,100,100,100,0,50,target,0,facing)
+                  call EffectCreateAndMove(true,"Others\\File00003933.mdl",facing,1.5,1.5,1,100,100,100,0,50,target,0,facing)
+            call UnitAddAbility(caster,'GST4')
+            call DamageU(false,caster,target,damage*0.5)
+            call UnitRemoveAbility(caster,'GST4')
+            call sound_play("Sound\\Iori\\Iori_Slash1.mp3",127)
+            endif
+            // первый финальный удар (второй — в ЗАВЕРШЕНИИ на 0.8 сек)
+
+        endif
+    endif
+
+    set caster=null
+    set target=null
+endfunction
+
+function Iori_D_Act takes unit caster,unit target returns nothing
+    local timer t=CreateTimer()
+    local integer id=GetHandleId(t)
+    local real x0=GetUnitX(caster)
+    local real y0=GetUnitY(caster)
+    local real x1=GetUnitX(target)
+    local real y1=GetUnitY(target)
+    local real facing=Angle2(x0,y0,x1,y1)
+    local real damage=4*GetHeroAgi(caster,true) // всего 4*AGI, два удара по 2*AGI
+
+    call SaveUnitHandle(HH,id,1,caster)
+    call SaveUnitHandle(HH,id,2,target)
+    call SaveReal(HH,id,3,facing)
+    call SaveReal(HH,id,15,damage)
+
+    call PauseUnit(caster,true)
+    call SetUnitInvulnerable(caster,true)
+    call SetUnitPathing(caster,false)
+
+    call TSE_TimerStart(t,0.02,true,function Iori_D_Act2)
+    set t=null
+endfunction
+
+function Iori_E_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real damage1=LoadReal(HH,id,16)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=7.3 then
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time<6 then
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+endif
+if time==0.02 then
+call sound_play("Sound\\Iori\\Iori_E.mp3",127)
+
+
+call sound_play("Sound\\Iori\\Iori_Effect.mp3",80)
+
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing+180,1.5,1.75,0.5,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",facing,1.5,2.5,0.75,100,100,100,40,100,caster,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,1.5,100,100,100,30,150,caster,0,facing)
+
+//call EffectCreateAndMove90(true,EffectID[1080],facing+180,1.5,1.55,1,100,100,100,0,100,caster,0,facing)
+
+call EffectCreateAndMove(true,"Iori\\FSAeff (208).mdl",facing,1.5,1.55,0.5,100,100,100,30,150,caster,0,facing)
+
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand left"))
+call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"origin"))
+call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand left"))
+
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
+
+
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,11)
+endif
+if time<5 then
+set time1=time1+0.02
+if time1>=0.1 or time==0.02 then
+set time1=0
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.5,100,100,100,40,50,caster,0,facing)
+//call EffectCreateAndMove90(true,EffectID[12],facing,1,1.25,1.5,100,100,100,40,100,caster,-50,facing)
+call EffectCreateAndMove(true,"BlackGoku\\satomiwind.mdl",facing,1,1,1.5,100,100,100,30,0,caster,-50,facing)
+
+endif
+call SaveReal(HH,id,6,time1)
+call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
+if SR(x0,y0,x1,y1)<200 and time<5 then
+call SaveReal(HH,id,5,5)
+call UnitSpeed(caster,1)
+call SetUnitAnimationByIndex(caster,3)
+
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+call SetUnitInvulnerable(target,true)
+
+
+call StopSound(LoadSoundHandle(HH,id,25),true,false)
+endif
+endif
+if time>5 and time<6.02 then
+
+
+if time<6 then
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+endif
+
+if time==5.02 then
+call SetUnitAnimationByIndex(caster,GetRandomInt(27,28))
+call sound_play("Sound\\Iori\\Iori_E1.mp3",127)
+endif
+
+if time==5.4 then
+call SetUnitAnimationByIndex(caster,GetRandomInt(27,28))
+call sound_play("Sound\\Iori\\Iori_E2.mp3",127)
+endif
+
+if time==5.8 then
+call SetUnitAnimationByIndex(caster,GetRandomInt(27,28))
+call sound_play("Sound\\Iori\\Iori_E3.mp3",127)
+endif
+
+
+if time==5.02 or time==5.2 or time==5.5 or time==6 then
+
+call SetUnitInvulnerable(target,false)
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,target,damage)
+call UnitRemoveAbility(caster,'GST4')
+call SetControlToUnit(target,target, 1, "stun")
+call SetUnitInvulnerable(target,true)
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,1.5,0.75,100,100,100,0,100,target,100,facing)
+call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,1.75,0.75,100,100,100,0,100,target,100,facing)
+call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing,1.5,1,0.75,100,100,100,0,100,target,100,facing,1)
+
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,1,1.5,100,100,100,40,150,target,150,facing)
+
+if GetRandomInt(1,2)==1 then
+call EffectCreateAndMove(true,"Others\\FSAeff (178).mdl",facing-45,1.5,0.5,0.75,100,100,100,0,100,target,100,facing)
+else
+call EffectCreateAndMove(true,"Others\\FSAeff (178).mdl",facing+45,1.5,0.5,0.75,100,100,100,0,100,target,100,facing)
+endif
+
+
+call EffectCreateAndMove(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1.5,2,0.75,100,100,100,40,100,target,150,facing)
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.75,100,100,100,0,100,caster,150,facing)
+
+endif
+
+
+if time==5.1 or time==5.3 or time==5.6 or time==5.9 then
+call sound_play("Sound\\Iori\\Iori_Hit.mp3",127)
+endif
+
+
+if time==5.02 or time==5.2 or time==5.4  or time==5.8 or time== 6 then
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.35,0.5,100,100,100,40,50,caster,0,facing)
+//call EffectCreateAndMove90(true,EffectID[12],facing,1,1,1.5,100,100,100,40,100,caster,-50,facing)
+call EffectCreateAndMove(true,"BlackGoku\\satomiwind.mdl",facing,1,1,1.5,100,100,100,30,0,caster,-50,facing)
+endif
+
+
+if time>5 and time<6 then
+call MoveUnit(target,target,16,facing)
+endif
+
+if (time>5.2 and time<5.3) or (time>5.5 and time<5.7) or (time>5.9 and time<6) then
+call MoveUnit(caster,caster,34,facing)
+endif
+
+if time==5.3 or time==5.7 or time==6 then
+call MoveUnit(target,caster,-120,facing)
+endif
+
+endif
+
+if time==6 then
+
+call Iori_Clear(caster,target,3)
+
+
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call DestroyEffect(LoadEffectHandle(HH,id,23))
+call DestroyEffect(LoadEffectHandle(HH,id,24))
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call DestroyEffect(LoadEffectHandle(HH,id,28))
+
+call MoveUnit(target,caster,-120,facing)
+call SetUnitAnimation(target,"stand")
+call UnitSpeed(caster,1)
+call UnitSpeed(target,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitInvulnerable(target,false)
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call PauseUnit(target,false)
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+
+
+call PushTimed(target,facing,20,20)
+call Iori_Heal(caster)
+
+
+endif
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_E_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetUnitAbilityLevel(caster,'IoE1')*0.2+4)*GetHeroAgi(caster,true)*0.25
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Iori_E_Act2)
+set t=null
+endfunction
+
+function Iori_W_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real damage=LoadReal(HH,id,15)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if dist<0 then
+
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call DestroyEffect(LoadEffectHandle(HH,id,23))
+call DestroyEffect(LoadEffectHandle(HH,id,24))
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call DestroyEffect(LoadEffectHandle(HH,id,28))
+
+call UnitSpeed(caster,1)
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+
+
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"war3mapImported\\Dummy.mdx")
+//call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+call AddSpecialEffectTarget("Aizen\\AZ_LCDark_W2_buff.mdl",n0,"origin")
+call AddSpecialEffectTarget("Iori\\Iori (13).mdl",n0,"origin")
+
+call AddSpecialEffectTarget("Iori\\Iori (21).mdl",n0,"origin")
+
+call UnitSize(n0,1.5,1.5,1.5)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(HH,id,20,n0)
+
+
+call sound_play("Sound\\Iori\\Iori_W.mp3",127)
+
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand left"))
+call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"origin"))
+call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand left"))
+
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
+
+
+call SetUnitAnimationByIndex(caster,3)
+call UnitSpeed(caster,1)
+call EffectCreateAndMove(true,"Madara\\EffecthPush.mdl",facing+180,1,0.5,0.75,100,100,100,20,100,caster,0,facing)
+
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.5,0.75,60,60,100,20,100,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1,1.75,100,100,100,20,100,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[53],facing,1.5,1.25,1.75,100,100,100,0,100,caster,0,facing)
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing+180,1.5,1.55,1,100,100,100,0,100,caster,0,facing)
+
+
+call EffectCreateAndMove(true,"Signum\\CF2.mdl",facing,1,0.4,0.75,100,100,100,0,100,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[854],facing,1,GetRandomReal(1.25,1.5),GetRandomReal(1.25,1.5),100,100,100,30,-200,Dummy,100,facing)
+
+
+endif
+
+if time>0.02 then
+call MoveUnit(caster,LoadUnitHandle(HH,id,20),0,facing)
+endif
+
+if time<1 then
+call MoveUnit(caster,caster,50,facing)
+call SaveReal(HH,id,8,dist-50)
+
+if time==0.04 or time==0.1 or time==0.2 or time==0.3 or time==0.4 then
+
+call EffectCreateAndMove(true,"Aizen\\File0000 (644).mdl",facing,1,GetRandomReal(1.25,1.5),GetRandomReal(1.25,1.5),100,100,100,30,-200,caster,100,facing)
+
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,GetRandomReal(1,1.25),GetRandomReal(1.5,1.75),100,100,100,60,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[6],facing,1,0.4,0.75,100,100,100,0,100,caster,0,facing)
+endif
+
+if target==null then
+set x0=PolX(x0,100,facing)
+set y0=PolY(y0,100,facing)
+set target=First_Target_Skill(caster,null,x0,y0,150)
+if target!=null then
+
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+
+
+call sound_play("Sound\\Iori\\Iori_Hit2.mp3",127)
+
+call SaveUnitHandle(HH,id,2,target)
+//call SetUnitAnimationByIndex(caster,37)
+call SetUnitAnimationByIndex(caster,39)
+call UnitSpeed(caster,1)
+call SaveReal(HH,id,5,5)
+call PauseUnit(target,true)
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,true)
+
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,1.25,0.75,100,100,100,20,100,target,0,facing)
+
+call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,1.25,0.75,100,100,100,20,100,target,0,facing)
+
+
+endif
+endif
+endif
+
+
+if time>5 then
+call MoveUnit(target,target,45,facing)
+call MoveUnit(target,caster,-120,facing)
+
+
+if time<5.1 then
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+50,0)
+else
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)-50,0)
+endif
+
+call PauseUnit(target,true)
+call SetUnitPathing(target,false)
+if time>5.2 then
+call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.75,0.5,100,100,100,0,0,caster,0,facing)
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,2.5,0.5,100,100,100,0,100,target,0,facing)
+
+call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+
+
+call EffectCreateAndMove(true,"Aizen\\TohkaEf4.mdl",facing,1,0.75,1,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMoveAn(true,"Others\\flowerMoonEff (84).mdl",facing,1.5,2,1.5,100,100,100,100,0,target,0,facing,2)
+
+call EffectCreateAndMove(true,"Zoro\\az_slb2.mdl",facing,1,1,1.5,100,100,100,0,0,target,0,facing)
+
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,target,0,facing)
+
+
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call DestroyEffect(LoadEffectHandle(HH,id,23))
+call DestroyEffect(LoadEffectHandle(HH,id,24))
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call DestroyEffect(LoadEffectHandle(HH,id,28))
+call UnitSpeed(caster,1)
+
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+
+call SetUnitPathing(caster,true)
+call SetUnitPathing(target,true)
+call PauseUnit(target,false)
+
+
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,target,damage)
+call UnitRemoveAbility(caster,'GST4')
+call ControlUnit(target,1,"stun")
+//call PushTimed(target,facing,25,20)
+
+call MyRemoveUnit(LoadUnitHandle(HH,id,20),1)
+
+call Iori_Clear(caster,target,2)
+call Iori_Heal(caster)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+endif
+endif
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_W_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=(GetUnitAbilityLevel(caster,'IoW1')*0.2+3)*GetHeroAgi(caster,true)
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+set dist=1000
+call SaveReal(HH,id,8,dist)
+
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Iori_W_Act2)
+set t=null
+endfunction
+
+function Iori_Q_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit uo=Iori_OriginalCaster(HH,id,1)
+local unit Dummy=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(Dummy)
+local real y1=GetUnitY(Dummy)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local boolean need_heal=LoadBoolean(HH,id,32)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if (Dummy!=null and (WaveCancelled(Dummy) or GetUnitTypeId(Dummy)==0)) then
+    call UnitSpeed(uo,1)
+    call MapPauseUnit(uo,false)
+    call SetUnitInvulnerable(uo,false)
+    call SetUnitPathing(uo,true)
+    call FlushChildHashtable(HH,id)
+    call TSE_DestroyTimer(GetExpiredTimer())
+    return
+endif
+if dist<0 and time>0.1 then
+call WaveUnregister(Dummy,false)
+
+
+call sound_play("Sound\\Iori\\Iori_Effect9.mp3",127)
+set x1=PolX(x1,-150,facing)
+set y1=PolY(y1,-150,facing)
+//call EffectCreateAndMove90(true,EffectID[1080],facing,1,1.5,0.75,100,100,100,0,150,Dummy,0,facing)
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+call SetUnitModel(n0,"Iori\\Iori (13) small.mdx")///[1680])//1658
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,100,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSize(n0,2,2,2)
+call MyRemoveUnit(n0,3)
+
+call SaveUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("QU"),n0)
+
+//set n0=null
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,1,100,100,100,0,0,Dummy,0,facing)
+
+call EffectCreateAndMoveAn(true,"Others\\AFB_hudie.mdl",GetRandomReal(0,360),1,1,1.5,100,100,100,50,0,Dummy,0,facing,3)
+
+//call EffectCreateAndMove(true,EffectID[2307],GetRandomReal(0,360),1.5,1.5,2,100,100,100,0,0,Dummy,0,facing)
+
+
+set x1=GetUnitX(Dummy)
+set y1=GetUnitY(Dummy)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,250,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,n0,damage)
+call UnitRemoveAbility(caster,'GST4')
+call SetControlToUnit(n0,n0,1,"stun")
+
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+call Iori_Burn(caster,n0)
+endif
+set need_heal=true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+  if need_heal then
+if LoadBoolean(HH,id,StringHash("FixReflect"))==false then
+    call Iori_Heal(caster)
+endif
+    endif
+
+
+call SetUnitAnimationByIndex(Dummy,1)
+call MyRemoveUnit(Dummy,2)
+
+call MyRemoveUnit(LoadUnitHandle(HH,id,21),0.5)
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,22),2)
+call MyRemoveUnit(LoadUnitHandle(HH,id,22),2)
+
+call SetUnitAnimationByIndex(LoadUnitHandle(HH,id,23),1)
+call MyRemoveUnit(LoadUnitHandle(HH,id,23),1)
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+if time==0.02 then
+
+call sound_play("Sound\\Iori\\Iori_Q1.mp3",127)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+//call SetUnitAnimationByIndex(uo,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(uo,10)
+
+call UnitSpeed(uo,3)
+//call EffectCreateAndMove(true,EffectID[3],facing,1.5,1,0.5,100,80,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,0,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[19],facing,1.5,1,0.5,100,80,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Signum\\DustWindFaster3.mdl",facing,1.5,1,1.25,100,100,100,0,100,caster,0,facing)
+
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13) small.mdl",caster,"hand right"))
+
+
+call DestroyEffect(AddSpecialEffectTarget("Mystogan\\Effect_A (5).mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+
+
+endif
+
+if time==0.1 then
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"BlackGoku\\[A]fense-lizi-toushewu.mdx")///[1680])//1658
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitColor(n0,100,100,100,100)
+call UnitSize(n0,2,2,2)
+call SaveUnitHandle(HH,id,20,n0)
+call WaveRegisterShared(n0,GetExpiredTimer())
+set n0=null
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"Iori\\Iori (13) medium.mdx")
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitSize(n0,1,1,1)
+call SaveUnitHandle(HH,id,21,n0)
+call WaveTrackVisual(LoadUnitHandle(HH,id,20),n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"Iori\\Iori (8).mdx")
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitSize(n0,2,2,2)
+call SaveUnitHandle(HH,id,22,n0)
+call WaveTrackVisual(LoadUnitHandle(HH,id,20),n0)
+set n0=null
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"Iori\\Iori (43).mdx")
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitSize(n0,3.5,3.5,3.5)
+call SaveUnitHandle(HH,id,23,n0)
+call WaveTrackVisual(LoadUnitHandle(HH,id,20),n0)
+set n0=null
+
+
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing+180,1,1,0.75,100,100,100,0,150,caster,100,facing)
+
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1,1.5,2,100,100,100,50,200,caster,100,facing)
+call EffectCreateAndMove90(true,"Others\\wind3.mdl",facing,1,1,2,100,70,100,40,170,caster,100,facing)
+
+call EffectCreateAndMove(true,"Others\\az-ziwu-yumao.mdl",facing,1.5,1,1.25,100,100,100,40,100,caster,100,facing)
+
+
+call UnitSpeed(uo,1)
+endif
+if time>0.1 then
+
+if Iori_ApplyWaveRedirect(id,caster,Dummy) then
+set dist=LoadReal(HH,id,8)
+set caster=IoriReflectedSource
+set facing=LoadReal(HH,id,3)
+call SetUnitFacingInstant(LoadUnitHandle(HH,id,21),facing)
+call SetUnitFacingInstant(LoadUnitHandle(HH,id,22),facing)
+call SetUnitFacingInstant(LoadUnitHandle(HH,id,23),facing)
+endif
+if First_Target_Skill(caster,null,x1,y1,200)!=null then
+set dist=0
+endif
+
+call SaveReal(HH,id,8,dist-70)
+if Iori_ApplyWaveRedirect(id,caster,Dummy) then
+set dist=LoadReal(HH,id,8)
+set caster=IoriReflectedSource
+set facing=LoadReal(HH,id,3)
+endif
+call MoveUnit(Dummy,Dummy,70,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,21),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,22),0,facing)
+call MoveUnit(Dummy,LoadUnitHandle(HH,id,23),0,facing)
+
+endif
+endif
+set uo=null
+set caster=null
+set Dummy=null
+endfunction
+
+function Iori_Q_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real facing=Angle2(x0,y0,x1,y1)
+local real damage=50+(GetUnitAbilityLevel(caster,'IoQ1')*0.2+3)*GetHeroAgi(caster,true)
+local real dist=SR(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+//call SetUnitAbilityLevel(caster,'LoG1',GetUnitAbilityLevel(caster,'LoG1')+1)
+set dist=1000+100*GetUnitAbilityLevel(caster,'IoQ1')
+call SaveReal(HH,id,8,dist)
+
+call SaveReal(HH,id,15,damage)
+call TSE_TimerStart(t,0.02,true,function Iori_Q_Act2)
+set t=null
+endfunction
+
+function Iori_F_W_Push_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+
+local real dist=LoadReal(HH,id,8)
+local real dist_Base=LoadReal(HH,id,9)
+local real dist_New=LoadReal(HH,id,18)
+local real max_height=LoadReal(HH,id,22)
+local real speed=LoadReal(HH,id,23)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>=5 then
+
+call MyRemoveUnit(LoadUnitHandle(HH,id,25),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,26),0.5)
+call MyRemoveUnit(LoadUnitHandle(HH,id,27),0.5)
+
+call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+
+
+if time<5 then
+
+
+call SaveReal(HH,id,8,dist-speed)
+call MoveUnit(target,target,speed,facing)
+call SetUnitFlyHeight(target,ParabolaZ(max_height,dist_Base,dist),0)
+
+
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,25),GetUnitFlyHeight(target)+75,0)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,26),GetUnitFlyHeight(target)+75,0)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,27),GetUnitFlyHeight(target)+75,0)
+
+call MoveUnit(target,LoadUnitHandle(HH,id,25),0,0)
+call MoveUnit(target,LoadUnitHandle(HH,id,26),0,0)
+call MoveUnit(target,LoadUnitHandle(HH,id,27),0,0)
+
+
+if dist<0 then
+call SaveReal(HH,id,5,5)
+endif
+endif
+endif
+
+set target=null
+endfunction
+
+function Iori_F_W_Push_Act takes unit caster0,unit target0 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster0)
+local real y0=GetUnitY(caster0)
+local real x1=GetUnitX(target0)
+local real y1=GetUnitY(target0)
+local real facing=Angle2(x0,y0,x1,y1)
+local real dist=0
+local real max_Height=GetRandomReal(400,600)
+local real speed=GetRandomReal(10,15)
+local real rand_point=0
+local real rand_facing=facing
+call UnitAddAbility(target0,'Amrf')
+call UnitRemoveAbility(target0,'Amrf')
+call SaveReal(HH,id,22,max_Height)
+call SaveReal(HH,id,23,speed)
+set rand_point=GetRandomReal(350,700)
+set x1=PolX(x0,rand_point,facing)
+set y1=PolY(y0,rand_point,facing)
+set dist=SR(x0,y0,x1,y1)
+set facing=Angle2(x0,y0,x1,y1)
+call SaveUnitHandle(HH,id,2,target0)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,8,dist)
+call SaveReal(HH,id,9,dist)
+
+
+set n00=CreateUnit(GetOwningPlayer(caster0),'e000',GetUnitX(target0),GetUnitY(target0),facing)
+call SetUnitModel(n00,"Others\\[doft]purpleaz-hit.mdx")
+call SetUnitFlyHeight(n00,0,0)
+call UnitColor(n00,100,100,100,0)
+call UnitSize(n00,2,2,2)
+call SaveUnitHandle(HH,id,25,n00)
+set n00=null
+
+set n00=CreateUnit(GetOwningPlayer(caster0),'e000',GetUnitX(target0),GetUnitY(target0),facing)
+call SetUnitModel(n00,"Signum\\fadespearpurple.mdx")
+call SetUnitFlyHeight(n00,0,0)
+call UnitColor(n00,100,100,100,0)
+call UnitSize(n00,1.75,1.5,1.5)
+call UnitSpeed(n00,0.6)
+call SaveUnitHandle(HH,id,26,n00)
+
+
+set n00=CreateUnit(GetOwningPlayer(caster0),'e000',GetUnitX(target0),GetUnitY(target0),facing)
+call SetUnitModel(n00,"Iori\\Iori (43).mdx")
+call SetUnitFlyHeight(n00,0,0)
+call UnitColor(n00,100,100,100,0)
+call UnitSize(n00,1.75,1.75,1.75)
+call UnitSpeed(n00,0.6)
+call SetUnitAnimationByIndex(n00,1)
+call SaveUnitHandle(HH,id,27,n00)
+
+
+call TSE_TimerStart(t,0.02,true,function Iori_F_W_Push_Act2)
+set t=null
+endfunction
+
+function Iori_F_W_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+//local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)//LoadReal(HH,id,11)
+local real y0=GetUnitY(caster)//LoadReal(HH,id,12)
+local boolean need_heal=LoadBoolean(HH,id,32)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.3 then
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+
+
+//MoveUnit(target,caster,-120,facing)
+if time==0.02 then
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"Signum\\fadespearpurple.mdx")///[1680])//1658
+call MoveUnit(caster,n0,50,facing)
+call SetUnitFlyHeight(n0,75,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSize(n0,1.5,1.5,1.5)
+call UnitSpeed(n0,0.5)
+call MyRemoveUnit(n0,2)
+call SaveUnitHandle(HH,id,20,n0)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+call SetUnitModel(n0,"Signum\\fadespearpurple.mdx")///[1680])//1658
+call MoveUnit(caster,n0,-50,facing)
+call SetUnitFlyHeight(n0,75,0)
+call UnitColor(n0,100,100,100,0)
+call UnitSize(n0,1.5,1.5,1.5)
+call UnitSpeed(n0,0.5)
+call MyRemoveUnit(n0,2)
+call SaveUnitHandle(HH,id,21,n0)
+
+
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_F_W.mp3",127)
+
+call sound_play("Sound\\Iori\\Iori_Effect7.mp3",127)
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,n0,damage)
+call UnitRemoveAbility(caster,'GST4')
+call Iori_F_W_Push_Act(caster,n0)
+call Iori_Burn(caster,n0)
+call SetControlToUnit(n0,n0,1.5,"stun")
+set need_heal=true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+  if need_heal then
+    call Iori_Heal(caster)
+    endif
+
+call SetUnitAnimationByIndex(caster,20)
+
+
+call UnitSpeed(caster,1.5)
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand left"))
+
+call DestroyEffect(AddSpecialEffectTarget("Signum\\fadespearpurple.mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Signum\\fadespearpurple.mdl",caster,"hand left"))
+
+call DestroyEffect(AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
+
+
+endif
+
+if time<0.3 then
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+25,0)
+endif
+
+
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,20),GetUnitFlyHeight(LoadUnitHandle(HH,id,20))+25,0)
+call MoveUnit(LoadUnitHandle(HH,id,20),LoadUnitHandle(HH,id,20),35,facing+time*3000)
+
+
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,21),GetUnitFlyHeight(LoadUnitHandle(HH,id,21))+25,0)
+call MoveUnit(LoadUnitHandle(HH,id,21),LoadUnitHandle(HH,id,21),35,facing-time*3000)
+
+
+if time==0.3 then
+call UnitSpeed(caster,1)
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+
+
+endif
+
+
+endif
+set caster=null
+//target=null
+endfunction
+
+function Iori_F_Q_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x1=LoadReal(HH,id,11)
+local real y1=LoadReal(HH,id,12)
+
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local boolean need_heal=LoadBoolean(HH,id,32)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.02 then
+call sound_play("Sound\\Iori\\Iori_Hit2.mp3",127)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x1,y1,facing)
+//call SetUnitModel(n0,EffectID[390])///[1680])//1658
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitColor(n0,100,100,100,100)
+call UnitSize(n0,2,2,2)
+call MyRemoveUnit(n0,2)
+
+call MoveUnit(n0,caster,-200,facing)
+
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing+180,1,1.25,0.75,100,100,100,0,0,n0,0,facing)
+//call EffectCreateAndMove(true,EffectID[393],facing,1,1.75,0.75,100,100,100,100,0,n0,0,facing)
+call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,2,0.75,100,100,100,0,0,n0,0,facing)
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,1.25,0.75,100,100,100,0,0,n0,0,facing)
+
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,-200,n0,0,facing)
+
+//call EffectCreateAndMove(true,EffectID[2676],facing,1,1,0.5,100,100,100,0,150,n0,0,facing)
+
+
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1.5,100,100,100,40,0,n0,0,facing)
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x1,y1,200,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,n0,damage)
+call UnitRemoveAbility(caster,'GST4')
+call SetControlToUnit(n0,n0,1,"stun")
+set need_heal=true
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+    if need_heal then
+    call Iori_Heal(caster)
+    endif
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+if time==0.02 then
+call EffectCreateAndMoveAn(true,"Others\\flowerMoonEff (84).mdl",facing,1.5,1,1,100,100,100,100,0,caster,0,facing,2)
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1,1,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[19],facing,1.5,1,0.75,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\az-ziwu-yumao.mdl",facing,1,1.75,0.75,100,100,100,100,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[20],facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_F_Q.mp3",127)
+
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,GetRandomInt(8,9))
+
+call UnitSpeed(caster,1)
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand right"))
+
+
+//call DestroyEffect(AddSpecialEffectTarget(EffectID[1572],caster,"hand right"))
+//call DestroyEffect(AddSpecialEffectTarget(EffectID[393],caster,"hand right"))
+
+
+endif
+
+endif
+set caster=null
+
+endfunction
+
+function Iori_F_E_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=GetUnitX(target)
+local real y1=GetUnitY(target)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+
+local real turns=2.0   // сколько витков
+local real radius=120. // радиус закрутки
+local real a
+local real ap
+local real dF
+local real dS
+
+
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.5 then
+  call Iori_Heal(caster)
+call Iori_Burn(caster,target)
+//KillUnit(target)
+call SetUnitFlyHeight(caster,0,GetUnitFlyHeight(caster))
+call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call DestroyEffect(LoadEffectHandle(HH,id,23))
+call DestroyEffect(LoadEffectHandle(HH,id,24))
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call DestroyEffect(LoadEffectHandle(HH,id,28))
+call UnitSpeed(caster,1)
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+call SetUnitPathing(caster,true)
+
+call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
+call SetUnitPathing(target,true)
+
+//call DamageU(false,caster,target,damage)
+
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2.5,0.75,100,100,100,0,100,target,0,facing)
+
+//call EffectCreateAndMove(true,EffectID[444],GetRandomReal(0,360),1.5,2,1,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.5,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2.5,0.5,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Iori\\bymutou-hongse-purple.mdl",GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,0,target,0,facing)
+
+//call EffectCreateAndMove(true,EffectID[1896],GetRandomReal(0,360),1.5,1.5,0.75,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,2,1.5,100,100,100,40,0,target,0,facing)
+call sound_play("Sound\\Iori\\Iori_Hit3.mp3",127)
+call MoveUnit(target,caster,-120,facing)
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+call SetUnitPathing(target,false)
+
+
+if time==0.1 or  time==0.2 or time==0.3 or time==0.4 or time==0.5 then
+call SetUnitInvulnerable(target,false)
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,target,damage*0.2)
+call UnitRemoveAbility(caster,'GST4')
+call SetUnitInvulnerable(target,true)
+endif
+if time==0.02 then
+
+
+call sound_play("Sound\\Iori\\Iori_Effect5.mp3",127)
+
+call MoveUnit(target,caster,-120,facing)
+
+
+set x0=GetUnitX(caster)
+set y0=GetUnitY(caster)
+set x1=GetUnitX(target)
+set y1=GetUnitY(target)
+
+set facing=Angle2(x0,y0,x1,y1)
+call SaveReal(HH,id,3,facing)
+//call EffectCreateAndMove(true,EffectID[827],facing,2,1,0.75,20,20,20,80,0,target,0,facing)
+
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand left"))
+call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"origin"))
+call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand left"))
+
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
+
+
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_F_E.mp3",127)
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,20)
+
+call UnitSpeed(caster,1)
+
+
+call UnitAddAbility(caster,'Amrf')
+call UnitRemoveAbility(caster,'Amrf')
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+
+
+endif
+
+
+if time<0.25 then
+
+//MoveUnit(target,target,20,facing)
+call MoveUnit(caster,caster,25,facing)
+call MoveUnit(target,target,25,facing)
+//MoveUnit(target,target,250,facing*time*360)
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)+30,0)
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+30,0)
+
+
+else
+call MoveUnit(caster,caster,25,facing)
+call MoveUnit(target,target,25,facing)
+//MoveUnit(target,target,250,facing*time*360)
+call SetUnitFlyHeight(caster,GetUnitFlyHeight(caster)-30,0)
+call SetUnitFlyHeight(target,GetUnitFlyHeight(target)-30,0)
+endif
+
+
+set a=time*360.*turns/0.5
+set ap=(time-0.02)*360.*turns/0.5
+
+set dF=radius*(Cos(a*bj_DEGTORAD)-Cos(ap*bj_DEGTORAD)) // смещение вдоль полёта
+set dS=radius*(Sin(a*bj_DEGTORAD)-Sin(ap*bj_DEGTORAD)) // смещение вбок
+
+call MoveUnit(target,target,dF,facing)
+call MoveUnit(target,target,dS,facing+90)
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1,1,0.75,100,100,100,0,50,target,0,facing)
+
+
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_F_D_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(caster)//LoadReal(HH,id,11)
+local real y0=GetUnitY(caster)//LoadReal(HH,id,12)
+local real x1=GetUnitX(target)//LoadReal(HH,id,11)
+local real y1=GetUnitY(target)//LoadReal(HH,id,12)
+local real damage=LoadReal(HH,id,15)
+local real dist=LoadReal(HH,id,8)
+local real stunDur=0.5           // оглушение цели после удара D+F
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.4 then
+  call Iori_Heal(caster)
+
+//call SetUnitFlyHeight(target,0,GetUnitFlyHeight(target))
+        call DestroyEffect(LoadEffectHandle(HH,id,21))
+        call DestroyEffect(LoadEffectHandle(HH,id,22))
+        call DestroyEffect(LoadEffectHandle(HH,id,23))
+        call DestroyEffect(LoadEffectHandle(HH,id,24))
+call sound_play("Sound\\Iori\\Iori_Slash3.mp3",127)
+call UnitSpeed(caster,1)
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
+call SetControlToUnit(target,target,stunDur,"stun")
+
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+//MoveUnit(target,caster,-120,facing)
+if time>0.02 and time<0.3 then
+call MoveUnit(target,caster,-120,facing)
+endif
+call SetUnitFacing(caster,facing)
+if time==0.02 then
+//call UnitAddAbility(target,'Amrf')
+//call UnitRemoveAbility(target,'Amrf')
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"war3mapImported\\Dummy.mdx")
+//call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+call AddSpecialEffectTarget("Others\\FSAEff (57).mdl",n0,"origin")
+call AddSpecialEffectTarget("Others\\FSAEff (57).mdl",n0,"chest")
+call UnitSize(n0,1.5,1.5,1.5)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MyRemoveUnit(n0,1)
+
+
+               call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand right"))
+                call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"hand left"))
+
+                call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"origin"))
+                call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Others\\FSAEff (57).mdl",caster,"chest"))
+
+//call EffectCreateAndMove(true,EffectID[1812],facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Guts\\AfbRedCharge.mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,60,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+
+
+call MoveUnit(target,caster,120,facing)
+set x0=GetUnitX(caster)
+set y0=GetUnitY(caster)
+set x1=GetUnitX(target)
+set y1=GetUnitY(target)
+set facing=Angle2(x0,y0,x1,y1)
+
+
+call sound_play("Sound\\Iori\\Iori_F_D.mp3",127)
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+//call SetUnitAnimationByIndex(caster,29)
+
+
+call SetUnitAnimationByIndex(caster,32)
+
+call UnitSpeed(caster,1.5)
+
+
+endif
+if time==0.12 then
+call MoveUnit(target,LoadUnitHandle(HH,id,20),0,0)
+endif
+if time==0.2 then
+//
+//
+//set n0=CreateUnit(GetOwningPlayer(caster),'045e',GetUnitX(target),GetUnitY(target),facing+45)
+//call SetUnitModel(n0,EffectID[1675])
+////call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+//call UnitSize(n0,1.5,1.5,1.5)
+//call UnitSpeed(n0,1)
+//call UnitColor(n0,100,50,50,0)
+//call SetUnitFlyHeight(n0,100,0)
+//call SetUnitAnimationByIndex(n0,1)
+//call SaveUnitHandle(HH,id,20,n0)
+//MyRemoveUnit(n0,1)
+//
+//set n0=CreateUnit(GetOwningPlayer(caster),'045e',GetUnitX(target),GetUnitY(target),facing-45)
+//call SetUnitModel(n0,EffectID[1675])
+////call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+//call UnitSize(n0,1.5,1.5,1.5)
+//call UnitSpeed(n0,1)
+//call UnitColor(n0,100,50,50,0)
+//call SetUnitFlyHeight(n0,100,0)
+//call SetUnitAnimationByIndex(n0,1)
+//call SaveUnitHandle(HH,id,20,n0)
+//MyRemoveUnit(n0,1)
+//
+    //call EffectCreateAndMoveAn(true,EffectID[1675],facing,1.5,1.55,1,100,5,50,0,50,target,0,facing,1)
+      call EffectCreateAndMove(true,"Iori\\Iori (32).mdl",facing,1.5,1.25,1,100,100,100,0,50,target,0,facing)
+    //   call EffectCreateAndMove90(true,EffectID[1682],facing,1.5,1.25,1,100,100,100,0,50,target,0,facing)
+endif
+
+if time==0.3 then
+call SetUnitInvulnerable(target,false)
+            call UnitAddAbility(caster,'GST4')
+            call DamageU(false,caster,target,damage)
+            call UnitRemoveAbility(caster,'GST4')
+            call SetUnitInvulnerable(target,true)
+
+//call EffectCreateAndMove(true,EffectID[1812],facing,1,1,0.75,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Guts\\AfbRedCharge.mdl",facing,1.5,2,0.5,100,100,100,0,0,target,0,facing)
+               //   call EffectCreateAndMove(true,EffectID[210],facing+180,1,1,1,100,100,100,0,50,target,0,facing)
+             //   call EffectCreateAndMove(true,EffectID[75],facing,1.5,1.75,0.75,100,100,100,0,50,target,0,facing)
+                call EffectCreateAndMove(true,"Others\\AZ_hit-red.mdl",facing+180,1.5,2,0.75,100,100,100,0,0,target,0,facing)
+               // call EffectCreateAndMoveAn(true,EffectID[1143],facing,1.5,3,0.75,100,100,100,0,50,target,0,facing,1)
+               call EffectCreateAndMove(true,"Others\\red-zhendi-shanguang.mdl",facing,1.5,2,0.5,100,100,100,0,50,target,0,facing)
+                  call EffectCreateAndMove(true,"Others\\jin xia.mdl",facing,1.5,2.5,0.75,100,100,100,0,50,target,0,facing)
+                  call EffectCreateAndMove(true,"Others\\File00003933.mdl",facing,1.5,1.5,1,100,100,100,0,50,target,0,facing)
+               call EffectCreateAndMove(true,"Others\\red-lizi-shunjian.mdl",facing,1,1.5,0.5,100,100,100,0,150,target,0,facing)
+
+
+               call PushTimed(target,facing,15,20)
+               endif
+//if time>0.3
+//call SetUnitFlyHeight(target,GetUnitFlyHeight(target)+50,0)
+//endif
+
+
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_F_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=0
+local real y1=0
+local real facing=0
+local real damage=2*GetHeroAgi(caster,true)
+local real dist=0//SR(x0,y0,x1,y1)
+local integer type_F=0
+local integer run=0
+// максимальная дальность до цели или точки, при большей комбинация не продолжается
+local real maxComboDist=1500
+local real comboDist=0
+
+set target=null
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+set type_F=6
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("DU"))
+set type_F=5
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("RU"))
+set type_F=4
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("EU"))
+set type_F=3
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("WU"))
+set type_F=2
+
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,"W")
+//endif
+
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("QU"))
+set type_F=1
+endif
+
+
+call SaveUnitHandle(HH,id,1,caster)
+
+//call SetUnitAbilityLevel(caster,'LoG1',GetUnitAbilityLevel(caster,'LoG1')+1)
+
+//call SaveReal(HH,id,8,dist)
+
+call SaveReal(HH,id,15,damage)
+
+
+// ограничение дальности только для полностью таргетных комбо (T+F, D+F, E+F); Q, R и W+F без ограничения
+if target!=null and (type_F==6 or type_F==5 or type_F==3) then
+set comboDist=SR(x0,y0,GetUnitX(target),GetUnitY(target))
+endif
+if target!=null and IsUnitAlive(target)==true and comboDist<=maxComboDist then
+
+set x1=GetUnitX(target)
+set y1=GetUnitY(target)
+set facing=Angle2(x0,y0,x1,y1)
+
+
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+
+
+call SaveReal(HH,id,3,facing)
+
+call SetUnitFacing(caster,facing)
+
+if type_F==6 then
+    if GetUnitFlyHeight(target)>200 then
+        set run=LoadInteger(HH,GetHandleId(target),StringHash("IoriFTid"))
+
+        // защита от старых флагов: таймер с этим id должен ещё существовать и вести эту цель
+        if run!=0 and LoadUnitHandle(HH,run,2)!=target then
+            set run=0
+            call SaveInteger(HH,GetHandleId(target),StringHash("IoriFTid"),0)
+            call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),false)
+        endif
+
+        if run!=0 then
+            // F_T уже ведёт цель: повторный F принимается сразу, пока идёт первый подъём
+            // после окончания подъёма цель уже падает, и нажатие ничего не делает
+            if LoadInteger(HH,run,9)==1 and not LoadBoolean(HH,run,10) and not LoadBoolean(HH,run,11) then
+                call SaveBoolean(HH,run,10,true)
+            endif
+            call FlushChildHashtable(HH,id)
+            call TSE_DestroyTimer(t)
+        else
+            // первое нажатие: запускаем F_T
+            call SaveInteger(HH,id,9,1)
+            call SaveUnitHandle(HH,id,2,target)
+
+            call PauseUnit(caster,true)
+            call SetUnitInvulnerable(caster,true)
+            call PauseUnit(target,true)
+
+            // флаги: T и T_Fly сразу отдают цель, повторный F находит этот таймер
+            call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),true)
+            call SaveInteger(HH,GetHandleId(target),StringHash("IoriFTid"),id)
+
+            // откат F сбрасывается ещё и таймером F_T (через 0.02 сек и в момент удара)
+            call AbilityCD(caster,'IoF1',0.01)
+
+            call TSE_TimerStart(t,0.02,true,function Iori_F_T_Act2)
+        endif
+    else
+        // цель ниже 200: ничего не делаем, цель падает по плану T
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(t)
+    endif
+endif
+
+if type_F==5 then
+call MoveUnit(target,caster,120,facing)
+set x0=GetUnitX(caster)
+set y0=GetUnitY(caster)
+set x1=GetUnitX(target)
+set y1=GetUnitY(target)
+set facing=Angle2(x0,y0,x1,y1)
+
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+
+call SaveReal(HH,id,3,facing)
+
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+call SaveUnitHandle(HH,id,2,target)
+call TSE_TimerStart(t,0.02,true,function Iori_F_D_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("DU"))
+endif
+
+
+if type_F==4 then
+// направление от текущего положения кастера до точки попадания R
+set facing=GetUnitFacing(caster)
+if HaveSavedReal(HH,GetHandleId(caster),'IoRX') then
+    set facing=Angle2(x0,y0,LoadReal(HH,GetHandleId(caster),'IoRX'),LoadReal(HH,GetHandleId(caster),'IoRY'))
+    call RemoveSavedReal(HH,GetHandleId(caster),'IoRX')
+    call RemoveSavedReal(HH,GetHandleId(caster),'IoRY')
+endif
+call SaveReal(HH,id,3,facing)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SetUnitPathing(caster,false)
+call TSE_TimerStart(t,0.02,true,function Iori_F_R_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("RU"))
+endif
+
+
+if type_F==3 then
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+call SaveUnitHandle(HH,id,2,target)
+
+
+call TSE_TimerStart(t,0.02,true,function Iori_F_E_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("EU"))
+endif
+if type_F==2 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call TSE_TimerStart(t,0.02,true,function Iori_F_W_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("WU"))
+
+endif
+
+
+if type_F==1 then
+call TSE_TimerStart(t,0.02,true,function Iori_F_Q_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("QU"))
+endif
+
+
+if GetUnitTypeId(target)=='e000' then
+call RemoveUnit(target)
+endif
+
+
+else
+call TSE_TimerStart(t,0.02,true,function SabracGnull)
+endif
+set t=null
+endfunction
+
+function Iori_G_Q_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=LoadReal(HH,id,11)
+local real y0=LoadReal(HH,id,12)
+local boolean need_heal=LoadBoolean(HH,id,32)
+local real damage=LoadReal(HH,id,15)*3
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.1 then
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+//call SetUnitModel(n0,EffectID[390])///[1680])//1658
+call MoveUnit(n0,n0,100,facing)
+call SetUnitFlyHeight(n0,200,0)
+call UnitColor(n0,100,100,100,100)
+call UnitSize(n0,2,2,2)
+call MyRemoveUnit(n0,2)
+
+
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,2,0.75,100,100,100,0,0,n0,0,facing)
+
+call EffectCreateAndMove(true,"Iori\\Iori (51).mdl",facing,1,1,0.5,100,100,100,0,150,n0,0,facing)
+
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,2.5,0.5,100,100,100,0,150,n0,0,facing)
+
+
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,2,1.5,100,100,100,0,0,n0,0,facing)
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,400,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,n0,damage)
+call UnitRemoveAbility(caster,'GST4')
+call Iori_R_Pause(caster,n0,1)
+
+set need_heal=true
+
+
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+    if need_heal then
+    call Iori_Heal(caster)
+    endif
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+if time==0.02 then
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1.75,0.75,100,100,100,0,0,caster,0,facing)
+//call EffectCreateAndMove(true,EffectID[19],facing,1.5,1,0.75,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\az-ziwu-yumao.mdl",facing,1,1.75,0.75,100,100,100,100,0,caster,0,facing)
+
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_G_Q.mp3",127)
+call sound_play("Sound\\Iori\\Iori_Effect4.mp3",127)
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,12)
+
+call UnitSpeed(caster,1)
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand right"))
+
+
+call DestroyEffect(AddSpecialEffectTarget("Mystogan\\Effect_A (5).mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+
+
+endif
+
+endif
+set caster=null
+
+endfunction
+
+function Iori_G_W_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(target)//LoadReal(HH,id,11)
+local real y0=GetUnitY(target)//LoadReal(HH,id,12)
+
+local real damage=LoadReal(HH,id,15)*4
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>0.2 then
+call Iori_Burn(caster,target)
+  call Iori_Heal(caster)
+call sound_play("Sound\\Iori\\Iori_Hit3.mp3",127)
+call UnitSpeed(caster,1)
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+call PauseUnit(target,false)
+call SetUnitInvulnerable(target,false)
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+//call SetUnitModel(n0,EffectID[390])///[1680])//1658
+call MoveUnit(n0,n0,100,facing)
+//call SetUnitFlyHeight(n0,200,0)
+call UnitColor(n0,100,100,100,100)
+call UnitSize(n0,2,2,2)
+call MyRemoveUnit(n0,2)
+
+//call EffectCreateAndMove(true,EffectID[193],GetRandomReal(0,360),1.5,2,0.75,100,100,100,80,180,target,0,facing)
+call EffectCreateAndMove(true,"Iori\\fire-boom-new-zisepurple.mdl",facing,1.5,1,0.75,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing+60,1.5,1.5,0.75,100,100,100,80,180,target,0,facing,1)
+call EffectCreateAndMoveAn(true,"Signum\\FSAeff (177).mdl",facing-60,1.5,1.5,0.75,100,100,100,80,180,target,0,facing,1)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.5,0.5,100,100,100,0,0,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[2676],facing,1,1,0.5,100,100,100,0,150,n0,0,facing)
+//call EffectCreateAndMove(true,EffectID[20],GetRandomReal(0,360),1.5,2,1.5,100,100,100,0,0,n0,0,facing)
+
+//call EffectCreateAndMove(true,EffectID[828],facing,1.5,1.75,0.75,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",facing,1.5,2,0.5,100,100,100,0,100,target,0,facing)
+
+//call EffectCreateAndMove(true,EffectID[287],facing,1.5,0.5,0.75,100,100,100,0,100,target,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.25,1,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMove(true,"Iori\\[A]TohkaExp.mdl",facing,1,0.5,0.75,100,100,100,20,100,target,0,facing)
+
+call EffectCreateAndMoveAn(true,"Iori\\Iori (43).mdl",facing,1.5,2,0.75,100,100,100,0,100,target,0,facing,1)
+
+
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,x0,y0,300,null)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,n0,damage)
+call UnitRemoveAbility(caster,'GST4')
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+call MoveUnit(target,caster,-120,facing)
+if time==0.02 then
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_G_W.mp3",127)
+
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,18)
+
+
+call UnitSpeed(caster,1.5)
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand right"))
+
+
+call DestroyEffect(AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+
+
+endif
+
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_G_E_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real x0=GetUnitX(target)//LoadReal(HH,id,11)
+local real y0=GetUnitY(target)//LoadReal(HH,id,12)
+
+local real damage=LoadReal(HH,id,15)*5
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>1 then
+  call Iori_Heal(caster)
+
+call SetUnitInvulnerable(target,false)
+call DestroyEffect(LoadEffectHandle(HH,id,21))
+call DestroyEffect(LoadEffectHandle(HH,id,22))
+call DestroyEffect(LoadEffectHandle(HH,id,23))
+call DestroyEffect(LoadEffectHandle(HH,id,24))
+call DestroyEffect(LoadEffectHandle(HH,id,25))
+call DestroyEffect(LoadEffectHandle(HH,id,26))
+call DestroyEffect(LoadEffectHandle(HH,id,27))
+call DestroyEffect(LoadEffectHandle(HH,id,28))
+call UnitSpeed(caster,1)
+
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+call PauseUnit(target,false)
+//call SetUnitInvulnerable(target,false)
+
+//call DamageU(false,caster,target,damage)
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+
+else
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+call PauseUnit(target,true)
+//call SetUnitInvulnerable(target,true)
+
+call SetUnitInvulnerable(target,true)
+
+call MoveUnit(target,caster,-120,facing)
+if time==0.02 then
+//call EffectCreateAndMove(true,EffectID[827],facing,2,1,0.75,20,20,20,80,0,target,0,facing)
+
+call SaveEffectHandle(HH,id,21,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,22,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"hand left"))
+call SaveEffectHandle(HH,id,23,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"origin"))
+call SaveEffectHandle(HH,id,24,AddSpecialEffectTarget("Zoro\\FSAEff (59).mdl",caster,"chest"))
+call SaveEffectHandle(HH,id,25,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,26,AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand left"))
+
+call SaveEffectHandle(HH,id,27,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand right"))
+call SaveEffectHandle(HH,id,28,AddSpecialEffectTarget("Aizen\\buff_zi.mdl",caster,"hand left"))
+
+
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_G_E.mp3",127)
+call sound_play("Sound\\Iori\\Iori_Effect6.mp3",127)
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,19)
+
+call UnitSpeed(caster,1.5)
+
+
+endif
+
+
+if time==0.02 or time==0.4 or time==0.8 then
+
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,100,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,500,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,1000,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,1500,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,2000,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,2500,target,0,facing,2)
+call EffectCreateAndMoveAn(true,"Iori\\flowerMoonEff (83).mdl",GetRandomReal(0,360),1,2,0.5,100,100,100,100,3000,target,0,facing,2)
+call EffectCreateAndMove(true,"Iori\\FSAEff (97).mdl",facing,1.5,2.5,0.2,100,100,100,0,0,target,0,facing)
+
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,0,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,500,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,500,target,0,facing)
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,1000,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,1000,target,0,facing)
+
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,1500,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,1500,target,0,facing)
+
+
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",GetRandomReal(0,360),1.5,1.25,1,100,100,100,0,2000,target,0,facing)
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",GetRandomReal(0,360),1.5,2,0.5,100,100,100,0,2000,target,0,facing)
+
+call EffectCreateAndMove(true,"Iori\\fire-boom-new-zisepurple.mdl",facing,1.5,1,0.75,100,100,100,0,150,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[438],facing,1.5,1,0.75,100,100,100,0,550,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[438],facing,1.5,1,0.75,100,100,100,0,950,target,0,facing)
+
+//
+//call EffectCreateAndMove(true,EffectID[439],facing,1.5,1,0.75,100,100,100,0,150,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[439],facing,1.5,1,0.75,100,100,100,0,550,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[439],facing,1.5,1,0.75,100,100,100,0,950,target,0,facing)
+//
+call EffectCreateAndMove(true,"Iori\\[A]TohkaExp.mdl",facing,1,0.5,0.75,100,100,100,20,100,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[284],facing,1,0.5,0.75,100,100,100,20,400,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[284],facing,1,0.5,0.75,100,100,100,20,700,target,0,facing)
+
+call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,0.75,100,100,100,0,100,target,0,facing)
+//
+//call EffectCreateAndMove(true,EffectID[168],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,500,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[168],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,800,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[168],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,1000,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[168],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,1400,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[168],GetRandomReal(0,360),1.5,3,0.5,100,100,100,0,1800,target,0,facing)
+//
+
+
+//call EffectCreateAndMove(true,EffectID[952],facing,1.5,1.25,1,100,100,100,0,400,target,0,facing)
+//call EffectCreateAndMove(true,EffectID[952],facing,1.5,1.25,1,100,100,100,0,800,target,0,facing)
+endif
+
+
+if time==0.2 then
+call SetUnitAnimationByIndex(caster,38)
+endif
+
+
+if time==0.1 or time==0.2 or time==0.3 or time==0.4 or time==0.5 or time==0.6 or time==0.7 or time==0.8 or time==0.9 or time==1 then
+call UnitAddAbility(caster,'GST4')
+set n0=null
+//call DamageU(false,caster,target,damage*0.1)
+
+
+//call DamageAoeOneTime0(caster,x0,y0,500,damage)
+//call DamageU(false,caster,target,damage)
+call SetUnitInvulnerable(target,false)
+call GroupClear(G)
+call GroupEnumUnitsInRange(G,GetUnitX( target),GetUnitY(target),300,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+if  UnitIsAlive(n0)and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 then
+call DamageU(false,caster,n0,damage*0.1)
+endif
+call GroupRemoveUnit(G,n0)
+endloop
+call GroupClear(G)
+
+
+call UnitRemoveAbility(caster,'GST4')
+call SetUnitInvulnerable(target,true)
+
+endif
+
+
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_G_D_Act2 takes nothing returns nothing
+local integer id=GetHandleId(GetExpiredTimer())
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real facing=LoadReal(HH,id,3)
+local real time=LoadReal(HH,id,5)
+local real time1=LoadReal(HH,id,6)
+local real x0=GetUnitX(target)//LoadReal(HH,id,11)
+local real y0=GetUnitY(target)//LoadReal(HH,id,12)
+
+local real damage=LoadReal(HH,id,15)*2
+local real dist=LoadReal(HH,id,8)
+set time=time+0.02
+call SaveReal(HH,id,5,time)
+if time>1 then
+  call Iori_Heal(caster)
+call PauseUnit(target,false)
+call SetUnitPathing(target,true)
+
+call PauseTimer(GetExpiredTimer())
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(GetExpiredTimer())
+else
+
+call PauseUnit(target,true)
+if time<0.2 then
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call MoveUnit(target,caster,-120,facing)
+
+//call SetUnitInvulnerable(target,true)
+endif
+
+if time==0.02 then
+call EffectCreateAndMove(true,"Gojo\\FSAeff (180).mdl",facing,1,1,0.75,100,100,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,30,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",facing,1.5,1,1.5,100,100,100,40,0,caster,0,facing)
+call sound_play("Sound\\Iori\\Iori_G_D.mp3",127)
+
+
+//call SetUnitAnimationByIndex(caster,7+GetRandomInt(1,2))
+
+call SetUnitAnimationByIndex(caster,16)
+
+
+call UnitSpeed(caster,1.5)
+
+call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (13).mdl",caster,"hand right"))
+
+
+call DestroyEffect(AddSpecialEffectTarget("Others\\az-ziwu-yumao.mdl",caster,"hand right"))
+
+call EffectCreateAndMove(true,"Others\\[A]az_axe_ef1.mdl",facing,1.5,1,0.5,100,80,100,0,0,caster,0,facing)
+call EffectCreateAndMove(true,"Others\\WindCirclefaster.mdl",GetRandomReal(0,360),1.5,2,1.5,100,100,100,0,0,n0,0,facing)
+call EffectCreateAndMove(true,"Zoro\\FSAEff (52).mdl",facing,1.5,1.25,1,100,100,100,0,0,target,0,facing)
+
+
+endif
+
+
+if time==0.3 then
+call PauseUnit(caster,false)
+call SetUnitInvulnerable(caster,false)
+
+
+//call SetUnitInvulnerable(target,false)
+//call EffectCreateAndMove(true,EffectID[438],facing,1.5,1,0.75,100,100,100,0,0,target,0,facing)
+
+
+//call sound_play("Sound\\Iori\\Iori_Hit3.mp3",127)
+
+call sound_play("Sound\\Iori\\Iori_Effect8.mp3",127)
+
+call UnitSpeed(caster,1)
+
+
+set n0=CreateUnit(GetOwningPlayer(caster),'e000',GetUnitX(caster),GetUnitY(caster),facing)
+call SetUnitModel(n0,"war3mapImported\\Dummy.mdx")
+//call AddSpecialEffectTarget(EffectID[1805],n0,"origin")
+call AddSpecialEffectTarget("Aizen\\AZ_LCDark_W2_buff.mdl",n0,"origin")
+//call AddSpecialEffectTarget(EffectID[438],n0,"origin")
+
+//call AddSpecialEffectTarget(EffectID[1671],n0,"origin")
+
+call UnitSize(n0,1.5,1.5,1.5)
+call UnitSpeed(n0,1)
+call UnitColor(n0,100,100,100,0)
+call SetUnitFlyHeight(n0,100,0)
+call SetUnitAnimationByIndex(n0,0)
+call SaveUnitHandle(HH,id,20,n0)
+call MyRemoveUnit(n0,1)
+//call EffectCreateAndMove(true,EffectID[193],GetRandomReal(0,360),1.5,2,0.75,100,100,100,80,180,target,0,facing)
+
+
+//call EffectCreateAndMove(true,EffectID[828],facing,1.5,1.75,0.75,100,100,100,0,0,target,0,facing)
+
+call EffectCreateAndMove(true,"Others\\[doft]purpleaz-hit.mdl",facing,1.5,2.25,0.5,100,100,100,0,100,target,50,facing)
+
+//call EffectCreateAndMove(true,EffectID[287],facing,1.5,0.5,0.75,100,100,100,0,100,target,0,facing)
+
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing,1.5,2.5,0.5,100,100,100,0,150,target,0,facing)
+
+call EffectCreateAndMoveAn(true,"Iori\\Iori (43).mdl",facing,1.5,3,0.75,100,100,100,0,100,target,0,facing,1)
+
+call EffectCreateAndMove(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",facing+180,1.5,2.5,0.75,100,100,100,40,100,target,0,facing)
+call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.5,1.5,100,100,100,30,150,target,0,facing)
+
+
+call UnitAddAbility(caster,'GST4')
+call DamageU(false,caster,target,damage)
+call UnitRemoveAbility(caster,'GST4')
+
+endif
+
+if time>0.3 then
+call MoveUnit(target,target,35,facing)
+call MoveUnit(target,LoadUnitHandle(HH,id,20),0,facing)
+call SetUnitPathing(target,false)
+set time1=time1+0.02
+if time1>0 then
+set time1=-0.1
+call EffectCreateAndMove90(true,"Gojo\\FSAeff (180).mdl",facing,1.5,1.15,0.5,100,100,100,0,150,target,0,facing)
+call EffectCreateAndMove90(true,"Iori\\[A]TohkaExp.mdl",facing,1.5,1.5,1.25,100,100,100,0,150,target,0,facing)
+
+endif
+call SaveReal(HH,id,6,time1)
+
+
+endif
+
+
+endif
+set caster=null
+set target=null
+endfunction
+
+function Iori_G_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real x1=0
+local real y1=0
+local real facing=0
+local real damage=GetHeroAgi(caster,true)
+local real dist=0//SR(x0,y0,x1,y1)
+
+local integer type_G=0
+local integer run=0
+local integer gType=6
+// максимальная дальность до цели или точки, при большей комбинация не продолжается
+local real maxComboDist=1500
+local real comboDist=0
+call SaveUnitHandle(HH,id,1,caster)
+set target=null
+
+//call SetUnitAbilityLevel(caster,'LoG1',GetUnitAbilityLevel(caster,'LoG1')+1)
+
+//call SaveReal(HH,id,8,dist)
+
+call SaveReal(HH,id,15,damage)
+
+set target=null
+
+// T+F+F+G: цель после второго подъёма F (должна быть выше 200)
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("FU"))
+set type_G=7
+endif
+if target!=null and GetUnitFlyHeight(target)<=200 then
+set target=null
+endif
+
+// T+G и T+F+G: цель после T или после одного F (должна быть выше 200)
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+set type_G=6
+endif
+if target!=null and GetUnitFlyHeight(target)<=200 then
+set target=null
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("DU"))
+set type_G=5
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+
+
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("RU"))
+set type_G=4
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("EU"))
+set type_G=3
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+
+endif
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("WU"))
+set type_G=2
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+
+endif
+
+
+if target==null then
+set target=LoadUnitHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("QU"))
+set type_G=1
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+
+endif
+
+//if(GetLocalPlayer()==GetOwningPlayer(caster))then
+//call DisplayTextToPlayer(GetLocalPlayer(),0,0,I2S(type_G))
+//endif
+// ограничение дальности только для полностью таргетных комбо (T+G, T+F+G, T+F+F+G, D+G, E+G, W+G); Q+G и R+G без ограничения
+if target!=null and (type_G==7 or type_G==6 or type_G==5 or type_G==3 or type_G==2) then
+set comboDist=SR(x0,y0,GetUnitX(target),GetUnitY(target))
+endif
+if target!=null and IsUnitAlive(target)==true and comboDist<=maxComboDist then
+call SaveUnitHandle(HH,id,2,target)
+set x1=GetUnitX(target)
+set y1=GetUnitY(target)
+set facing=Angle2(x0,y0,x1,y1)
+
+call SetUnitFacing(caster,facing)
+
+call SaveReal(HH,id,11,x1)
+call SaveReal(HH,id,12,y1)
+
+
+call SaveReal(HH,id,3,facing)
+
+
+if type_G==5 then
+
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+call SaveUnitHandle(HH,id,2,target)
+call PauseUnit(target,true)
+//call SetUnitInvulnerable(target,true)
+//KillUnit(target)
+
+call TSE_TimerStart(t,0.02,true,function Iori_G_D_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("DU"))
+endif
+
+
+if type_G==4 then
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+
+call PauseUnit(target,true)
+//call TSE_TimerStart(t,0.02,true,function Iori_G_R_Act)
+call Iori_G_R_Act(caster)
+call TSE_TimerStart(t,0.02,false,function SabracGnull)
+
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("RU"))
+
+endif
+
+if type_G==3 then
+
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+
+call PauseUnit(target,true)
+//call SetUnitInvulnerable(target,true)
+//KillUnit(target)
+
+call TSE_TimerStart(t,0.02,true,function Iori_G_E_Act2)
+
+
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("EU"))
+endif
+
+
+if type_G==2 then
+
+call PauseUnit(caster,true)
+call SetUnitInvulnerable(caster,true)
+
+
+call PauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+
+call TSE_TimerStart(t,0.02,true,function Iori_G_W_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("WU"))
+endif
+
+
+if type_G==1 then
+call TSE_TimerStart(t,0.02,true,function Iori_G_Q_Act2)
+call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("QU"))
+endif
+
+
+// T+G, T+F+G, T+F+F+G: завершающий удар по цели в воздухе
+if type_G==6 or type_G==7 then
+    if LoadBoolean(HH,GetHandleId(target),StringHash("IoriG")) then
+        // G уже ведёт эту цель
+        call FlushChildHashtable(HH,id)
+        call TSE_DestroyTimer(t)
+    else
+        // T+F+F+G: цель взята из FU либо второй подъём F уже идёт
+        set run=LoadInteger(HH,GetHandleId(target),StringHash("IoriFTid"))
+        set gType=6
+        if type_G==7 or (run!=0 and LoadInteger(HH,run,9)==2) then
+            set gType=7
+        endif
+        call SaveInteger(HH,id,9,gType)
+
+        call PauseUnit(caster,true)
+        call SetUnitInvulnerable(caster,true)
+        call PauseUnit(target,true)
+
+        // флаги: F_T, T и T_Fly сразу отдают цель
+        call SaveBoolean(HH,GetHandleId(target),StringHash("IoriG"),true)
+        call SaveBoolean(HH,GetHandleId(target),StringHash("IoriFT"),true)
+
+        call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("TU"))
+        call RemoveSavedHandle(HH,GetHandleId(GetOwningPlayer(caster)),StringHash("FU"))
+
+        call TSE_TimerStart(t,0.02,true,function Iori_G_T_Act2)
+    endif
+endif
+
+
+if GetUnitTypeId(target)=='e000' then
+call RemoveUnit(target)
+endif
+
+else
+call TSE_TimerStart(t,0.02,true,function SabracGnull)
+endif
+set t=null
+endfunction
+
+function IoriCastCondition takes nothing returns boolean
+    local integer ioriAbility=GetSpellAbilityId()
+    return udg_B and (ioriAbility=='IoQ1' or ioriAbility=='IoW1' or ioriAbility=='IoE1' or ioriAbility=='IoR1' or ioriAbility=='IoT1' or ioriAbility=='IoD1' or ioriAbility=='IoF1' or ioriAbility=='IoG3')
+endfunction
+
+function IoriCastAction takes nothing returns nothing
+    local unit ioriCaster=GetTriggerUnit()
+    local unit ioriVictim=GetSpellTargetUnit()
+    local integer ioriAbility=GetSpellAbilityId()
+    local real ioriX=GetSpellTargetX()
+    local real ioriY=GetSpellTargetY()
+    if ioriAbility=='IoQ1' then
+        call Iori_Q_Act(ioriCaster,ioriX,ioriY)
+    elseif ioriAbility=='IoW1' then
+        call Iori_W_Act(ioriCaster,ioriX,ioriY)
+    elseif ioriAbility=='IoR1' then
+        call Iori_R_Act(ioriCaster,ioriX,ioriY)
+    elseif ioriAbility=='IoF1' then
+        call Iori_F_Act(ioriCaster,ioriCaster)
+    elseif ioriAbility=='IoG3' then
+        call Iori_G_Act(ioriCaster,ioriCaster)
+    elseif ioriVictim!=null then
+        if ioriAbility=='IoE1' then
+            call Iori_E_Act(ioriCaster,ioriVictim)
+        elseif ioriAbility=='IoD1' then
+            call Iori_D_Act(ioriCaster,ioriVictim)
+        elseif ioriAbility=='IoT1' then
+            call Iori_T_Act(ioriCaster,ioriVictim)
+        endif
+    endif
+    set ioriVictim=null
+    set ioriCaster=null
+endfunction
+
+function IoriLearn takes nothing returns nothing
+    local integer ioriSkill=GetLearnedSkill()
+    local unit ioriHero=GetTriggerUnit()
+    if ioriSkill=='IoW1' then
+        call SetUnitAbilityLevel(ioriHero,'IoD1',GetUnitAbilityLevel(ioriHero,ioriSkill))
+    elseif ioriSkill=='IoE1' then
+        call SetUnitAbilityLevel(ioriHero,'IoG3',GetUnitAbilityLevel(ioriHero,ioriSkill))
+    elseif ioriSkill=='IoR1' then
+        call SetUnitAbilityLevel(ioriHero,'IoF1',GetUnitAbilityLevel(ioriHero,ioriSkill))
+    endif
+    set ioriHero=null
+endfunction
+
+function IoriInit takes nothing returns nothing
+    local trigger ioriTrigger=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(ioriTrigger,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call TriggerAddCondition(ioriTrigger,Condition(function IoriCastCondition))
+    call TriggerAddAction(ioriTrigger,function IoriCastAction)
+    set ioriTrigger=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(ioriTrigger,EVENT_PLAYER_HERO_SKILL)
+    call TriggerAddAction(ioriTrigger,function IoriLearn)
+    set ioriTrigger=null
+endfunction
+
 //LANG_DATA_BEGIN — сгенерировано tools/lang/gen.js из table/en, руками не править
 function LANG_Data0 takes nothing returns nothing
 call LANG_A('A000',0,0,"Mine Attack")
@@ -315221,6 +320149,94 @@ call LANG_A('OiG1',1,0,"Orihime prepares for 2 sec., then dashes 2500 in the cho
 call LANG_A('OiG1',3,0,"Orihime prepares for 2 sec., then dashes 2500 in the chosen direction. On contact with the first enemy true hero, both are paused and invulnerable for 1 sec. The seal then bursts, dealing magic damage through shields and Boros Armor, and Orihime dies. She survives if the dash misses.|n|n|cFF00A5FFAv"+"ailable from level 25.|nDamage: 100% of Orihime’s maximum HP|nPreparation: 2 sec.|nDash: 2500|nHold: 1 sec.|nCooldown: 50 sec.|r")
 call LANG_A('HmF2',1,0,"Returns the marked ally to the saved position. No range limit.|r")
 call LANG_A('HmF2',3,0,"Homura records a living allied hero’s position. Cast on that hero again to return them to the mark. A successful cast reduces D cooldown by 2 sec.|n|n|cFF00A5FFMark duration: 3 sec.|nRange: 1200|nCooldown after recall: 20 sec.|r")
+call LANG_A('IoQ1',0,0,"108 Shiki: Yami Barai, [|cffffcc00Level 1|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',0,1,"108 Shiki: Yami Barai, [|cffffcc00Level 2|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',0,2,"108 Shiki: Yami Barai, [|cffffcc00Level 3|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',0,3,"108 Shiki: Yami Barai, [|cffffcc00Level 4|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',0,4,"108 Shiki: Yami Barai, [|cffffcc00Level 5|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',1,0,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 3.2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1100|nCast time: 0.01 sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoQ1',1,1,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 3.4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1200|nCast time: 0.01 sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoQ1',1,2,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 3.6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1300|nCast time: 0.01 sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoQ1',1,3,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 3.8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1400|nCast time: 0.01 sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoQ1',1,4,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1500|nCast time: 0.01 sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoQ1',2,0,"108 Shiki: Yami Barai, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
+call LANG_A('IoQ1',3,0,"Iori sends a burst of purple flame forward. It explodes on the first enemy hit or at the end of its path, burning and stunning nearby enemies.|n|n|cFF00A5FFDamage: 50 + 3.2/3.4/3.6/3.8/4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nAoE: 250|nProjectile range: 1100/1200/1300/1400/1500|nCast time: 0.01 "+"sec.|nCooldown: 15 sec.|r")
+call LANG_A('IoW1',0,0,"212 Shiki: Kototsuki In, [|cffffcc00Level 1|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',0,1,"212 Shiki: Kototsuki In, [|cffffcc00Level 2|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',0,2,"212 Shiki: Kototsuki In, [|cffffcc00Level 3|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',0,3,"212 Shiki: Kototsuki In, [|cffffcc00Level 4|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',0,4,"212 Shiki: Kototsuki In, [|cffffcc00Level 5|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',1,0,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 3.2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash range: 1000|nGrab"+" radius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoW1',1,1,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 3.4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash range: 1000|nGrab"+" radius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoW1',1,2,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 3.6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash range: 1000|nGrab"+" radius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoW1',1,3,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 3.8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash range: 1000|nGrab"+" radius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoW1',1,4,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash range: 1000|nGrab r"+"adius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoW1',2,0,"212 Shiki: Kototsuki In, [|cffffcc00Level %d|r] (|cffffcc00W|r)")
+call LANG_A('IoW1',3,0,"Iori dashes forward, grabs the first enemy he hits and slams them into the ground.|n|nPassive from level 20: each ability or follow-up that hits heals Iori once for 0.5*AGI. Each T → F lift heals separately.|n|n|cFF00A5FFDamage: 3.2/3.4/3.6/3.8/4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec.|nDash ran"+"ge: 1000|nGrab radius: 150|nCast time: 0.1 sec.|nCooldown: 20 sec.|r")
+call LANG_A('IoE1',0,0,"127 Shiki: Aoi Hana, [|cffffcc00Level 1|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',0,1,"127 Shiki: Aoi Hana, [|cffffcc00Level 2|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',0,2,"127 Shiki: Aoi Hana, [|cffffcc00Level 3|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',0,3,"127 Shiki: Aoi Hana, [|cffffcc00Level 4|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',0,4,"127 Shiki: Aoi Hana, [|cffffcc00Level 5|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',1,0,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.05*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 4.2*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoE1',1,1,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.1*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 4.4*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoE1',1,2,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.15*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 4.6*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoE1',1,3,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.2*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 4.8*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoE1',1,4,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.25*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoE1',2,0,"127 Shiki: Aoi Hana, [|cffffcc00Level %d|r] (|cffffcc00E|r)")
+call LANG_A('IoE1',3,0,"Iori rushes the target, strikes four times and knocks them back.|n|nPassive from level 12: Q, R, W → F, E → F and Q/W/R/T → G ignite enemies, even through invulnerability. The burn deals 0.5*AGI every 0.5 sec. for 2 sec. Reapplying it refreshes the duration. Cleansing removes the burn.|n|n|cFF"+"00A5FFDamage per hit: 1.05/1.1/1.15/1.2/1.25*|r|c003CFF3CAGI|r|cFF00A5FF|nTotal damage: 4.2/4.4/4.6/4.8/5*|r|c003CFF3CAGI|r|cFF00A5FF|nStun: 1 sec. per hit|nRange: 900|nCast time: 0.15 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',0,0,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level 1|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',0,1,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level 2|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',0,2,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level 3|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',0,3,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level 4|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',0,4,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level 5|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',1,0,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 1 sec.|nPillar damage: (4 + s"+"econds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 5*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 1.7 sec.|nPillars: 3 + 2 per full second charged, max. 5|nPillar AoE: 200|nProjectile range: 1000 to 1333|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',1,1,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 1.5 sec.|nPillar damage: (4 +"+" seconds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 5.5*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 2.05 sec.|nPillars: 3 + 2 per full second charged, max. 5|nPillar AoE: 200|nProjectile range: 1000 to 1500|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',1,2,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 2 sec.|nPillar damage: (4 + s"+"econds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 6*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 2.4 sec.|nPillars: 3 + 2 per full second charged, max. 7|nPillar AoE: 200|nProjectile range: 1000 to 1667|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',1,3,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 2.5 sec.|nPillar damage: (4 +"+" seconds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 6.5*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 2.75 sec.|nPillars: 3 + 2 per full second charged, max. 7|nPillar AoE: 200|nProjectile range: 1000 to 1833|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',1,4,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 3 sec.|nPillar damage: (4 + s"+"econds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 7*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 3.1 sec.|nPillars: 3 + 2 per full second charged, max. 9|nPillar AoE: 200|nProjectile range: 1000 to 2000|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoR1',2,0,"Ura 1029 Shiki: Homura Hotogi, [|cffffcc00Level %d|r] (|cffffcc00R|r)")
+call LANG_A('IoR1',3,0,"Iori charges a flame projectile. On impact, a line of purple pillars erupts, immobilizing and burning enemies. A longer charge increases range, the number of pillars, damage and immobilization. Each enemy can take damage from the pillars once.|n|n|cFF00A5FFMax. channel: 1/1.5/2/2.5/3 sec.|nPillar da"+"mage: (4 + seconds charged)*|r|c003CFF3CAGI|r|cFF00A5FF, max. 5/5.5/6/6.5/7*|r|c003CFF3CAGI|r|cFF00A5FF|nImmobilization: 1 + 0.7 × seconds charged, max. 1.7/2.05/2.4/2.75/3.1 sec.|nPillars: 3 + 2 per full second charged, max. 5/5/7/7/9|nPillar AoE: 200|nProjectile range: 1000 to 1333/1500/1667/1833"+"/2000|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoT1',0,0,"Kin 1201 Shiki: Ya Otome, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
+call LANG_A('IoT1',1,0,"Iori strikes the target eight times and launches them, opening an F or G follow-up. If the target has less than 10*AGI HP after accounting for resistances, the eight strikes lead into a finishing cross slash. After T → F → F → G, the target is held until landing and stunned for 1 sec.|n|n|cFF0"+"0A5FFStandard: 8 hits of 1*|r|c003CFF3CAGI|r|cFF00A5FF and a final hit of 2*|r|c003CFF3CAGI|r|cFF00A5FF (total 10*|r|c003CFF3CAGI|r|cFF00A5FF)|nExecution: all 11*|r|c003CFF3CAGI|r|cFF00A5FF damage is dealt by the cross slash|nRange: 1000|nCast time: 0.15 sec.|nCooldown: 35 sec.|r")
+call LANG_A('IoT1',2,0,"Kin 1201 Shiki: Ya Otome, [|cffffcc00Level 1|r] (|cffffcc00T|r)")
+call LANG_A('IoT1',3,0,"Iori strikes the target eight times and launches them, opening an F or G follow-up. If the target has less than 10*AGI HP after accounting for resistances, the eight strikes lead into a finishing cross slash. After T → F → F → G, the target is held until landing and stunned for 1 sec.|n|n|cFF0"+"0A5FFStandard: 8 hits of 1*|r|c003CFF3CAGI|r|cFF00A5FF and a final hit of 2*|r|c003CFF3CAGI|r|cFF00A5FF (total 10*|r|c003CFF3CAGI|r|cFF00A5FF)|nExecution: all 11*|r|c003CFF3CAGI|r|cFF00A5FF damage is dealt by the cross slash|nRange: 1000|nCast time: 0.15 sec.|nCooldown: 35 sec.|r")
+call LANG_A('IoD1',0,0,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level 1|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',0,1,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level 2|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',0,2,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level 3|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',0,3,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level 4|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',0,4,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level 5|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',1,0,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoD1',1,1,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoD1',1,2,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoD1',1,3,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoD1',1,4,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoD1',2,0,"Kin 25 Shiki: Homura Tsumugi, [|cffffcc00Level %d|r] (|cffffcc00D|r)")
+call LANG_A('IoD1',3,0,"Iori rushes the target, catches them and throws them over his shoulder.|n|nPassive: R pillars immobilize enemies for 1 + 0.7 × seconds charged. Q → G and T → G immobilize for 1 sec. The longest remaining immobilization takes precedence. Cleansing removes it.|n|n|cFF00A5FFDamage: two hits of 2*|"+"r|c003CFF3CAGI|r|cFF00A5FF (total 4*|r|c003CFF3CAGI|r|cFF00A5FF)|nStun: 0.5 sec.|nRange: 900|nCast time: 0.1 sec.|nCooldown: 25 sec.|r")
+call LANG_A('IoF1',0,0,"311 Shiki: Tsumi Yomi, [|cffffcc00Level 1|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',0,1,"311 Shiki: Tsumi Yomi, [|cffffcc00Level 2|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',0,2,"311 Shiki: Tsumi Yomi, [|cffffcc00Level 3|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',0,3,"311 Shiki: Tsumi Yomi, [|cffffcc00Level 4|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',0,4,"311 Shiki: Tsumi Yomi, [|cffffcc00Level 5|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',1,0,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 6 sec.|r")
+call LANG_A('IoF1',1,1,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 5 sec.|r")
+call LANG_A('IoF1',1,2,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 4 sec.|r")
+call LANG_A('IoF1',1,3,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 3 sec.|r")
+call LANG_A('IoF1',1,4,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 2 sec.|r")
+call LANG_A('IoF1',2,0,"311 Shiki: Tsumi Yomi, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
+call LANG_A('IoF1',3,0,"Follow up within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: strike the impact point for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1 sec.|nW: launch and burn nearby enemies for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 1.5 sec.|nE: spin the target in the air and burn them. Five hits of 0.4*|r|c0"+"03CFF3CAGI|r|cFF00A5FF|nR: dash through enemies toward the projectile, up to 1500, dealing 4*|r|c003CFF3CAGI|r|cFF00A5FF|nD: pull the target in and knock them back for 2*|r|c003CFF3CAGI|r|cFF00A5FF and stun for 0.5 sec.|nT: lift the target higher for 2*|r|c003CFF3CAGI|r|cFF00A5FF. Can be used twice."+"|nCast time: 0.01 sec.|nCooldown: 6/5/4/3/2 sec.|r")
+call LANG_A('IoG3',0,0,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level 1|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',0,1,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level 2|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',0,2,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level 3|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',0,3,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level 4|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',0,4,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level 5|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',1,0,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 6 sec.|r")
+call LANG_A('IoG3',1,1,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 5 sec.|r")
+call LANG_A('IoG3',1,2,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 4 sec.|r")
+call LANG_A('IoG3',1,3,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 3 sec.|r")
+call LANG_A('IoG3',1,4,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 2 sec.|r")
+call LANG_A('IoG3',2,0,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
+call LANG_A('IoG3',3,0,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 6/5/4/3/2 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -315308,6 +320324,8 @@ call LANG_It('I00M',3,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.
 call LANG_It('I00N',0,"Vongola Cloud Ring, Rank B")
 call LANG_It('I00N',1,"Vongola Cloud Ring, Rank B")
 call LANG_It('I00N',2,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
+endfunction
+function LANG_Data53 takes nothing returns nothing
 call LANG_It('I00N',3,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
 call LANG_It('I00O',0,"Vongola Cloud Ring, Rank A")
 call LANG_It('I00O',1,"Vongola Cloud Ring, Rank A")
@@ -315396,8 +320414,6 @@ call LANG_It('I018',3,"Increase |c0077FFFFINT|r by 30, DEF by 10 and HP by 1300.
 call LANG_It('I019',0,"Vongola Sky Ring, Rank D")
 call LANG_It('I019',1,"Vongola Sky Ring, Rank D")
 call LANG_It('I019',2,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I019',3,"Increase |c00FFFF66AllStat|r by 9, attack by 10.")
 call LANG_It('I01A',0,"Vongola Sky Ring, Rank C")
 call LANG_It('I01A',1,"Vongola Sky Ring, Rank C")
@@ -315560,6 +320576,8 @@ call LANG_It('I02D',3,"A gift, a secret inside... :)")
 call LANG_It('I02E',0,"Hell Ring: \"Soul Eater\", Rank D")
 call LANG_It('I02E',1,"Hell Ring: \"Soul Eater\", Rank D")
 call LANG_It('I02E',2,"Increases attack by 15, AS by 9%, 10% chance when receiving physical damage to block and appear behind the enemy. The ability counts as blocks, not misses.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I02E',3,"Increases attack by 15, AS by 9%, 10% chance when receiving physical damage to block and appear behind the enemy. The ability counts as blocks, not misses.")
 call LANG_It('I02F',0,"Hell Ring: \"Soul Eater\", Rank C")
 call LANG_It('I02F',1,"Hell Ring: \"Soul Eater\", Rank C")
@@ -315648,8 +320666,6 @@ call LANG_It('I02Z',3,"DEF +15, AS +50%, |c0077FFFFINT|r +35, |c00FF5555STR|r +1
 call LANG_It('I030',0,"Fallen Angel Wings")
 call LANG_It('I030',1,"Fallen Angel Wings")
 call LANG_It('I030',2,"Changes the appearance of the hero. |n|n|cFFFF0000Requires: at least 15 kills|r|n|nHeavenly Punishment: Stops time in a 500 radius around you for 5 seconds.")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I030',3,"Changes the appearance of the hero. |n|n|cFFFF0000Requires: at least 15 kills|r|n|nHeavenly Punishment: Stops time in a 500 radius around you for 5 seconds.")
 call LANG_It('I031',0,"Patriot")
 call LANG_It('I031',1,"Patriot")
@@ -315812,6 +320828,8 @@ call LANG_It('I03X',1,"Akatsuki Cloak")
 call LANG_It('I03X',2,"Increase DEF by 5 points and magic defense by 10%.")
 call LANG_It('I03X',3,"Increase DEF by 5 points and magic defense by 10%.")
 call LANG_It('I03Y',0,"Akatsuki Hat")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I03Y',1,"Akatsuki Hat")
 call LANG_It('I03Y',2,"Increases mana regeneration by 75% and |c0077FFFFINT|r by 20.")
 call LANG_It('I03Y',3,"Increases mana regeneration by 75% and |c0077FFFFINT|r by 20.")
@@ -315900,8 +320918,6 @@ call LANG_It('I04H',3,"Increases |c00FFFF66AllStat|r by 9, mana regen by 25%, an
 call LANG_It('I04I',0,"Security Droid mk.II")
 call LANG_It('I04I',1,"Security Droid mk.II")
 call LANG_It('I04I',2,"Increases |c00FFFF66AllStat|r by 20, mana regen by 50%, and HP by 10. Active ability: \"Guard droid\" - places a ward in the specified area, for 80 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I04I',3,"Increases |c00FFFF66AllStat|r by 20, mana regen by 50%, and HP by 10. Active ability: \"Guard droid\" - places a ward in the specified area, for 80 sec.|n|nCooldown: 25 sec.|n...vanilla eye...")
 call LANG_It('I04J',0,"Security Droid mk.II (Recipe)")
 call LANG_It('I04J',1,"Security Droid mk.II (Recipe)")
@@ -316064,6 +321080,8 @@ call LANG_It('I05M',1,"Fake Storm Mare Ring")
 call LANG_It('I05M',2,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 35, 35% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec.")
 call LANG_It('I05M',3,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 35, 35% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec.")
 call LANG_It('I05N',0,"True Storm Mare Ring")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_It('I05N',1,"True Storm Mare Ring")
 call LANG_It('I05N',2,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 40, HP by 500, 40% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec|n|nActive: Deals 15% Max HP of Enemy +15*(2.5*|c00FF5555STR|r of enemy - (|c0077FFFFINT|r of enemy + |c003CFF3CAGI|r of enemy)) magic damage to all enemies within a 400 "+"radius and knocks them back 400 units.|nDamage, without deducting resistances and vulnerabilities, cannot be lower than 15% of Max HP and higher than 45% of the enemy's Max HP.|nAoE: 450|nCD: 20 seconds")
 call LANG_It('I05N',3,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 40, HP by 500, 40% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec|n|nActive: Deals 15% Max HP of Enemy +15*(2.5*|c00FF5555STR|r of enemy - (|c0077FFFFINT|r of enemy + |c003CFF3CAGI|r of enemy)) magic damage to all enemies within a 400 "+"radius and knocks them back 400 units.|nDamage, without deducting resistances and vulnerabilities, cannot be lower than 15% of Max HP and higher than 45% of the enemy's Max HP.|nAoE: 450|nCD: 20 seconds")
@@ -316152,8 +321170,6 @@ call LANG_It('I068',1,"Holy Grail")
 call LANG_It('I068',2,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Healing\" - gradually restores 500 + Level * 10. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCooldown: 45 sec.")
 call LANG_It('I068',3,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Healing\" - gradually restores 500 + Level * 10. HP to all allies for 6 sec. within a radius of 1000. Cannot be used again on affected targets for 15 seconds after it ends.|n|nCDR: 45 sec")
 call LANG_It('I069',0,"Holy Grail (Recipe)")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_It('I069',1,"Holy Grail (Recipe)")
 call LANG_It('I069',2,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Sphere of Fire, Box of Madao, Quincy Overcoat.")
 call LANG_It('I069',3,"MS +20%, Regeneration +20, DEF +5, AoE +1500, |c00FFFF66AllStat|r +25.|n|nActive: \"Heal\"|n|nCooldown: 45 sec.|n|nRequires: Sphere of Fire, Box of Madao, Quincy Overcoat.")
@@ -316316,6 +321332,8 @@ call LANG_It('IHnK',2,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPa
 call LANG_It('IHnK',3,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.")
 call LANG_It('IHnR',0,"Hakka no Togame (Recipe)")
 call LANG_It('IHnR',1,"Hakka no Togame (Recipe)")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_It('IHnR',2,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.|n|nRequires: Ice Gloves, Sode no Shirayuki.")
 call LANG_It('IHnR',3,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.|n|nRequires: Ice Gloves, Sode no Shirayuki.")
 call LANG_It('IBSI',0,"Buster Sword")
@@ -316404,8 +321422,6 @@ call LANG_It('IAZI',0,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',1,"Seal of Alchemy (INT, Passive off)")
 call LANG_It('IAZI',2,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
 call LANG_It('IAZI',3,"Increases |c0077FFFFINT|r by 35 + 5%, HP by 500, and DEF by 3. Cannot be stolen. Can be sold for full value.|nPassive (disabled): Changes all outgoing magical damage to physical, but increases magical damage taken by 5%.|nActive: Double press - changes the |c0077FFFFINT|r bonus to |c00FF5555STR|r, r"+"eplacing the bonus HP with 50% MP regeneration.|nSingle press - enables Passive.")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_It('IBBi',0,"Key of Bab-ilu")
 call LANG_It('IBBi',1,"Key of Bab-ilu")
 call LANG_It('IBBi',2,"Increase HP by 450, DEF by 5, Attack by 40, AS by 50%.|n|nPassive Ability: \"Paphos Dosage\" - damage over 30 deals an additional 30 (chaos, blockable). Does not work with the Onizuka Set. CDR: 1 sec.|n|nPassive Ability: \"Treasury\" - gold for kills +20%, for the end of the round +10%.|n|nPassive A"+"bility: \"Execution\" - the owner's damage finishes off an enemy hero left with less than 3% HP. Does not work on targets with a shield.")
@@ -316568,6 +321584,8 @@ call LANG_U('H047',3,"Laxus Dreyar is a Thunder Dragon Slayer and S-Class Mage o
 call LANG_U('H048',3,"Frieza is a cruel tyrant, the leader of Frieza's army, and the self-proclaimed Emperor of the Universe.|n|nRole: Caster, Exhauster|n|n")
 call LANG_U('H049',3,"Yuuji - Shana's partner, Mistas \"Midnight Child\".|n|nRole: Durable, Carry, Disabler, Swordsman|n|n")
 call LANG_U('H04A',3,"Gon Frikss is a beginner hunter.|n|nRole: Durable, Caster, Carry, Exhauster|n|n")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_U('H04B',3,"Gon Frikss is a beginner hunter.|n|nRole: Durable, Caster, Carry, Exhauster|n|n")
 call LANG_U('H04C',3,"Yuzuriha Inori - Was created as a vessel for Oma Mana.|n|nRole: Support, Carry|n|n")
 call LANG_U('H04D',3,"Uryu Ishida - The last young Quincy, in ordinary life he studies at the same school as \"Ichigo\".")
@@ -316656,8 +321674,6 @@ call LANG_U('H244',3,"Misaka Mikoto is the 3th strongest esper in academy city, 
 call LANG_U('H248',3,"Frieza is a cruel tyrant, the leader of Frieza's army, and the self-proclaimed Emperor of the Universe.|n|nRole: Caster, Exhauster|n|n")
 call LANG_U('H26B',3,"Nero - a former emperor, Nero's artistic nature is reflected in her fighting style.|n|nRole: Caster, Durable, Disabler, Swordsman|n|n")
 call LANG_U('H34Z',3,"Tobirama is the 2th hokage of the village hidden in the leaves.|n|nRole: Caster, Assassin, Exhauster|n|n")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_U('H34X',3,"Tobirama is the 2th Hokage of the village hidden in the leaves.|n|nRole: Caster, Assassin, Exhauster|n|n")
 call LANG_U('H35Z',3,"Yoruichi is the former captain of the 2nd Division and the princess of the Shihōin clan.|n|nRole: Caster, Assassin, Exhauster|n|n")
 call LANG_U('H35X',3,"Yoruichi is the former captain of the 2nd Division and the princess of the Shihōin clan.|n|nRole: Caster, Assassin, Exhauster|n|n")
@@ -316742,6 +321758,7 @@ call LANG_U('HHom',2,"Homura Akemi")
 call LANG_U('HHom',3,"Homura Akemi is a magical girl who can stop and rewind time. Her abilities are in development.|n|nRole: Caster, Disabler, Escape|n")
 call LANG_U('HHDv',2,"Homura Akemi")
 call LANG_U('HHDv',3,"Homura Akemi in her Devil form. Her abilities are in development.|n|nRole: Caster, Disabler, Escape|n")
+call LANG_U('HIor',3,"Iori is a melee fighter who chains attacks into follow-ups and controls enemies with purple flames.|n|nRole: Carry, Assassin, Solo Target")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
@@ -316819,6 +321836,8 @@ call LANG_B('B02Z',1,"Blocked")
 call LANG_B('B031',1,"This warrior is accelerated.")
 call LANG_B('B032',0,"Cleave")
 call LANG_B('B032',1,"Cleave")
+endfunction
+function LANG_Data59 takes nothing returns nothing
 call LANG_B('B033',0,"Fire Run")
 call LANG_B('B033',1,"This warrior used the spell ''Fire Run''.")
 call LANG_B('B034',0,"Ice Shield")
@@ -316908,8 +321927,6 @@ call LANG_B('BP01',0,"Exhaustion")
 call LANG_B('BP01',1,"Laxus is exhausted and deals 20% less damage.")
 call LANG_B('BP02',1,"Lucci's next auto-attack will deal additional damage to the enemy.")
 call LANG_B('BW01',1,"Increases: Magic Resist")
-endfunction
-function LANG_Data59 takes nothing returns nothing
 call LANG_B('YoG2',1,"Raises the wearer's AGI and changes their Q ability.")
 call LANG_B('BHSF',1,"Incoming damage block")
 call LANG_B('BRR0',1,"Warrior slowed by 60% and all damage reduced by 80%.")
@@ -317096,6 +322113,7 @@ endfunction
 //LANG_DATA_END
 function InitCustomTriggers takes nothing returns nothing
 call ExecuteFunc("LANG_Init") // язык (RU / EN) — до всего, что читает тексты
+call IoriInit()
 call Sh_Init() //Shop32
 call InitTrig_LamboLearnE()
 call InitTrig_LamboChoice()
@@ -322909,7 +327927,7 @@ local string bmpIcon=GetUnitBaseStringFieldById(bmpType,UNIT_SF_ICON_NORMAL)
 // Reserve shared availability before CreateUnit can dispatch any selection-region events.
 call SaveBoolean(BOT_DB,-1,bmpType,true)
 loop
-exitwhen bmpIndex>=150
+exitwhen bmpIndex>HERO_ROSTER_LAST
 if udg_RH[bmpIndex]==bmpType then
 call SaveInteger(BOT_DB,bmpPlayer,240,bmpIndex+1)
 set udg_RH[bmpIndex]=0
@@ -322956,7 +327974,7 @@ set heroType=BOT_Pool[ModuloInteger(start+k,BOT_PoolCount)]
 if not BOT_HeroTaken(heroType) then
 set index=0
 loop
-exitwhen index>=150
+exitwhen index>HERO_ROSTER_LAST
 if udg_RH[index]==heroType then
 return heroType
 endif
