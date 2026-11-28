@@ -1,0 +1,69 @@
+@here
+3.8.5
+- Added Homura Akemi, Iori Yagami and Might Guy.
+- Added a Nanaya Shiki bot with combat combos and its own item build.
+
+**Heroes**
+**Hit**
+T
+- Cast time 0.35 sec. A 0.2-sec windup adds a stance, blue aura and voice line before the dash.
+
+**Homura Akemi**
+- New INT hero with base and Devil forms.
+Q
+- Five variants: shield, double pistol shot, bazooka, sniper rifle and flash grenade. The weapon also changes basic attacks. Pistol/bazooka/rifle range 1500/2500/4000. Shield and pistol cooldown 14/13/12/11/10 sec.
+- The rifle bullet grants 650 vision and cancels the target’s current order on hit. The bazooka knocks enemies away in the direction of the shot.
+W
+- Fires a ten-round burst. Moving or issuing another order interrupts the burst.
+E
+- Lobs a rocket that stuns for 1 sec. throughout the blast area. Flight time scales with distance.
+R
+- Homura blinks around the chosen area and throws six grenades. Area radius 550, grenade blast radius 350. Enemies can move out of the area.
+D
+- Blinks up to 750, changes weapon and resets Q cooldown. Ctrl+D selects the next weapon or random mode. Self-casting changes weapons in place with a 2-sec cooldown.
+F
+- From level 12, records a living ally’s position within 1200 for 6 sec. Recast to return them from any distance. Ctrl+F switches between manual and automatic recall.
+G
+- From level 25, bonds with an ally. Saving them from lethal damage restores 30% HP and unlocks an optional transformation until round end. Madoka is selected automatically and recovers 45% HP. Madoka becoming a Goddess also unlocks the form.
+T
+- Stops time across the map for 4–5 sec. Projectiles and supported sustained attacks resume when time returns. D cooldown during the stop is 1.5 sec. From level 35, the chosen ally can also act.
+**Devil Homura**
+- Dark energy basic attacks at 900 range. G displays a passive form icon. Bonus mana recovery is 40 MP/sec.
+Q
+- Area damage of 7 × INT and a 2-sec root. Supports point quick-cast.
+W
+- The curse gains stacks when the target uses abilities. Stacks increase damage over time, slows and their ability cooldowns.
+E
+- Grants an ally +40 to all attributes, a shield worth 7 × Homura’s INT, and time-stop immunity for 20 sec.
+R
+- A 3-sec. area deals 10 × INT total across six hits. AS/MS slow builds from 20% to 60%, and magic resistance falls by 25%.
+D / F / T
+- D blinks up to 1200. Recast within 3 sec. to return. F selects an ally anywhere on the map. T stops time for 5 sec.
+
+**Iori Yagami**
+- New AGI hero with purple flames and an alternate skin. His abilities burn enemies and heal Iori when they hit.
+- Burn deals 1.5 × AGI per application and skips ticks against invulnerable targets.
+R
+- A charged projectile creates a line of fire pillars and stuns enemies hit. Cooldown 35 sec.
+F / G
+- Follow up on other techniques. Cost 40/55/70/85/100 MP.
+
+**Jellal Fernandes**
+G
+- Flame of Rebuke unlocks at level 25. Grants +20 to all attributes for 60 sec. Can target Jellal, allies or enemies.
+
+**Might Guy**
+- New hero in the Naruto tavern. E opens the Eight Gates in sequence, increasing attributes and changing F, G and D. At level 35, E starts at the sixth gate.
+Q / T
+- Both abilities have a follow-up. Q adds a leaping strike, and T unlocks a stronger second blow.
+R
+- Lifts enemies while spinning. The finisher stuns and knocks targets back.
+D / F / G
+- Gates unlock Omote Renge, Ura Renge, Asakujaku, Hirudora, Night Guy, Sekizo and Air Step.
+
+**Orihime**
+G
+- Rokuten Shishun unlocks at level 25. After a 2-sec windup, Orihime dashes 2500. She and the first enemy true hero hit are paused and invulnerable for 1 sec. The seal bursts for magic damage equal to 100% of Orihime’s max HP through shields and Boros Armor, then Orihime dies. Cooldown 50 sec.
+
+**Ruby**
+- The Kaleidostick Ruby projectile freezes during a time stop and resumes flight afterwards.
