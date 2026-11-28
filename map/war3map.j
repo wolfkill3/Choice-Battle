@@ -13727,6 +13727,26 @@ function SndN takes integer sni returns sound
     return soundStr[sni+snk]
 endfunction
 // звук по пути (путь собирается в коде); если пути нет в массиве — по-старому, свой звук, удалится сам
+function SndPlayLocalizedVolumes takes integer sndEnglishId,integer sndJapaneseId,integer sndEnglishVolume,integer sndJapaneseVolume returns nothing
+    local sound sndEnglish=SndN(sndEnglishId)
+    local sound sndJapanese=SndN(sndJapaneseId)
+    if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE) then
+        call SetSoundVolume(sndEnglish,sndEnglishVolume)
+        call SetSoundVolume(sndJapanese,0)
+    else
+        call SetSoundVolume(sndEnglish,0)
+        call SetSoundVolume(sndJapanese,sndJapaneseVolume)
+    endif
+    call StartSound(sndEnglish)
+    call StartSound(sndJapanese)
+    set sndEnglish=null
+    set sndJapanese=null
+endfunction
+
+function SndPlayLocalizedPair takes integer sndEnglishId,integer sndJapaneseId returns nothing
+    call SndPlayLocalizedVolumes(sndEnglishId,sndJapaneseId,127,127)
+endfunction
+
 function SndByPath takes string sbp returns sound
     local integer sbi=LoadInteger(SND_IX,StringHash(sbp),0)
     if sbi>0 then
@@ -32025,46 +32045,37 @@ function HomuraReturnModeBadge takes unit hrmUnit,integer hrmSlot,integer hrmId,
     set hrmText=null
 endfunction
 
-function OnButtonChangeAbilityMode takes nothing returns nothing
-    local player p = TrigP()
+function ApplyAbilityMode takes player p,framehandle but,unit modeSelected returns nothing
     local integer pHid = PH( p )
-    local integer buttonId = LoadInteger( HH, pHid, '+bId' )
-    local framehandle but = GetTriggerFrame( )
     local integer butHid = 0
     local integer itemTypeId = 0
     local integer freeSlotId = 0
     local integer avcHitSpell='HtW1'
-    local unit hrmSelected
     local integer hrmAbility
     local integer hrmOwnerKey
     local integer hrmModeKey
 
-    if buttonId == -1 then
-        return
-    endif
-    set hrmSelected=GetUnitSelected(p)
-    if (GetUnitTypeId(hrmSelected)=='HHom' or GetUnitTypeId(hrmSelected)=='HHDv') and (p==OwnerOf(hrmSelected) or GetPlayerAlliance(OwnerOf(hrmSelected),p,ALLIANCE_SHARED_CONTROL)) then
-        if but==GetFrameByName("AbilityVarBarIcon",4) and GetUnitTypeId(hrmSelected)=='HHDv' then
+    if (GetUnitTypeId(modeSelected)=='HHom' or GetUnitTypeId(modeSelected)=='HHDv') and (p==OwnerOf(modeSelected) or GetPlayerAlliance(OwnerOf(modeSelected),p,ALLIANCE_SHARED_CONTROL)) then
+        if but==GetFrameByName("AbilityVarBarIcon",4) and GetUnitTypeId(modeSelected)=='HHDv' then
             set hrmAbility='HdG1'
             set hrmModeKey=StringHash("HomuraAutoD")
         elseif but==GetFrameByName("AbilityVarBarIcon",5) then
             set hrmAbility='HmF1'
-            if GetUnitTypeId(hrmSelected)=='HHDv' then
+            if GetUnitTypeId(modeSelected)=='HHDv' then
                 set hrmAbility='HdF1'
             endif
             set hrmModeKey=StringHash("HomuraAutoF")
         endif
-        if hrmAbility!=0 and GetUnitAbilityLevel(hrmSelected,hrmAbility)>0 and IsUnitAbilityVisible(hrmSelected,hrmAbility) then
-            set hrmOwnerKey=PH(OwnerOf(hrmSelected))
+        if hrmAbility!=0 and GetUnitAbilityLevel(modeSelected,hrmAbility)>0 and IsUnitAbilityVisible(modeSelected,hrmAbility) then
+            set hrmOwnerKey=PH(OwnerOf(modeSelected))
             call SaveBoolean(HH,hrmOwnerKey,hrmModeKey,not LoadBoolean(HH,hrmOwnerKey,hrmModeKey))
         endif
     endif
-    set hrmSelected=null
     if but==GetFrameByName("AbilityVarBarIcon",4) then
         set freeSlotId=0
         loop
             exitwhen freeSlotId>11
-            if Hero[freeSlotId]==GetUnitSelected(p) and GetUnitTypeId(Hero[freeSlotId])=='HHom' and (p==OwnerOf(Hero[freeSlotId]) or GetPlayerAlliance(OwnerOf(Hero[freeSlotId]),p,ALLIANCE_SHARED_CONTROL)) and not IsUnitPaused(Hero[freeSlotId]) and GetUnitAbilityLevel(Hero[freeSlotId],'HmG1')>0 and IsUnitAbilityVisible(Hero[freeSlotId],'HmG1') then
+            if Hero[freeSlotId]==modeSelected and GetUnitTypeId(Hero[freeSlotId])=='HHom' and (p==OwnerOf(Hero[freeSlotId]) or GetPlayerAlliance(OwnerOf(Hero[freeSlotId]),p,ALLIANCE_SHARED_CONTROL)) and not IsUnitPaused(Hero[freeSlotId]) and GetUnitAbilityLevel(Hero[freeSlotId],'HmG1')>0 and IsUnitAbilityVisible(Hero[freeSlotId],'HmG1') then
                 set butHid=GetHandleId(Hero[freeSlotId])
                 call SaveInteger(HH,butHid,StringHash("HomuraNextQ"),ModuloInteger(LoadInteger(HH,butHid,StringHash("HomuraNextQ"))+1,6))
                 set freeSlotId=12
@@ -32088,7 +32099,7 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
         set freeSlotId=0
         loop
             exitwhen freeSlotId>11
-            if Hero[freeSlotId]==GetUnitSelected(p) and GetUnitTypeId(Hero[freeSlotId])=='HHit' and (p==OwnerOf(Hero[freeSlotId]) or GetPlayerAlliance(OwnerOf(Hero[freeSlotId]),p,ALLIANCE_SHARED_CONTROL)) and not IsUnitPaused(Hero[freeSlotId]) and GetUnitAbilityLevel(Hero[freeSlotId],avcHitSpell)>0 and IsUnitAbilityVisible(Hero[freeSlotId],avcHitSpell) then
+            if Hero[freeSlotId]==modeSelected and GetUnitTypeId(Hero[freeSlotId])=='HHit' and (p==OwnerOf(Hero[freeSlotId]) or GetPlayerAlliance(OwnerOf(Hero[freeSlotId]),p,ALLIANCE_SHARED_CONTROL)) and not IsUnitPaused(Hero[freeSlotId]) and GetUnitAbilityLevel(Hero[freeSlotId],avcHitSpell)>0 and IsUnitAbilityVisible(Hero[freeSlotId],avcHitSpell) then
                 set butHid=PH(OwnerOf(Hero[freeSlotId]))
                 if but==GetFrameByName( "AbilityVarBarIcon", 9 ) then
                     call SaveInteger(HH,butHid,StringHash("HitVW"),ModuloInteger(LoadInteger(HH,butHid,StringHash("HitVW"))+1,3))
@@ -32361,12 +32372,12 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
             endif
         endif
     endif
-    // if GetUnitTypeId(GetUnitSelected(p))=='HIc2' and (p==GetOwningPlayer(GetUnitSelected(p)) or GetPlayerAlliance(GetOwningPlayer(GetUnitSelected(p),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) and IsUnitPaused(GetUnitSelected(p))==false and GetUnitAbilityLevel(GetUnitSelected(p),'Pet1')==0 then
-    //     set pHid=GetHandleId(GetOwningPlayer(GetUnitSelected(p)))
+    // if GetUnitTypeId(modeSelected)=='HIc2' and (p==GetOwningPlayer(modeSelected) or GetPlayerAlliance(GetOwningPlayer(modeSelected,p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 7 ) and IsUnitPaused(modeSelected)==false and GetUnitAbilityLevel(modeSelected,'Pet1')==0 then
+    //     set pHid=GetHandleId(GetOwningPlayer(modeSelected))
     //     if LoadReal(HH,pHid,VariationTHash)==0 then
     //         call SaveReal(HH,pHid,VariationTHash,1)
-    //         call SetAbilityIntegerLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
-    //         call SetAbilityRealLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_RLF_CAST_RANGE,0,900)
+    //         call SetAbilityIntegerLevelField(GetUnitAbility(modeSelected,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,1)
+    //         call SetAbilityRealLevelField(GetUnitAbility(modeSelected,'GKT1'), ABILITY_RLF_CAST_RANGE,0,900)
     //         if GetLocalPlayer()==p then
     //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 0, true )
     //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist2.blp", 1, true )
@@ -32378,8 +32389,8 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     //         endif
     //     else
     //         call SaveReal(HH,pHid,VariationTHash,0)
-    //         call SetAbilityIntegerLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_ILF_TARGET_TYPE,0,2)
-    //         call SetAbilityRealLevelField(GetUnitAbility(GetUnitSelected(p),'GKT1'), ABILITY_RLF_CAST_RANGE,0,99999)
+    //         call SetAbilityIntegerLevelField(GetUnitAbility(modeSelected,'GKT1'), ABILITY_ILF_TARGET_TYPE,0,2)
+    //         call SetAbilityRealLevelField(GetUnitAbility(modeSelected,'GKT1'), ABILITY_RLF_CAST_RANGE,0,99999)
     //         if GetLocalPlayer()==p then
     //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 0, true )
     //             call SetFrameTexture( GetFrameByName( "AbilityVarBarIcon", 7 ), "ReplaceableTextures\\CommandButtons\\BTNDragonFist1.blp", 1, true )
@@ -32391,15 +32402,13 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     //         endif
     //     endif
     // endif
-    if GetUnitTypeId(GetUnitSelected(p))=='H00P' and (p==OwnerOf(Moria) or GetPlayerAlliance(OwnerOf(Moria),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 6 ) and IsUnitPaused(Moria)==false and GetUnitAbilityLevel(Moria,'Pet1')==0 then
+    if GetUnitTypeId(modeSelected)=='H00P' and (p==OwnerOf(Moria) or GetPlayerAlliance(OwnerOf(Moria),p,ALLIANCE_SHARED_CONTROL)) and but==GetFrameByName( "AbilityVarBarIcon", 6 ) and IsUnitPaused(Moria)==false and GetUnitAbilityLevel(Moria,'Pet1')==0 then
         set pHid=PH(OwnerOf(Moria))
         if LoadInteger(HH,pHid,'ShSn')!=0 then
             if LoadInteger(HH,pHid,VariationGHash)<LoadInteger(HH,pHid,'ShSn') then
                 call SaveInteger(HH,pHid,VariationGHash,LoadInteger(HH,pHid,VariationGHash)+1)
-                call SyncSavedInteger(HH, pHid, VariationGHash)
             else
                 call SaveInteger(HH,pHid,VariationGHash,1)
-                call SyncSavedInteger(HH, pHid, VariationGHash)
             endif
         endif
         if GetAbilityRemainingCooldown(GetUnitAbility(Moria, 'MrG1'))<0.2 then
@@ -32411,6 +32420,42 @@ function OnButtonChangeAbilityMode takes nothing returns nothing
     endif
     set p = null
     set but = null
+endfunction
+
+function OnButtonChangeAbilityMode takes nothing returns nothing
+    local player modeSender=GetTriggerPlayer()
+    local framehandle modeFrame
+    local integer modeButton
+    local integer modeHero=0
+    if modeSender==GetLocalPlayer() then
+        set modeFrame=GetTriggerFrame()
+        set modeButton=GetFrameContext(modeFrame)
+        if modeButton>=0 and modeButton<=12 and modeFrame==GetFrameByName("AbilityVarBarIcon",modeButton) and LoadInteger(HH,PH(TrigP()),'+bId')!=-1 then
+            loop
+                exitwhen modeHero>=12 or (Hero[modeHero]!=null and IsUnitSelected(Hero[modeHero],modeSender))
+                set modeHero=modeHero+1
+            endloop
+            call SendSyncData("AVMD",I2S(1+modeButton*16+modeHero))
+        endif
+    endif
+    set modeFrame=null
+    set modeSender=null
+endfunction
+
+function AbilityModeSync takes nothing returns nothing
+    local integer modePayload=S2I(GetTriggerSyncData())-1
+    local integer modeButton=modePayload/16
+    local integer modeHero=ModuloInteger(modePayload,16)
+    local player modeSender=V(GetTriggerSyncPlayer())
+    local unit modeSelected=null
+    if modePayload>=0 and modeButton<=12 and modeHero<=12 then
+        if modeHero<12 and Hero[modeHero]!=null and (modeSender==OwnerOf(Hero[modeHero]) or GetPlayerAlliance(OwnerOf(Hero[modeHero]),modeSender,ALLIANCE_SHARED_CONTROL)) then
+            set modeSelected=Hero[modeHero]
+        endif
+        call ApplyAbilityMode(modeSender,GetFrameByName("AbilityVarBarIcon",modeButton),modeSelected)
+    endif
+    set modeSelected=null
+    set modeSender=null
 endfunction
 
 function AbilityModeClick takes nothing returns nothing
@@ -47155,6 +47200,7 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     local trigger toggleEmote = null
     local trigger toggleStats = null
     local trigger AbilityModeHotkey = null
+    local trigger abilityModeSyncTrigger = null
     local integer x=0
     local integer i
     local integer j
@@ -47338,6 +47384,16 @@ function Trig_StatusBar_Actions takes nothing returns nothing
     call TriggerAddAction( tOnClick, function OnButtonChangeAbilityMode )
     call TriggerAddAction( tOnHover, function OnAddButtonHover )
     call TriggerAddAction( tOnUnHover, function OnAddButtonUnHover )
+
+    set abilityModeSyncTrigger=CreateTrigger()
+    set x=0
+    loop
+        exitwhen x>=12
+        call BlzTriggerRegisterPlayerSyncEvent(abilityModeSyncTrigger,Player(x),"AVMD",false)
+        set x=x+1
+    endloop
+    call TriggerAddAction(abilityModeSyncTrigger,function AbilityModeSync)
+    set abilityModeSyncTrigger=null
 
     set x=0
     loop
@@ -58684,6 +58740,21 @@ function HomuraBurstLayer takes string hvModel,real hvX,real hvY,real hvZ,real h
     set hvEffect=null
 endfunction
 
+function HomuraCastWind takes unit homuraWindCaster,real homuraWindYaw,boolean homuraWindForward returns nothing
+    local real homuraWindX=GetUnitX(homuraWindCaster)
+    local real homuraWindY=GetUnitY(homuraWindCaster)
+    local real homuraWindZ=GetUnitZ(homuraWindCaster)
+    local real homuraWindAngle=homuraWindYaw*bj_DEGTORAD
+    if GetUnitTypeId(homuraWindCaster)=='HHDv' then
+        call HomuraFxAt("Others\\WindNewFaw4.mdx",homuraWindX,homuraWindY,homuraWindZ+24.,homuraWindYaw,0.92,0.53,159,103,236,155)
+    else
+        call HomuraFxAt("Others\\WindNewFaw4.mdx",homuraWindX,homuraWindY,homuraWindZ+22.,homuraWindYaw,0.62,0.42,222,211,250,130)
+    endif
+    if homuraWindForward then
+        call HomuraBurstLayer("Others\\wind3.mdx",homuraWindX+76.*Cos(homuraWindAngle),homuraWindY+76.*Sin(homuraWindAngle),homuraWindZ+58.,homuraWindYaw,90.,0.58,1.75,135,0.40,0.13)
+    endif
+endfunction
+
 function HomuraWitchBurst takes string hwbModel,string hwbAnim,real hwbX,real hwbY,real hwbZ,real hwbYaw,real hwbScale,real hwbSpeed,integer hwbAlpha,real hwbLife returns nothing
     local effect hwbFx=AddSpecialEffect(hwbModel,hwbX,hwbY)
     if hwbFx!=null then
@@ -58897,6 +58968,43 @@ call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",null,hwBlinkX,hwBlinkY,hw
 call HomuraFxAlpha(HomuraWitchFx("WitchVoidBloom",null,hwBlinkX,hwBlinkY,hwBlinkZ+40.,hwBlinkYaw,1.10,0.26),180)
 endfunction
 
+function HomuraDarkGroundFx takes string hdgModel,real hdgX,real hdgY,real hdgYaw,real hdgWidth,real hdgHeight,real hdgLife,integer hdgAlpha returns nothing
+    local effect hdgEffect=HomuraWitchFx(hdgModel,null,hdgX,hdgY,GetTerrainHeightAt(hdgX,hdgY)+12.,hdgYaw,1.,hdgLife)
+    if hdgEffect!=null then
+        call SetSpecialEffectMatrixScale(hdgEffect,hdgWidth,hdgWidth,hdgHeight)
+        call SetSpecialEffectVertexColour(hdgEffect,110,70,153,hdgAlpha)
+    endif
+    set hdgEffect=null
+endfunction
+
+function HomuraWorldShadow takes real hwsX,real hwsY,real hwsYaw returns nothing
+    local effect hwsEffect=AddSpecialEffect("Homura\\WitchGroundWave.mdx",hwsX,hwsY)
+    if hwsEffect!=null then
+        call SetSpecialEffectPositionWithZ(hwsEffect,hwsX,hwsY,GetTerrainHeightAt(hwsX,hwsY)+10.)
+        call SetSpecialEffectMatrixScale(hwsEffect,2.5,2.5,0.18)
+        call SetSpecialEffectYaw(hwsEffect,hwsYaw)
+        call SetSpecialEffectAnimation(hwsEffect,"stand")
+        call SetSpecialEffectTimeScale(hwsEffect,0.36)
+        call SetSpecialEffectVertexColour(hwsEffect,55,28,82,199)
+        call GroundFxFade(hwsEffect,199,2.95,0.55)
+    endif
+    set hwsEffect=null
+endfunction
+
+function HomuraWorldLightning takes real hwlX,real hwlY,real hwlYaw,real hwlScale returns nothing
+    local effect hwlEffect=AddSpecialEffect("war3mapImported\\Purple Lightning.mdx",hwlX,hwlY)
+    if hwlEffect!=null then
+        call SetSpecialEffectPositionWithZ(hwlEffect,hwlX,hwlY,GetTerrainHeightAt(hwlX,hwlY)+18.)
+        call SetSpecialEffectYaw(hwlEffect,hwlYaw)
+        call SetSpecialEffectMatrixScale(hwlEffect,hwlScale,hwlScale,0.28)
+        call SetSpecialEffectAnimation(hwlEffect,"birth")
+        call SetSpecialEffectTimeScale(hwlEffect,2.45)
+        call SetSpecialEffectVertexColour(hwlEffect,220,143,255,205)
+        call GroundFxFade(hwlEffect,205,0.52,0.20)
+    endif
+    set hwlEffect=null
+endfunction
+
 function HomuraWitchVisual takes string hwButton,unit hwCaster,unit hwTarget,real hwAimX,real hwAimY returns nothing
 local real hwGround=GetTerrainHeightAt(hwAimX,hwAimY)+8.
 local real hwFacing=GetUnitFacing(hwCaster)
@@ -58914,6 +59022,9 @@ if hwTarget!=null and (hwButton=="w" or hwButton=="e") then
 set hwAimX=GetUnitX(hwTarget)
 set hwAimY=GetUnitY(hwTarget)
 set hwGround=GetUnitZ(hwTarget)+8.
+endif
+if hwButton=="q" or hwButton=="w" or hwButton=="e" or hwButton=="r" then
+    call HomuraCastWind(hwCaster,Atan2(hwAimY-GetUnitY(hwCaster),hwAimX-GetUnitX(hwCaster))*bj_RADTODEG,hwButton=="q" or hwButton=="r")
 endif
 if hwButton=="q" then
 set hwRiftAngle=Atan2(hwAimY-GetUnitY(hwCaster),hwAimX-GetUnitX(hwCaster))
@@ -58942,6 +59053,8 @@ call HomuraWitchBurst("Iori\\FSAeff (174).mdx","death",hwAimX+95.*Cos(hwRiftAngl
 call HomuraWitchBurst("Iori\\Iori (13) purple fire.mdx","stand",hwAimX,hwAimY,hwGround+92.,hwRiftYaw,1.65,2.15,175,1.25)
 call HomuraFxAt("Minato-37.mdx",hwAimX,hwAimY,hwGround+132.,hwRiftYaw,2.85,0.52,211,159,255,224)
 call HomuraGroundWave(hwAimX,hwAimY,0.95,188)
+call HomuraFxAt("Others\\WindNewFaw4.mdx",hwAimX,hwAimY,hwGround+12.,hwRiftYaw,1.38,0.60,178,112,247,166)
+call HomuraFxAlpha(HomuraWitchFx("WitchFeatherStorm",null,hwAimX,hwAimY,hwGround+50.,hwRiftYaw+90.,1.9,0.58),174)
 call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",null,hwAimX,hwAimY,hwGround+12.,hwRiftYaw,1.62,0.84),170)
 set hwRift=null
 elseif hwButton=="w" then
@@ -58953,6 +59066,7 @@ call HomuraFxAlpha(HomuraWitchFx("WitchCurseHaze",hwTarget,hwAimX,hwAimY,hwGroun
 call HomuraFxAlpha(HomuraWitchFx("WitchRecallThreads",hwTarget,hwAimX,hwAimY,hwGround+105.,hwFacing,1.35,0.78),185)
 call HomuraFxAlpha(HomuraWitchFx("WitchAwakeningCinders",hwCaster,GetUnitX(hwCaster),GetUnitY(hwCaster),GetUnitZ(hwCaster)+36.,hwFacing,1.10,0.74),155)
 call HomuraGroundWave(hwAimX,hwAimY,0.72,163)
+call HomuraFxAlpha(HomuraWitchFx("WitchRecallThreads",hwTarget,hwAimX,hwAimY,hwGround+55.,hwFacing+90.,1.35,0.76),197)
 call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",hwTarget,hwAimX,hwAimY,hwGround+13.,hwFacing,1.14,0.92),154)
 elseif hwButton=="e" then
 call HomuraGroundWave(hwAimX,hwAimY,0.75,145)
@@ -58966,7 +59080,12 @@ call HomuraFxAlpha(HomuraWitchFx("WitchAegisWisps",hwCaster,GetUnitX(hwCaster),G
 call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",hwTarget,hwAimX,hwAimY,hwGround+8.,hwFacing,1.27,0.82),141)
 call HomuraFxAlpha(HomuraWitchFx("WitchVoidBloom",hwTarget,hwAimX,hwAimY,hwGround+42.,hwFacing,1.03,0.35),156)
 elseif hwButton=="r" then
+call HomuraWorldShadow(hwAimX,hwAimY,hwFacing)
+call HomuraDarkGroundFx("WitchLabyrinthSmoke",hwAimX,hwAimY,hwFacing,3.65,0.72,2.85,182)
 call HomuraGroundWave(hwAimX,hwAimY,1.45,215)
+call HomuraWorldLightning(hwAimX,hwAimY,hwFacing,1.65)
+call HomuraFxAt("Others\\WindNewFaw4.mdx",hwAimX,hwAimY,hwGround+20.,hwFacing,2.42,0.86,165,108,239,154)
+call HomuraFxAlpha(HomuraWitchFx("WitchFeatherStorm",null,hwAimX,hwAimY,hwGround+75.,hwFacing+135.,3.35,1.05),158)
 set hwZone=HomuraWitchFx("WitchLabyrinth",null,hwAimX,hwAimY,hwGround,hwFacing,7.25,3.)
 call HomuraFxAlpha(hwZone,205)
 if hwZone!=null then
@@ -58987,7 +59106,11 @@ set hwSectorX=hwAimX+245.*Cos(hwSectorAngle)
 set hwSectorY=hwAimY+245.*Sin(hwSectorAngle)
 call HomuraFxAlpha(HomuraWitchFx("WitchWorldEmbers",null,hwSectorX,hwSectorY,GetTerrainHeightAt(hwSectorX,hwSectorY)+30.,hwSectorAngle*bj_RADTODEG,1.27,3.),167)
 if ModuloInteger(hwSector,2)==0 then
-    call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",null,hwSectorX,hwSectorY,GetTerrainHeightAt(hwSectorX,hwSectorY)+10.,hwSectorAngle*bj_RADTODEG,1.28,0.86),128)
+    call HomuraDarkGroundFx("WitchLabyrinthSmoke",hwSectorX,hwSectorY,hwSectorAngle*bj_RADTODEG,2.12,0.77,1.6,181)
+endif
+if hwSector==1 or hwSector==5 then
+    call HomuraWorldLightning(hwSectorX,hwSectorY,hwSectorAngle*bj_RADTODEG,1.18)
+    call HomuraFxAlpha(HomuraWitchFx("WitchCurseHaze",null,hwSectorX,hwSectorY,GetTerrainHeightAt(hwSectorX,hwSectorY)+48.,hwFacing+90.,2.25,1.1),167)
 endif
 set hwSector=hwSector+1
 endloop
@@ -75992,15 +76115,7 @@ endif
         if LoadInteger(HH,GetHandleId( u ),BGRageIHash)==4 then
             set tdamage=0
             call SaveBoolean(HH,GetHandleId( u ),SH_BGRageBool,true)
-            if LoadBoolean(HH,PH( GetLocalPlayer() ),SOUND_LANGUAGE)==true then 
-                set soundplay=SndN(793) // Sound\Music\mp3Music\SoundEng\BlackGokuRage_eng.mp3
-                call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            else
-                set soundplay=SndN(796) // Sound\Music\mp3Music\SoundJap\BlackGokuRage.mp3
-                call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            endif
+            call SndPlayLocalizedPair(793,796)
         endif
     endif
 
@@ -76030,15 +76145,7 @@ endif
         if LoadInteger(HH,GetHandleId( c ),BGRageIHash)==4 then
             set tdamage=0
             call SaveBoolean(HH,GetHandleId( c ),SH_BGRageBool,true)
-            if LoadBoolean(HH,PH( GetLocalPlayer() ),SOUND_LANGUAGE)==true then 
-                set soundplay=SndN(793) // Sound\Music\mp3Music\SoundEng\BlackGokuRage_eng.mp3
-                call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            else
-                set soundplay=SndN(796) // Sound\Music\mp3Music\SoundJap\BlackGokuRage.mp3
-                call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            endif
+            call SndPlayLocalizedPair(793,796)
         endif
     endif
     //
@@ -77146,13 +77253,7 @@ endif
                 else
                 call SetUnitAnimation(u,"Spell Channel Alternate")
                 endif
-                if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                    set soundplay=SndN(806) // Sound\Music\mp3Music\FinalExplosion.mp3
-                else
-                    set soundplay=SndN(808) // Sound\Music\mp3Music\Vegeta\FinalExplosion-jap.mp3
-                endif
-                call StartSound(soundplay)
-                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+                call SndPlayLocalizedPair(806,808)
                 set hn=CreateUnit(damagedPlayer,'e3E6',x,y,0)
                 call SetUnitFlyHeight(hn,0,0)
                 call SetUnitFlyHeight(hn,350,350)
@@ -104013,13 +104114,7 @@ function LucoraGunCast takes nothing returns nothing
     call SaveUnitHandle(h,id,1,GetSpellTargetUnit())
     //call SaveUnitHandle(h,id,2,CreateUnit(GetOwningPlayer(u),'e0BH',GetUnitX(u),GetUnitY(u),0))
     //call SaveUnitHandle(h,id,3,CreateUnit(GetOwningPlayer(u),'e0BG',GetUnitX(u),GetUnitY(u),0))
-    if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-        set soundplay=SndN(1283) // Sound\Music\mp3Music\VegetaE.mp3
-    else
-        set soundplay=SndN(1285) // Sound\Music\mp3Music\Vegeta\VegetaE-jap.mp3
-    endif
-    call StartSound(soundplay)
-    //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+    call SndPlayLocalizedPair(1283,1285)
     call TSE_TimerStart(t,0.15,true,function LucoraGunCast2)
     set u=null
     set t=null
@@ -110168,13 +110263,7 @@ call SetUnitAnimation(u,"Spell Channel")
 else
 call SetUnitAnimation(u,"Spell Channel Alternate")
 endif
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(806) // Sound\Music\mp3Music\FinalExplosion.mp3
-else
-set soundplay=SndN(808) // Sound\Music\mp3Music\Vegeta\FinalExplosion-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(806,808)
 set n=CreateUnit(p,'e3E6',GetUnitX(u),GetUnitY(u),0)
 call SetUnitFlyHeight(n,0,0)
 call SetUnitFlyHeight(n,350,350)
@@ -110423,26 +110512,14 @@ set e=AddSpecialEffectTarget("war3mapImported\\gallit gun.mdx",u,"chest")
 set e1=AddSpecialEffectTarget("war3mapImported\\PurpleMissile.mdl",u,"hand")
 call SaveEffectHandle(h,id,7,e)
 call SaveEffectHandle(h,id,8,e1)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1310) // Sound\Music\mp3Music\GalickGun2.mp3
-else
-set soundplay=SndN(1312) // Sound\Music\mp3Music\Vegeta\GalickGun2-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1310,1312)
 call SetUnitAnimation(u,"Spell Two")
 else
 call SaveReal(h,id,10,5500)
 call SetUnitTimeScale(u,0.7)
 set e=AddSpecialEffectTarget("war3mapImported\\GreenChakra.mdx",u,"origin")
 call SaveEffectHandle(h,id,7,e)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1314) // Sound\Music\mp3Music\FinalShineAttack.mp3
-else
-set soundplay=SndN(1316) // Sound\Music\mp3Music\Vegeta\FinalShineAttack-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1314,1316)
 if GetUnitAbilityLevel(u,'VGH4')>0 then
 call SetUnitAnimation(u,"Spell One Alternate")
 else
@@ -110564,13 +110641,7 @@ call SaveReal(h,id,3,y1)
 set bigBangProjectile=CreateUnit(p,'e0DG',x,y,a*bj_RADTODEG)
 call SaveUnitHandle(h,id,1,bigBangProjectile)
 call WaveRegister(bigBangProjectile,t,null,null)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1318) // Sound\Music\mp3Music\BigBandAttack.mp3
-else
-set soundplay=SndN(1320) // Sound\Music\mp3Music\Vegeta\BigBandAttack-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1318,1320)
 call UnitApplyTimedLife(WaveTrackVisual(bigBangProjectile,CreateUnit(p,'e0DH',x+25*Cos(a),y+25*Sin(a),a*bj_RADTODEG)),'BTLF',1)
 call UnitApplyTimedLife(WaveTrackVisual(bigBangProjectile,CreateUnit(p,'e0DI',x+25*Cos(a),y+25*Sin(a),a*bj_RADTODEG)),'BTLF',1)
 call TSE_TimerStart(t,0.03,true,function BigBangAttackCast2)
@@ -124865,13 +124936,7 @@ call SaveUnitHandle(h,id,2,l__d)
 call SaveReal(h,id,3,angle)
 call SaveReal(h,id,4,speed)
 call SaveReal(h,id,5,dmg)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1624) // Sound\Music\mp3Music\GalakticDonut.mp3
-else
-set soundplay=SndN(1626) // Sound\Music\mp3Music\Gotenks\GalakticDonut-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1624,1626)
 call WaveRegisterHoming(l__d,t)
 call TSE_TimerStart(t,0.02,true,function MissleMoveGalacticDonut2)
 set t=null
@@ -125152,13 +125217,7 @@ call SetUnitX(c,x+20*Cos(a))
 call SetUnitY(c,y+20*Sin(a))
 call SaveReal(h,id,15,5)
 endif
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1631) // Sound\Music\mp3Music\SuperBuuvVolleyball3.mp3
-else
-set soundplay=SndN(1634) // Sound\Music\mp3Music\Gotenks\SuperBuuvVolleyball3-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1631,1634)
 call SetUnitAnimationByIndex(l__d,32)
 call SaveReal(h,id,11,x)
 call SaveReal(h,id,12,y)
@@ -125316,20 +125375,10 @@ call SaveReal(h,id,25,GetUnitTimeScale(u))
 call MapPauseUnit(u,true)
 call SetUnitInvulnerable(u,true)
 if GetRandomInt(1,2)==1 then
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1640) // Sound\Music\mp3Music\SuperBuuvVolleyball1.mp3
+call SndPlayLocalizedPair(1640,1642)
 else
-set soundplay=SndN(1642) // Sound\Music\mp3Music\Gotenks\SuperBuuvVolleyball1-jap.mp3
+call SndPlayLocalizedPair(1644,1642)
 endif
-else
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1644) // Sound\Music\mp3Music\SuperBuuvVolleyball11.mp3
-else
-set soundplay=SndN(1642) // Sound\Music\mp3Music\Gotenks\SuperBuuvVolleyball1-jap.mp3
-endif
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
 call SaveReal(h,id,7,0)
@@ -125629,13 +125678,7 @@ call SaveReal(h,id,7,10)
 call SaveReal(h,id,8,10)
 call SaveReal(h,id,2,x)
 call SaveReal(h,id,3,y)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1646) // Sound\Music\mp3Music\SplintingHeadPunch.mp3
-else
-set soundplay=SndN(1648) // Sound\Music\mp3Music\Gotenks\SplintingHeadPunch-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1646,1648)
 call WaveRegisterHoming(l__n,t)
 call WaveKeepCasterState(l__n,u,LoadBoolean(h,id,22),LoadBoolean(h,id,23),LoadReal(h,id,24),LoadReal(h,id,25))
 call WaveTrackVisual(l__n,LoadUnitHandle(h,id,10))
@@ -125897,13 +125940,7 @@ call SaveReal(h,id,3,GetSpellTargetY())
 call SetUnitTimeScale(u,2)
 call SetUnitAnimationByIndex(u,38)
 call TSE_TimerStart(t,0.1,true,function DieDieMissleCast2)
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1654) // Sound\Music\mp3Music\DieDieMissle.mp3
-else
-set soundplay=SndN(1656) // Sound\Music\mp3Music\Gotenks\DieDieMissle-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1654,1656)
 set u=null
 set t=null
 endfunction
@@ -151469,13 +151506,7 @@ call SaveUnitHandle(h,id,0,u)
 call SaveGroupHandle(h,id,1,CreateGroup())
 call SaveUnitHandle(h,id,3,CreateUnit(p,'e0QW',x+100*Cos((a+deg90)),y+100*Sin((a+deg90)),a*bj_RADTODEG))
 call SaveUnitHandle(h,id,4,CreateUnit(p,'e0QW',x+100*Cos((a-deg90)),y+100*Sin((a-deg90)),a*bj_RADTODEG))
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(1999) // Sound\Music\mp3Music\FriezaDeathSaucer.mp3
-else
-set soundplay=SndN(2001) // Sound\Music\mp3Music\Frieza\FriezaDeathSaucer-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(1999,2001)
 call WaveRegisterShared(LoadUnitHandle(h,id,3),t)
 call WaveRegisterShared(LoadUnitHandle(h,id,4),t)
 call TSE_TimerStart(t,0.025,true,function KienzanCast2)
@@ -158939,40 +158970,13 @@ else
 if time==0.02 then
 
 
-if LoadBoolean(HH,PH(GetLocalPlayer()), SOUND_LANGUAGE )==true then
-set soundplay=SndN(2168) // Sound\Music\mp3Music\Cell_G_ENG.mp3
-call SetSoundVolume(soundplay,370)
-else
-
 if rand22==1 then
-set soundplay=SndN(2171) // Sound\Music\mp3Music\Perfect Cell\Cell_G3.mp3
-
+call SndPlayLocalizedVolumes(2168,2171,370,200)
+elseif rand33==1 then
+call SndPlayLocalizedVolumes(2168,2174,370,200)
 else
-
-if rand33==1 then
-set soundplay=SndN(2174) // Sound\Music\mp3Music\Perfect Cell\Cell_G2.mp3
-else
-set soundplay=SndN(2177) // Sound\Music\mp3Music\Perfect Cell\Cell_G.mp3
+call SndPlayLocalizedVolumes(2168,2177,370,200)
 endif
-
-endif
-
-call SetSoundVolume(soundplay,200)
-endif
-
-
-
-
-
-call StartSound(soundplay)
-////call KillSoundWhenDone(soundplay)
-
-
-
-
-
-
-
 call EffectCreateAndMove(true,EffectID[23],facing,1.5,1,0.5,100,60,30,50,0,caster,0,facing)
 if LoadInteger(HH,id,25)==1 then
 call EffectCreateAndMove(true,EffectID[720],facing,1.5,1.75,0.4,100,60,30,0,75,caster,50,facing)
@@ -159956,13 +159960,7 @@ call SetUnitAcquireRange(u, 51)
 call UnitAddAbility(u, 'A1FU')
 call UnitAddAbility(u,'Pet1')
 call SetUnitAnimation(u,"Cinematic Channel")
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(2194) // Sound\Music\mp3Music\CellSuperKamehameha.mp3
-else
-set soundplay=SndN(2196) // Sound\Music\mp3Music\Perfect Cell\CellSuperKamehameha-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(2194,2196)
 set n=CreateUnit(p,0x6530425A,x+75*Cos(a-ang),y+75*Sin(a-ang),a*bj_RADTODEG)
 call SaveUnitHandle(h,id,7,n)
 call SetUnitVertexColor(n,125,200,255,180)
@@ -214437,21 +214435,9 @@ set soundplay=SndN(3091) // Sound\Music\mp3Music\deathbeams.mp3
 call StartSound(soundplay)
 //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
 if GetRandomInt(0,5) == 1 then
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(3094) // Sound\Music\mp3Music\FriezaQ1.mp3
-else
-set soundplay=SndN(3097) // Sound\Music\mp3Music\Frieza\FriezaQ1-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(3094,3097)
 elseif GetRandomInt(0,5) == 2 then
-if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-set soundplay=SndN(3100) // Sound\Music\mp3Music\FriezaQ2.mp3
-else
-set soundplay=SndN(3103) // Sound\Music\mp3Music\Frieza\FriezaQ2-jap.mp3
-endif
-call StartSound(soundplay)
-//call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+call SndPlayLocalizedPair(3100,3103)
 endif
 call GroupEnumUnitsInRange(G,x,y,135,Base)
 loop
@@ -263662,6 +263648,7 @@ function HomuraWeaponCast takes nothing returns nothing
     local real homuraStartY=GetUnitY(homuraCaster)
     local real homuraShotAngle=Atan2(homuraTargetY-homuraStartY,homuraTargetX-homuraStartX)
     call SetUnitFacingInstant(homuraCaster,homuraShotAngle*bj_RADTODEG)
+    call HomuraCastWind(homuraCaster,homuraShotAngle*bj_RADTODEG,true)
     if homuraSpell=='HmW1' then
         call HomuraCombatAnim(homuraCaster,38,4)
         call HomuraPlayVoice(homuraCaster,4989,0.85)
@@ -263745,6 +263732,7 @@ function HomuraTeleport takes unit homuraMover,real homuraX,real homuraY returns
     local real homuraTravelX=GetUnitX(homuraMover)
     local real homuraTravelY=GetUnitY(homuraMover)
     local real homuraTravelYaw=Atan2(homuraY-homuraTravelY,homuraX-homuraTravelX)*bj_RADTODEG
+    call HomuraCastWind(homuraMover,homuraTravelYaw,false)
     if GetUnitTypeId(homuraMover)=='HHDv' then
         call HomuraWitchBlinkFx(homuraTravelX,homuraTravelY,GetUnitZ(homuraMover)+5.,homuraTravelYaw)
         call SetUnitXY_1(homuraMover,homuraX,homuraY,false)
@@ -263771,6 +263759,7 @@ function HomuraBlinkCast takes unit homuraMover returns nothing
     if HomuraTravelAllowed(homuraMover) and homuraBlink!=null then
         if GetSpellTargetUnit()==homuraMover then
             call HomuraRefundMana(homuraMover,'HmG1')
+            call HomuraCastWind(homuraMover,GetUnitFacing(homuraMover),false)
             if TSE_On and TSE_Src==homuraMover then
                 call StartAbilityCooldown(homuraBlink,1.5)
             else
@@ -263867,6 +263856,9 @@ function HomuraRecallCast takes unit homuraRecallCaster,integer homuraCastSpell 
     if GetHeroLevel(homuraRecallCaster)>=12 and HomuraTravelAllowed(homuraRecallCaster) and UnitIsAlive(homuraRecallAlly) and homuraRecallAlly!=homuraRecallCaster and IsUnitType(homuraRecallAlly,UNIT_TYPE_HERO) and not IsUnitIllusion(homuraRecallAlly) and IsUnitAlly(homuraRecallAlly,OwnerOf(homuraRecallCaster)) then
         if homuraRecallTimer!=null then
             set homuraRecallUsed=HomuraRecallReturn(homuraRecallTimer)
+            if homuraRecallUsed then
+                call HomuraCastWind(homuraRecallCaster,GetUnitFacing(homuraRecallCaster),false)
+            endif
         elseif homuraRecallTimer==null and (GetUnitTypeId(homuraRecallCaster)=='HHDv' or IsUnitInRange(homuraRecallCaster,homuraRecallAlly,1200.)) and homuraCastSpell!='HmF2' and (GetUnitAbilityLevel(homuraRecallCaster,'HmF2')>0 or UnitAddAbility(homuraRecallCaster,'HmF2')) then
             set homuraRecallTimer=CreateTimer()
             set homuraRecallId=GetHandleId(homuraRecallTimer)
@@ -263901,6 +263893,7 @@ function HomuraRecallCast takes unit homuraRecallCaster,integer homuraCastSpell 
             call SaveEffectHandle(h,homuraRecallId,5,homuraRecallClock)
             endif
             call SetUnitAnimationByIndex(homuraRecallCaster,homuraRecallAnimation)
+            call HomuraCastWind(homuraRecallCaster,GetUnitFacing(homuraRecallCaster),false)
             if GetUnitTypeId(homuraRecallCaster)=='HHDv' then
                 call HomuraPlayVoice(homuraRecallCaster,4993,1.85)
             else
@@ -264151,8 +264144,10 @@ function HomuraQCast takes unit homuraQCaster returns nothing
     local timer homuraQTimer
     local integer homuraQId
     if homuraMode==0 then
+        call HomuraCastWind(homuraQCaster,GetUnitFacing(homuraQCaster),false)
         call HomuraPlayVoice(homuraQCaster,4987,1.8)
     else
+        call HomuraCastWind(homuraQCaster,homuraQA*bj_RADTODEG,true)
         call HomuraPlayVoice(homuraQCaster,5065+2*homuraMode,3.5)
     endif
     if homuraMode==0 then
@@ -264328,6 +264323,7 @@ function HomuraBarrageCast takes unit homuraBarrageCaster returns nothing
     call MapPauseUnit(homuraBarrageCaster,true)
     call SetUnitInvulnerable(homuraBarrageCaster,true)
     call HomuraPlayVoice(homuraBarrageCaster,5013,3.1)
+    call HomuraCastWind(homuraBarrageCaster,GetUnitFacing(homuraBarrageCaster),false)
     call TSE_TimerStartOwned(homuraBarrageTimer,0.16,true,function HomuraBarrageTick,OwnerOf(homuraBarrageCaster))
     call HomuraBarrageAdvance(homuraBarrageTimer)
     set homuraBarrageEmbers=null
@@ -264445,6 +264441,7 @@ call HomuraRefundMana(homuraTCaster,'HmT1')
 return
 endif
 call HomuraCombatAnim(homuraTCaster,18+3*LoadInteger(HH,GetHandleId(homuraTCaster),StringHash("HomuraWeapon")),6)
+call HomuraCastWind(homuraTCaster,GetUnitFacing(homuraTCaster),false)
 if GetUnitTypeId(homuraTCaster)=='HHDv' then
 call StartSound(SndN(5097))
 call HomuraFxAlpha(HomuraWitchFx("WitchRecallThreads",homuraTCaster,GetUnitX(homuraTCaster),GetUnitY(homuraTCaster),GetUnitZ(homuraTCaster)+50.,0.,1.62,0.35),175)
@@ -264522,6 +264519,7 @@ function HomuraReworkCast takes nothing returns nothing
                 call HomuraCombatAnim(homuraMover,33,6)
                 call HomuraPlayVoice(homuraMover,4997,3.)
                 call StartSound(SndN(5193))
+                call HomuraCastWind(homuraMover,GetUnitFacing(homuraMover),false)
                 call HomuraWitchVisual("v",homuraMover,homuraMover,GetUnitX(homuraMover),GetUnitY(homuraMover))
                 call HomuraGroundWave(GetUnitX(homuraMover),GetUnitY(homuraMover),1.1,165)
                 call TSE_TimerStartOwned(homuraMorphDelay,1.15,false,function HomuraDevilMorphReady,OwnerOf(homuraMover))
@@ -264541,6 +264539,7 @@ function HomuraReworkCast takes nothing returns nothing
             set homuraVowAlly=HomuraVowMadoka(homuraMover)
             if homuraVowAlly!=null then
                 if HomuraVowBind(homuraMover,homuraVowAlly) then
+                    call HomuraCastWind(homuraMover,GetUnitFacing(homuraMover),false)
                     call HomuraPlayVoice(homuraMover,4993,1.35)
                     call HomuraVowGoddess(homuraVowAlly)
                     call HomuraCutBlink(homuraMover)
@@ -264548,6 +264547,7 @@ function HomuraReworkCast takes nothing returns nothing
                     call HomuraRefundMana(homuraMover,'HmD1')
                 endif
             elseif HomuraVowBind(homuraMover,GetSpellTargetUnit()) then
+                call HomuraCastWind(homuraMover,GetUnitFacing(homuraMover),false)
                 call HomuraPlayVoice(homuraMover,4993,1.35)
                 call HomuraCutBlink(homuraMover)
             else
@@ -297830,6 +297830,9 @@ set hdwStacks=IMinBJ(5,LoadInteger(h,hdwId,3)+1)
 if hdwStacks>LoadInteger(h,hdwId,3) then
     call HomuraWitchFx("WitchSurge",hdwUnit,GetUnitX(hdwUnit),GetUnitY(hdwUnit),GetUnitZ(hdwUnit)+36.,0.,0.55+0.09*hdwStacks,0.23)
     call HomuraFxAlpha(HomuraWitchFx("WitchCurseHaze",hdwUnit,GetUnitX(hdwUnit),GetUnitY(hdwUnit),GetUnitZ(hdwUnit)+75.,GetUnitFacing(hdwUnit),0.9+0.12*hdwStacks,0.45),165)
+    if hdwStacks==5 then
+        call HomuraFxAlpha(HomuraWitchFx("WitchFeatherStorm",hdwUnit,GetUnitX(hdwUnit),GetUnitY(hdwUnit),GetUnitZ(hdwUnit)+48.,GetUnitFacing(hdwUnit),1.22,0.38),171)
+    endif
 endif
 call SaveInteger(h,hdwId,3,hdwStacks)
 set hdwCooldownTimer=CreateTimer()
@@ -297939,7 +297942,7 @@ if hdrPrevious!=null then
     call DestroyGroup(hdrPrevious)
 endif
 if hdrTick>0 and hdrTick<=30 and ModuloInteger(hdrTick,5)==0 and udg_B and DU2 and round==LoadInteger(h,hdrId,5) then
-    call HomuraFxAlpha(HomuraWitchFx("WitchSurge",null,LoadReal(h,hdrId,1),LoadReal(h,hdrId,2),GetTerrainHeightAt(LoadReal(h,hdrId,1),LoadReal(h,hdrId,2))+8.,0.,3.9,0.28),135)
+    call HomuraFxAlpha(HomuraWitchFx("WitchSurge",null,hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+8.,0.,3.9,0.28),135)
     set hdrPulseIndex=0
     loop
         exitwhen hdrPulseIndex>=3
@@ -297947,7 +297950,7 @@ if hdrTick>0 and hdrTick<=30 and ModuloInteger(hdrTick,5)==0 and udg_B and DU2 a
         set hdrPulseX=hdrX+(170.+90.*I2R(hdrPulseIndex))*Cos(hdrPulseAngle)
         set hdrPulseY=hdrY+(170.+90.*I2R(hdrPulseIndex))*Sin(hdrPulseAngle)
         if hdrTick<30 then
-            call HomuraFxAlpha(HomuraWitchFx("WitchLabyrinthSmoke",null,hdrPulseX,hdrPulseY,GetTerrainHeightAt(hdrPulseX,hdrPulseY)+20.,hdrPulseAngle*bj_RADTODEG,2.05,0.7),145)
+            call HomuraDarkGroundFx("WitchLabyrinthSmoke",hdrPulseX,hdrPulseY,hdrPulseAngle*bj_RADTODEG,2.05,0.63,0.7,170)
             call HomuraFxAlpha(HomuraWitchFx("WitchRecallThreads",null,hdrPulseX,hdrPulseY,GetTerrainHeightAt(hdrPulseX,hdrPulseY)+100.,hdrPulseAngle*bj_RADTODEG,2.1,0.46),180)
         else
             call HomuraFxAlpha(HomuraWitchFx("WitchVoidBloom",null,hdrPulseX,hdrPulseY,GetTerrainHeightAt(hdrPulseX,hdrPulseY)+68.,hdrPulseAngle*bj_RADTODEG,1.65,0.35),205)
@@ -297955,12 +297958,13 @@ if hdrTick>0 and hdrTick<=30 and ModuloInteger(hdrTick,5)==0 and udg_B and DU2 a
         set hdrPulseIndex=hdrPulseIndex+1
     endloop
     if hdrTick==15 then
-        call HomuraWitchBurst("Iori\\Iori (50).mdx","death",LoadReal(h,hdrId,1),LoadReal(h,hdrId,2),GetTerrainHeightAt(LoadReal(h,hdrId,1),LoadReal(h,hdrId,2))+82.,0.,2.65,1.45,190,0.66)
+        call HomuraFxAt("Others\\WindNewFaw4.mdx",hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+30.,120.,2.18,0.62,172,96,241,146)
+        call HomuraWitchBurst("Iori\\Iori (50).mdx","death",hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+82.,0.,2.65,1.45,190,0.66)
     endif
     if hdrTick==30 then
-        call HomuraWitchFx("WitchVoidBloom",null,LoadReal(h,hdrId,1),LoadReal(h,hdrId,2),GetTerrainHeightAt(LoadReal(h,hdrId,1),LoadReal(h,hdrId,2))+68.,0.,2.65,0.42)
-        call HomuraWitchBurst("Iori\\fire-boom-new-zisepurple.mdx","death",LoadReal(h,hdrId,1),LoadReal(h,hdrId,2),GetTerrainHeightAt(LoadReal(h,hdrId,1),LoadReal(h,hdrId,2))+52.,0.,4.35,1.55,235,1.12)
-        call HomuraWitchBurst("Iori\\[A]TohkaExp.mdx","birth",LoadReal(h,hdrId,1),LoadReal(h,hdrId,2),GetTerrainHeightAt(LoadReal(h,hdrId,1),LoadReal(h,hdrId,2))+165.,0.,3.55,1.38,190,0.58)
+        call HomuraWitchFx("WitchVoidBloom",null,hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+68.,0.,2.65,0.42)
+        call HomuraWitchBurst("Iori\\fire-boom-new-zisepurple.mdx","death",hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+52.,0.,4.35,1.55,235,1.12)
+        call HomuraWitchBurst("Iori\\[A]TohkaExp.mdx","birth",hdrX,hdrY,GetTerrainHeightAt(hdrX,hdrY)+165.,0.,3.55,1.38,190,0.58)
     endif
 endif
 if hdrTick>=30 then
@@ -303061,7 +303065,7 @@ endfunction
 function Guy_Dmg takes unit caster,unit whom,real dmg,damagetype dt returns nothing
 local boolean held=LoadBoolean(HH,GetHandleId(whom),StringHash("GuyHeld"))
 local boolean gst=held and GetUnitAbilityLevel(caster,'GST4')==0
-if held then
+if held and not (LoadBoolean(HH,GetHandleId(whom),StringHash("GuyTargetWasInvulnerable")) and HeroHasShield(whom)) then
 call SetUnitInvulnerable(whom,false)
 endif
 if gst then
@@ -303117,27 +303121,111 @@ call SetWidgetLife(caster,RMaxBJ(GetWidgetLife(caster)-dmg*0.1,1.))
 endfunction
 
 // Гай на паузе и неуязвим (правило карты: пауза = неуязвимость) / отпущен
-function Guy_Hold takes unit caster,boolean on returns nothing
-call MapPauseUnit(caster,on)
-call SetUnitInvulnerable(caster,on)
-call SetUnitPathing(caster,not on)
-if not on then
-call Guy_Fly(caster,0.,0.)
-call SetUnitTimeScale(caster,1.)
-call ResetUnitAnimation(caster)
-endif
+function Guy_EndCasterHold takes unit guyProtectedUnit returns nothing
+    local integer guyProtectionId=GetHandleId(guyProtectedUnit)
+    if LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterHold")) then
+        call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterHold"))
+        call MapPauseUnit(guyProtectedUnit,LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterWasPaused")))
+        if LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterInvulnerable")) then
+            call SetUnitInvulnerable(guyProtectedUnit,LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterWasInvulnerable")))
+        endif
+        call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterInvulnerable"))
+        call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterWasPaused"))
+        call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterWasInvulnerable"))
+        call SetUnitPathing(guyProtectedUnit,true)
+        call Guy_Fly(guyProtectedUnit,0.,0.)
+        call SetUnitTimeScale(guyProtectedUnit,1.)
+        call ResetUnitAnimation(guyProtectedUnit)
+    endif
 endfunction
 
 // guy_hold552: отпустить пойманного (только если держал Гай - чужой инвул/паузу не снимаем)
 function Guy_Release takes unit whom returns nothing
 local integer tid=GetHandleId(whom)
 if LoadBoolean(HH,tid,StringHash("GuyHeld")) then
-call SaveBoolean(HH,tid,StringHash("GuyHeld"),false)
-call MapPauseUnit(whom,false)
-call SetUnitInvulnerable(whom,false)
+call RemoveSavedBoolean(HH,tid,StringHash("GuyHeld"))
+call MapPauseUnit(whom,LoadBoolean(HH,tid,StringHash("GuyTargetWasPaused")))
+call SetUnitInvulnerable(whom,LoadBoolean(HH,tid,StringHash("GuyTargetWasInvulnerable")) and HeroHasShield(whom))
+call RemoveSavedBoolean(HH,tid,StringHash("GuyTargetWasPaused"))
+call RemoveSavedBoolean(HH,tid,StringHash("GuyTargetWasInvulnerable"))
 endif
 endfunction
 // страховка: скилл оборвался, а враг ещё в руках этого захвата (номер захвата совпал) - отпустить
+function Guy_ProtectionTick takes nothing returns nothing
+    local timer guyProtectionTimer=GetExpiredTimer()
+    local integer guyProtectionTimerId=GetHandleId(guyProtectionTimer)
+    local unit guyProtectedUnit=LoadUnitHandle(h,guyProtectionTimerId,0)
+    local integer guyProtectionId=GetHandleId(guyProtectedUnit)
+    local boolean guyTargetHeld=LoadBoolean(HH,guyProtectionId,StringHash("GuyHeld"))
+    local boolean guyCasterHeld=LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterHold"))
+    if not udg_B or round!=LoadInteger(h,guyProtectionTimerId,1) or not UnitIsAlive(guyProtectedUnit) then
+        if GetUnitTypeId(guyProtectedUnit)!=0 then
+            if guyTargetHeld then
+                call Guy_Release(guyProtectedUnit)
+                call SaveBoolean(HH,guyProtectionId,TARGET_ABILITY,false)
+            endif
+            call Guy_EndCasterHold(guyProtectedUnit)
+        endif
+        set guyTargetHeld=false
+        set guyCasterHeld=false
+    endif
+    if guyTargetHeld or guyCasterHeld then
+        if not IsUnitPaused(guyProtectedUnit) then
+            call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyTargetWasPaused"))
+            call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterWasPaused"))
+            call MapPauseUnit(guyProtectedUnit,true)
+        endif
+        if (guyTargetHeld or LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterInvulnerable"))) and not IsUnitInvulnerable(guyProtectedUnit) then
+            call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyTargetWasInvulnerable"))
+            call RemoveSavedBoolean(HH,guyProtectionId,StringHash("GuyCasterWasInvulnerable"))
+            call SetUnitInvulnerable(guyProtectedUnit,true)
+        endif
+    else
+        call RemoveSavedHandle(HH,guyProtectionId,StringHash("GuyProtectionTimer"))
+        call FlushChildHashtable(h,guyProtectionTimerId)
+        call DestroyTimer(guyProtectionTimer)
+    endif
+    set guyProtectedUnit=null
+    set guyProtectionTimer=null
+endfunction
+
+function Guy_WatchProtection takes unit guyProtectedUnit returns nothing
+    local integer guyProtectionId=GetHandleId(guyProtectedUnit)
+    local timer guyProtectionTimer
+    if LoadTimerHandle(HH,guyProtectionId,StringHash("GuyProtectionTimer"))==null then
+        set guyProtectionTimer=CreateTimer()
+        call SaveTimerHandle(HH,guyProtectionId,StringHash("GuyProtectionTimer"),guyProtectionTimer)
+        call SaveUnitHandle(h,GetHandleId(guyProtectionTimer),0,guyProtectedUnit)
+        call SaveInteger(h,GetHandleId(guyProtectionTimer),1,round)
+        call TimerStart(guyProtectionTimer,0.03,true,function Guy_ProtectionTick)
+        set guyProtectionTimer=null
+    endif
+endfunction
+
+function Guy_BeginCasterHold takes unit guyProtectedUnit,boolean guyGainsInvulnerability returns nothing
+    local integer guyProtectionId=GetHandleId(guyProtectedUnit)
+    if not LoadBoolean(HH,guyProtectionId,StringHash("GuyCasterHold")) then
+        call SaveBoolean(HH,guyProtectionId,StringHash("GuyCasterWasPaused"),IsUnitPaused(guyProtectedUnit))
+        call SaveBoolean(HH,guyProtectionId,StringHash("GuyCasterWasInvulnerable"),IsUnitInvulnerable(guyProtectedUnit))
+    endif
+    call SaveBoolean(HH,guyProtectionId,StringHash("GuyCasterHold"),true)
+    call SaveBoolean(HH,guyProtectionId,StringHash("GuyCasterInvulnerable"),guyGainsInvulnerability)
+    call MapPauseUnit(guyProtectedUnit,true)
+    if guyGainsInvulnerability then
+        call SetUnitInvulnerable(guyProtectedUnit,true)
+    endif
+    call SetUnitPathing(guyProtectedUnit,false)
+    call Guy_WatchProtection(guyProtectedUnit)
+endfunction
+
+function Guy_Hold takes unit caster,boolean on returns nothing
+    if on then
+        call Guy_BeginCasterHold(caster,true)
+    else
+        call Guy_EndCasterHold(caster)
+    endif
+endfunction
+
 function Guy_GrabSafe takes nothing returns nothing
 local timer t=GetExpiredTimer()
 local unit whom=LoadUnitHandle(HH,GetHandleId(t),1)
@@ -303152,17 +303240,22 @@ set t=null
 endfunction
 // враг в руках комбо: пауза + инвул (guy_hold552; было оглушение), метка TARGET_ABILITY (чужие длительности на нём
 // замирают); dur - сколько держим (страховка отпустит через dur+1); отпущен - на землю
-function Guy_Grab takes unit caster,unit target,real dur,boolean on returns nothing
+function Guy_SetGrab takes unit caster,unit target,real dur,boolean on,boolean guyGrabThroughShield returns nothing
 local integer tid=GetHandleId(target)
 local timer t
 call SaveBoolean(HH,tid,TARGET_ABILITY,on)
 if on then
 call UnitAddAbility(target,'Amrf')
 call UnitRemoveAbility(target,'Amrf')
-if LoadBoolean(HH,tid,StringHash("GuyHeld")) or (not IsUnitInvulnerable(target) and not IsUnitPaused(target)) then
+if LoadBoolean(HH,tid,StringHash("GuyHeld")) or (not IsUnitInvulnerable(target) and not IsUnitPaused(target)) or (guyGrabThroughShield and Guy_Gate(caster)==8 and HeroHasShield(target)) then
+if not LoadBoolean(HH,tid,StringHash("GuyHeld")) then
+call SaveBoolean(HH,tid,StringHash("GuyTargetWasPaused"),IsUnitPaused(target))
+call SaveBoolean(HH,tid,StringHash("GuyTargetWasInvulnerable"),IsUnitInvulnerable(target))
+endif
 call SaveBoolean(HH,tid,StringHash("GuyHeld"),true)
 call MapPauseUnit(target,true)
 call SetUnitInvulnerable(target,true)
+call Guy_WatchProtection(target)
 call SaveInteger(HH,tid,StringHash("GuyHeldN"),LoadInteger(HH,tid,StringHash("GuyHeldN"))+1)
 set t=CreateTimer()
 call SaveUnitHandle(HH,GetHandleId(t),1,target)
@@ -303176,6 +303269,10 @@ else
 call Guy_Release(target)
 call Guy_Fly(target,GetUnitDefaultFlyHeight(target),0.)
 endif
+endfunction
+
+function Guy_Grab takes unit caster,unit target,real dur,boolean on returns nothing
+    call Guy_SetGrab(caster,target,dur,on,false)
 endfunction
 
 // БАЛАНС (владелец 1 нояб: «урон по балансу как у Эя (Райкаге)», «скейлинг всех кнопок на 5 уровней»): Q (2+ур)*СИЛ
@@ -303818,7 +303915,7 @@ elseif p>=1. then
 call SaveInteger(HH,id,8,1)
 call SaveReal(HH,id,6,time)
 call SaveInteger(HH,id,9,-1)
-call Guy_Grab(caster,target,2.3,true)
+call Guy_SetGrab(caster,target,2.3,true,true)
 call Guy_F_Proc(caster,target)
 // звук ударов (2.23 сек) — вместе с серией (отзыв 1 нояб: «звуки удара вместе с ударами, а не после»)
 call sound_play("Guy\\GuyW-sfx.mp3",127)
@@ -303950,7 +304047,7 @@ if ReverseIntercept(caster,n0) then
 call SaveBoolean(HH,id,GetHandleId(n0),true)
 else
 call GroupAddUnit(gr,n0)
-call Guy_Grab(caster,n0,2.8,true)
+call Guy_SetGrab(caster,n0,2.8,true,true)
 endif
 endif
 endloop
@@ -304293,9 +304390,8 @@ call AbilityCD(caster,'GyD2',TimerGetRemaining(tc))
 endif
 call SaveUnitHandle(HH,id,1,caster)
 call SaveReal(HH,id,3,facing)
-call Guy_Hold(caster,true)
+call Guy_BeginCasterHold(caster,false)
 // рывок 8 врат без неуязвимости (владелец 13 нояб: «D на 8 вратах убрать инвул»); пауза на 0.24 сек остаётся
-call SetUnitInvulnerable(caster,false)
 call SetUnitFacing(caster,facing)
 call SetUnitAnimationByIndex(caster,31)
 call SetUnitTimeScale(caster,2.)
@@ -305559,7 +305655,7 @@ set target=LoadUnitHandle(HH,id,40)
 if target!=null and not ReverseIntercept(caster,target) then
 call SaveUnitHandle(HH,id,2,target)
 call SaveReal(HH,id,3,Angle2(GetUnitX(target),GetUnitY(target),GetUnitX(caster),GetUnitY(caster)))
-call Guy_Grab(caster,target,3.4,true)
+call Guy_SetGrab(caster,target,3.4,true,true)
 endif
 call TSE_TimerStart(t,0.02,true,function Guy_G4_Act2)
 set target=null
