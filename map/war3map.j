@@ -83,7 +83,7 @@ real array BOT_PublicPingX
 real array BOT_PublicPingY
 integer array BOT_Type
 constant integer BOT_PoolCount=32
-constant integer HERO_ROSTER_LAST=149
+constant integer HERO_ROSTER_LAST=150
 integer array BOT_Pool
 integer array BOT_Buy
 integer array BOT_Spell
@@ -6732,6 +6732,9 @@ endfunction
             set time=time-time*(0.1+0.01*udg_kill[PId(OwnerOf(target))])
         endif
         
+        if GetUnitTypeId(target)=='HGai' and LoadInteger(HH,GetHandleId(target),StringHash("GuyGate"))>=5 then
+            set time=time*0.75
+        endif
         if GetUnitTypeId(target)=='HMaG' or GetUnitTypeId(target)=='HHDv' then   // Madoka Goddess
             set time=time*0.2
         endif
@@ -13697,6 +13700,7 @@ call SND_Add(5187,2,"Sound\\Iori\\Iori_Effect6.mp3",12700)
 call SND_Add(5189,2,"Sound\\Iori\\Iori_G_D.mp3",12700)
 call SND_Add(5191,2,"Voice\\Iori_Summon.mp3",12700)
 call SND_Add(5193,2,"Sound\\Homura\\Homura_Awakening_OST.mp3",3200)
+call SND_Add(5195,2,"Voice\\GuySummon.mp3",12700)
 endfunction
 function SND_ArrInit takes nothing returns nothing
 call ExecuteFunc("SND_Arr0")
@@ -15433,6 +15437,8 @@ endfunction
 function TavSwapInit takes nothing returns nothing
     // только Дезмастер (Эсканор вторых кнопок не имеет); остальных героев владелец не просил
     call TavSwapAdd('DMQ1','DMQ2')
+    call TavSwapAdd('GyQ1','GyQ2')
+    call TavSwapAdd('GyT1','GyT2')
 endfunction
 // показать в ячейке i способность id: иконка, стоимость по уровням, название, клавиша, описание
 function TavSwapShow takes integer i,integer id returns nothing
@@ -15464,7 +15470,7 @@ function Condition_AbilityString3 takes integer id returns boolean
 if HaveSavedInteger(HH,SH_TavSwap,id) then
 return true // 29 окт: вторые кнопки из таблицы TavSwapAdd
 endif
-return id=='HmD1' or id=='HdD1' or id=='HtF1' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='SuE1' or id=='SuF1' or id=='SuD1' or id=='SnE1' or id=='A0JA'
+return id=='GyE1' or id=='HmD1' or id=='HdD1' or id=='HtF1' or id=='OM13' or id=='A17D' or id=='A177' or id=='A172' or id=='A16U' or id=='A0TN'  or id=='MrF1' or id=='MrT1' or id=='MrG2' or id=='RsT1' or id=='RsF1' or id=='SiF1' or id=='SiF2' or id=='SiE1' or id=='SiE2' or id=='BbT1' or id=='FlW1' or id=='FlG1' or id=='RmQ1' or id=='SuE1' or id=='SuF1' or id=='SuD1' or id=='SnE1' or id=='A0JA'
 //A0J8 / A0JB / A0J9 — до 22 окт (v3: W / R / T меняются вместе с E2)
 endfunction
 function Condition_AbilityString2 takes integer id returns boolean
@@ -28425,6 +28431,8 @@ elseif id=='HHDv' then
 set l__s="HomuraDevilSummon.mp3"
 elseif id=='HIor' then
 set l__s="Iori_Summon.mp3"
+elseif id=='HGai' then
+set l__s="GuySummon.mp3"
 elseif id=='H02M' or id=='H12M' then
 set l__s="Aizen.mp3"
 elseif id=='HIc1' then
@@ -28959,6 +28967,7 @@ call SetPlayerAbilityAvailableBJ(false,'A0UD',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A0V7',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A10Z',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A1I8',PlayerVC(GetForLoopIndexA()))
+call SetPlayerAbilityAvailableBJ(false,'HdMb',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'GAE5',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A2HK',PlayerVC(GetForLoopIndexA()))
 call SetPlayerAbilityAvailableBJ(false,'A3IG',PlayerVC(GetForLoopIndexA()))
@@ -29354,6 +29363,7 @@ set udg_RH[146]='HDMa'//Dead Master (3.8.2, из Choice Random 5.3)
 set udg_RH[147]='HHit'
 set udg_RH[148]='HHom'
 set udg_RH[149]='HIor'
+set udg_RH[150]='HGai'
 //Hit — на тест (30 окт)
 //Hit1end
 loop
@@ -29518,6 +29528,7 @@ set udg_RH2[146]="Dead Master"
 set udg_RH2[147]="Hit"
 set udg_RH2[148]="Homura Akemi"
 set udg_RH2[149]="Iori Yagami"
+set udg_RH2[150]="Might Guy"
 call DestroyTrigger(GetTriggeringTrigger())
 endfunction
 function InitTrig_Init takes nothing returns nothing
@@ -33236,6 +33247,59 @@ call HomuraTavernButton(5,String2Id(dvPrefix+"G1"),"D")
 call HomuraTavernButton(6,String2Id(dvPrefix+"D1"),"G")
 call HomuraTavernButton(7,String2Id(dvPrefix+"F1"),"F")
 endfunction
+function GuyTavernGates takes nothing returns nothing
+    local string guyFIcon=GetFrameTexture(GetFrameByName("TavernAbility",7),0)
+    local string guyGIcon=GetFrameTexture(GetFrameByName("TavernAbility",6),0)
+    local integer guyGatePreview=0
+    local integer guyPreviewD='GyD1'
+    local integer guyPreviewF='GyF1'
+    local integer guyPreviewG='GyG1'
+    local integer guyPreviewLayer=0
+    local framehandle guyPreviewE=GetFrameByName("TavernAbility",2)
+    if guyFIcon==GetAbilityBaseStringFieldById('GyF1',ABILITY_SF_ICON_NORMAL) then
+        set guyGatePreview=1
+        set guyPreviewF='GyF2'
+    elseif guyFIcon==GetAbilityBaseStringFieldById('GyF2',ABILITY_SF_ICON_NORMAL) then
+        if guyGIcon==GetAbilityBaseStringFieldById('GyG1',ABILITY_SF_ICON_NORMAL) then
+            set guyGatePreview=3
+            set guyPreviewF='GyF2'
+        else
+            set guyGatePreview=6
+            set guyPreviewF='GyF3'
+        endif
+        set guyPreviewG='GyG2'
+    elseif guyFIcon==GetAbilityBaseStringFieldById('GyF3',ABILITY_SF_ICON_NORMAL) then
+        if guyGIcon==GetAbilityBaseStringFieldById('GyG2',ABILITY_SF_ICON_NORMAL) then
+            set guyGatePreview=7
+            set guyPreviewF='GyF3'
+            set guyPreviewG='GyG3'
+        else
+            set guyGatePreview=8
+            set guyPreviewD='GyD2'
+            set guyPreviewF='GyF4'
+            set guyPreviewG='GyG4'
+        endif
+    endif
+    call TavSwapShow(2,'GyE1')
+    call TavSwapShow(5,guyPreviewD)
+    call TavSwapShow(6,guyPreviewG)
+    call TavSwapShow(7,guyPreviewF)
+    if guyGatePreview>=6 then
+        loop
+            exitwhen guyPreviewLayer>2
+            call SetFrameTexture(guyPreviewE,"ReplaceableTextures\\CommandButtons\\BTNGuyE"+I2S(guyGatePreview)+".blp",guyPreviewLayer,true)
+            set guyPreviewLayer=guyPreviewLayer+1
+        endloop
+    endif
+    if guyGatePreview>0 then
+        call AddFrameText(GetFrameByName("TavernAbilityTooltipText",2),"\n\n"+Lng("Открыто врат: ","Open gates: ")+I2S(guyGatePreview))
+        call SetFrameSize(GetFrameByName("TavernAbilityTooltip",2),.26,GetFrameHeight(GetFrameByName("TavernAbilityTooltipText",2))+.03)
+    endif
+    call ShowFrame(GetFrameByName("TavernAbilityBorderOpenable",2),true)
+    set guyPreviewE=null
+endfunction
+
+
 function OnButtonAddonAbility takes nothing returns nothing
     local player p = TrigP()
     local integer pHid = PH( p )
@@ -33252,6 +33316,12 @@ function OnButtonAddonAbility takes nothing returns nothing
         return
     endif
     if p==GetLocalPlayer() then
+        if GetFrameContext(but)==2 and (GetFrameTexture(but,0)==GetAbilityBaseStringFieldById('GyE1',ABILITY_SF_ICON_NORMAL) or GetFrameTexture(but,0)=="ReplaceableTextures\\CommandButtons\\BTNGuyE6.blp" or GetFrameTexture(but,0)=="ReplaceableTextures\\CommandButtons\\BTNGuyE7.blp" or GetFrameTexture(but,0)=="ReplaceableTextures\\CommandButtons\\BTNGuyE8.blp") then
+            call GuyTavernGates()
+            set p=null
+            set but=null
+            return
+        endif
         loop
         exitwhen i>=40
         
@@ -41424,8 +41494,8 @@ call TSE_TimerStart(udg_TimerRandom,90.0,false,null) //Start
 set udg_TB=CreateTimerDialog(udg_Timer)
 call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
 call TimerDialogDisplay(udg_TB,true)
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
 // call AddFrameText(TavernChat,"Паузы уменьшают урон на 50%, красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes")
 set randcond=true
 if SDMode then
@@ -41532,8 +41602,8 @@ call TSE_TimerStart(udg_Timer,100.0,false,null)
 set udg_TB=CreateTimerDialog(udg_Timer)
 call LANG_TdTitle(udg_TB,"До начала раунда осталось:","Until the start of the round left:")
 call TimerDialogDisplay(udg_TB,true)
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes","The red player can turn on / off the reduction between rounds with the command -PauseRes"))
 // call AddFrameText(TavernChat,"Паузы уменьшают урон на 50%, красный игрок между раундами может вкл/выкл уменьшение командой -PauseRes")
 elseif bu==udg_Button[3] then
     set CPTModeON=true
@@ -41976,6 +42046,7 @@ call TavRole_Set('HDMa',81)
 call TavRole_Set('HHit',22)
 call TavRole_Set('HHom',273)
 call TavRole_Set('HIor',6)
+call TavRole_Set('HGai',4)
 endfunction
 //TAVROLE_DATA_END
 function TavRole_Name takes integer trB returns string
@@ -51463,6 +51534,10 @@ if cmb!=true then
         call IH('HHit',u,"ReplaceableTextures\\CommandButtons\\BTNHitHero.blp")
         call IH('HHom',u,"ReplaceableTextures\\CommandButtons\\BTNHomura.blp")
         call IH('HIor',u,"ReplaceableTextures\\CommandButtons\\BTNIoriIcon.blp")
+        call IH('HGai',u,"ReplaceableTextures\\CommandButtons\\BTNGuyHero.blp")
+        if GetUnitTypeId(u)=='HGai' then
+            call ExecuteFunc("Guy_Preload")
+        endif
         call IH('HHDv',u,"ReplaceableTextures\\CommandButtons\\BTNDevilHomura.blp")
 //Shinji1end
 //Escanor1start
@@ -58662,12 +58737,12 @@ function HomuraBlastFx takes unit hvSource,real hvX,real hvY,real hvZ,real hvYaw
     elseif hvKind==2 then
         call HomuraBurstLayer("Homura\\HomuraGrenadeBurst.mdx",hvX,hvY,hvZ+10.,hvYaw,0.,0.91,1.55,220,0.74,0.28)
     elseif hvKind==5 then
-        call HomuraWitchBurst("war3mapImported\\SolarFlare.mdx","birth",hvX,hvY,hvZ+68.,hvYaw,1.8,1.8,224,0.47)
+        call HomuraWitchBurst("war3mapImported\\SolarFlare.mdx","birth",hvX,hvY,hvZ+68.,hvYaw,2.65,1.55,240,0.58)
         call HomuraBurstLayer("Minato-37.mdx",hvX,hvY,hvZ+35.,hvYaw,0.,0.85,2.3,205,0.24,0.1)
-        call HomuraWitchBurst("CirclePulse_White.mdx","stand",hvX,hvY,hvZ+8.,hvYaw,hvRadius/125.,2.6,135,0.31)
+        call HomuraWitchBurst("CirclePulse_White.mdx","stand",hvX,hvY,hvZ+8.,hvYaw,hvRadius/100.,2.55,195,0.4)
     elseif hvKind==3 then
         call HomuraBurstLayer("Homura\\HomuraHeavyBurst.mdx",hvX,hvY,hvZ+12.,hvYaw,0.,1.85,1.2,225,1.65,0.35)
-        call HomuraWitchBurst("ExplosionBig1.mdx","birth",hvX,hvY,hvZ+24.,hvYaw,1.18,2.65,185,0.63)
+        call HomuraWitchBurst("Others\\[A]Boom.mdx","birth",hvX,hvY,hvZ+24.,hvYaw,1.10,2.35,200,0.63)
         call HomuraWitchBurst("DustWaveAnimate.mdx","birth",hvX,hvY,hvZ+7.,hvYaw,1.55,1.65,104,0.68)
     else
         call HomuraWitchBurst("Homura\\HomuraBarrageBurst.mdx","birth",hvX,hvY,hvZ+10.,hvYaw,3.48,1.72,220,0.52)
@@ -59109,11 +59184,11 @@ return 'HmN0'
 elseif homuraQMode==4 then
 return 'HmA0'
 endif
-return 'HmQ1'
+return 'HmS0'
 endfunction
 
 function HomuraIsQ takes integer homuraQSpell returns boolean
-return homuraQSpell=='HmQ1' or homuraQSpell=='HmP0' or homuraQSpell=='HmB0' or homuraQSpell=='HmN0' or homuraQSpell=='HmA0'
+return homuraQSpell=='HmQ1' or homuraQSpell=='HmS0' or homuraQSpell=='HmP0' or homuraQSpell=='HmB0' or homuraQSpell=='HmN0' or homuraQSpell=='HmA0'
 endfunction
 
 function HomuraRefreshFormRange takes unit dvRangeUnit returns nothing
@@ -59130,15 +59205,22 @@ endif
 endif
 set dvRecall=null
 endfunction
+function HomuraShowReturnButton takes unit homuraButtonUnit,integer homuraButtonId,boolean homuraButtonVisible returns nothing
+    local ability homuraReturnButton=GetUnitAbility(homuraButtonUnit,homuraButtonId)
+    if homuraReturnButton!=null then
+        call ShowAbility(homuraReturnButton,homuraButtonVisible)
+    endif
+    set homuraReturnButton=null
+endfunction
+
 function HomuraButtonLayout takes unit hblUnit returns nothing
 local boolean hblDevil=GetUnitTypeId(hblUnit)=='HHDv'
-local string hblPrefix="Hm"
 local string hblIds="QWERGFDT"
-local string hblKeys="QWERDFGT"
 local integer hblI=0
 local integer hblRaw
-local integer hblX
-local integer hblY
+local integer hblKey=GetHandleId(hblUnit)
+local boolean hblRecallPending=LoadTimerHandle(HH,hblKey,StringHash("HomuraRecall"))!=null
+local boolean hblStepPending=hblDevil and LoadTimerHandle(HH,hblKey,StringHash("HdStep"))!=null
 local integer hblPoints=GetHeroSkillPoints(hblUnit)
 local integer hblSaved=LoadInteger(HH,GetHandleId(hblUnit),StringHash("HomuraStoredPoints"))
 local ability hblAbility=GetUnitAbility(hblUnit,'AHer')
@@ -59146,7 +59228,6 @@ if hblAbility!=null and IsAbilityVisible(hblAbility)==hblDevil then
 call ShowAbility(hblAbility,not hblDevil)
 endif
 if hblDevil then
-set hblPrefix="Hd"
 if hblPoints>0 then
 if UnitModifySkillPoints(hblUnit,-hblPoints) then
 call SaveInteger(HH,GetHandleId(hblUnit),StringHash("HomuraStoredPoints"),hblSaved+hblPoints)
@@ -59157,31 +59238,55 @@ if UnitModifySkillPoints(hblUnit,hblSaved) then
 call RemoveSavedInteger(HH,GetHandleId(hblUnit),StringHash("HomuraStoredPoints"))
 endif
 endif
-loop
-exitwhen hblI>=8
 if hblDevil then
-if GetUnitAbilityLevel(hblUnit,String2Id("Hm"+SubString(hblIds,hblI,hblI+1)+"1"))>0 then
-call UnitRemoveAbility(hblUnit,String2Id("Hm"+SubString(hblIds,hblI,hblI+1)+"1"))
+    loop
+        exitwhen hblI>=8
+        set hblRaw=String2Id("Hm"+SubString(hblIds,hblI,hblI+1)+"1")
+        if hblRaw!='HmD1' and GetUnitAbilityLevel(hblUnit,hblRaw)>0 then
+            call UnitRemoveAbility(hblUnit,hblRaw)
+        endif
+        set hblI=hblI+1
+    endloop
 endif
-endif
-set hblRaw=String2Id(hblPrefix+SubString(hblIds,hblI,hblI+1)+"1")
-if hblI==0 and not hblDevil and LoadInteger(HH,GetHandleId(hblUnit),StringHash("HomuraQFront"))!=0 then
-set hblRaw=LoadInteger(HH,GetHandleId(hblUnit),StringHash("HomuraQFront"))
-elseif hblI==5 and LoadTimerHandle(HH,GetHandleId(hblUnit),StringHash("HomuraRecall"))!=null then
-set hblRaw='HmF2'
-elseif hblI==6 and GetUnitAbilityLevel(hblUnit,'HmV1')>0 then
-set hblRaw='HmV1'
-endif
-set hblAbility=GetUnitAbility(hblUnit,hblRaw)
-if hblAbility!=null then
-set hblX=ModuloInteger(hblI,4)
-set hblY=R2I(I2R(hblI)/4.)
-// Keep native positions and configured hotkeys from the ability object data.
-endif
-set hblI=hblI+1
-endloop
+call HomuraShowReturnButton(hblUnit,'HmF1',not hblDevil and not hblRecallPending)
+call HomuraShowReturnButton(hblUnit,'HdF1',hblDevil and not hblRecallPending)
+call HomuraShowReturnButton(hblUnit,'HmF2',hblRecallPending)
+call HomuraShowReturnButton(hblUnit,'HdG1',hblDevil and not hblStepPending)
+call HomuraShowReturnButton(hblUnit,'HdG2',hblStepPending)
 set hblAbility=null
 endfunction
+function HomuraRecallClear takes timer homuraRecallTimer returns nothing
+    local integer homuraRecallId=GetHandleId(homuraRecallTimer)
+    local unit homuraRecallCaster=LoadUnitHandle(h,homuraRecallId,0)
+    local integer homuraRecallKey=GetHandleId(homuraRecallCaster)
+    local effect homuraRecallFx=LoadEffectHandle(h,homuraRecallId,4)
+    local effect homuraRecallClock=LoadEffectHandle(h,homuraRecallId,5)
+    local ability homuraRecallOriginal=GetUnitAbility(homuraRecallCaster,LoadInteger(h,homuraRecallId,9))
+    if LoadTimerHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))==homuraRecallTimer then
+        call RemoveSavedHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))
+        if homuraRecallOriginal!=null then
+            call SetAbilityRemainingCooldown(homuraRecallOriginal,0.)
+        endif
+        call HomuraButtonLayout(homuraRecallCaster)
+    endif
+    if homuraRecallFx!=null then
+        if not LoadBoolean(h,homuraRecallId,8) then
+            call SetSpecialEffectVisible(homuraRecallFx,false)
+        endif
+        call DestroyEffect(homuraRecallFx)
+    endif
+    if homuraRecallClock!=null then
+        call SetSpecialEffectVisible(homuraRecallClock,false)
+        call DestroyEffect(homuraRecallClock)
+    endif
+    set homuraRecallOriginal=null
+    set homuraRecallClock=null
+    call FlushChildHashtable(h,homuraRecallId)
+    call TSE_DestroyTimer(homuraRecallTimer)
+    set homuraRecallFx=null
+    set homuraRecallCaster=null
+endfunction
+
 function HomuraRefreshFormIcons takes unit homuraIconUnit returns nothing
 local string homuraIconLetters="QWERTGDF"
 local string homuraIconLetter
@@ -59295,7 +59400,7 @@ local integer homuraPrevious=LoadInteger(HH,GetHandleId(homuraMover),StringHash(
 local ability homuraOld
 local ability homuraNew
 local real homuraLeft
-local integer homuraScan=1
+local integer homuraScan=0
 local integer homuraScanId
 local ability homuraHiddenQ
 call HomuraRefreshFormRange(homuraMover)
@@ -59309,14 +59414,21 @@ set homuraLeft=GetAbilityRemainingCooldown(homuraQ)
 if homuraOld!=null then
 set homuraLeft=RMaxBJ(homuraLeft,GetAbilityRemainingCooldown(homuraOld))
 endif
-if homuraFront!='HmQ1' and GetUnitAbility(homuraMover,homuraFront)==null then
+if GetUnitAbility(homuraMover,homuraFront)==null then
 call UnitAddAbility(homuraMover,homuraFront)
 endif
 set homuraNew=GetUnitAbility(homuraMover,homuraFront)
 if homuraNew==null then
     set homuraMode=0
-    set homuraFront='HmQ1'
-    set homuraNew=homuraQ
+    set homuraFront='HmS0'
+    if GetUnitAbilityLevel(homuraMover,homuraFront)==0 then
+        call UnitAddAbility(homuraMover,homuraFront)
+    endif
+    set homuraNew=GetUnitAbility(homuraMover,homuraFront)
+    if homuraNew==null then
+        set homuraFront='HmQ1'
+        set homuraNew=homuraQ
+    endif
     call HomuraApplyWeapon(homuraMover,homuraMode)
 endif
 if homuraFront!=homuraPrevious or GetUnitAbilityLevel(homuraMover,homuraFront)!=homuraRank then
@@ -59324,6 +59436,7 @@ call SetUnitAbilityLevel(homuraMover,homuraFront,homuraRank)
 call SetAbilityRemainingCooldown(homuraNew,homuraLeft)
 call SetAbilityRemainingCooldown(homuraQ,homuraLeft)
 endif
+call ShowAbility(homuraNew,true)
 loop
 exitwhen homuraScan>4
 set homuraScanId=HomuraQModeId(homuraScan)
@@ -59334,7 +59447,6 @@ endif
 set homuraScan=homuraScan+1
 endloop
 call ShowAbility(homuraQ,homuraFront=='HmQ1')
-call ShowAbility(homuraNew,true)
 call SaveInteger(HH,GetHandleId(homuraMover),StringHash("HomuraQFront"),homuraFront)
 if homuraFront=='HmQ1' then
 call SetAbilityStringField(homuraQ,ABILITY_SF_ICON_NORMAL,GetAbilityBaseStringFieldById('HmS0',ABILITY_SF_ICON_NORMAL))
@@ -59364,19 +59476,24 @@ endfunction
 function HomuraDevilStepClear takes unit hdsOwner returns nothing
     local integer hdsOwnerKey=GetHandleId(hdsOwner)
     local timer hdsWindow=LoadTimerHandle(HH,hdsOwnerKey,StringHash("HdStep"))
-    local ability hdsBlink
     if hdsWindow!=null then
         call RemoveSavedHandle(HH,hdsOwnerKey,StringHash("HdStep"))
         call FlushChildHashtable(h,GetHandleId(hdsWindow))
         call TSE_DestroyTimer(hdsWindow)
     endif
-    call UnitRemoveAbility(hdsOwner,'HdG2')
-    set hdsBlink=GetUnitAbility(hdsOwner,'HdG1')
-    if hdsBlink!=null then
-        call ShowAbility(hdsBlink,true)
-    endif
+    call HomuraButtonLayout(hdsOwner)
     set hdsWindow=null
-    set hdsBlink=null
+endfunction
+
+function HomuraRemoveFormRegen takes unit homuraUnit returns nothing
+    local buff homuraManaAura
+    call UnitRemoveAbility(homuraUnit,'HdHr')
+    call UnitRemoveAbility(homuraUnit,'HdMb')
+    set homuraManaAura=GetUnitBuff(homuraUnit,'BHMr')
+    if homuraManaAura!=null then
+        call RemoveBuff(homuraManaAura)
+    endif
+    set homuraManaAura=null
 endfunction
 
 function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType returns nothing
@@ -59387,6 +59504,7 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     local integer homuraFormPoints=0
     local integer homuraFormIndex=0
     local integer array homuraFormIds
+    local integer array homuraDevilIds
     local integer array homuraFormLevels
     local real array homuraFormCooldowns
     local real homuraFormHP
@@ -59395,10 +59513,8 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     local integer homuraFormMaxHP=R2I(GetUnitMaxLife(homuraFormUnit))
     local integer homuraFormMaxMP=R2I(GetUnitMaxMana(homuraFormUnit))
     local real homuraFormArmour=GetUnitArmour(homuraFormUnit)
-    local real homuraFormHPRegen=GetUnitLifeRegen(homuraFormUnit)
     local integer homuraFormBonus=0
     local boolean homuraFormDevil=homuraFormType=='HHDv'
-    local integer homuraFormMorph='HmM2'
     local integer homuraFormAlternate
     local boolean homuraRevertPaused=not homuraFormDevil and IsUnitPaused(homuraFormUnit)
     local timer homuraFormRecall=LoadTimerHandle(HH,homuraFormKey,StringHash("HomuraRecall"))
@@ -59414,6 +59530,14 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     set homuraFormIds[5]='HmD1'
     set homuraFormIds[6]='HmF1'
     set homuraFormIds[7]='HmG1'
+    set homuraDevilIds[0]='HdQ1'
+    set homuraDevilIds[1]='HdW1'
+    set homuraDevilIds[2]='HdE1'
+    set homuraDevilIds[3]='HdR1'
+    set homuraDevilIds[4]='HdT1'
+    set homuraDevilIds[5]=0
+    set homuraDevilIds[6]='HdF1'
+    set homuraDevilIds[7]='HdG1'
     loop
         exitwhen homuraFormIndex>=8
         if homuraFormDevil then
@@ -59424,7 +59548,10 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
             endif
             call SaveInteger(HH,homuraFormKey,StringHash("HomuraNormalRank"+I2S(homuraFormIndex)),homuraFormLevels[homuraFormIndex])
         else
-            set homuraFormAbility=GetUnitAbility(homuraFormUnit,String2Id("Hd"+SubString("QWERTDFG",homuraFormIndex,homuraFormIndex+1)+"1"))
+            set homuraFormAbility=null
+            if homuraDevilIds[homuraFormIndex]!=0 then
+                set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraDevilIds[homuraFormIndex])
+            endif
             set homuraFormLevels[homuraFormIndex]=LoadInteger(HH,homuraFormKey,StringHash("HomuraNormalRank"+I2S(homuraFormIndex)))
         endif
         if homuraFormAbility!=null then
@@ -59437,7 +59564,6 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     set homuraFormMana=GetWidgetMana(homuraFormUnit)
     set homuraFormAttackLeft=GetUnitAttackRemainingCooldown(homuraFormUnit)
     if homuraFormDevil then
-        set homuraFormMorph='HmM1'
         set homuraFormPoints=GetHeroSkillPoints(homuraFormUnit)
         if homuraFormPoints>0 then
             if not UnitModifySkillPoints(homuraFormUnit,-homuraFormPoints) then
@@ -59448,13 +59574,11 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     if homuraRevertPaused then
         call MapPauseUnit(homuraFormUnit,false)
     endif
-    call UnitAddAbility(homuraFormUnit,homuraFormMorph)
-    set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraFormMorph)
-    if homuraFormAbility!=null then
-        call SetAbilityIntegerLevelField(homuraFormAbility,ABILITY_ILF_MANA_COST,0,0)
-        call IssueImmediateOrder(homuraFormUnit,"bearform")
-        call UnitRemoveAbility(homuraFormUnit,homuraFormMorph)
+    if homuraFormDevil and GetUnitAbilityLevel(homuraFormUnit,'HmD1')>0 then
+        call UnitMakeAbilityPermanent(homuraFormUnit,true,'HmD1')
     endif
+    // Keep both live resource states and their item bonuses during either morph.
+    call MorphUnitToTypeIdEx(homuraFormUnit,homuraFormType,0x502,false,false,2,2,true,false,null,true)
     if homuraRevertPaused then
         call MapPauseUnit(homuraFormUnit,true)
     endif
@@ -59469,6 +59593,7 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     endif
     if not homuraFormDevil then
         call HomuraDevilStepClear(homuraFormUnit)
+        call UnitRemoveAbility(homuraFormUnit,'HdG2')
     endif
     if homuraFormType=='HHDv' and homuraFormOld=='HHom' then
         set homuraFormBonus=1
@@ -59478,8 +59603,7 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     call SetUnitMaxLife(homuraFormUnit,homuraFormMaxHP+2000*homuraFormBonus)
     call SetUnitMaxMana(homuraFormUnit,homuraFormMaxMP+2000*homuraFormBonus)
     call SetUnitArmour(homuraFormUnit,homuraFormArmour+30.*homuraFormBonus)
-    call SetUnitLifeRegen(homuraFormUnit,homuraFormHPRegen+40.*homuraFormBonus)
-    call SetUnitRealField(homuraFormUnit,UNIT_RF_MANA_REGENERATION,GetUnitBaseRealFieldById(homuraFormType,UNIT_RF_MANA_REGENERATION))
+
     set homuraFormBaseDamage=homuraFormBaseDamage+200*homuraFormBonus
     call SetWidgetLife(homuraFormUnit,homuraFormHP)
     call SetWidgetMana(homuraFormUnit,homuraFormMana)
@@ -59488,22 +59612,35 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
     set homuraFormIndex=0
     loop
         exitwhen homuraFormIndex>=8
-        set homuraFormAlternate=String2Id("Hd"+SubString("QWERTDFG",homuraFormIndex,homuraFormIndex+1)+"1")
+        set homuraFormAlternate=homuraDevilIds[homuraFormIndex]
         if homuraFormIndex<5 then
             call SetPlayerAbilityAvailable(OwnerOf(homuraFormUnit),homuraFormIds[homuraFormIndex],not homuraFormDevil)
         endif
         if homuraFormDevil then
-            call UnitRemoveAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
-            if homuraFormIndex==7 then
-                call UnitRemoveAbility(homuraFormUnit,'HdD1')
+            if homuraFormIds[homuraFormIndex]=='HmD1' then
+                if GetUnitAbilityLevel(homuraFormUnit,'HmD1')>0 then
+                    call DisableUnitAbility2(homuraFormUnit,'HmD1',false,true)
+                    call ShowAbility(GetUnitAbility(homuraFormUnit,'HmD1'),false)
+                endif
             else
-                if GetUnitAbility(homuraFormUnit,homuraFormAlternate)==null then
+                call UnitRemoveAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
+            endif
+            if homuraFormAlternate!=0 then
+                if GetUnitAbilityLevel(homuraFormUnit,homuraFormAlternate)==0 then
                     call UnitAddAbility(homuraFormUnit,homuraFormAlternate)
                 endif
-                call SetAbilityRemainingCooldown(GetUnitAbility(homuraFormUnit,homuraFormAlternate),homuraFormCooldowns[homuraFormIndex])
+                set homuraFormAbility=GetUnitAbility(homuraFormUnit,homuraFormAlternate)
+                if homuraFormAbility!=null then
+                    call SetAbilityRemainingCooldown(homuraFormAbility,homuraFormCooldowns[homuraFormIndex])
+                endif
             endif
         else
-            call UnitRemoveAbility(homuraFormUnit,homuraFormAlternate)
+            if homuraFormAlternate!=0 then
+                call UnitRemoveAbility(homuraFormUnit,homuraFormAlternate)
+            endif
+            if homuraFormIndex==7 then
+                set homuraFormLevels[homuraFormIndex]=IMaxBJ(1,homuraFormLevels[homuraFormIndex])
+            endif
             if homuraFormLevels[homuraFormIndex]>0 then
                 if GetUnitAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])==null then
                     call UnitAddAbility(homuraFormUnit,homuraFormIds[homuraFormIndex])
@@ -59515,8 +59652,23 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
         endif
         set homuraFormIndex=homuraFormIndex+1
     endloop
+    call UnitRemoveAbility(homuraFormUnit,'HdD1')
     if homuraFormDevil then
-        set homuraFormIndex=1
+        set homuraFormAbility=GetUnitAbility(homuraFormUnit,'HdG1')
+    else
+        set homuraFormAbility=GetUnitAbility(homuraFormUnit,'HmG1')
+    endif
+    if homuraFormAbility!=null then
+        call ShowAbility(homuraFormAbility,true)
+    endif
+    if homuraFormDevil then
+        if GetUnitAbilityLevel(homuraFormUnit,'HdHr')==0 then
+            call UnitAddAbility(homuraFormUnit,'HdHr')
+        endif
+        if GetUnitAbilityLevel(homuraFormUnit,'HdMb')==0 then
+            call UnitAddAbility(homuraFormUnit,'HdMb')
+        endif
+        set homuraFormIndex=0
         loop
             exitwhen homuraFormIndex>4
             call UnitRemoveAbility(homuraFormUnit,HomuraQModeId(homuraFormIndex))
@@ -59544,9 +59696,11 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
         call SetWidgetPortrait(homuraFormUnit,"Homura\\HomuraWitch_Portrait.mdx")
         call IH('HHDv',homuraFormUnit,"ReplaceableTextures\\CommandButtons\\BTNDevilHomura.blp")
     else
+        call HomuraRemoveFormRegen(homuraFormUnit)
         call RemoveSavedBoolean(HH,homuraFormKey,StringHash("HomuraReturnPending"))
         call UnitRemoveAbility(homuraFormUnit,'HmV1')
         if GetUnitAbilityLevel(homuraFormUnit,'HmD1')>0 then
+            call UnitMakeAbilityPermanent(homuraFormUnit,false,'HmD1')
             call EnableUnitAbility(homuraFormUnit,'HmD1',true,true)
         endif
         call HomuraApplyWeapon(homuraFormUnit,homuraFormMode)
@@ -59558,13 +59712,10 @@ function HomuraChangeForm takes unit homuraFormUnit,integer homuraFormType retur
         if GetUnitAbilityLevel(homuraFormUnit,'HmF2')==0 then
             call UnitAddAbility(homuraFormUnit,'HmF2')
         endif
-        call EnableUnitAbility(homuraFormUnit,'HmF2',true,true)
         if homuraFormDevil then
             call SaveInteger(h,GetHandleId(homuraFormRecall),9,'HdF1')
-            call DisableUnitAbility(homuraFormUnit,'HdF1',true,true)
         else
             call SaveInteger(h,GetHandleId(homuraFormRecall),9,'HmF1')
-            call DisableUnitAbility(homuraFormUnit,'HmF1',true,true)
         endif
     endif
     if homuraFormPoints>0 then
@@ -59629,7 +59780,7 @@ function HomuraVowBind takes unit homuraKeeper,unit homuraVowAlly returns boolea
     call SetSpecialEffectScale(homuraVowMark,0.63)
     call SetSpecialEffectVertexColour(homuraVowMark,228,137,231,142)
     call SaveEffectHandle(HH,homuraVowKey,StringHash("HomuraVowMark"),homuraVowMark)
-    call StartAbilityCooldown(homuraVowButton,9999.)
+    call DisableAbility(homuraVowButton,false,true)
     set homuraVowButton=null
     set homuraVowMark=null
     return true
@@ -59690,33 +59841,52 @@ endfunction
 function HomuraVowSave takes unit homuraVowAlly returns boolean
     local integer homuraVowSlot=0
     local real homuraVowFraction=0.30
+    local boolean homuraVowIsMadoka=HomuraIsMadoka(homuraVowAlly)
+    local unit homuraVowProtector
     loop
         exitwhen homuraVowSlot>=10
-        if HomuraVowReady(Hero[homuraVowSlot],homuraVowAlly) then
-            if HomuraIsMadoka(homuraVowAlly) then
+        set homuraVowProtector=Hero[homuraVowSlot]
+        if homuraVowIsMadoka and GetUnitTypeId(homuraVowProtector)=='HHom' and HomuraVowTeammates(homuraVowProtector,homuraVowAlly) then
+            call HomuraVowBind(homuraVowProtector,homuraVowAlly)
+        endif
+        if HomuraVowReady(homuraVowProtector,homuraVowAlly) then
+            if homuraVowIsMadoka then
                 set homuraVowFraction=0.45
             endif
-            call SetEventDamage(0.)
-            call HomuraVowClear(Hero[homuraVowSlot])
+            call HomuraVowClear(homuraVowProtector)
             call SetWidgetLife(homuraVowAlly,GetWidgetMaxLife(homuraVowAlly)*homuraVowFraction)
             call HomuraFxAt("Homura\\HomuraTimeDial.mdx",GetUnitX(homuraVowAlly),GetUnitY(homuraVowAlly),GetUnitZ(homuraVowAlly)+12.,0.,1.23,0.55,238,132,211,188)
             call SaveReal(HH,GetHandleId(homuraVowAlly),StringHash("HomuraSaveUntil"),TimerGetElapsed(ShnClock)+1.)
             call HomuraWitchFx("WitchAegis",homuraVowAlly,GetUnitX(homuraVowAlly),GetUnitY(homuraVowAlly),GetUnitZ(homuraVowAlly)+8.,0.,1.65,1.)
-            if HomuraIsMadoka(homuraVowAlly) then
+            if homuraVowIsMadoka then
                 call StartSound(SndN(299))
             else
                 call StartSound(SndN(4999))
             endif
-            call HomuraUnlockDevil(Hero[homuraVowSlot])
+            call HomuraUnlockDevil(homuraVowProtector)
+            set homuraVowProtector=null
             return true
         endif
         set homuraVowSlot=homuraVowSlot+1
     endloop
+    set homuraVowProtector=null
     return false
+endfunction
+
+function HomuraVowDamageSave takes unit homuraVowTarget,real homuraVowDamage,boolean homuraVowEnemy returns boolean
+    if homuraVowDamage<=0. or homuraVowDamage<GetWidgetLife(homuraVowTarget)-0.405 or not udg_B or not DU or not DU2 or not homuraVowEnemy then
+        return false
+    endif
+    return HomuraVowSave(homuraVowTarget)
 endfunction
 
 function HomuraVowRoundReset takes unit homuraKeeper returns nothing
     local ability homuraVowAbility
+    local timer homuraRecallWindow=LoadTimerHandle(HH,GetHandleId(homuraKeeper),StringHash("HomuraRecall"))
+    if homuraRecallWindow!=null then
+        call HomuraRecallClear(homuraRecallWindow)
+    endif
+    set homuraRecallWindow=null
     call RemoveSavedInteger(HH,GetHandleId(homuraKeeper),StringHash("HomuraDevilReadyRound"))
     call RemoveSavedHandle(HH,GetHandleId(homuraKeeper),StringHash("HomuraTimePartner"))
     if GetUnitTypeId(homuraKeeper)=='HHDv' then
@@ -59726,6 +59896,7 @@ function HomuraVowRoundReset takes unit homuraKeeper returns nothing
         endif
     endif
     if GetUnitTypeId(homuraKeeper)=='HHom' then
+        call HomuraRemoveFormRegen(homuraKeeper)
         call HomuraVowClear(homuraKeeper)
         call UnitRemoveAbility(homuraKeeper,'HmV1')
         if GetUnitAbilityLevel(homuraKeeper,'HmD1')>0 then
@@ -60325,10 +60496,10 @@ endfunction
 function CastPauseRes takes nothing returns nothing
 if PauseRes==false then
 set PauseRes=true
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%."))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%."))
 else
 set PauseRes=false
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы не уменьшают урон на 50%","Pauses do not reduce damage by 50%"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы не уменьшают урон на 50%","Pauses do not reduce damage by 50%"))
 endif
 endfunction
 function CondNoduel takes nothing returns boolean
@@ -64413,7 +64584,10 @@ return
 endif
 set cbU=Hero[cbP]
 if HomuraIsQ(cbId) then
+set cbId=LoadInteger(HH,GetHandleId(cbU),StringHash("HomuraQFront"))
+if cbId==0 then
 set cbId=HomuraQModeId(LoadInteger(HH,GetHandleId(cbU),StringHash("HomuraWeapon")))
+endif
 endif
 set cbA=GetUnitAbility(cbU,cbId)
 // уровень 0 — способность не применить, а поля уровня -1 читают мусор (крит при спаме, 15 окт)
@@ -67376,6 +67550,9 @@ endif
 set DU=true
 loop
     exitwhen i>=10
+    if GetUnitTypeId(Hero[i])=='HHDv' and LoadBoolean(HH,GetHandleId(Hero[i]),StringHash("HomuraReturnPending")) then
+        call HomuraVowRoundReset(Hero[i])
+    endif
     if GetUnitTypeId(Hero[i])=='HHom' then
         call HomuraVowAuto(Hero[i])
     endif
@@ -67383,9 +67560,9 @@ loop
 endloop
 set i=0
 if PauseRes==true then
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%."))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы уменьшают урон на 50%","Pauses reduce damage by 50%."))
 else
-call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,true,Lng("Паузы не уменьшают урон на 50%","Pauses do not reduce damage by 50%"))
+call DisplayChatMessageEx(null,CHAT_RECIPIENT_UNKNOWN,10,false,Lng("Паузы не уменьшают урон на 50%","Pauses do not reduce damage by 50%"))
 endif
 call DisableTrigger(duels)
 call DisableTrigger(gg_trg_MoveToArena2)
@@ -69443,7 +69620,9 @@ function MadokaF2_Periodic takes nothing returns nothing
                         call UnitRemoveAbility(caster,'A0QL')
                         call UnitAddAbility(caster, 'MaF2')
                         call UnitAddAbility(caster, 'A0WR')
-                        call myCustomDamage(LoadUnitHandle(h, id, SH_Source) , caster , 999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+                        if not HomuraVowSave(caster) then
+                            call myCustomDamage(LoadUnitHandle(h, id, SH_Source) , caster , 999999 , false , false , null , DAMAGE_TYPE_UNKNOWN , null)
+                        endif
                         call UnitRemoveAbility(caster, 'MaF2')
                         call UnitRemoveAbility(caster, 'A0WR')
                         call SaveBoolean(HH,GetHandleId(caster),'mdf+',false)
@@ -73279,6 +73458,15 @@ set b = GetEventDamage()
 //local boolean fullrage=false
 //
 set nb=b
+if nb>0. and duid=='HGai' then
+    if LoadBoolean(HH,uid,StringHash("GuySpin")) then
+        set nb=nb*0.4
+    endif
+    if LoadInteger(HH,uid,StringHash("GuyGate"))>=4 then
+        set nb=nb*(1.+0.05*(LoadInteger(HH,uid,StringHash("GuyGate"))-3))
+    endif
+    set b=nb
+endif
 set nb2=nb
 set critcoef=1
 if GetUnitAbilityLevel(c,'Bwk1')>0 and nb>0 then
@@ -73545,16 +73733,20 @@ endif
 //endif
 //Shinji1end
 if nb>l and (duid=='H03T' or duid=='H03W' or duid=='H03S' or duid=='H03V' or duid=='H03U') and LoadBoolean(h,GetHandleId(Hero[idu]),SH_alive)==true then // скобки (12 окт): фейковая смерть путей Pain — только при смертельном уроне
-    call SetUnitInvulnerable(u,true)
-    call SetUnitState(u,UNIT_STATE_LIFE,1)
-    call UnitAddAbility(u,'A0QL')
-    call UnitAddAbility(u,'Aeth')
-    call MapPauseUnit(u,true)
-    call SetUnitAnimation(u,"Death")
-    set hn=CreateUnit(PlayerV(PLAYER_NEUTRAL_AGGRESSIVE),'h019',x,y,GetRandomReal(0,359))
-    call UnitAddAbility(hn,'A0VZ')
-    call IssueTargetOrder(hn,"magicleash",u)
-    set nb=0
+    if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+        set nb=0.
+    else
+        call SetUnitInvulnerable(u,true)
+        call SetUnitState(u,UNIT_STATE_LIFE,1)
+        call UnitAddAbility(u,'A0QL')
+        call UnitAddAbility(u,'Aeth')
+        call MapPauseUnit(u,true)
+        call SetUnitAnimation(u,"Death")
+        set hn=CreateUnit(PlayerV(PLAYER_NEUTRAL_AGGRESSIVE),'h019',x,y,GetRandomReal(0,359))
+        call UnitAddAbility(hn,'A0VZ')
+        call IssueTargetOrder(hn,"magicleash",u)
+        set nb=0
+    endif
 else
 if (not((GetUnitAbilityLevel(u,'A0IH')==0 and GetUnitAbilityLevel(c,'A0IH')==0) or (GetUnitAbilityLevel(u,'A0IH')>0 and GetUnitAbilityLevel(c,'A0IH')>0)) and GetUnitAbilityLevel(c,'Aloc')==0 and nb>0) or GetUnitAbilityLevel(u,'A295')>0 then
 //call SetEventDamage(0.05)
@@ -73827,23 +74019,31 @@ if cond==0 then
      //sabrac8start
 
             if nb>=GetUnitState(u,UNIT_STATE_LIFE) and duid=='HSaC' then
-              call SaveUnitHandle(HH,GetHandleId( u ),SH_SabracTKillU,Hero[idc])
-              //call SetEventDamage(0.05)
-              set nb=0
+                if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                    set nb=0.
+                else
+                  call SaveUnitHandle(HH,GetHandleId( u ),SH_SabracTKillU,Hero[idc])
+                  //call SetEventDamage(0.05)
+                  set nb=0
+                endif
             endif
 
             if GetUnitAbilityLevel( u ,'A18L')==0  and LoadBoolean(HH,GetHandleId( u ),SH_SabracFdie)==false and nb>=GetUnitState(u,UNIT_STATE_LIFE)and LoadUnitHandle(HH,GetHandleId(u),SH_SabracZoneU)!=null and SR(GetUnitX( u ),GetUnitY( u ),GetUnitX(LoadUnitHandle(HH,GetHandleId( u ),SH_SabracZoneU)),GetUnitY(LoadUnitHandle(HH,GetHandleId( u ),SH_SabracZoneU)))<1500 then
-                //call SetEventDamage(0.05)
-                call SetUnitTargetable(u, false)
-                call SaveUnitHandle(HH,GetHandleId( u ),SH_SabracFKillU,Hero[idc])
-                call SaveBoolean(HH,GetHandleId( u ),SH_SabracFdie,true)
-                call UnitRemoveAbility(u,'IHYs')
-                call UnitRemoveAbility(u, 'IHYb')
-                call UnitRemoveAbility(u, 'IOb3')
-                call UnitRemoveAbility(u, 'IO3b')
-                call SetUnitTargetable(u, false)
-                call SetUnitState(u,UNIT_STATE_LIFE,10000)
-                set nb=0
+                if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                    set nb=0.
+                else
+                    //call SetEventDamage(0.05)
+                    call SetUnitTargetable(u, false)
+                    call SaveUnitHandle(HH,GetHandleId( u ),SH_SabracFKillU,Hero[idc])
+                    call SaveBoolean(HH,GetHandleId( u ),SH_SabracFdie,true)
+                    call UnitRemoveAbility(u,'IHYs')
+                    call UnitRemoveAbility(u, 'IHYb')
+                    call UnitRemoveAbility(u, 'IOb3')
+                    call UnitRemoveAbility(u, 'IO3b')
+                    call SetUnitTargetable(u, false)
+                    call SetUnitState(u,UNIT_STATE_LIFE,10000)
+                    set nb=0
+                endif
             endif
 
 
@@ -74018,16 +74218,20 @@ if cond==0 then
                 
         //danzo suicide 
         if  duid=='HDSN'  and nb>GetUnitState( u ,UNIT_STATE_LIFE) and nb>0 and GetHeroLevel(u)>=25 then //and LoadBoolean(H,GetHandleId(target),StringHash("DanzoFpassive"))==false
-            call SetUnitTargetable(u, false)
-            call newBlockDamage( u )
-            call UnitRemoveAbility(u,'IHYs')
-            call UnitRemoveAbility(u, 'IHYb')
-            call UnitRemoveAbility(u, 'IOb3')
-            call UnitRemoveAbility(u, 'IO3b')
-            call DanzoFPassive(u,Hero[idc])
-            //SaveBoolean(H,GetHandleId(target),StringHash("DanzoFpassive"),true)
-            //SaveUnitHandle(HH,uid,StringHash("DanzoFpassiveU"),Hero[idc])
-            set nb=0
+            if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                set nb=0.
+            else
+                call SetUnitTargetable(u, false)
+                call newBlockDamage( u )
+                call UnitRemoveAbility(u,'IHYs')
+                call UnitRemoveAbility(u, 'IHYb')
+                call UnitRemoveAbility(u, 'IOb3')
+                call UnitRemoveAbility(u, 'IO3b')
+                call DanzoFPassive(u,Hero[idc])
+                //SaveBoolean(H,GetHandleId(target),StringHash("DanzoFpassive"),true)
+                //SaveUnitHandle(HH,uid,StringHash("DanzoFpassiveU"),Hero[idc])
+                set nb=0
+            endif
         endif        
         //===========
         //==============================================================================
@@ -74096,29 +74300,33 @@ if cond==0 then
             set nb=0
         endif
         if nb>0 and GetUnitAbilityLevel(u,'A16M')>0 and GetUnitAbilityLevel(u,'A16I')==0 and b*1.2>l and GetHeroLevel(u)>5 then
-            call SetUnitState(u,UNIT_STATE_LIFE,1)
-            call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.20*myCustomHeal2(u,1),"HealthRes")
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.20)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0LA',x,y,0),'BTLF',3)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0L8',x,y,0),'BTLF',3)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0L9',x,y,0),'BTLF',3)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0C7',x,y,0),'BTLF',6)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e01O',x,y,0),'BTLF',1.1)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AX',x,y,GetRandomReal(0,359)),'BTLF',1)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AW',x,y,GetRandomReal(0,359)),'BTLF',0.01)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B1',x,y,GetRandomReal(0,359)),'BTLF',0.4)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B4',x,y,GetRandomReal(0,359)),'BTLF',0.4)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AZ',x,y,GetRandomReal(0,359)),'BTLF',0.4)
-            call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B3',x,y,GetRandomReal(0,359)),'BTLF',0.4)
-            call CreateModeIndicatorForm(u, "ReplaceableTextures\\CommandButtons\\BTNKamidzeTouma.blp", 8)
-            call CreateModeIndicatorForm(u, "ReplaceableTextures\\PassiveButtons\\PASTouma0.blp", 80)
-            call UnitAddAbilityTimed(u,8,'A16H')
-            call UnitAddAbilityTimed(u,80,'A16I')
-            set soundplay=SndN(781) // Sound\Music\mp3Music\ToumaBerserk.mp3
-            call StartSound(soundplay)
-            //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            //call SetEventDamage(0.05)
-            set nb=0
+            if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                set nb=0.
+            else
+                call SetUnitState(u,UNIT_STATE_LIFE,1)
+                call HealTextTag(u,u,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.20*myCustomHeal2(u,1),"HealthRes")
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.20)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0LA',x,y,0),'BTLF',3)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0L8',x,y,0),'BTLF',3)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0L9',x,y,0),'BTLF',3)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0C7',x,y,0),'BTLF',6)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e01O',x,y,0),'BTLF',1.1)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AX',x,y,GetRandomReal(0,359)),'BTLF',1)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AW',x,y,GetRandomReal(0,359)),'BTLF',0.01)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B1',x,y,GetRandomReal(0,359)),'BTLF',0.4)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B4',x,y,GetRandomReal(0,359)),'BTLF',0.4)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0AZ',x,y,GetRandomReal(0,359)),'BTLF',0.4)
+                call UnitApplyTimedLife(CreateUnit(damagedPlayer,'e0B3',x,y,GetRandomReal(0,359)),'BTLF',0.4)
+                call CreateModeIndicatorForm(u, "ReplaceableTextures\\CommandButtons\\BTNKamidzeTouma.blp", 8)
+                call CreateModeIndicatorForm(u, "ReplaceableTextures\\PassiveButtons\\PASTouma0.blp", 80)
+                call UnitAddAbilityTimed(u,8,'A16H')
+                call UnitAddAbilityTimed(u,80,'A16I')
+                set soundplay=SndN(781) // Sound\Music\mp3Music\ToumaBerserk.mp3
+                call StartSound(soundplay)
+                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+                //call SetEventDamage(0.05)
+                set nb=0
+            endif
         endif
         if nb>0 and GetUnitAbilityLevel(u,'B05Z')>0 and duid!='H05R' and GetRandomInt(0,100)<15 and u==Hero[idu] then
             loop
@@ -74133,7 +74341,9 @@ if cond==0 then
             //call SetEventDamage(0.05)
             set nb=0
         endif
-        if b>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.01 and nb>0 and GetUnitAbilityLevel(u,'A1A3')>0 and LoadInteger(HH,GetHandleId(u),SH_d)<10 then
+        if b>GetWidgetLife(u) and nb>0. and GetUnitAbilityLevel(u,'A1A3')>0 and LoadInteger(HH,uid,SH_d)<10 and HomuraVowDamageSave(u,nb,isTargetEnemy) then
+            set nb=0.
+        elseif b>GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.01 and nb>0 and GetUnitAbilityLevel(u,'A1A3')>0 and LoadInteger(HH,GetHandleId(u),SH_d)<10 then
             if b<GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.03 then
             call SaveInteger(HH,GetHandleId(u),SH_d,LoadInteger(HH,GetHandleId(u),SH_d)+1)
             else
@@ -74402,30 +74612,34 @@ endif
      //DeadMaster6End
         if nb>GetWidgetLife(u)and (LoadBoolean(DMG_IHT,uid,'I03F') or GetUnitAbilityLevel(u,'KIJ4')>0)and GetUnitAbilityLevel(u,'B01O')==0 and GetHeroPrimaryAttribute(u)==HERO_ATTRIBUTE_AGI and GetUnitAbilityLevel(u,'A0WR')==0 and nb>0 then
 			if LoadInteger(h, uid, SH_AnbuSet_CD)==0 and GetWidgetMana(u)>=GetWidgetMaxMana(u)*0.25 and GetUnitAbilityLevel(u,'A1CE')==0 then
-				set hn=CreateUnit(damagedPlayer,'e0RA',x,y,0)
-				call UnitApplyTimedLife(hn,'BTLF',1)
-				call SetUnitAnimation(hn,"birth")
-                //call SetEventDamage(0.05)
-				set nb=GetWidgetMaxLife(u)*0.15*DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
-                call SetWidgetLife(u, 1)
-                call HealTextTag(u,u,nb*myCustomHeal2(u,1),"HealthRes")
-				call SetWidgetLife(u, nb)
-				set bjLCT=CreateTimer()
-				call SaveUnitHandle(h, GetHandleId(bjLCT), 0, u)
-				call SaveInteger(h, uid, SH_AnbuSet_CD, 35)
-                call CreateModeIndicatorForm(u, "war3mapImported\\BTNAnbuSet.blp", 35)
-				call TSE_TimerStart(bjLCT, 1, true, function AnbuSet_CD)
-				set bjLCT=null
-                call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.25)
-                call AllTextTag("|c0000DF38+"+I2S(R2I(nb))+"|r",u)
-                call IssueImmediateOrder(u, "stop")
-                //call ShowUnit(u, false)
-                //call MapPauseUnit(u, true)
-                set bjLCT=CreateTimer()
-                call SaveUnitHandle(h, GetHandleId(bjLCT), CasterHash, u)
-                call TSE_TimerStart(bjLCT, 0, false, function AnbuSet_Action) //anbu
-                set bjLCT=null
-                set nb=0
+			    if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+			        set nb=0.
+			    else
+				    set hn=CreateUnit(damagedPlayer,'e0RA',x,y,0)
+				    call UnitApplyTimedLife(hn,'BTLF',1)
+				    call SetUnitAnimation(hn,"birth")
+                    //call SetEventDamage(0.05)
+				    set nb=GetWidgetMaxLife(u)*0.15*DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
+                    call SetWidgetLife(u, 1)
+                    call HealTextTag(u,u,nb*myCustomHeal2(u,1),"HealthRes")
+				    call SetWidgetLife(u, nb)
+				    set bjLCT=CreateTimer()
+				    call SaveUnitHandle(h, GetHandleId(bjLCT), 0, u)
+				    call SaveInteger(h, uid, SH_AnbuSet_CD, 35)
+                    call CreateModeIndicatorForm(u, "war3mapImported\\BTNAnbuSet.blp", 35)
+				    call TSE_TimerStart(bjLCT, 1, true, function AnbuSet_CD)
+				    set bjLCT=null
+                    call SetWidgetMana(u, GetWidgetMana(u)-GetWidgetMaxMana(u)*0.25)
+                    call AllTextTag("|c0000DF38+"+I2S(R2I(nb))+"|r",u)
+                    call IssueImmediateOrder(u, "stop")
+                    //call ShowUnit(u, false)
+                    //call MapPauseUnit(u, true)
+                    set bjLCT=CreateTimer()
+                    call SaveUnitHandle(h, GetHandleId(bjLCT), CasterHash, u)
+                    call TSE_TimerStart(bjLCT, 0, false, function AnbuSet_Action) //anbu
+                    set bjLCT=null
+                    set nb=0
+			    endif
             endif
         endif
         if(GetUnitAbilityLevel(u,'A1H1')>0 and nb>200) and CurrentEventAttack==false then
@@ -76843,88 +77057,100 @@ endif
     endif
     if GetUnitAbilityLevel(c,'A1WT')==0 and GetUnitAbilityLevel(c,'A3WR')==0 and  (GetUnitAbilityLevel(c,'CB01')==0 or (GetUnitAbilityLevel(c,'CB01')>0 and CurrentEventAttack)) and GetUnitAbilityLevel(c,'B059')==0 and GetUnitAbilityLevel(u,'Bwul')==0 and not ogPenetrating and LoadInteger(HH,cid,BlockPenetrate)==0 then
         if GetUnitAbilityLevel(u,'A18L')>0 and nb>l then
-            set t=CreateTimer()
-            set DSC_K=DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина HP
-            call SetUnitInvulnerable(u,true)
-            call ShowUnitTimed(u,false,0.01)
-            call MapPauseUnit(u,true)
-            call HealTextTag(u,u,(GetWidgetMaxLife(u)*0.35*DSC_K-GetWidgetLife(u))*myCustomHeal2(u,1),"HealthRes")
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.35*DSC_K)
-            if GetWidgetMana(u)<GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35 then
-                call HealTextTag(u,u,(GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35-GetWidgetMana(u))*myCustomMana2(u,1),"ManaRes")
-                call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35)
+            if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                set nb=0.
+            else
+                set t=CreateTimer()
+                set DSC_K=DeathSaveCleanse(u) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина HP
+                call SetUnitInvulnerable(u,true)
+                call ShowUnitTimed(u,false,0.01)
+                call MapPauseUnit(u,true)
+                call HealTextTag(u,u,(GetWidgetMaxLife(u)*0.35*DSC_K-GetWidgetLife(u))*myCustomHeal2(u,1),"HealthRes")
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE)*0.35*DSC_K)
+                if GetWidgetMana(u)<GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35 then
+                    call HealTextTag(u,u,(GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35-GetWidgetMana(u))*myCustomMana2(u,1),"ManaRes")
+                    call SetUnitState(u,UNIT_STATE_MANA,GetUnitState(u,UNIT_STATE_MAX_MANA)*0.35)
+                endif
+                call SaveUnitHandle(h,GetHandleId(t),0,u)
+                call SaveEffectHandle(h,GetHandleId(t),1,AddSpecialEffect("war3mapImported\\6.mdx",x,y))
+                call TSE_TimerStart(t,5,false,function MistRingRes)
+                set t=null
+                set nb=0
             endif
-            call SaveUnitHandle(h,GetHandleId(t),0,u)
-            call SaveEffectHandle(h,GetHandleId(t),1,AddSpecialEffect("war3mapImported\\6.mdx",x,y))
-            call TSE_TimerStart(t,5,false,function MistRingRes)
-            set t=null
-            set nb=0
         endif
         if duid=='H02I' and nb>l and GetHeroLevel(u)>=12 and Hero[idu]==u and DU and LoadInteger(HH,uid,SH_VegetaDeath)!=0 then
-            set cjlocgn_00000000=CreateTimer()
-            set cjlocgn_00000001=GetHandleId(cjlocgn_00000000)
-            call SaveInteger(HH,uid,SH_VegetaDeath,0)
-            call UnitAddAbility(u,'Arav')
-            call UnitRemoveAbility(u,'Arav')
-            call SetUnitFlyHeight(u,300,300)
-            call SaveUnitHandle(h,cjlocgn_00000001,0,u)
-            call SaveUnitHandle(h,cjlocgn_00000001,1,c)
-            call SetUnitTimeScale(u,0.3)
-            call UnitRemoveAbility(u,'IHYs')
-            call UnitRemoveAbility(u, 'IHYb')
-            call UnitRemoveAbility(u, 'IOb3')
-            call UnitRemoveAbility(u, 'IO3b')
-            call SetUnitTargetable(u, false)
-            call MapPauseUnit(u,true)
-            call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE))
-            call SetUnitInvulnerable(u,true)
-            if GetUnitAbilityLevel(u,'VGH4')==0 then
-            call SetUnitAnimation(u,"Spell Channel")
+            if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                set nb=0.
             else
-            call SetUnitAnimation(u,"Spell Channel Alternate")
+                set cjlocgn_00000000=CreateTimer()
+                set cjlocgn_00000001=GetHandleId(cjlocgn_00000000)
+                call SaveInteger(HH,uid,SH_VegetaDeath,0)
+                call UnitAddAbility(u,'Arav')
+                call UnitRemoveAbility(u,'Arav')
+                call SetUnitFlyHeight(u,300,300)
+                call SaveUnitHandle(h,cjlocgn_00000001,0,u)
+                call SaveUnitHandle(h,cjlocgn_00000001,1,c)
+                call SetUnitTimeScale(u,0.3)
+                call UnitRemoveAbility(u,'IHYs')
+                call UnitRemoveAbility(u, 'IHYb')
+                call UnitRemoveAbility(u, 'IOb3')
+                call UnitRemoveAbility(u, 'IO3b')
+                call SetUnitTargetable(u, false)
+                call MapPauseUnit(u,true)
+                call SetUnitState(u,UNIT_STATE_LIFE,GetUnitState(u,UNIT_STATE_MAX_LIFE))
+                call SetUnitInvulnerable(u,true)
+                if GetUnitAbilityLevel(u,'VGH4')==0 then
+                call SetUnitAnimation(u,"Spell Channel")
+                else
+                call SetUnitAnimation(u,"Spell Channel Alternate")
+                endif
+                if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
+                    set soundplay=SndN(806) // Sound\Music\mp3Music\FinalExplosion.mp3
+                else
+                    set soundplay=SndN(808) // Sound\Music\mp3Music\Vegeta\FinalExplosion-jap.mp3
+                endif
+                call StartSound(soundplay)
+                //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
+                set hn=CreateUnit(damagedPlayer,'e3E6',x,y,0)
+                call SetUnitFlyHeight(hn,0,0)
+                call SetUnitFlyHeight(hn,350,350)
+                call SetUnitScale(hn,1.5,1.5,1.5)
+                call UnitApplyTimedLife(hn,'BTLF',2)
+                set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x,y)
+                call SetSpecialEffectScale(EFF, 3.3)
+                call SetSpecialEffectTimeScale(EFF , 1.6)
+                call DestroyEffect(EFF)
+                set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl", x, y)
+                call SetSpecialEffectScale(EFF , 2)
+                call SetSpecialEffectTimeScale(EFF , 0.25)
+                call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 4)
+                call TSE_TimerStart(cjlocgn_00000000,2,false,function FinalExplosionCast3)
+                set cjlocgn_00000000=null
             endif
-            if LoadBoolean(HH,PH(GetLocalPlayer()),SOUND_LANGUAGE)==true then
-                set soundplay=SndN(806) // Sound\Music\mp3Music\FinalExplosion.mp3
-            else
-                set soundplay=SndN(808) // Sound\Music\mp3Music\Vegeta\FinalExplosion-jap.mp3
-            endif            
-            call StartSound(soundplay)
-            //call KillSoundWhenDone(soundplay) // звук из массива soundStr — не удалять
-            set hn=CreateUnit(damagedPlayer,'e3E6',x,y,0)
-            call SetUnitFlyHeight(hn,0,0)
-            call SetUnitFlyHeight(hn,350,350)
-            call SetUnitScale(hn,1.5,1.5,1.5)
-            call UnitApplyTimedLife(hn,'BTLF',2)
-            set EFF = AddSpecialEffect("Hashirama\\SmokeFuzzy.mdl",x,y)
-            call SetSpecialEffectScale(EFF, 3.3)
-            call SetSpecialEffectTimeScale(EFF , 1.6)
-            call DestroyEffect(EFF)
-            set EFF=AddSpecialEffect("war3mapImported\\WindCircleFaster.mdl", x, y)
-            call SetSpecialEffectScale(EFF , 2)
-            call SetSpecialEffectTimeScale(EFF , 0.25)
-            call SetSpecialEffectAlphaTimed(EFF , 255 , 255 , 255 , 255 , 4)
-            call TSE_TimerStart(cjlocgn_00000000,2,false,function FinalExplosionCast3)
-            set cjlocgn_00000000=null
         endif
         if GetUnitAbilityLevel(u,'A185')>0 then
-            if nb>l then
-                set ide=GetHandleId(u)
-                call SetUnitX(u,LoadReal(HH,ide,SH_xc))
-                call SetUnitY(u,LoadReal(HH,ide,SH_yc))
-                set cjlocgn_00000000=CreateTimer()
-                call SetUnitInvulnerable(u,true)
-                call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
-                call TSE_TimerStart(cjlocgn_00000000,0.001,false,function Block_Damage)
-                call SetUnitState(u,UNIT_STATE_LIFE,LoadReal(HH,ide,SH_hpc))
-                call SetUnitState(u,UNIT_STATE_MANA,LoadReal(HH,ide,SH_mpc))
-                call RemoveUnit(LoadUnitHandle(HH,uid,SH_dc))
-                call RemoveSavedReal(HH,ide,SH_hpc)
-                call RemoveSavedReal(HH,ide,SH_mpc)
-                call RemoveSavedReal(HH,ide,SH_xc)
-                call RemoveSavedReal(HH,ide,SH_yc)
-                call UnitRemoveAbility(u,'A185')
-                if GetUnitAbilityLevel(u,'A182')==0 then
-                    call UnitAddAbility(u,'A182')
+            if nb>l then // Izanagi
+                if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                    set nb=0.
+                else
+                    set ide=GetHandleId(u)
+                    call SetUnitX(u,LoadReal(HH,ide,SH_xc))
+                    call SetUnitY(u,LoadReal(HH,ide,SH_yc))
+                    set cjlocgn_00000000=CreateTimer()
+                    call SetUnitInvulnerable(u,true)
+                    call SaveUnitHandle(h,GetHandleId(cjlocgn_00000000),0,u)
+                    call TSE_TimerStart(cjlocgn_00000000,0.001,false,function Block_Damage)
+                    call SetUnitState(u,UNIT_STATE_LIFE,LoadReal(HH,ide,SH_hpc))
+                    call SetUnitState(u,UNIT_STATE_MANA,LoadReal(HH,ide,SH_mpc))
+                    call RemoveUnit(LoadUnitHandle(HH,uid,SH_dc))
+                    call RemoveSavedReal(HH,ide,SH_hpc)
+                    call RemoveSavedReal(HH,ide,SH_mpc)
+                    call RemoveSavedReal(HH,ide,SH_xc)
+                    call RemoveSavedReal(HH,ide,SH_yc)
+                    call UnitRemoveAbility(u,'A185')
+                    if GetUnitAbilityLevel(u,'A182')==0 then
+                        call UnitAddAbility(u,'A182')
+                    endif
                 endif
             endif
         endif
@@ -76987,17 +77213,24 @@ endif
         // endif
         if duid == 'HRen' and GetHeroLevel(u) >= 25 and nb>0 and ( GetWidgetLife(u)-nb <= GetWidgetMaxLife(u)*0.20 or b*1.25 > GetWidgetLife(u) ) then
             if LoadReal(HH, GetHandleId(u), RengokuF_CD) == 0 then
-                call RengokuF_Pass_Act(u , CreateTimer())
-                call SaveReal(HH, GetHandleId(u), RengokuF_CD, 200)
-                //call SetEventDamage(0.05)
-                set nb=0
+                if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                    set nb=0.
+                else
+                    call RengokuF_Pass_Act(u , CreateTimer())
+                    call SaveReal(HH, GetHandleId(u), RengokuF_CD, 200)
+                    //call SetEventDamage(0.05)
+                    set nb=0
+                endif
             endif
         endif
         if GetHeroLevel(u) >= 25 and duid == 'HMad' and GetUnitAbilityLevel(u, 'MaF2') == 0 and nb>0 and nb>=GetWidgetLife(u) and DU==true then     
-            call SetWidgetLife(u, GetWidgetMaxLife(u) * 0.5 * DeathSaveCleanse(u)) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
-            call MadokaF_Death(u , c)
-            call HomuraVowMadokaScenario(u)
-            set nb=0
+            if HomuraVowDamageSave(u,nb,isTargetEnemy) then
+                set nb=0.
+            else
+                call SetWidgetLife(u, GetWidgetMaxLife(u) * 0.5 * DeathSaveCleanse(u)) // 3.8.2: снимает некроз / эссенцию льда, с ними — половина
+                call MadokaF_Death(u , c)
+                set nb=0
+            endif
         endif
     endif
     if nb>0 and GetUnitAbilityLevel(c, 'PV01')>0 and GetUnitAbilityLevel(c,'A2WR')==0 and GetUnitAbilityLevel(c,'A3WR')==0 then     // дополнительный урон от Перчатки Вонголы
@@ -77126,8 +77359,13 @@ if nb>0 then
         call SetEventDamage(0)
         set nb=0
     endif
-    if nb>0. and nb>=GetWidgetLife(u)-0.405 and udg_B and DU and DU2 and isTargetEnemy and u==Hero[idu] and HomuraVowSave(u) then
+    if HomuraVowDamageSave(u,nb,isTargetEnemy) then
         set nb=0.
+    endif
+    if CurrentEventAttack and nb>0. and suid=='HGai' and isTargetEnemy and LoadBoolean(HH,cid,StringHash("GuyNun")) then
+        call SaveUnitHandle(HH,StringHash("GuyF"),1,c)
+        call SaveUnitHandle(HH,StringHash("GuyF"),2,u)
+        call ExecuteFunc("Guy_F_Hook")
     endif
     // 3.8.2: Ключ Баб-Илу — добивание вражеского героя ниже 3% HP (урон любого юнита владельца ключа)
     if nb>0 and u==Hero[idu] and l-nb>0 and l-nb<ll*0.03 and IsUnitEnemy(u,sourcePlayer) and idc>=0 and idc<12 and (UnitHasItemOfTypeBJ(Hero[idc],'IBBi') or GetUnitAbilityLevel(c,'KIBK')>0) then
@@ -145346,6 +145584,35 @@ call SaveStr(HH,SH_ShnChanO,'GrT1',"blizzard")
 call SaveInteger(HH,SH_ShnChanT,'GrT1',2)
 call SaveStr(HH,SH_ShnChanO,'GrW1',"thunderbolt")
 call SaveInteger(HH,SH_ShnChanT,'GrW1',1)
+call SaveStr(HH,SH_ShnChanO,'GyD1',"flamestrike")
+call SaveInteger(HH,SH_ShnChanT,'GyD1',2)
+call SaveStr(HH,SH_ShnChanO,'GyD2',"forkedlightning")
+call SaveInteger(HH,SH_ShnChanT,'GyD2',2)
+call SaveStr(HH,SH_ShnChanO,'GyE1',"frostnova")
+call SaveStr(HH,SH_ShnChanO,'GyF1',"cyclone")
+call SaveStr(HH,SH_ShnChanO,'GyF2',"deathcoil")
+call SaveInteger(HH,SH_ShnChanT,'GyF2',1)
+call SaveStr(HH,SH_ShnChanO,'GyF3',"deathpact")
+call SaveInteger(HH,SH_ShnChanT,'GyF3',1)
+call SaveStr(HH,SH_ShnChanO,'GyF4',"dispel")
+call SaveInteger(HH,SH_ShnChanT,'GyF4',1)
+call SaveStr(HH,SH_ShnChanO,'GyG1',"darkportal")
+call SaveStr(HH,SH_ShnChanO,'GyG2',"earthquake")
+call SaveInteger(HH,SH_ShnChanT,'GyG2',2)
+call SaveStr(HH,SH_ShnChanO,'GyG3',"entanglingroots")
+call SaveInteger(HH,SH_ShnChanT,'GyG3',2)
+call SaveStr(HH,SH_ShnChanO,'GyG4',"faeriefire")
+call SaveInteger(HH,SH_ShnChanT,'GyG4',2)
+call SaveStr(HH,SH_ShnChanO,'GyQ1',"blizzard")
+call SaveInteger(HH,SH_ShnChanT,'GyQ1',2)
+call SaveStr(HH,SH_ShnChanO,'GyQ2',"breathoffire")
+call SaveStr(HH,SH_ShnChanO,'GyR1',"carrionswarm")
+call SaveStr(HH,SH_ShnChanO,'GyT1',"cripple")
+call SaveInteger(HH,SH_ShnChanT,'GyT1',1)
+call SaveStr(HH,SH_ShnChanO,'GyT2',"curse")
+call SaveInteger(HH,SH_ShnChanT,'GyT2',1)
+call SaveStr(HH,SH_ShnChanO,'GyW1',"chainlightning")
+call SaveInteger(HH,SH_ShnChanT,'GyW1',1)
 call SaveStr(HH,SH_ShnChanO,'HSE1',"healingspray")
 call SaveInteger(HH,SH_ShnChanT,'HSE1',2)
 call SaveStr(HH,SH_ShnChanO,'HSF1',"drain")
@@ -147598,6 +147865,7 @@ call SaveStr(HH,SH_AbOrd,'FlR1',"roar")
 call SaveStr(HH,SH_AbOrd,'FlT1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'FlW1',"shadowstrike")
 call SaveStr(HH,SH_AbOrd,'FlW2',"breathoffrost")
+call SaveStr(HH,SH_AbOrd,'GFGS',"attributemodskill")
 call SaveStr(HH,SH_AbOrd,'GGBB',"earthquake")
 call SaveStr(HH,SH_AbOrd,'GGBS',"hex")
 call SaveStr(HH,SH_AbOrd,'GGS4',"breathoffrost")
@@ -147670,6 +147938,24 @@ call SaveStr(HH,SH_AbOrd,'GrQ1',"rainoffire")
 call SaveStr(HH,SH_AbOrd,'GrR1',"carrionswarm")
 call SaveStr(HH,SH_AbOrd,'GrT1',"blizzard")
 call SaveStr(HH,SH_AbOrd,'GrW1',"thunderbolt")
+call SaveStr(HH,SH_AbOrd,'GyD1',"flamestrike")
+call SaveStr(HH,SH_AbOrd,'GyD2',"forkedlightning")
+call SaveStr(HH,SH_AbOrd,'GyE1',"frostnova")
+call SaveStr(HH,SH_AbOrd,'GyF1',"cyclone")
+call SaveStr(HH,SH_AbOrd,'GyF2',"deathcoil")
+call SaveStr(HH,SH_AbOrd,'GyF3',"deathpact")
+call SaveStr(HH,SH_AbOrd,'GyF4',"dispel")
+call SaveStr(HH,SH_AbOrd,'GyG1',"darkportal")
+call SaveStr(HH,SH_AbOrd,'GyG2',"earthquake")
+call SaveStr(HH,SH_AbOrd,'GyG3',"entanglingroots")
+call SaveStr(HH,SH_AbOrd,'GyG4',"faeriefire")
+call SaveStr(HH,SH_AbOrd,'GyQ1',"blizzard")
+call SaveStr(HH,SH_AbOrd,'GyQ2',"breathoffire")
+call SaveStr(HH,SH_AbOrd,'GyR1',"carrionswarm")
+call SaveStr(HH,SH_AbOrd,'GySl',"cripple")
+call SaveStr(HH,SH_AbOrd,'GyT1',"cripple")
+call SaveStr(HH,SH_AbOrd,'GyT2',"curse")
+call SaveStr(HH,SH_AbOrd,'GyW1',"chainlightning")
 call SaveStr(HH,SH_AbOrd,'HSC1',"engineeringupgrade")
 call SaveStr(HH,SH_AbOrd,'HSE1',"healingspray")
 call SaveStr(HH,SH_AbOrd,'HSF1',"drain")
@@ -263382,18 +263668,21 @@ endfunction
 function HomuraSwapWeapon takes unit homuraMover returns nothing
     local integer homuraChoice=LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraNextQ"))
     local integer homuraMode=homuraChoice-1
+    local ability homuraActiveQ
     if homuraChoice==0 then
         set homuraMode=ModuloInteger(LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraWeapon"))+GetRandomInt(1,4),5)
-    endif
-    if homuraMode!=0 and GetUnitAbilityLevel(homuraMover,'HmQ1')>0 and GetUnitAbilityLevel(homuraMover,HomuraQModeId(homuraMode))==0 then
-        if not UnitAddAbility(homuraMover,HomuraQModeId(homuraMode)) then
-            call HomuraRefreshQ(homuraMover)
-            return
-        endif
     endif
     call StartSound(SndN(5057))
     call HomuraApplyWeapon(homuraMover,homuraMode)
     call HomuraRefreshQ(homuraMover)
+    if GetUnitAbilityLevel(homuraMover,'HmQ1')>0 then
+        call SetAbilityRemainingCooldown(GetUnitAbility(homuraMover,'HmQ1'),0.)
+        set homuraActiveQ=GetUnitAbility(homuraMover,LoadInteger(HH,GetHandleId(homuraMover),StringHash("HomuraQFront")))
+        if homuraActiveQ!=null then
+            call SetAbilityRemainingCooldown(homuraActiveQ,0.)
+        endif
+        set homuraActiveQ=null
+    endif
     call HomuraPlayVoice(homuraMover,5025+2*GetRandomInt(0,2),1.85)
 endfunction
 
@@ -263470,40 +263759,6 @@ function HomuraBlinkCast takes unit homuraMover returns nothing
         endif
     endif
     set homuraBlink=null
-endfunction
-
-function HomuraRecallClear takes timer homuraRecallTimer returns nothing
-    local integer homuraRecallId=GetHandleId(homuraRecallTimer)
-    local unit homuraRecallCaster=LoadUnitHandle(h,homuraRecallId,0)
-    local integer homuraRecallKey=GetHandleId(homuraRecallCaster)
-    local effect homuraRecallFx=LoadEffectHandle(h,homuraRecallId,4)
-    local effect homuraRecallClock=LoadEffectHandle(h,homuraRecallId,5)
-    local ability homuraRecallOriginal=GetUnitAbility(homuraRecallCaster,LoadInteger(h,homuraRecallId,9))
-    if LoadTimerHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))==homuraRecallTimer then
-        call RemoveSavedHandle(HH,homuraRecallKey,StringHash("HomuraRecall"))
-    endif
-    call DisableUnitAbility(homuraRecallCaster,'HmF2',true,true)
-    if homuraRecallOriginal!=null then
-        call SetAbilityRemainingCooldown(homuraRecallOriginal,0.)
-        call EnableAbility(homuraRecallOriginal,true,true)
-    endif
-    call HomuraButtonLayout(homuraRecallCaster)
-    if homuraRecallFx!=null then
-        if not LoadBoolean(h,homuraRecallId,8) then
-            call SetSpecialEffectVisible(homuraRecallFx,false)
-        endif
-        call DestroyEffect(homuraRecallFx)
-    endif
-    if homuraRecallClock!=null then
-        call SetSpecialEffectVisible(homuraRecallClock,false)
-        call DestroyEffect(homuraRecallClock)
-    endif
-    set homuraRecallOriginal=null
-    set homuraRecallClock=null
-    call FlushChildHashtable(h,homuraRecallId)
-    call TSE_DestroyTimer(homuraRecallTimer)
-    set homuraRecallFx=null
-    set homuraRecallCaster=null
 endfunction
 
 function HomuraRecallReturn takes timer hrrTimer returns boolean
@@ -263612,10 +263867,8 @@ function HomuraRecallCast takes unit homuraRecallCaster,integer homuraCastSpell 
             call SaveBoolean(h,homuraRecallId,10,LoadBoolean(HH,PH(OwnerOf(homuraRecallCaster)),StringHash("HomuraAutoF")))
             call SaveInteger(h,homuraRecallId,11,round)
             // The engine still uses the casting ability after SPELL_EFFECT.
-            call DisableUnitAbility(homuraRecallCaster,homuraCastSpell,true,true)
             call CBS_SetTT(GetUnitAbility(homuraRecallCaster,'HmF2'),0,0)
             call SetAbilityRemainingCooldown(GetUnitAbility(homuraRecallCaster,'HmF2'),0.)
-            call EnableAbility(GetUnitAbility(homuraRecallCaster,'HmF2'),true,true)
             call HomuraButtonLayout(homuraRecallCaster)
             call SaveUnitHandle(h,homuraRecallId,0,homuraRecallCaster)
             call SaveUnitHandle(h,homuraRecallId,1,homuraRecallAlly)
@@ -264179,6 +264432,31 @@ function HomuraDevilMorphReady takes nothing returns nothing
     set homuraMorphTimer=null
 endfunction
 
+function HomuraQStartCooldown takes unit homuraCaster,integer homuraSpell returns nothing
+    local ability homuraCastAbility=GetUnitAbility(homuraCaster,homuraSpell)
+    local ability homuraLearnedQ=GetUnitAbility(homuraCaster,'HmQ1')
+    local ability homuraShieldButton
+    local integer homuraLevel=GetUnitAbilityLevel(homuraCaster,homuraSpell)-1
+    local real homuraCooldown
+    if homuraCastAbility!=null and homuraLevel>=0 then
+        set homuraCooldown=RMaxBJ(GetAbilityRemainingCooldown(homuraCastAbility),GetAbilityRealLevelField(homuraCastAbility,ABILITY_RLF_COOLDOWN,homuraLevel))
+        if homuraSpell=='HmS0' or homuraSpell=='HmQ1' then
+            set homuraShieldButton=GetUnitAbility(homuraCaster,'HmS0')
+            if homuraShieldButton!=null then
+                call StartAbilityCooldown(homuraShieldButton,homuraCooldown)
+            endif
+            if homuraLearnedQ!=null then
+                call StartAbilityCooldown(homuraLearnedQ,homuraCooldown)
+            endif
+        elseif homuraLearnedQ!=null then
+            call SetAbilityRemainingCooldown(homuraLearnedQ,homuraCooldown)
+        endif
+    endif
+    set homuraShieldButton=null
+    set homuraLearnedQ=null
+    set homuraCastAbility=null
+endfunction
+
 function HomuraReworkCast takes nothing returns nothing
     local unit homuraMover=GetTriggerUnit()
     local integer homuraType=GetUnitTypeId(homuraMover)
@@ -264238,9 +264516,7 @@ function HomuraReworkCast takes nothing returns nothing
             endif
         elseif (HomuraIsQ(homuraCastSpell) or homuraCastSpell=='HmW1' or homuraCastSpell=='HmE1') then
             if HomuraIsQ(homuraCastSpell) then
-if homuraCastSpell!='HmQ1' then
-call SetAbilityRemainingCooldown(GetUnitAbility(homuraMover,'HmQ1'),RMaxBJ(GetAbilityRemainingCooldown(GetUnitAbility(homuraMover,homuraCastSpell)),GetAbilityRealLevelField(GetUnitAbility(homuraMover,homuraCastSpell),ABILITY_RLF_COOLDOWN,GetUnitAbilityLevel(homuraMover,'HmQ1')-1)))
-endif
+                call HomuraQStartCooldown(homuraMover,homuraCastSpell)
                 call HomuraQCast(homuraMover)
             endif
             call HomuraCutBlink(homuraMover)
@@ -297658,10 +297934,13 @@ function HomuraDevilStepEnd takes nothing returns nothing
     local timer hdsTimer=GetExpiredTimer()
     local integer hdsWindowKey=GetHandleId(hdsTimer)
     local unit hdsUnit=LoadUnitHandle(h,hdsWindowKey,0)
-    if hdsUnit!=null then
+    if hdsUnit!=null and LoadTimerHandle(HH,GetHandleId(hdsUnit),StringHash("HdStep"))==hdsTimer then
         if not LoadBoolean(h,hdsWindowKey,4) or not HomuraDevilStepReturn(hdsUnit,hdsTimer) then
             call HomuraDevilStepClear(hdsUnit)
         endif
+    else
+        call FlushChildHashtable(h,hdsWindowKey)
+        call TSE_DestroyTimer(hdsTimer)
     endif
     set hdsUnit=null
     set hdsTimer=null
@@ -297775,13 +298054,13 @@ call HomuraDevilStepReturn(hdUnit,hdTimer)
 else
 call HomuraDevilStepClear(hdUnit)
 endif
-elseif hdSpell=='HdG1' and HomuraTravelAllowed(hdUnit) then
+elseif hdSpell=='HdG1' and HomuraTravelAllowed(hdUnit) and LoadTimerHandle(HH,hdKey,StringHash("HdStep"))==null then
 set hdDistance=SR1(GetUnitX(hdUnit),GetUnitY(hdUnit),hdX,hdY)
 if hdDistance>1200. then
 set hdX=GetUnitX(hdUnit)+(hdX-GetUnitX(hdUnit))*1200./hdDistance
 set hdY=GetUnitY(hdUnit)+(hdY-GetUnitY(hdUnit))*1200./hdDistance
 endif
-if hdDistance>=1. and HomuraLandingAllowed(hdX,hdY) and UnitAddAbility(hdUnit,'HdG2') then
+if hdDistance>=1. and HomuraLandingAllowed(hdX,hdY) and (GetUnitAbilityLevel(hdUnit,'HdG2')>0 or UnitAddAbility(hdUnit,'HdG2')) then
 set hdTimer=CreateTimer()
 set hdId=GetHandleId(hdTimer)
 call SaveTimerHandle(HH,hdKey,StringHash("HdStep"),hdTimer)
@@ -297792,8 +298071,9 @@ call SaveInteger(h,hdId,3,round)
 call HomuraTeleport(hdUnit,hdX,hdY)
 call SaveBoolean(h,hdId,4,LoadBoolean(HH,PH(OwnerOf(hdUnit)),StringHash("HomuraAutoD")))
 call HomuraPlayVoice(hdUnit,5091,2.)
-call ShowAbility(GetUnitAbility(hdUnit,'HdG1'),false)
-call ShowAbility(GetUnitAbility(hdUnit,'HdG2'),true)
+call SetAbilityRemainingCooldown(GetUnitAbility(hdUnit,'HdG2'),0.)
+call HomuraButtonLayout(hdUnit)
+call SetAbilityRemainingCooldown(GetUnitAbility(hdUnit,'HdQ1'),0.)
 set hdAbility=GetUnitAbility(hdUnit,LoadInteger(HH,hdKey,StringHash("HdLastSpell")))
 if hdAbility!=null then
 set hdDistance=GetAbilityRemainingCooldown(hdAbility)
@@ -302616,6 +302896,2702 @@ call TSE_TimerStart(CreateTimer(),4.50,false,function Trig_Execute_Actions2b)
 set t=null
 endfunction
 // Iori
+function Guy_Eff takes string mdl,real x,real y,real facing,real life,real size,real speed,real transp,real high returns nothing
+local unit fx=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'e200',x,y,facing)
+call SetUnitModel(fx,mdl)
+call SetUnitFlyHeight(fx,high,0.)
+call UnitSize(fx,size,size,size)
+call UnitSpeed(fx,speed)
+call UnitColor(fx,100,100,100,transp)
+call MyRemoveUnit(fx,life)
+set fx=null
+endfunction
+// то же для моделей без Stand (только Birth): дамми играет анимацию 0
+function Guy_EffAn takes string mdl,real x,real y,real facing,real life,real size,real speed,real transp,real high returns nothing
+local unit fx=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'e200',x,y,facing)
+call SetUnitModel(fx,mdl)
+call SetUnitAnimationByIndex(fx,0)
+call SetUnitFlyHeight(fx,high,0.)
+call UnitSize(fx,size,size,size)
+call UnitSpeed(fx,speed)
+call UnitColor(fx,100,100,100,transp)
+call MyRemoveUnit(fx,life)
+set fx=null
+endfunction
+
+// поставить юнит в точку, если она на карте (за краем SetUnitX может уронить игру)
+function Guy_Move takes unit u,real x,real y returns nothing
+if RectContainsCoords(bj_mapInitialPlayableArea,x,y) then
+call SetUnitX(u,x)
+call SetUnitY(u,y)
+endif
+endfunction
+
+// высота полёта юнита (Amrf — как у разраба)
+function Guy_Fly takes unit u,real hgt,real rate returns nothing
+call UnitAddAbility(u,'Amrf')
+call UnitRemoveAbility(u,'Amrf')
+call SetUnitFlyHeight(u,hgt,rate)
+endfunction
+
+// обзор в точке на dur сек (дамми разраба gbRd)
+function Guy_Vision takes unit caster,real x,real y,real dur returns nothing
+set n0=CreateUnit(GetOwningPlayer(caster),'gbRd',x,y,0.)
+call MyRemoveUnit(n0,dur)
+endfunction
+
+function Guy_Gate takes unit caster returns integer
+return LoadInteger(HH,GetHandleId(caster),StringHash("GuyGate"))
+endfunction
+
+// удар об землю, sc ~ круг 300*sc: кольцо дрожи, кольцо ветра, пыль; с 4 врат (владелец: «базовым абилкам больше
+// разрушительности, камешки наламывает, шоквейвы») — трещины с выбросом пыли, разлом с клочьями, ударная волна и
+// разлёт плит-обломков (Plagiat Effect193); тяжёлый удар (sc от 1) — ещё пыль кольцом со столбом (Raoh File00003573),
+// а с 4 врат — выброс осколков с кратером (amx 138). Обломки, пыль и осколки — модели с одной анимацией, через Guy_EffAn.
+// guy_dev55 применён (14 ноя); guy_ground55 - земля вернулась, кроме Хирудоры
+function Guy_Crush takes real x,real y,real sc,integer gate returns nothing
+// guy_dev55: пыль снята, вместо неё удар; guy_ground55: с 4 врат вернулись трещины, шипы, обломки и осколки
+call Guy_Eff("Kisame\\az_hitheavy.mdl",x,y,0.,1.,0.8*sc,1.,0.,50.)
+if gate>=4 then
+call Guy_Eff("Izayoi\\FBT-dilie2.mdl",x,y,GetRandomReal(0.,360.),1.5,1.5*sc,1.,0.,0.)
+call Guy_Eff("Others\\ChuShou_Effect_Earth1.mdl",x,y,GetRandomReal(0.,360.),1.5,0.6*sc,1.5,0.,0.)
+call Guy_EffAn("ap\\[Plagiat]Effect193.mdl",x,y,GetRandomReal(0.,360.),2.,0.9*sc,1.,0.,0.)
+if sc>=1. then
+call Guy_EffAn("amx (138).mdl",x,y,GetRandomReal(0.,360.),2.,0.6*sc,1.,0.,0.)
+endif
+endif
+endfunction
+
+// толчок от земли (старт рывка, прыжок): выброс грязи назад (Guts nitu) и столб пыли из-под ног (Zoro newvalkdust)
+function Guy_Kick takes real x,real y,real facing returns nothing
+// guy_dev55: пыль и грязь из-под ног сняты (разраб: «пыль, ветер эти»)
+endfunction
+
+// попадание кулаком/ногой: белый блик удара, искры, воронка воздуха; с 4 врат — ещё взрыв воздуха
+function Guy_Hit takes unit target,integer gate returns nothing
+local real a=GetRandomReal(0.,360.)
+call Guy_Eff("Signum\\CF2.mdl",GetUnitX(target),GetUnitY(target),a,1.,0.5,0.6,30.,50.)
+call Guy_Eff("Others\\hit-juhuang-lizi.mdl",GetUnitX(target),GetUnitY(target),a,1.,1.,1.,0.,60.)
+// разраб 1 нояб: «круглешки при ударе не нравятся» — кольцо HakenSaber2 и ёж FawEffects сняты; «не хватает пыли»
+if gate>=4 then
+call Guy_Eff("Kisame\\az_hitheavy.mdl",GetUnitX(target),GetUnitY(target),a,1.,0.7,1.,0.,60.)
+endif
+endfunction
+
+// след рывка: клуб пыли-ветра и белые штрихи-порыв
+function Guy_Dash takes unit u,real facing,real high returns nothing
+call Guy_Eff("Guts\\BY_Wood_Eff_Ord_DanGe_Wid_ChongFengQiLiu.mdl",GetUnitX(u),GetUnitY(u),facing,1.,0.7,0.85,20.,high+50.)
+endfunction
+
+// вспышка там, откуда Гай исчез: белая вспышка-удар вбок и кольцо ветра
+function Guy_Blink takes real x,real y,real facing returns nothing
+call Guy_Eff("Izayoi\\BY_Wood_GongChengSiPai_1.mdl",x,y,facing,1.,1.2,1.,30.,60.)
+// разраб 1 нояб: «эффекты ID 5 и 4, которые за блинк отвечают» — EffectID[5] и EffectID[4] вместо кольца
+call Guy_Eff("Others\\BlackBlink1.mdl",x,y,facing,1.,1.,2.,0.,0.)
+call Guy_Eff("Aizen\\AZ_LCDark_W2_buff.mdl",x,y,facing,1.,1.,1.,0.,0.)
+endfunction
+
+// guy_hold552 (владелец 17 ноя: «в долгих скилах врагов держать в паузе и инвуле - обязательное правило»):
+// урон Гая; пойманный Гаем (метка GuyHeld: пауза + инвул) на время удара без инвула, а у Гая GST4 - иначе урон по
+// цели в паузе режется вдвое (обработчик урона)
+function Guy_Dmg takes unit caster,unit whom,real dmg,damagetype dt returns nothing
+local boolean held=LoadBoolean(HH,GetHandleId(whom),StringHash("GuyHeld"))
+local boolean gst=held and GetUnitAbilityLevel(caster,'GST4')==0
+if held then
+call SetUnitInvulnerable(whom,false)
+endif
+if gst then
+call UnitAddAbility(caster,'GST4')
+endif
+call myCustomDamage(caster,whom,dmg,false,false,null,dt,null)
+if gst then
+call UnitRemoveAbility(caster,'GST4')
+endif
+if held and UnitIsAlive(whom) then
+call SetUnitInvulnerable(whom,true)
+endif
+endfunction
+
+// урон врагам в круге r: каждый — один раз за часть part умения (метка в HH таймера id), оглушение stun; число задетых,
+// первый задетый — в HH[id][40]
+// dt — тип урона: null обычный, DAMAGE_TYPE_UNIVERSAL — хаос (так в карте: «Тип урона: Хаос», напр. Акселератор)
+function Guy_AreaT takes unit caster,integer id,integer part,real x,real y,real r,real dmg,real stun,damagetype dt returns integer
+local integer cnt=0
+local group guyHits=CreateGroup()
+local unit guyVictim
+local integer gate=Guy_Gate(caster)
+call GroupEnumUnitsInRange(guyHits,x,y,r,Base)
+loop
+set guyVictim=FirstOfGroup(guyHits)
+exitwhen guyVictim==null
+call GroupRemoveUnit(guyHits,guyVictim)
+if Condition_Base(GetOwningPlayer(caster),guyVictim) and UnitIsAlive(guyVictim) and LoadInteger(HH,id,GetHandleId(guyVictim))!=part then
+call SaveInteger(HH,id,GetHandleId(guyVictim),part)
+set cnt=cnt+1
+if cnt==1 then
+call SaveUnitHandle(HH,id,40,guyVictim)
+endif
+call Guy_Hit(guyVictim,gate)
+if stun>0 then
+call SetControlToUnit(caster,guyVictim,stun,"stun")
+endif
+call Guy_Dmg(caster,guyVictim,dmg,dt)
+endif
+endloop
+call DestroyGroup(guyHits)
+set guyHits=null
+set guyVictim=null
+return cnt
+endfunction
+function Guy_Area takes unit caster,integer id,integer part,real x,real y,real r,real dmg,real stun returns integer
+return Guy_AreaT(caster,id,part,x,y,r,dmg,stun,null)
+endfunction
+
+// техники врат (F и G с врат; владелец: «наносит часть урона самому Гаю») — 10% урона техники по себе, не смертельно
+function Guy_Self takes unit caster,real dmg returns nothing
+call SetWidgetLife(caster,RMaxBJ(GetWidgetLife(caster)-dmg*0.1,1.))
+endfunction
+
+// Гай на паузе и неуязвим (правило карты: пауза = неуязвимость) / отпущен
+function Guy_Hold takes unit caster,boolean on returns nothing
+call MapPauseUnit(caster,on)
+call SetUnitInvulnerable(caster,on)
+call SetUnitPathing(caster,not on)
+if not on then
+call Guy_Fly(caster,0.,0.)
+call SetUnitTimeScale(caster,1.)
+call ResetUnitAnimation(caster)
+endif
+endfunction
+
+// guy_hold552: отпустить пойманного (только если держал Гай - чужой инвул/паузу не снимаем)
+function Guy_Release takes unit whom returns nothing
+local integer tid=GetHandleId(whom)
+if LoadBoolean(HH,tid,StringHash("GuyHeld")) then
+call SaveBoolean(HH,tid,StringHash("GuyHeld"),false)
+call MapPauseUnit(whom,false)
+call SetUnitInvulnerable(whom,false)
+endif
+endfunction
+// страховка: скилл оборвался, а враг ещё в руках этого захвата (номер захвата совпал) - отпустить
+function Guy_GrabSafe takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit whom=LoadUnitHandle(HH,GetHandleId(t),1)
+if whom!=null and LoadInteger(HH,GetHandleId(whom),StringHash("GuyHeldN"))==LoadInteger(HH,GetHandleId(t),2) then
+call Guy_Release(whom)
+call SaveBoolean(HH,GetHandleId(whom),TARGET_ABILITY,false)
+endif
+call FlushChildHashtable(HH,GetHandleId(t))
+call TSE_DestroyTimer(t)
+set whom=null
+set t=null
+endfunction
+// враг в руках комбо: пауза + инвул (guy_hold552; было оглушение), метка TARGET_ABILITY (чужие длительности на нём
+// замирают); dur - сколько держим (страховка отпустит через dur+1); отпущен - на землю
+function Guy_Grab takes unit caster,unit target,real dur,boolean on returns nothing
+local integer tid=GetHandleId(target)
+local timer t
+call SaveBoolean(HH,tid,TARGET_ABILITY,on)
+if on then
+call UnitAddAbility(target,'Amrf')
+call UnitRemoveAbility(target,'Amrf')
+if LoadBoolean(HH,tid,StringHash("GuyHeld")) or (not IsUnitInvulnerable(target) and not IsUnitPaused(target)) then
+call SaveBoolean(HH,tid,StringHash("GuyHeld"),true)
+call MapPauseUnit(target,true)
+call SetUnitInvulnerable(target,true)
+call SaveInteger(HH,tid,StringHash("GuyHeldN"),LoadInteger(HH,tid,StringHash("GuyHeldN"))+1)
+set t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(t),1,target)
+call SaveInteger(HH,GetHandleId(t),2,LoadInteger(HH,tid,StringHash("GuyHeldN")))
+call TSE_TimerStart(t,dur+1.,false,function Guy_GrabSafe)
+set t=null
+else
+call SetControlToUnit(caster,target,dur,"stun")
+endif
+else
+call Guy_Release(target)
+call Guy_Fly(target,GetUnitDefaultFlyHeight(target),0.)
+endif
+endfunction
+
+// БАЛАНС (владелец 1 нояб: «урон по балансу как у Эя (Райкаге)», «скейлинг всех кнопок на 5 уровней»): Q (2+ур)*СИЛ
+// (Q1 60%, Q2 40%), W 50+(1+ур), R 5 ур. (3+ур), T 2+8, D 2.5+0.5*ур.E, F нунчаки 3.5+0.5*ур. Техники врат — x0.75
+// от прежнего (F) и x(0.55+0.05*ур.E) (G): 0.6 на 1 ур. E, 0.8 на 5-м.
+// «Круглешки» сняты везде (владелец 1 нояб, скрин после guy56): WindCirclefaster, FSAeff (99), wavejojo, кольца дрожи
+// red-zhendi, az_axe_ef1, WindWeak2 — остались пыль и вертикальные кольца конуса за тигром Хирудоры.
+// 13 нояб (владелец: «врата -15%»): урон техник врат (F и G врат: Omote, Asakujaku, Night Guy, Ura, Hirudora,
+// Sekizo) x0.85; обычные кнопки и базовая G (Tsumujikaze) — без изменений.
+//--------------------- F: нунчаки (Soshuga) ---------------------
+// Хаосом (DAMAGE_TYPE_UNIVERSAL) бьёт только Night Guy — последняя F (владелец 1 нояб; сперва были все F);
+// дальность F по цели — 1500.
+// (владелец: «Гай достаёт нунчаки и вращает ими 2 сек, повышая резист на 60% (на бегу), далее нунчаки остаются и Гай
+// проведёт доп. комбинацию ударов нунчаками по следующей цели таргетной способности или автоатаки»). Резист — флаг
+// GuySpin, его читает обработчик урона (урон по Гаю x0.4); заряд — GuyNun, ловится в обработчике урона (атака) и в
+// таргетных кнопках Гая (W, T, F врат). Комбо — 3 удара по 0.1 сек, всего lvl*СИЛ (уровень F растёт за Q). Модели
+// нунчаков нет ни в чейзе, ни в naruto-vfx; на руке — Phoenix_Missile_mini, как у Сошуги в NL.
+// Ключи: 1 Гай, 2 цель, 5 время, 7 урон, 9 ударов сделано
+function Guy_F_Combo2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local integer k=LoadInteger(HH,id,9)
+call SaveReal(HH,id,5,time)
+if udg_B and UnitIsAlive(caster) and UnitIsAlive(target) and k<3 then
+if time>=0.1*k then
+call SaveInteger(HH,id,9,k+1)
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Dmg(caster,target,LoadReal(HH,id,7)/3.,null)
+endif
+else
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+// заряд нунчаков сработал на цели (зовут таргетные кнопки и обработчик урона через Guy_F_Hook)
+function Guy_F_Proc takes unit caster,unit target returns nothing
+local timer t
+local integer id
+if LoadBoolean(HH,GetHandleId(caster),StringHash("GuyNun")) and UnitIsAlive(target) then
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GuyNun"),false)
+set t=CreateTimer()
+set id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,7,(3.5+0.5*GetUnitAbilityLevel(caster,'GyF1'))*GetHeroStr(caster,true))
+// на серию ударов нунчаки ещё 0.4 сек на руке (заряд потрачен — основной эффект снимается)
+set EFF=AddSpecialEffectTarget("Abilities\\Weapons\\PhoenixMissile\\Phoenix_Missile_mini.mdl",caster,"hand right")
+call RemoveEffect(EFF,0.4,true,CreateTimer())
+call TSE_TimerStart(t,0.02,true,function Guy_F_Combo2)
+endif
+set t=null
+endfunction
+function Guy_F_Hook takes nothing returns nothing
+call Guy_F_Proc(LoadUnitHandle(HH,StringHash("GuyF"),1),LoadUnitHandle(HH,StringHash("GuyF"),2))
+endfunction
+// вращение 2 сек (резист), потом 8 сек заряд; ключи: 1 Гай, 5 время, 10 вихрь на руке
+function Guy_F_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local integer cid=GetHandleId(caster)
+call SaveReal(HH,id,5,time)
+if time<2. and udg_B and UnitIsAlive(caster) then
+if ModuloInteger(R2I(time*50.+0.5),15)==0 then
+endif
+elseif time<2.02 then
+call SaveBoolean(HH,cid,StringHash("GuySpin"),false)
+call SaveBoolean(HH,cid,StringHash("GuyNun"),true)
+elseif time>=10. or not LoadBoolean(HH,cid,StringHash("GuyNun")) or udg_B==false or not UnitIsAlive(caster) then
+call SaveBoolean(HH,cid,StringHash("GuySpin"),false)
+call SaveBoolean(HH,cid,StringHash("GuyNun"),false)
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set t=null
+endfunction
+function Guy_F_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GuySpin"),true)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GuyNun"),false)
+// нунчаки на руке — как в NL (Сошуга: Phoenix_Missile_mini на «hand right»; владелец 1 нояб: «так же повесим»),
+// держатся всё вращение и пока заряд не потрачен; прежний вихрь VeterGa на руке снят
+set EFF=AddSpecialEffectTarget("Abilities\\Weapons\\PhoenixMissile\\Phoenix_Missile_mini.mdl",caster,"hand right")
+call SaveEffectHandle(HH,id,10,EFF)
+call sound_play("Guy\\GuyF1-"+I2S(GetRandomInt(1,2))+".mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_F_Act2)
+set t=null
+endfunction
+
+//--------------------- E: Восемь врат ---------------------
+// (владелец: каждое нажатие открывает следующие врата, 30 сек (1 нояб; было 20), каждые врата обновляют длительность; потолок врат — по
+// уровню E: 4/5/6/7/8; кд 8 сек x число врат после закрытия — выбор владельца 29 окт). Бонусы врат — способности:
+// GyS1..GyS8 (СИЛ/ЛОВ, AIab), GyAu (аура скорости бега/атаки только на себя, уровень = врата), GyMp (+50% реген маны,
+// с 2 врат), +20% здоровья с 4 врат (SetUnitMaxLife, прибавка в ключе 14), резист к контролю 25% с 5 врат (читает
+// CalculateControlResist). С 4 врат Гай теряет 0.4% здоровья в сек и получает +5% урона за каждые врата сверх 3
+// (урон — в обработчике урона). С 3 врат — форма (анимации alternate). Закрытие 8 врат: 20 сек в коляске и слабость
+// как у Гона после G (Guy_E_Wheel). Ключи таймера: 1 Гай, 5 осталось сек, 8 врата, 10-13 ауры, 14 прибавка здоровья.
+// Общая перезарядка F и G на все врата (владелец 13 нояб: «чтобы не было такого, что чел на 1 вратах жмёт кнопку,
+// потом апает врата — и новые кнопки уже»): кнопка, приходящая в слот, получает остаток перезарядки уходящей.
+// D не трогаем (D2 — рывки с зарядами, своя логика).
+function Guy_Slot takes unit caster,string key,integer base,integer new,integer lvl returns nothing
+local integer old=LoadInteger(HH,GetHandleId(caster),StringHash(key))
+local real left=0.
+if old==0 then
+set old=base
+endif
+if old!=new then
+if key!="GuySD" then
+set left=GetAbilityRemainingCooldown(GetUnitAbility(caster,old))
+endif
+if old!=base then
+call UnitRemoveAbility(caster,old)
+endif
+if new==base then
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),base,true)
+else
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),base,false)
+call UnitAddAbility(caster,new)
+call SetUnitAbilityLevel(caster,new,lvl)
+endif
+if left>0.05 and left>GetAbilityRemainingCooldown(GetUnitAbility(caster,new)) then
+call StartAbilityCooldown(GetUnitAbility(caster,new),left)
+endif
+call SaveInteger(HH,GetHandleId(caster),StringHash(key),new)
+endif
+endfunction
+// F, G и D по числу открытых врат: F — Omote Renge с 1, Asakujaku с 6, Night Guy с 8; G — Ura Renge с 3, Hirudora
+// с 7, Sekizo с 8; D — рывки от воздуха с 8 (3 заряда)
+function Guy_Slots takes unit caster returns nothing
+local integer gate=Guy_Gate(caster)
+local integer lvl=IMaxBJ(GetUnitAbilityLevel(caster,'GyQ1'),1)
+if gate>=8 then
+call Guy_Slot(caster,"GuySF",'GyF1','GyF4',lvl)
+call Guy_Slot(caster,"GuySG",'GyG1','GyG4',1)
+if LoadInteger(HH,GetHandleId(caster),StringHash("GuySD"))!='GyD2' then
+call SaveInteger(HH,GetHandleId(caster),StringHash("GuyAir"),3)
+endif
+call Guy_Slot(caster,"GuySD",'GyD1','GyD2',1)
+return
+endif
+if gate>=6 then
+call Guy_Slot(caster,"GuySF",'GyF1','GyF3',lvl)
+elseif gate>=1 then
+call Guy_Slot(caster,"GuySF",'GyF1','GyF2',lvl)
+else
+call Guy_Slot(caster,"GuySF",'GyF1','GyF1',lvl)
+endif
+if gate>=7 then
+call Guy_Slot(caster,"GuySG",'GyG1','GyG3',1)
+elseif gate>=3 then
+call Guy_Slot(caster,"GuySG",'GyG1','GyG2',1)
+else
+call Guy_Slot(caster,"GuySG",'GyG1','GyG1',1)
+endif
+call Guy_Slot(caster,"GuySD",'GyD1','GyD1',1)
+endfunction
+// бонус СИЛ/ЛОВ врат gate — кодами, не арифметикой: сборка (remove unreferenced objects) выкидывает способности,
+// которых нет в коде литералом
+function Guy_Stat takes integer gate returns integer
+if gate<=1 then
+return 'GyS1'
+elseif gate==2 then
+return 'GyS2'
+elseif gate==3 then
+return 'GyS3'
+elseif gate==4 then
+return 'GyS4'
+elseif gate==5 then
+return 'GyS5'
+elseif gate==6 then
+return 'GyS6'
+elseif gate==7 then
+return 'GyS7'
+endif
+return 'GyS8'
+endfunction
+// иконка E — врата, которые откроет следующее нажатие: 6/7/8 свои (владелец 1 нояб, GuyEIcons; «на уровень назад» —
+// E6 уже при открытых 5), на 8 остаётся E8, иначе обычная; 0 — врата закрыты
+function Guy_E_Icon takes unit caster,integer gate returns nothing
+local string pth="ReplaceableTextures\\CommandButtons\\BTNGuyE.blp"
+if gate>=5 then
+set pth="ReplaceableTextures\\CommandButtons\\BTNGuyE"+I2S(IMinBJ(gate+1,8))+".blp"
+endif
+call SetAbilityStringField(GetUnitAbility(caster,'GyE1'),ABILITY_SF_ICON_NORMAL,pth)
+endfunction
+// ауры врат на руках и ногах: зелёные огоньки (Guy\Aura — Izayoi FSAeff 56 с зелёной текстурой; 1 нояб владелец:
+// «сделай зелёным, сейчас голубая») до 6 врат; на 7 — синее пламя (Guy\AuraBlue — AuraLightBlue из NL), на 8 —
+// красное на груди (Guy\AuraRed — AuraItachi из NL); у обоих частицы в пространстве модели (guy_assets54 MODELSPACE)
+// аура врат снимается сразу: сначала прячем (иначе частицы пламени ещё висят и сливаются с новой аурой —
+// владелец 1 нояб: «аура с 6 врат при 8 сливается»), потом удаляем, как RemoveEffectAct разраба
+function Guy_EffOff takes effect e returns nothing
+if e!=null then
+call SetSpecialEffectVisible(e,false)
+call DestroyEffect(e)
+endif
+endfunction
+// ☠ снимать ДО SetUnitModel: владелец 13 нояб «после 7 врат нажимаю 8 — на Гае 2 эффекта» — смена модели на Guy8
+// шла раньше снятия синей ауры, и она оставалась на новой модели рядом с красной
+function Guy_E_AuraOff takes integer id returns nothing
+if HaveSavedHandle(HH,id,10) then
+call Guy_EffOff(LoadEffectHandle(HH,id,10))
+call Guy_EffOff(LoadEffectHandle(HH,id,11))
+call Guy_EffOff(LoadEffectHandle(HH,id,12))
+call Guy_EffOff(LoadEffectHandle(HH,id,13))
+endif
+call RemoveSavedHandle(HH,id,10)
+call RemoveSavedHandle(HH,id,11)
+call RemoveSavedHandle(HH,id,12)
+call RemoveSavedHandle(HH,id,13)
+endfunction
+function Guy_E_Aura takes unit caster,integer id,integer gate returns nothing
+local string mdl="Guy\\Aura.mdx"
+call Guy_E_AuraOff(id)
+if gate>=8 then
+// 8 врат — красное пламя на груди, как в NL (триггер vrata_smerti: AuraItachi на chest); владелец 1 нояб:
+// красные огоньки az_lcdark на руках/ногах «говно» и отставали от Гая
+// на origin, как синяя: на chest пламя крутилось с костью груди и висело криво (владелец 1 нояб)
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Guy\\AuraRed.mdx",caster,"origin"))
+call RemoveSavedHandle(HH,id,11)
+call RemoveSavedHandle(HH,id,12)
+call RemoveSavedHandle(HH,id,13)
+return
+endif
+if gate>=7 then
+// 7 врат — синее пламя (владелец 1 нояб: «на 6 зелёная, на 7 синяя»; в NL AuraLightBlue на origin)
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Guy\\AuraBlue.mdx",caster,"origin"))
+call RemoveSavedHandle(HH,id,11)
+call RemoveSavedHandle(HH,id,12)
+call RemoveSavedHandle(HH,id,13)
+return
+endif
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget(mdl,caster,"hand left"))
+call SaveEffectHandle(HH,id,11,AddSpecialEffectTarget(mdl,caster,"hand right"))
+call SaveEffectHandle(HH,id,12,AddSpecialEffectTarget(mdl,caster,"foot left"))
+call SaveEffectHandle(HH,id,13,AddSpecialEffectTarget(mdl,caster,"foot right"))
+endfunction
+// после 8 врат (владелец 1 нояб: «не убивать, а сделать инвалидом и слабым, как у Гона после G»; было: 10 сек
+// оглушения и 200% здоровья): 20 сек Гай в коляске без способностей (Guy\GuyWheel x1.6 — модель владельца) и слаб, как Гон после
+// Gon's Rage — HP/MP лок (Essence, FrozenMinusManaCast), AS/MS -60% (ISQS), AllStat -50/75/100 по уровню (GFGS),
+// значок с таймером. Таймер возвращает модель и размер; ключи: 1 Гай, 5 время
+function Guy_E_Wheel2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.1
+call SaveReal(HH,id,5,time)
+if time>=20. or udg_B==false or not UnitIsAlive(caster) then
+call UnitApplySilence(caster,false)
+call SetUnitModel(caster,"Guy\\Guy.mdx")
+call UnitSize(caster,1.,1.,1.)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set t=null
+endfunction
+function Guy_E_Wheel takes unit caster returns nothing
+local timer t=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(t),1,caster)
+call SetUnitModel(caster,"Guy\\GuyWheel.mdx")
+call UnitSize(caster,1.6,1.6,1.6)
+call SetUnitAnimation(caster,"stand")
+call UnitAddAbility(caster,'ISQS')
+call UnitMakeAbilityPermanent(caster,true,'ISQS')
+call UnitRemoveAbilityTimedPause(caster,'ISQS',20.)
+call UnitAddAbility(caster,'GFGS')
+call UnitRemoveAbilityTimed(caster,'GFGS',20.)
+call UnitMakeAbilityPermanent(caster,true,'GFGS')
+if GetHeroLevel(caster)>24 then
+call SetUnitAbilityLevel(caster,'GFGS',GetUnitAbilityLevel(caster,'GFGS')+1)
+endif
+if GetHeroLevel(caster)>29 then
+call SetUnitAbilityLevel(caster,'GFGS',GetUnitAbilityLevel(caster,'GFGS')+1)
+endif
+call Essence(caster,caster,20.)
+call FrozenMinusManaCast(caster,20.)
+// в коляске без способностей (владелец 1 нояб); снимает Guy_E_Wheel2
+call UnitApplySilence(caster,true)
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtonsDisabled\\DISBTNGuyE8.blp",20.)
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",GetUnitX(caster),GetUnitY(caster),0.,1.5,1.,1.,40.,0.)
+call TSE_TimerStart(t,0.1,true,function Guy_E_Wheel2)
+set t=null
+endfunction
+function Guy_E_Close takes unit caster,timer t returns nothing
+local integer id=GetHandleId(t)
+local integer gate=LoadInteger(HH,id,8)
+call UnitRemoveAbility(caster,Guy_Stat(gate))
+call UnitRemoveAbility(caster,'GyAu')
+call UnitRemoveAbility(caster,'GyMv')
+call UnitRemoveAbility(caster,'GyMp')
+if LoadReal(HH,id,14)>0. then
+call SetUnitMaxLife(caster,GetUnitState(caster,UNIT_STATE_MAX_LIFE)-LoadReal(HH,id,14))
+endif
+// ауру снимаем до смены модели (см. Guy_E_AuraOff)
+call Guy_E_AuraOff(id)
+if gate>=8 then
+call SetUnitModel(caster,"Guy\\Guy.mdx")
+endif
+call AddUnitAnimationProperties(caster,"alternate",false)
+call SaveInteger(HH,GetHandleId(caster),StringHash("GuyGate"),0)
+call RemoveSavedHandle(HH,GetHandleId(caster),StringHash("GuyGT"))
+call Guy_Slots(caster)
+call Guy_E_Icon(caster,0)
+call AbilityCD(caster,'GyE1',8.*gate)
+if gate>=8 and udg_B and UnitIsAlive(caster) then
+call Guy_E_Wheel(caster)
+endif
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endfunction
+function Guy_E_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local integer gate=LoadInteger(HH,id,8)
+local real time=LoadReal(HH,id,5)
+// guy_fix552 (разраб 17 ноя: «врата какого хуя в паузе кончаются») - пока Гай на паузе, время врат стоит
+if not IsUnitPaused(caster) then
+set time=time-0.1
+call SaveReal(HH,id,5,time)
+endif
+if udg_B and UnitIsAlive(caster) and time>0. then
+if gate>=4 then
+call SetWidgetLife(caster,RMaxBJ(GetWidgetLife(caster)-GetUnitState(caster,UNIT_STATE_MAX_LIFE)*0.0004*(gate-3),1.))
+endif
+if ModuloInteger(R2I(time*10.+0.5),10)==0 then
+// пыль кольцом под ногами, пока врата открыты; красные следы (дрожь земли с 4 врат, круг на 8) сняты — владелец
+// 1 нояб: «что за красные следы, когда он бегает, убери»
+endif
+else
+call Guy_E_Close(caster,t)
+endif
+set caster=null
+set t=null
+endfunction
+function Guy_E_Morph takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit caster=LoadUnitHandle(HH,GetHandleId(t),1)
+call SetUnitAnimationByIndex(caster,27)
+call QueueUnitAnimation(caster,"stand")
+call FlushChildHashtable(HH,GetHandleId(t))
+call TSE_DestroyTimer(t)
+set caster=null
+set t=null
+endfunction
+function Guy_E_Act takes unit caster returns nothing
+local integer cid=GetHandleId(caster)
+local integer gate=Guy_Gate(caster)
+local integer old=gate
+local timer t=LoadTimerHandle(HH,cid,StringHash("GuyGT"))
+local timer tm
+local integer id
+local real hp
+if gate>=3+GetUnitAbilityLevel(caster,'GyE1') then
+set t=null
+return
+endif
+set gate=gate+1
+// guy_e35 (17 ноя: «на 35 сразу с 6 врат можно было открыть») - с 35 уровня меньше 6 врат не открывается
+if gate<6 and GetHeroLevel(caster)>=35 and 3+GetUnitAbilityLevel(caster,'GyE1')>=6 then
+set gate=6
+endif
+if t==null then
+set t=CreateTimer()
+call SaveTimerHandle(HH,cid,StringHash("GuyGT"),t)
+call SaveUnitHandle(HH,GetHandleId(t),1,caster)
+call TSE_TimerStart(t,0.1,true,function Guy_E_Act2)
+endif
+set id=GetHandleId(t)
+call SaveInteger(HH,id,8,gate)
+// 30 сек (владелец 1 нояб; было 20)
+call SaveReal(HH,id,5,30.)
+// guy_dev55 (разраб: «а где длительность врат») - таймер с иконкой E на панели статусов; новое нажатие - снова 30
+// guy_fix552: таймер на панели тоже стоит в паузе
+call CreateModeIndicatorWithPauseForm(caster,"ReplaceableTextures\\CommandButtons\\BTNGuyE.blp",30.)
+call SaveInteger(HH,cid,StringHash("GuyGate"),gate)
+if old>=1 then
+call UnitRemoveAbility(caster,Guy_Stat(old))
+endif
+call UnitAddAbility(caster,Guy_Stat(gate))
+if old<1 then
+call UnitAddAbility(caster,'GyAu')
+call UnitAddAbility(caster,'GyMv')
+endif
+// скорость атаки и бега без бафа (13 нояб: аура AIae вешала чужой баф Мукуро)
+call SetUnitAbilityLevel(caster,'GyAu',gate)
+call SetUnitAbilityLevel(caster,'GyMv',gate)
+if old<2 and gate>=2 then
+call UnitAddAbility(caster,'GyMp')
+endif
+// бонусы врат — без кнопок: в игре они вылезали на панель кнопками без подсказки и сбивали F/G/D (владелец 31 окт,
+// скриншоты); прячутся нативом UjAPI, как карта прячет свои кнопки
+call ShowUnitAbility(caster,Guy_Stat(gate),false)
+call ShowUnitAbility(caster,'GyAu',false)
+call ShowUnitAbility(caster,'GyMv',false)
+call ShowUnitAbility(caster,'GyMp',false)
+if old<4 and gate>=4 then
+set hp=GetUnitState(caster,UNIT_STATE_MAX_LIFE)*0.2
+call SaveReal(HH,id,14,hp)
+call SetUnitMaxLife(caster,GetUnitState(caster,UNIT_STATE_MAX_LIFE)+hp)
+call SetWidgetLife(caster,GetWidgetLife(caster)+hp)
+endif
+if gate==8 then
+// 8 врат: модель MightGuy8th — красные волосы и кожа (1 нояб); прежнюю ауру снять до смены модели
+call Guy_E_AuraOff(id)
+call SetUnitModel(caster,"Guy\\Guy8.mdx")
+endif
+if gate>=3 then
+call AddUnitAnimationProperties(caster,"alternate",true)
+endif
+if old<1 or gate==7 or gate==8 then
+call Guy_E_Aura(caster,id,gate)
+endif
+call Guy_Slots(caster)
+call Guy_E_Icon(caster,gate)
+// morph — через 0.05 сек: сразу после каста движок возвращает stand и перебивал её (владелец 1 нояб: «на каст просто стоит»)
+set tm=CreateTimer()
+call SaveUnitHandle(HH,GetHandleId(tm),1,caster)
+call TSE_TimerStart(tm,0.05,false,function Guy_E_Morph)
+set tm=null
+call sound_play("Guy\\GuyE"+I2S(gate)+".mp3",127)
+if gate>=4 then
+call Guy_Crush(GetUnitX(caster),GetUnitY(caster),0.8+0.1*gate,gate)
+endif
+if gate>=8 then
+call Guy_Eff("Guts\\bymutou-hongse3.mdl",GetUnitX(caster),GetUnitY(caster),0.,2.,2.25,1.,0.,0.)
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",GetUnitX(caster),GetUnitY(caster),0.,2.,2.,1.,20.,0.)
+endif
+set t=null
+endfunction
+
+//--------------------- Q: Dainamikku Entorī ---------------------
+// Гай летит ногой вперёд в сторону курсора (700, 40 за тик; на паузе и неуязвим, след ветра). Первый враг на пути
+// получает удар (60% урона Q) и отлетает на 350, Гай отталкивается от него назад дугой. После попадания 3 сек вместо Q —
+// Q2 (Koyubi Kōgeki): прыжок и удар сверху по тому же врагу (40% урона Q, оглушение 1 сек).
+// Ключи: 1 Гай, 3 угол, 5 время фазы, 7 урон Q, 8 фаза (0 полёт, 1 отскок), 9 остаток пути
+function Guy_Q_Reset takes unit caster returns nothing
+local integer cid=GetHandleId(caster)
+local timer t=LoadTimerHandle(HH,cid,StringHash("GuyQT"))
+if t!=null then
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,GetHandleId(t))
+endif
+call RemoveSavedHandle(HH,cid,StringHash("GuyQT"))
+call RemoveSavedHandle(HH,cid,StringHash("GuyQ"))
+call ShowUnitAbility(caster,'GyQ2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GyQ1',true)
+set t=null
+endfunction
+function Guy_Q_Timeout takes nothing returns nothing
+call Guy_Q_Reset(LoadUnitHandle(HH,GetHandleId(GetExpiredTimer()),1))
+endfunction
+function Guy_Q_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,9)
+local integer phase=LoadInteger(HH,id,8)
+local real time=LoadReal(HH,id,5)+0.02
+local unit target
+local timer tq
+local boolean over=false
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) then
+set over=true
+elseif phase==0 then
+if dist<=0. then
+set over=true
+else
+call SaveReal(HH,id,9,dist-40.)
+call Guy_Move(caster,PolX(GetUnitX(caster),40.,facing),PolY(GetUnitY(caster),40.,facing))
+if ModuloInteger(R2I(time*50.+0.5),3)==0 then
+call Guy_Dash(caster,facing,0.)
+endif
+set target=First_Target_Skill(caster,null,PolX(GetUnitX(caster),60.,facing),PolY(GetUnitY(caster),60.,facing),130.)
+if target!=null and ReverseIntercept(caster,target) then
+set over=true
+elseif target!=null then
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,5,0.)
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Crush(GetUnitX(target),GetUnitY(target),0.6,Guy_Gate(caster))
+call sound_play("Guy\\GuyQ1-sfx.mp3",127)
+call Guy_Dmg(caster,target,LoadReal(HH,id,7)*0.6,null)
+call Push(target,35.,facing*bj_DEGTORAD,350.)
+// Q2 на 3 сек
+call SaveUnitHandle(HH,GetHandleId(caster),StringHash("GuyQ"),target)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GyQ1',false)
+if GetUnitAbilityLevel(caster,'GyQ2')==0 then
+call UnitAddAbility(caster,'GyQ2')
+endif
+call ShowUnitAbility(caster,'GyQ2',true)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'GyQ2'),0.)
+call SetUnitAbilityLevel(caster,'GyQ2',GetUnitAbilityLevel(caster,'GyQ1'))
+set tq=CreateTimer()
+call SaveTimerHandle(HH,GetHandleId(caster),StringHash("GuyQT"),tq)
+call SaveUnitHandle(HH,GetHandleId(tq),1,caster)
+call TSE_TimerStart(tq,3.,false,function Guy_Q_Timeout)
+call SetUnitAnimationByIndex(caster,10)
+endif
+endif
+elseif time>=0.3 then
+set over=true
+else
+// отскок назад дугой (до 150 в высоту)
+call Guy_Move(caster,PolX(GetUnitX(caster),-14.,facing),PolY(GetUnitY(caster),-14.,facing))
+call SetUnitFlyHeight(caster,600.*(time/0.3)*(1.-time/0.3),0.)
+endif
+if over then
+call Guy_Vision(caster,GetUnitX(caster),GetUnitY(caster),2.)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set tq=null
+set t=null
+endfunction
+function Guy_Q_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
+// полёт 1000 (владелец 1 нояб: «Q1 дальность увеличить», было 700)
+call SaveReal(HH,id,9,1000.)
+call SaveReal(HH,id,7,(2.+GetUnitAbilityLevel(caster,'GyQ1'))*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitFacing(caster,LoadReal(HH,id,3))
+call SetUnitAnimationByIndex(caster,29)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call sound_play("Guy\\GuyQ1.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_Q_Act2)
+set t=null
+endfunction
+// Q2: прыжок дугой 0.45 сек на врага из Q (догоняет его в полёте) и удар сверху; ключи: 1 Гай, 2 цель, 5 время,
+// 7 урон, 11/12 откуда
+function Guy_Q2_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local real p=time/0.45
+call SaveReal(HH,id,5,time)
+if UnitIsAlive(target) then
+call SaveReal(HH,id,13,GetUnitX(target))
+call SaveReal(HH,id,14,GetUnitY(target))
+endif
+if p<1. and udg_B and UnitIsAlive(caster) then
+call Guy_Move(caster,LoadReal(HH,id,11)+(LoadReal(HH,id,13)-LoadReal(HH,id,11))*p,LoadReal(HH,id,12)+(LoadReal(HH,id,14)-LoadReal(HH,id,12))*p)
+call SetUnitFlyHeight(caster,1600.*p*(1.-p),0.)
+else
+if udg_B and UnitIsAlive(caster) and not ReverseIntercept(caster,target) then
+call Guy_Move(caster,LoadReal(HH,id,13),LoadReal(HH,id,14))
+call Guy_Crush(GetUnitX(caster),GetUnitY(caster),1.,Guy_Gate(caster))
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",GetUnitX(caster),GetUnitY(caster),0.,1.,1.,1.,40.,0.)
+call sound_play("Guy\\GuyQ2-sfx.mp3",127)
+call Guy_Area(caster,id,1,GetUnitX(caster),GetUnitY(caster),200.,LoadReal(HH,id,7),1.)
+endif
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_Q2_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local unit target=LoadUnitHandle(HH,GetHandleId(caster),StringHash("GuyQ"))
+call Guy_Q_Reset(caster)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,7,(2.+GetUnitAbilityLevel(caster,'GyQ1'))*GetHeroStr(caster,true)*0.4)
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+call SaveReal(HH,id,13,GetUnitX(caster))
+call SaveReal(HH,id,14,GetUnitY(caster))
+call Guy_Hold(caster,true)
+call SetUnitAnimationByIndex(caster,16)
+call SetUnitTimeScale(caster,1.8)
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call sound_play("Guy\\GuyQ2.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_Q2_Act2)
+set target=null
+set t=null
+endfunction
+
+//--------------------- W: Dainamikku-Akushyon ---------------------
+// Гай напрыгивает на цель (дуга 0.3 сек) и бьёт её 6 раз с разных сторон (вспышками, каждые 0.3 сек — под звук ударов
+// GuyW-sfx 2.23 сек, он стартует с первым ударом; по 12% урона W),
+// финал — удар ногой с отбросом 300 (28%). Враг оглушён на всё комбо, Гай на паузе и неуязвим.
+// Ключи: 1 Гай, 2 цель, 3 угол первой стороны, 5 время, 6 начало фазы, 7 урон, 8 фаза, 9 текущий удар, 11/12 откуда
+function Guy_W_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local integer phase=LoadInteger(HH,id,8)
+local real tp=time-LoadReal(HH,id,6)
+local real dmg=LoadReal(HH,id,7)
+local real x0=GetUnitX(target)
+local real y0=GetUnitY(target)
+local real p
+local real ak
+local integer k
+local boolean over=false
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) or not UnitIsAlive(target) then
+set over=true
+elseif phase==0 then
+set p=tp/0.3
+if p>=1. and ReverseIntercept(caster,target) then
+set over=true
+elseif p>=1. then
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,6,time)
+call SaveInteger(HH,id,9,-1)
+call Guy_Grab(caster,target,2.3,true)
+call Guy_F_Proc(caster,target)
+// звук ударов (2.23 сек) — вместе с серией (отзыв 1 нояб: «звуки удара вместе с ударами, а не после»)
+call sound_play("Guy\\GuyW-sfx.mp3",127)
+call Guy_Crush(x0,y0,0.7,Guy_Gate(caster))
+else
+call Guy_Move(caster,LoadReal(HH,id,11)+(x0-LoadReal(HH,id,11))*p,LoadReal(HH,id,12)+(y0-LoadReal(HH,id,12))*p)
+call SetUnitFlyHeight(caster,1000.*p*(1.-p),0.)
+endif
+elseif phase==1 then
+set k=R2I(tp/0.3)
+if k>=6 then
+// финал: удар ногой с той стороны, откуда прыгнул
+call SaveInteger(HH,id,8,2)
+call SaveReal(HH,id,6,time)
+set ak=LoadReal(HH,id,3)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call Guy_Move(caster,PolX(x0,110.,ak),PolY(y0,110.,ak))
+call SetUnitFacing(caster,ak+180.)
+call SetUnitAnimationByIndex(caster,7)
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Crush(x0,y0,1.,Guy_Gate(caster))
+call Guy_Grab(caster,target,0.,false)
+call Guy_Dmg(caster,target,dmg*0.28,null)
+call Push(target,35.,(ak+180.)*bj_DEGTORAD,300.)
+elseif k!=LoadInteger(HH,id,9) then
+call SaveInteger(HH,id,9,k)
+set ak=LoadReal(HH,id,3)+137.*k
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call Guy_Move(caster,PolX(x0,100.,ak),PolY(y0,100.,ak))
+call SetUnitFacing(caster,ak+180.)
+call SetUnitAnimationByIndex(caster,34+ModuloInteger(k,2))
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Dmg(caster,target,dmg*0.12,null)
+endif
+elseif tp>=0.3 then
+set over=true
+endif
+if over then
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_W_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,Angle2(GetUnitX(target),GetUnitY(target),GetUnitX(caster),GetUnitY(caster)))
+call SaveReal(HH,id,7,50.+(1.+GetUnitAbilityLevel(caster,'GyW1'))*GetHeroStr(caster,true))
+call SaveReal(HH,id,11,GetUnitX(caster))
+call SaveReal(HH,id,12,GetUnitY(caster))
+call Guy_Hold(caster,true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitAnimationByIndex(caster,13)
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call sound_play("Guy\\GuyW.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_W_Act2)
+set t=null
+endfunction
+
+//--------------------- R: Konoha Gōriki Senpū ---------------------
+// враги R кружат вокруг Гая на высоте hgt; pull 0..1 — стягивание к 130 (0 — держать радиус)
+function Guy_R_Orbit takes unit caster,group gr,real x0,real y0,real hgt,real pull returns nothing
+local integer k=0
+local real ak
+local real dist
+loop
+exitwhen k>=GroupGetCount(gr)
+set n0=GroupGetUnitByIndex(gr,k)
+if UnitIsAlive(n0) then
+set ak=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))+12.
+set dist=SR(x0,y0,GetUnitX(n0),GetUnitY(n0))
+set dist=RMaxBJ(dist-(dist-130.)*pull*0.25,130.)
+call Guy_Move(n0,PolX(x0,dist,ak),PolY(y0,dist,ak))
+call SetUnitFlyHeight(n0,hgt,0.)
+endif
+set k=k+1
+endloop
+endfunction
+// (владелец 1 нояб: «крутиться на голове, подпрыгнуть вместе с врагом и ударить, откинув»; потом: «эффекты — просто
+// крутящиеся ветерки, изначально был маленьким и непонятна область засасывания — область больше»; «подпрыгивает сразу —
+// надо, чтобы каждая крутка понемногу поднимала его вверх»).
+// 0 — 2 сек: Гай крутится на голове — юнит прозрачный, на его месте копия модели (эффект Guy.mdl, клип 30 Spell 9 —
+// вверх ногами), 30 за тик; каждый оборот (0.25 сек) плавно поднимает его ещё на 62 — к 2 сек высота 500. Враги в 550
+// подхватываются, кружат вокруг, стягиваются к нему и поднимаются вместе с ним. Вокруг — крупные ветерки по размеру
+// области (wind3 x2, WindNewFaw4 x1.8 — кольцо ~550), вихрь VeterGa на груди. 2 сек: Гай появляется и бьёт ногой в
+// полёте (клип 4) — урон R, оглушение 1 сек, отброс 500 от Гая; падает, приземление к 2.35 сек. Пауза и неуязвимость.
+// Ключи: 1 Гай, 3 угол вращения, 4 группа поднятых, 5 время, 7 урон, 10 вихрь, 11 копия, 15 удар был
+function Guy_R_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local group gr=LoadGroupHandle(HH,id,4)
+local effect e=LoadEffectHandle(HH,id,11)
+local real time=LoadReal(HH,id,5)+0.02
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real hgt
+local real f
+local integer stp
+local integer k=0
+local boolean over=false
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) then
+set over=true
+elseif time<2. then
+// крутится на голове; подъём ступеньками — каждый оборот 0.25 сек плавно ещё на 62
+set stp=R2I(time/0.25)
+set f=(time-0.25*stp)/0.25
+set hgt=62.5*(stp+f*f*(3.-2.*f))
+call SaveReal(HH,id,3,LoadReal(HH,id,3)+30.)
+call SetSpecialEffectOrientation(e,LoadReal(HH,id,3),0.,0.)
+call SetSpecialEffectHeight(e,-77.+hgt)
+call SetUnitFlyHeight(caster,hgt,0.)
+call GroupEnumUnitsInRange(G,x0,y0,550.,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) and not IsUnitInGroup(n0,gr) and not LoadBoolean(HH,id,GetHandleId(n0)) then
+if ReverseIntercept(caster,n0) then
+call SaveBoolean(HH,id,GetHandleId(n0),true)
+else
+call GroupAddUnit(gr,n0)
+call Guy_Grab(caster,n0,2.8,true)
+endif
+endif
+endloop
+call Guy_R_Orbit(caster,gr,x0,y0,hgt+20.,0.25)
+// крупные крутящиеся ветерки — видно область засасывания (~550)
+if ModuloInteger(R2I(time*50.+0.5),10)==0 then
+call Guy_Eff("Others\\wind3.mdl",x0,y0,GetRandomReal(0.,360.),1.5,2.,1.,20.,0.)
+elseif ModuloInteger(R2I(time*50.+0.5),10)==5 then
+call Guy_Eff("Others\\WindNewFaw4.mdl",x0,y0,GetRandomReal(0.,360.),1.,1.8,1.,15.,0.)
+endif
+elseif not LoadBoolean(HH,id,15) then
+// удар ногой в полёте: урон, оглушение, отброс 500 от Гая; Гай падает
+call SaveBoolean(HH,id,15,true)
+call SetSpecialEffectVisible(e,false)
+call DestroyEffect(e)
+call RemoveSavedHandle(HH,id,11)
+call SetUnitVertexColor(caster,255,255,255,255)
+set hgt=GetUnitFlyHeight(caster)
+call SetUnitAnimationByIndex(caster,4)
+call SetUnitTimeScale(caster,1.5)
+loop
+exitwhen k>=GroupGetCount(gr)
+set n0=GroupGetUnitByIndex(gr,k)
+call Guy_Grab(caster,n0,0.,false)
+if UnitIsAlive(n0) then
+call Guy_Hit(n0,Guy_Gate(caster))
+call SetControlToUnit(caster,n0,1.,"stun")
+call Guy_Dmg(caster,n0,LoadReal(HH,id,7),null)
+call Push(n0,35.,Atan2(GetUnitY(n0)-y0,GetUnitX(n0)-x0),500.)
+endif
+set k=k+1
+endloop
+call SetUnitFlyHeight(caster,0.,1600.)
+elseif time>=2.35 then
+// приземлился
+call Guy_Crush(x0,y0,1.3,Guy_Gate(caster))
+set over=true
+endif
+if over then
+if HaveSavedHandle(HH,id,11) then
+call SetSpecialEffectVisible(e,false)
+call DestroyEffect(e)
+endif
+call SetUnitVertexColor(caster,255,255,255,255)
+if not LoadBoolean(HH,id,15) then
+loop
+exitwhen k>=GroupGetCount(gr)
+call Guy_Grab(caster,GroupGetUnitByIndex(gr,k),0.,false)
+set k=k+1
+endloop
+endif
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call DestroyGroup(gr)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set e=null
+set gr=null
+set caster=null
+set t=null
+endfunction
+function Guy_R_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveGroupHandle(HH,id,4,CreateGroup())
+call SaveReal(HH,id,7,(3.+GetUnitAbilityLevel(caster,'GyR1'))*GetHeroStr(caster,true))
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("",caster,"chest"))
+call Guy_Hold(caster,true)
+call Guy_Fly(caster,0.,0.)
+// копия Гая вверх ногами — крутится на голове; сам Гай прозрачный
+call SetUnitVertexColor(caster,255,255,255,0)
+set EFF=AddSpecialEffect("Guy\\Guy.mdx",GetUnitX(caster),GetUnitY(caster))
+call SetSpecialEffectHeight(EFF,-77.)
+call SetSpecialEffectScale(EFF,1.03)
+call SetSpecialEffectOrientation(EFF,GetUnitFacing(caster),0.,0.)
+call SetSpecialEffectAnimationByIndex(EFF,30)
+call SetSpecialEffectTimeScale(EFF,0.3)
+call SaveEffectHandle(HH,id,11,EFF)
+call SaveReal(HH,id,3,GetUnitFacing(caster))
+call sound_play("Guy\\GuyR.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_R_Act2)
+set t=null
+endfunction
+
+//--------------------- T: Konoha Kaiganshō ---------------------
+// T1: Гай мгновенно встаёт перед врагом и бьёт кулаком — малый урон (3*СИЛ) и оглушение 1 сек. 10 сек вместо T —
+// T2: такой же удар, но 9*СИЛ, отброс 500, без оглушения; после T2 кд T 25 сек, не использовал — T откатывается как обычно.
+function Guy_T_Reset takes unit caster returns nothing
+local integer cid=GetHandleId(caster)
+local timer t=LoadTimerHandle(HH,cid,StringHash("GuyTT"))
+if t!=null then
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,GetHandleId(t))
+endif
+call RemoveSavedHandle(HH,cid,StringHash("GuyTT"))
+call ShowUnitAbility(caster,'GyT2',false)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GyT1',true)
+set t=null
+endfunction
+function Guy_T_Timeout takes nothing returns nothing
+call Guy_T_Reset(LoadUnitHandle(HH,GetHandleId(GetExpiredTimer()),1))
+endfunction
+// вспышка перед врагом и удар кулаком
+function Guy_T_Punch takes unit caster,unit target,real sc returns nothing
+local real facing=Angle2(GetUnitX(target),GetUnitY(target),GetUnitX(caster),GetUnitY(caster))
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),facing+180.)
+call Guy_Move(caster,PolX(GetUnitX(target),90.,facing),PolY(GetUnitY(target),90.,facing))
+call SetUnitFacing(caster,facing+180.)
+call SetUnitAnimationByIndex(caster,35)
+call QueueUnitAnimation(caster,"stand")
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Eff("Kisame\\az_hitheavy.mdl",GetUnitX(target),GetUnitY(target),facing,1.,sc,1.,0.,80.)
+call Guy_Crush(GetUnitX(target),GetUnitY(target),0.6*sc,Guy_Gate(caster))
+call Guy_F_Proc(caster,target)
+endfunction
+function Guy_T_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+if target==null or not UnitIsAlive(target) or ReverseIntercept(caster,target) then
+call TSE_DestroyTimer(t)
+set t=null
+return
+endif
+call Guy_T_Punch(caster,target,1.)
+call sound_play("Guy\\GuyT1.mp3",127)
+call sound_play("Guy\\GuyT1-sfx.mp3",127)
+call SetControlToUnit(caster,target,1.,"stun")
+call Guy_Dmg(caster,target,2.*GetHeroStr(caster,true),null)
+call SetPlayerAbilityAvailable(GetOwningPlayer(caster),'GyT1',false)
+if GetUnitAbilityLevel(caster,'GyT2')==0 then
+call UnitAddAbility(caster,'GyT2')
+endif
+call ShowUnitAbility(caster,'GyT2',true)
+call SetAbilityRemainingCooldown(GetUnitAbility(caster,'GyT2'),0.)
+call SaveTimerHandle(HH,GetHandleId(caster),StringHash("GuyTT"),t)
+call SaveUnitHandle(HH,GetHandleId(t),1,caster)
+call TSE_TimerStart(t,10.,false,function Guy_T_Timeout)
+set t=null
+endfunction
+function Guy_T2_Act takes unit caster,unit target returns nothing
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+call Guy_T_Reset(caster)
+if target==null or not UnitIsAlive(target) or ReverseIntercept(caster,target) then
+return
+endif
+call Guy_T_Punch(caster,target,2.)
+set facing=GetUnitFacing(caster)
+call Guy_Eff("Kisame\\az_hitheavy.mdl",GetUnitX(target),GetUnitY(target),facing,1.,1.2,1.,0.,80.)
+call sound_play("Guy\\GuyT2.mp3",127)
+call sound_play("Guy\\GuyT2-sfx.mp3",127)
+call Guy_Dmg(caster,target,8.*GetHeroStr(caster,true),null)
+call Push(target,40.,facing*bj_DEGTORAD,500.)
+call AbilityCD(caster,'GyT1',25.)
+endfunction
+
+//--------------------- D: Kuchiyose no Jutsu (черепаха) ---------------------
+// Гай призывает под собой черепаху и отталкивается от неё вперёд (600 дугой, 40 за тик), черепаха отлетает назад (до
+// 900) и бьёт первого врага на пути: 10*СИЛ и оглушение 0.3 сек. Ключи: 1 Гай, 3 угол, 5 время, 7 урон, 9 путь Гая,
+// 10 путь черепахи, 20 черепаха
+function Guy_D_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit turtle=LoadUnitHandle(HH,id,20)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,9)
+local real dt=LoadReal(HH,id,10)
+local real time=LoadReal(HH,id,5)+0.02
+local unit target
+local unit guyTurtleSource=WaveRedirectedSource(turtle)
+local real guyTurtleFacing=facing+180.
+call SaveReal(HH,id,5,time)
+if dist>0. and udg_B and UnitIsAlive(caster) then
+call SaveReal(HH,id,9,dist-40.)
+call Guy_Move(caster,PolX(GetUnitX(caster),40.,facing),PolY(GetUnitY(caster),40.,facing))
+call SetUnitFlyHeight(caster,600.*(1.-dist/600.)*(dist/600.),0.)
+if ModuloInteger(R2I(time*50.+0.5),3)==0 then
+call Guy_Dash(caster,facing,0.)
+endif
+elseif dist>-100. then
+call SaveReal(HH,id,9,-100.)
+call Guy_Vision(caster,GetUnitX(caster),GetUnitY(caster),2.)
+call Guy_Hold(caster,false)
+endif
+if dt>0. and (WaveCancelled(turtle) or GetUnitTypeId(turtle)==0) then
+call SaveReal(HH,id,10,0.)
+elseif dt>0. then
+if guyTurtleSource!=null then
+set guyTurtleFacing=WaveRedirectedAngle(turtle)
+call SetUnitFacingInstant(turtle,guyTurtleFacing)
+else
+set guyTurtleSource=caster
+endif
+call SaveReal(HH,id,10,dt-45.)
+call Guy_Move(turtle,PolX(GetUnitX(turtle),45.,guyTurtleFacing),PolY(GetUnitY(turtle),45.,guyTurtleFacing))
+set target=First_Target_Skill(guyTurtleSource,null,GetUnitX(turtle),GetUnitY(turtle),225.)
+if target!=null and udg_B then
+call SaveReal(HH,id,10,0.)
+call Guy_Crush(GetUnitX(target),GetUnitY(target),1.5,Guy_Gate(caster))
+call Guy_Hit(target,Guy_Gate(caster))
+call SetControlToUnit(guyTurtleSource,target,0.3,"stun")
+call Guy_Dmg(guyTurtleSource,target,LoadReal(HH,id,7),null)
+endif
+endif
+if LoadReal(HH,id,10)<=0. and LoadReal(HH,id,9)<=-100. then
+if not WaveCancelled(turtle) and GetUnitTypeId(turtle)!=0 then
+call WaveUnregister(turtle,false)
+call Guy_EffAn("Madara\\kaizokusfxbyvalk4.mdl",GetUnitX(turtle),GetUnitY(turtle),GetRandomReal(0.,360.),1.,1.5,1.,30.,0.)
+call Guy_Vision(caster,GetUnitX(turtle),GetUnitY(turtle),2.)
+call RemoveUnit(turtle)
+endif
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set guyTurtleSource=null
+set turtle=null
+set caster=null
+set t=null
+endfunction
+function Guy_D_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call SaveReal(HH,id,9,600.)
+call SaveReal(HH,id,10,900.)
+call SaveReal(HH,id,7,(2.5+0.5*IMaxBJ(GetUnitAbilityLevel(caster,'GyE1'),1))*GetHeroStr(caster,true))
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',GetUnitX(caster),GetUnitY(caster),facing+180.)
+// модель владельца (1 нояб): ~300 в длину против ~220 у старой — размер 1, бег вдвое быстрее (нет walk fast)
+call SetUnitModel(n0,"Guy\\Turtle.mdx")
+// x1.5 (владелец 1 нояб: «черепаху больше в полтора раза и эффекты тоже»)
+call UnitSize(n0,1.5,1.5,1.5)
+call Guy_Fly(n0,0.,0.)
+call SetUnitAnimation(n0,"walk")
+call UnitSpeed(n0,2.)
+call SaveUnitHandle(HH,id,20,n0)
+call WaveRegisterShared(n0,t)
+// дым призыва (кольцо белых клубов, Madara kaizokusfxbyvalk4)
+call Guy_EffAn("Madara\\kaizokusfxbyvalk4.mdl",GetUnitX(caster),GetUnitY(caster),GetRandomReal(0.,360.),1.,1.95,1.,20.,0.)
+// печать призыва на земле под черепахой (модель владельца 1 нояб, «Summoning Seal»: круг 100 при x1) — x3.5, 1 сек
+set EFF=AddSpecialEffect("Guy\\SummonSeal.mdx",GetUnitX(caster),GetUnitY(caster))
+call SetSpecialEffectOrientation(EFF,facing,0.,0.)
+call SetSpecialEffectScale(EFF,5.25)
+call RemoveEffect(EFF,1.,true,CreateTimer())
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),facing)
+call Guy_Hold(caster,true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitFacing(caster,facing)
+call SetUnitAnimationByIndex(caster,17)
+call sound_play("Guy\\GuyD1.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_D_Act2)
+set t=null
+endfunction
+// D с 8 врат: рывок на 500 (0.1 сек), 3 заряда, заряд копится 3.5 сек; заряды — HH[Гай][GuyAir], таймер
+// накопления — HH[Гай][GuyAirT]
+function Guy_D2_Charge takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local unit caster=LoadUnitHandle(HH,GetHandleId(t),1)
+local integer cid=GetHandleId(caster)
+local integer k=LoadInteger(HH,cid,StringHash("GuyAir"))+1
+call SaveInteger(HH,cid,StringHash("GuyAir"),k)
+if k>=3 or GetUnitAbilityLevel(caster,'GyD2')==0 then
+call SaveInteger(HH,cid,StringHash("GuyAir"),3)
+call RemoveSavedHandle(HH,cid,StringHash("GuyAirT"))
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,GetHandleId(t))
+endif
+set caster=null
+set t=null
+endfunction
+// красный двойник Гая в позе выпада (анимация 25) — след рывка с 8 врат
+function Guy_DashGhost takes unit caster,real life returns nothing
+local unit fx=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(fx,"Guy\\Guy.mdx")
+// поза бега — Walk Alternate (индекс 42, её Гай и играет на бегу с 3 врат); полёт 31 владелец 1 нояб забраковал
+call SetUnitAnimationByIndex(fx,42)
+call UnitSpeed(fx,1.)
+call UnitColor(fx,100,15,15,50)
+call MyRemoveUnit(fx,life)
+set fx=null
+endfunction
+// рывок 8 врат (отзыв 1 нояб: «микро-зигзаги, 3 — на озвучке как раз 3 отскока»): 3 отрезка +30 / -30 / +30 от
+// направления, длины 144 / 288 / 144 (боковой снос в сумме 0, вперёд 500), 48 за тик — 0.24 сек; на каждом отскоке
+// двойник и кольцо воздуха; стена — рывок обрывается. Ключи: 1 Гай, 3 угол, 9 тик
+function Guy_D2_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real facing=LoadReal(HH,id,3)
+local integer cnt=LoadInteger(HH,id,9)
+local real ak=facing+30.
+local real x
+local real y
+call SaveInteger(HH,id,9,cnt+1)
+if cnt>=3 and cnt<9 then
+set ak=facing-30.
+endif
+set x=PolX(GetUnitX(caster),48.,ak)
+set y=PolY(GetUnitY(caster),48.,ak)
+if cnt<12 and udg_B and UnitIsAlive(caster) and not IsTerrainPathable(x,y,PATHING_TYPE_FLYABILITY) then
+if cnt==0 or cnt==3 or cnt==9 then
+// отскок (ветерки на отскоках, след и пыль в конце сняты — владелец 1 нояб: «не нравятся ветерки, которые остаются после прыжка»)
+call SetUnitFacing(caster,ak)
+call Guy_DashGhost(caster,0.3)
+// EffectID 15 и 12 (владелец 1 нояб)
+endif
+call Guy_Move(caster,x,y)
+else
+call Guy_Vision(caster,GetUnitX(caster),GetUnitY(caster),2.)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set t=null
+endfunction
+function Guy_D2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local integer cid=GetHandleId(caster)
+local timer tc=LoadTimerHandle(HH,cid,StringHash("GuyAirT"))
+local integer k=LoadInteger(HH,cid,StringHash("GuyAir"))-1
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+call SaveInteger(HH,cid,StringHash("GuyAir"),k)
+if tc==null then
+set tc=CreateTimer()
+call SaveTimerHandle(HH,cid,StringHash("GuyAirT"),tc)
+call SaveUnitHandle(HH,GetHandleId(tc),1,caster)
+call TSE_TimerStart(tc,3.5,true,function Guy_D2_Charge)
+endif
+if k<=0 then
+call AbilityCD(caster,'GyD2',TimerGetRemaining(tc))
+endif
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,facing)
+call Guy_Hold(caster,true)
+// рывок 8 врат без неуязвимости (владелец 13 нояб: «D на 8 вратах убрать инвул»); пауза на 0.24 сек остаётся
+call SetUnitInvulnerable(caster,false)
+call SetUnitFacing(caster,facing)
+call SetUnitAnimationByIndex(caster,31)
+call SetUnitTimeScale(caster,2.)
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),facing)
+call Guy_DashGhost(caster,0.3)
+call sound_play("Guy\\GuyD2.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_D2_Act2)
+set tc=null
+set t=null
+endfunction
+
+//--------------------- G: Konoha Tsumujikaze ---------------------
+// Гай встаёт на голову и 2 сек крутит ногами (вихрь VeterGa, пауза и неуязвимость): враги в 300 расталкиваются от него,
+// 8 ударов по 3/8*СИЛ, в конце — 7*СИЛ всем в 350 и отброс 300. Ключи: 1 Гай, 5 время, 7 сила, 9 удар, 10 вихрь
+function Guy_G_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local real time=LoadReal(HH,id,5)+0.02
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real ak
+local integer k=R2I(time/0.25)
+call SaveReal(HH,id,5,time)
+if time<2. and udg_B and UnitIsAlive(caster) then
+call SetUnitFacing(caster,GetUnitFacing(caster)+30.)
+call GroupEnumUnitsInRange(G,x0,y0,300.,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
+set ak=Angle2(x0,y0,GetUnitX(n0),GetUnitY(n0))
+call Guy_Move(n0,PolX(GetUnitX(n0),10.,ak),PolY(GetUnitY(n0),10.,ak))
+endif
+endloop
+if k!=LoadInteger(HH,id,9) then
+call SaveInteger(HH,id,9,k)
+call SetUnitAnimationByIndex(caster,7)
+call SetUnitTimeScale(caster,2.2)
+call Guy_Eff("Others\\WindNewFaw4.mdl",x0,y0,GetRandomReal(0.,360.),1.,1.,1.,40.,0.)
+call Guy_Area(caster,id,k+1,x0,y0,300.,LoadReal(HH,id,7)*3./8.,0.)
+endif
+else
+if udg_B and UnitIsAlive(caster) then
+call Guy_Crush(x0,y0,1.2,Guy_Gate(caster))
+call GroupEnumUnitsInRange(G,x0,y0,350.,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
+call Guy_Hit(n0,Guy_Gate(caster))
+call Guy_Dmg(caster,n0,LoadReal(HH,id,7)*7.,null)
+call Push(n0,35.,Atan2(GetUnitY(n0)-y0,GetUnitX(n0)-x0),300.)
+endif
+endloop
+endif
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set caster=null
+set t=null
+endfunction
+function Guy_G_Act takes unit caster returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveInteger(HH,id,9,-1)
+call SaveReal(HH,id,7,GetHeroStr(caster,true)*(0.55+0.05*IMaxBJ(GetUnitAbilityLevel(caster,'GyE1'),1)))
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Guy\\VeterGa.mdx",caster,"origin"))
+call Guy_Hold(caster,true)
+call SetUnitAnimationByIndex(caster,11)
+call SetUnitTimeScale(caster,1.5)
+call sound_play("Guy\\GuyG1.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_G_Act2)
+set t=null
+endfunction
+
+//--------------------- F врат: Omote Renge (с 1 врат) ---------------------
+// Гай встаёт перед врагом, апперкотом подкидывает его (до 800 за 0.45 сек; отзыв 1 нояб: «подкидывал выше и крутился
+// вместе с целью при падении»), взлетает следом, хватает и, вращаясь вместе с ним,
+// вбивает головой в землю: (1+F)*СИЛ и оглушение 1 сек. Ключи: 1 Гай, 2 цель, 5 время, 7 урон, 15 приземлился,
+// 16 звук захвата сыгран
+function Guy_F2_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local real high
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) or not UnitIsAlive(target) or time>=1.4 then
+call Guy_Grab(caster,target,0.,false)
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif time<0.45 then
+// апперкот: враг до 800, Гай следом
+set high=800.*time/0.45
+call SetUnitFlyHeight(target,high,0.)
+call SetUnitFlyHeight(caster,RMaxBJ(high-120.,0.),0.)
+elseif time<0.7 then
+// схватил наверху, начинают крутиться
+if not LoadBoolean(HH,id,16) then
+call SaveBoolean(HH,id,16,true)
+call sound_play("Guy\\GuyF2-sfx2.mp3",127)
+call SetUnitAnimationByIndex(caster,30)
+endif
+call SetUnitFacing(caster,GetUnitFacing(caster)+40.)
+call SetUnitFacing(target,GetUnitFacing(caster))
+call Guy_Move(caster,GetUnitX(target),GetUnitY(target))
+call SetUnitFlyHeight(caster,820.,0.)
+call SetUnitFlyHeight(target,800.,0.)
+elseif time<1.1 then
+// падают вниз головой, крутясь вместе (Гай держит врага), вокруг воздушный смерч
+set high=800.*(1.1-time)/0.4
+call SetUnitFacing(caster,GetUnitFacing(caster)+45.)
+call SetUnitFacing(target,GetUnitFacing(caster))
+call Guy_Move(caster,GetUnitX(target),GetUnitY(target))
+call SetUnitFlyHeight(caster,high+20.,0.)
+call SetUnitFlyHeight(target,high,0.)
+// владелец 1 нояб: «эффект 20 при полёте вниз, переверни на 180, скорость 1.5»; потом «прозрачность 40% и меньше» — видно 40% (102 из 255), размер 0.8-1
+if ModuloInteger(R2I(time*50.+0.5),3)==0 then
+set EFF=AddSpecialEffect("Others\\WindCirclefaster.mdl",GetUnitX(target),GetUnitY(target))
+call SetSpecialEffectHeight(EFF,high)
+call SetSpecialEffectOrientation(EFF,GetRandomReal(0.,360.),180.,0.)
+call SetSpecialEffectScale(EFF,GetRandomReal(0.8,1.))
+call SetSpecialEffectTimeScale(EFF,1.5)
+call SetSpecialEffectAlpha(EFF,102)
+call RemoveEffect(EFF,0.7,true,CreateTimer())
+endif
+elseif not LoadBoolean(HH,id,15) then
+call SaveBoolean(HH,id,15,true)
+call Guy_Fly(target,GetUnitDefaultFlyHeight(target),0.)
+call SetUnitFlyHeight(caster,0.,0.)
+// удар об землю — эффекты 73 и 1303, как в финале Ura Renge (владелец 1 нояб: «в F1 опять 15, давай те же»);
+// потом (владелец 2 нояб): 73 и 1303 в 1.5 раза меньше и прозрачность 50, плюс 1401 (купол земли earthdom)
+call Guy_Eff("Madara\\BY_Wood_GongChengSiPai_6.mdl",GetUnitX(target),GetUnitY(target),GetRandomReal(0.,360.),1.5,2.,0.8,50.,0.)
+call Guy_Eff("Izayoi\\BY_Wood_Sand_YueKongJi.mdl",GetUnitX(target),GetUnitY(target),GetRandomReal(0.,360.),1.5,1.,1.,50.,0.)
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",GetUnitX(target),GetUnitY(target),0.,1.5,1.5,1.,20.,0.)
+call Guy_Hit(target,Guy_Gate(caster))
+call sound_play("Guy\\GuyF2-sfx3.mp3",127)
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call SetControlToUnit(caster,target,1.,"stun")
+call Guy_Dmg(caster,target,LoadReal(HH,id,7),null)
+call Guy_Self(caster,LoadReal(HH,id,7))
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_F2_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+if target==null or not UnitIsAlive(target) or ReverseIntercept(caster,target) then
+call TSE_DestroyTimer(t)
+set t=null
+return
+endif
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+// guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Omote Renge 6*СИЛ
+call SaveReal(HH,id,7,6.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call Guy_T_Punch(caster,target,1.)
+call Guy_Fly(caster,0.,0.)
+call SetUnitAnimationByIndex(caster,5)
+call Guy_Grab(caster,target,1.5,true)
+call sound_play("Guy\\GuyF2.mp3",127)
+call sound_play("Guy\\GuyF2-sfx1.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_F2_Act2)
+set t=null
+endfunction
+
+//--------------------- F врат: Asakujaku (с 6 врат) ---------------------
+// Asakujaku — как в Naruto Legend (владелец 1 нояб: «полная хуйня, возьми просто у НЛ»; триггеры NL Pavlin + ydari +
+// tay_dvig, Desktop\NL\war3map (1).j ~69067). Гай встаёт в 150 перед врагом, оба взлетают на 350; Гай молотит кулаками
+// (анимация 10 = «Spell four alternate» той же модели ak3, x2), на руках огонь (RedDragonMissile). Каждые 0.1 сек из врага веером назад вылетают 2 огненных шара (как дамми hbot NL: RedDragonMissile, 1000/сек,
+// 400, на высоте ~450, взрываются через 0.8 сек) и урон врагам в 350 за его спиной; каждые 0.2 сек на враге взрыв
+// VolcanoMissile + DemolisherFireMissile + slam2 (NL). Через 1.5 сек враг падает и отлетает на 375 от Гая, Гай
+// опускается; в 2.0 приземление, оглушение 0.5 сек. Урон наш: (2+F)*СИЛ за 15 тиков.
+// Звуки — пак владельца (GuyF3, sfx1..3), не asa.wav NL. Ключи: 1 Гай, 2 цель, 3 угол Гай->враг, 5 время, 7 урон,
+// 9 тик, 10/11 огонь на руках, 15 враг падает
+function Guy_FireBall2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local effect e=LoadEffectHandle(HH,id,10)
+local integer cnt=LoadInteger(HH,id,9)+1
+local real ak=LoadReal(HH,id,3)
+call SaveInteger(HH,id,9,cnt)
+if cnt<=20 then
+call SaveReal(HH,id,11,PolX(LoadReal(HH,id,11),40.,ak))
+call SaveReal(HH,id,12,PolY(LoadReal(HH,id,12),40.,ak))
+call SetSpecialEffectPosition(e,LoadReal(HH,id,11),LoadReal(HH,id,12))
+call SetSpecialEffectHeight(e,380.+5.*cnt)
+else
+// долетел: огненный взрыв в воздухе, шар прячем (без его Death)
+call Guy_Eff("Kisame\\AFBCronoseffect1.mdl",LoadReal(HH,id,11),LoadReal(HH,id,12),ak,1.,1.6,1.,0.,480.)
+call SetSpecialEffectVisible(e,false)
+call DestroyEffect(e)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set e=null
+set t=null
+endfunction
+// огненный шар павлиньего хвоста (отзыв 1 нояб: «эффект огня другой взять, чтобы летели подальше, масштабнее»):
+// Signum\FSAeff (132) — огненный шар с хвостом, x1.6, из (x,y) в сторону ak на 800 за 0.4 сек, в конце взрыв
+function Guy_FireBall takes real x,real y,real ak returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+set EFF=AddSpecialEffect("Signum\\FSAeff (132).mdl",x,y)
+call SetSpecialEffectHeight(EFF,380.)
+call SetSpecialEffectYaw(EFF,ak)
+call SetSpecialEffectScale(EFF,1.6)
+call SaveEffectHandle(HH,id,10,EFF)
+call SaveReal(HH,id,11,x)
+call SaveReal(HH,id,12,y)
+call SaveReal(HH,id,3,ak)
+call TSE_TimerStart(t,0.02,true,function Guy_FireBall2)
+set t=null
+endfunction
+function Guy_F3_Hands takes integer id returns nothing
+call DestroyEffect(LoadEffectHandle(HH,id,10))
+call DestroyEffect(LoadEffectHandle(HH,id,11))
+call RemoveSavedHandle(HH,id,10)
+call RemoveSavedHandle(HH,id,11)
+endfunction
+function Guy_F3_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local real ak=LoadReal(HH,id,3)
+local integer k=R2I(time/0.06)
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) or not UnitIsAlive(target) or time>=2.75 then
+if UnitIsAlive(target) and udg_B and UnitIsAlive(caster) then
+// приземлился (1 нояб владелец: «непонятные эффекты врага на земле, который падает» — blackblink, феникс, рябь и
+// «смерть» врага из NL убраны)
+call Guy_Crush(GetUnitX(target),GetUnitY(target),1.2,Guy_Gate(caster))
+call sound_play("Guy\\GuyF3-sfx3.mp3",127)
+call SetControlToUnit(caster,target,0.5,"stun")
+endif
+if not LoadBoolean(HH,id,15) then
+// прервано до падения — огонь на руках ещё висит
+call Guy_F3_Hands(id)
+endif
+call SetUnitTimeScale(target,1.)
+call ResetUnitAnimation(target)
+call Guy_Grab(caster,target,0.,false)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+elseif time<2.25 then
+// владелец 1 нояб: «больше ударов и длиннее на 0.75 сек» — тик 0.06, серия 2.25 сек (урон тот же)
+// серия: тик 0.06 — 2 огненных шара веером за спину врага и урон за его спиной; через тик — взрыв на враге
+if k!=LoadInteger(HH,id,9) then
+call SaveInteger(HH,id,9,k)
+call SetUnitAnimationByIndex(caster,34+ModuloInteger(k,2))
+call Guy_FireBall(GetUnitX(target),GetUnitY(target),ak+GetRandomReal(-75.,75.))
+call Guy_FireBall(GetUnitX(target),GetUnitY(target),ak+GetRandomReal(-75.,75.))
+call Guy_Area(caster,id,k+1,PolX(GetUnitX(target),200.,ak),PolY(GetUnitY(target),200.,ak),350.,LoadReal(HH,id,7)/37.,0.)
+if ModuloInteger(k,3)==0 then
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Other\\Volcano\\VolcanoMissile.mdl",target,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\DemolisherFireMissile\\DemolisherFireMissile.mdl",target,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Guy\\Slam2.mdx",target,"chest"))
+endif
+if ModuloInteger(k,6)==0 then
+call sound_play("Guy\\GuyF3-sfx2.mp3",110)
+endif
+endif
+else
+if not LoadBoolean(HH,id,15) then
+// враг падает и отлетает от Гая, Гай опускается
+call SaveBoolean(HH,id,15,true)
+call Guy_F3_Hands(id)
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Weapons\\DemolisherFireMissile\\DemolisherFireMissile.mdl",target,"chest"))
+call DestroyEffect(AddSpecialEffectTarget("Guy\\Slam2.mdx",target,"chest"))
+call SetUnitFlyHeight(target,GetUnitDefaultFlyHeight(target),1000.)
+call SetUnitFlyHeight(caster,0.,700.)
+call SetUnitTimeScale(caster,1.)
+call SetUnitAnimation(caster,"stand")
+endif
+call Guy_Move(target,PolX(GetUnitX(target),15.,ak),PolY(GetUnitY(target),15.,ak))
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_F3_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real ak=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+if target==null or not UnitIsAlive(target) or ReverseIntercept(caster,target) then
+call TSE_DestroyTimer(t)
+set t=null
+return
+endif
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveInteger(HH,id,9,-1)
+call SaveReal(HH,id,3,ak)
+// guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Asakujaku 8*СИЛ
+call SaveReal(HH,id,7,8.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call Guy_Grab(caster,target,2.95,true)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),ak)
+call Guy_Move(caster,PolX(GetUnitX(target),150.,ak+180.),PolY(GetUnitY(target),150.,ak+180.))
+call SetUnitFacing(caster,ak)
+call Guy_Fly(caster,350.,0.)
+call Guy_Fly(target,350.,0.)
+call SetUnitAnimationByIndex(caster,34)
+call SetUnitTimeScale(caster,2.)
+call SaveEffectHandle(HH,id,10,AddSpecialEffectTarget("Abilities\\Weapons\\RedDragonBreath\\RedDragonMissile.mdl",caster,"hand left"))
+call SaveEffectHandle(HH,id,11,AddSpecialEffectTarget("Abilities\\Weapons\\RedDragonBreath\\RedDragonMissile.mdl",caster,"hand right"))
+call DestroyEffect(AddSpecialEffectTarget("Abilities\\Spells\\Human\\Thunderclap\\ThunderClapCaster.mdl",target,"chest"))
+call sound_play("Guy\\GuyF3.mp3",127)
+call sound_play("Guy\\GuyF3-sfx1.mp3",127)
+call Guy_Self(caster,LoadReal(HH,id,7))
+call TSE_TimerStart(t,0.02,true,function Guy_F3_Act2)
+set t=null
+endfunction
+
+//--------------------- F врат: Night Guy (с 8 врат) ---------------------
+// (владелец 31 окт: «ночной гай не выглядит как ночной гай, хочу как в аниме, супер крутая пафосная») Сцена в три части:
+// 1) 0.8 сек подготовка: Гай на паузе в позе силы, вокруг бьют столбы красного пара 8 врат (Sabrac File00004804), под
+//    ногами трещины и обломки, красные кольца поднимаются вверх, экран вспыхивает красным, к 0.4 сек за ним встаёт
+//    дракон (модель Night Guy с Discord, ~600 при x1, голова вперёд — x1.8 вокруг Гая); враг оглушён и ждёт.
+// 2) рывок: Гай и дракон летят к врагу (55 за тик), за Гаем красные двойники-пинки, по земле — разлом, выбросы грязи по
+//    бокам и красные кольца; долетел — пинок с выбросом искр, дальше несёт врага перед собой ещё 700.
+// 3) удар: огромный взрыв — красный купол, огненное кольцо с обломками, три ударные волны Джирена (4/7/10), удар об
+//    землю с 8 врат, красная вспышка экрана, тряска; (5+F)*СИЛ, оглушение 1.5 сек, отброс 400; дракон доигрывает Death.
+// Ключи: 1 Гай, 2 цель, 3 угол, 5 время, 6 начало фазы, 7 урон, 8 фаза (0 подготовка, 1 рывок, 2 несёт), 9 путь, 20 дракон
+
+// шаг следа: true, если с прошлого раза пройдено step (ключи key/key+1 — точка, key+10 — первый раз уже был)
+function Guy_TrailStep takes integer id,integer key,real x,real y,real step returns boolean
+if LoadBoolean(HH,id,key+10) and SR(LoadReal(HH,id,key),LoadReal(HH,id,key+1),x,y)<step then
+return false
+endif
+call SaveBoolean(HH,id,key+10,true)
+call SaveReal(HH,id,key,x)
+call SaveReal(HH,id,key+1,y)
+return true
+endfunction
+// красный двойник Гая в позе пинка — гаснет за life
+function Guy_Ghost takes unit caster,real high,real life returns nothing
+local unit fx=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'e200',GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call SetUnitModel(fx,"Guy\\Guy.mdx")
+call SetUnitAnimationByIndex(fx,29)
+call UnitSpeed(fx,0.5)
+call UnitColor(fx,100,15,15,55)
+call SetUnitFlyHeight(fx,high,0.)
+call MyRemoveUnit(fx,life)
+set fx=null
+endfunction
+// красная вспышка экрана (как вспышка у Мадоки разраба)
+function Guy_RedFlash takes real dur returns nothing
+call CinematicFadeBJCustom(bj_CINEFADETYPE_FADEIN,dur,"ReplaceableTextures\\CameraMasks\\White_mask.blp",100,12,12,35)
+endfunction
+function Guy_WhiteFlash takes real dur returns nothing
+call CinematicFadeBJCustom(bj_CINEFADETYPE_FADEIN,dur,"ReplaceableTextures\\CameraMasks\\White_mask.blp",100,100,100,45)
+endfunction
+// большой взрыв Night Guy в точке
+// земля под Гаем — набор морфа Гатса (GutsFMorph_Act2; разраб 1 нояб: «не хватает эффектов на земле, у Гатса в морфе хорошие»)
+function Guy_F4_Ground takes unit caster,real facing returns nothing
+call EffectCreateAndMove(true,"Guts\\red-qiquan.mdl",facing,1.5,1.5,0.5,100,100,100,0.,0.,caster,0.,facing)
+call EffectCreateAndMove(true,"Guts\\File00000002.mdl",facing,1.5,1.25,0.5,100,100,100,0.,0.,caster,0.,facing)
+call EffectCreateAndMove(true,"Guts\\red-lizi-zhendi-fast.mdl",GetRandomReal(0.,360.),1.,2.,0.4,100,100,100,40.,0.,caster,0.,facing)
+call EffectCreateAndMove(true,"Guts\\File00003933.mdl",GetRandomReal(0.,360.),1.5,1.5,1.25,100,100,100,0.,100.,caster,0.,facing)
+endfunction
+// красные взрывы на земле — как F-W Гатса (Guts_F_W_Act2), без кольца WindCirclefaster; владелец 1 нояб: «не на взрыв,
+// а за драконом — след»: зовётся в полёте раз в 0.08 сек в точке Гая, на земле (размеры Гатса x sc)
+function Guy_F4_Red takes real x,real y,real facing,real sc returns nothing
+local unit fx
+call Guy_Eff("Guts\\az_siwen3.mdl",x,y,facing+180.,1.,1.5*sc,0.5,0.,0.)
+set fx=CreateUnit(Player(PLAYER_NEUTRAL_PASSIVE),'e200',x,y,GetRandomReal(0.,360.))
+call SetUnitModel(fx,"Others\\Lamboaz-zidan.mdl")
+call SetUnitAnimationByIndex(fx,1)
+call UnitSize(fx,1.5*sc,1.5*sc,1.5*sc)
+call UnitColor(fx,100,100,100,60.)
+call MyRemoveUnit(fx,1.)
+call Guy_Eff("Guts\\red-lizi-shunjian.mdl",x,y,facing,1.,4.*sc,0.6,0.,0.)
+call Guy_Eff("Guts\\AZ_hit-red.mdl",x,y,facing+180.,1.,4.*sc,0.35,0.,15.)
+call Guy_Eff("Guts\\az_slb.mdl",x,y,GetRandomReal(0.,360.),1.5,2.5*sc,0.6,30.,0.)
+// вместо Sand3 — EffectID 1896 (владелец 1 нояб), параметры как у разраба: размер 1, скорость 2
+call Guy_Eff("Zoro\\az_slb2.mdl",x,y,facing,1.25,1.*sc,2.,0.,0.)
+set fx=null
+endfunction
+function Guy_F4_Boom takes real x,real y,real facing returns nothing
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",x,y,0.,1.5,3.,1.,0.,0.)
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",x,y,0.,1.5,2.5,1.,20.,0.)
+// 14 ноя (владелец: «в конце не хватает бабаха») - после снятия тряски/вспышек/земли взрыв крупнее в воздухе:
+// огонь Natsu x2.2, два огненных шара, выброс x3, вспышка AFBCronos; волны средние (разраб просил выше и меньше)
+call Guy_Eff("Ace\\[A]Natsu roar 3.mdl",x,y,GetRandomReal(0.,360.),2.3,2.2,1.,0.,0.)
+call Guy_EffAn("JirenShock2.mdl",x,y,0.,1.,3.,1.,0.,150.)
+call Guy_EffAn("JirenShock2.mdl",x,y,0.,1.,5.,0.8,20.,150.)
+call Guy_EffAn("JirenShock2.mdl",x,y,0.,1.,7.,0.6,40.,150.)
+call Guy_EffAn("Aizen\\fire-boom-new-red.mdl",x,y,GetRandomReal(0.,360.),2.,3.,1.,0.,50.)
+call Guy_EffAn("Aizen\\fire-boom-new-red.mdl",x,y,GetRandomReal(0.,360.),2.,4.5,0.8,30.,120.)
+call Guy_EffAn("Guts\\[A]red-shoot-big.mdl",x,y,facing,1.,3.,1.,0.,80.)
+call Guy_Eff("Kisame\\AFBCronoseffect1.mdl",x,y,facing,1.,2.5,1.,0.,100.)
+call Guy_Crush(x,y,2.5,8)
+endfunction
+// Фазы под звуки владельца (31 окт: «GuyF4-1 — нажал, начал каст, светится красным; GuyF4-2 — формируется дракон;
+// GuyF4-3 — встал в стойку, дракон готовится; GuyF4-4 — полетел; sfx1 — удар по врагу»; длина — полная, по звукам):
+// 0 — 3.8 сек красное свечение, 3.8 — 7.45 дракон формируется (растёт x0.5 -> x1.8), 7.45 — 13.35 полёт (владелец: «весь
+// звук GuyF4-3 летит на врага или с врагом, если поймал»): погоня 40 за тик, поймал — пинок (sfx1) и полёт вместе 12 за тик
+// с подъёмом до 300, конец звука — удар вниз и взрыв (GuyF4-4). Гай на паузе и неуязвим, враг до
+// пинка свободен — дракон догоняет. Ключи: 1 Гай, 2 цель, 3 угол, 5 время, 6 начало фазы, 7 урон, 8 фаза (0 подготовка,
+// 1 полёт, 2 несёт), 9 путь, 16/17 начало 2/3 части подготовки, 20 дракон
+function Guy_F4_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer guyNightShieldMode
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local unit dragon=LoadUnitHandle(HH,id,20)
+local real time=LoadReal(HH,id,5)+0.02
+local integer phase=LoadInteger(HH,id,8)
+local real tp=time-LoadReal(HH,id,6)
+local real facing=LoadReal(HH,id,3)
+local real dist=LoadReal(HH,id,9)
+local real x0=GetUnitX(caster)
+local real y0=GetUnitY(caster)
+local real sc
+local integer k=R2I(time*50.+0.5)
+local boolean boom=false
+local boolean over=false
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) then
+set over=true
+elseif phase==0 then
+// подготовка: Гай и дракон смотрят на врага
+if UnitIsAlive(target) then
+set facing=Angle2(x0,y0,GetUnitX(target),GetUnitY(target))
+call SaveReal(HH,id,3,facing)
+call SetUnitFacing(caster,facing)
+endif
+// кровавый пар 8 врат, гуще к концу
+if ModuloInteger(k,5)==0 then
+call Guy_Eff("Sabrac\\File00004804.mdl",PolX(x0,GetRandomReal(0.,140.),GetRandomReal(0.,360.)),PolY(y0,GetRandomReal(0.,140.),GetRandomReal(0.,360.)),0.,0.8,GetRandomReal(1.5,2.2)+time*0.05,1.,40.,0.)
+call Guy_Eff("Guts\\bymutou-hongse3.mdl",x0,y0,0.,1.,2.+time*0.08,1.,30.,0.)
+endif
+if ModuloInteger(k,15)==0 then
+endif
+if ModuloInteger(k,25)==0 then
+endif
+// часть 2: формируется дракон
+if time>=0.5 and not LoadBoolean(HH,id,16) then
+call SaveBoolean(HH,id,16,true)
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
+call SetUnitModel(n0,"Guy\\NightGuy.mdx")
+call UnitSize(n0,0.5,0.5,0.5)
+call Guy_Fly(n0,60.,0.)
+call SetUnitAnimation(n0,"birth")
+call QueueUnitAnimation(n0,"stand")
+call SaveUnitHandle(HH,id,20,n0)
+set dragon=n0
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",x0,y0,0.,1.5,2.,1.,0.,0.)
+endif
+if dragon!=null then
+call SetUnitFacing(dragon,facing)
+if time<2.5 then
+set sc=0.5+0.9*(time-0.5)/2.
+call UnitSize(dragon,sc,sc,sc)
+endif
+endif
+// полёт — весь звук GuyF4-3 (5.9 сек): Гай с драконом летит на врага, поймал — летит с ним
+if time>=2.5 then
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,6,time)
+// x1.4 (разраб 1 нояб: «дракончика чуть уменьшить», было 1.8)
+call UnitSize(dragon,1.4,1.4,1.4)
+call Guy_F4_Ground(caster,facing)
+call sound_play("Guy\\GuyF4-3.mp3",127)
+call SetUnitAnimationByIndex(caster,29)
+call SetUnitTimeScale(caster,0.5)
+call Guy_Kick(x0,y0,facing)
+call Guy_EffAn("Guts\\[A]red-shoot-big.mdl",x0,y0,facing,1.,1.5,1.,0.,80.)
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",x0,y0,0.,1.5,2.5,1.,0.,0.)
+call Guy_Crush(x0,y0,1.6,8)
+endif
+// владелец 15 нояб: «улетал с врагом еще дальше», «пусть будет 3000» - полёт с врагом 1.5 сек по 40 за тик
+elseif (phase==1 and (tp>=5.9 or not UnitIsAlive(target))) or (phase==2 and time-LoadReal(HH,id,10)>=1.5) then
+// звук полёта кончился (или враг погиб до поимки) — удар вниз и взрыв
+set boom=true
+elseif phase==1 then
+// погоня: 40 за тик. ☠ Проходимость — FLYABILITY, как у разраба (SetUnitXY_1): с WALKABILITY в guy16-21 Гай
+// стоял на месте (владелец 1 нояб: «не летит за врагом, урона нету» — взрыв был далеко от врага)
+set facing=Angle2(x0,y0,GetUnitX(target),GetUnitY(target))
+call SaveReal(HH,id,3,facing)
+call SetUnitFacing(caster,facing)
+// x2 (владелец 1 нояб: «полёт дракона ускорить в 2 раза»): 80 за тик, с врагом 50
+// владелец 15 нояб: «скорость полета ускорь в 2 раза» - 160 за тик (поймает с любого шага: радиус 120)
+if not IsTerrainPathable(PolX(x0,160.,facing),PolY(y0,160.,facing),PATHING_TYPE_FLYABILITY) then
+call Guy_Move(caster,PolX(x0,160.,facing),PolY(y0,160.,facing))
+endif
+if SR(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))<=120. then
+if ReverseIntercept(caster,target) then
+set over=true
+else
+// поймал: пинок, дальше летит вместе с врагом до конца звука
+call SaveInteger(HH,id,8,2)
+call SaveReal(HH,id,10,time)
+call Guy_Grab(caster,target,3.,true)
+call sound_play("Guy\\GuyF4-4.mp3",127)
+call Guy_Hit(target,8)
+call Guy_EffAn("Guts\\[A]red-shoot-big.mdl",GetUnitX(target),GetUnitY(target),facing,1.,2.,1.,0.,80.)
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",GetUnitX(target),GetUnitY(target),0.,1.,1.5,1.,0.,60.)
+call sound_play("Guy\\GuyF4-sfx1.mp3",127)
+endif
+endif
+else
+// летит с врагом: 8 за тик вперёд (пока земля проходима), оба поднимаются до 300
+// владелец 13 нояб: «улетает далековато» — было 50 за тик (5000 за 2 сек), стало 8 (800 за 2 сек)
+set dist=RMinBJ(dist+5.,300.)
+call SaveReal(HH,id,9,dist)
+if not IsTerrainPathable(PolX(x0,130.,facing),PolY(y0,130.,facing),PATHING_TYPE_FLYABILITY) then
+// guy_dev55 (разраб: «летит с целью еле-еле») - 20 за тик (2000 за 2 сек); владелец 15 нояб: x2 и дальше -
+// 40 за тик 1.5 сек (3000)
+call Guy_Move(caster,PolX(x0,40.,facing),PolY(y0,40.,facing))
+endif
+call Guy_Move(target,PolX(GetUnitX(caster),80.,facing),PolY(GetUnitY(caster),80.,facing))
+call SetUnitFlyHeight(caster,dist,0.)
+call SetUnitFlyHeight(target,dist,0.)
+call SetUnitFlyHeight(dragon,dist+60.,0.)
+endif
+// дракон летит с Гаем; след — красные двойники, разлом, грязь по бокам, красные кольца
+if phase>0 and not over then
+call Guy_Move(dragon,GetUnitX(caster),GetUnitY(caster))
+call SetUnitFacing(dragon,facing)
+// след — по пройденному пути, а не по тикам (13 нояб, лаги): на погоне (80 за тик) как раньше — двойник раз в 2 тика,
+// взрывы раз в 4, грязь раз в 3; когда Гай медленно несёт врага (8 за тик) или упёрся, эффекты не копятся в одной точке
+// (было до 125 дамми за 2 сек почти на месте)
+if Guy_TrailStep(id,30,x0,y0,120.) then
+call Guy_Ghost(caster,LoadReal(HH,id,9),0.4)
+endif
+// след за драконом — красные взрывы Гатса на земле (раз в 300 пути)
+if Guy_TrailStep(id,32,x0,y0,200.) then
+call Guy_F4_Red(GetUnitX(caster),GetUnitY(caster),facing,0.7)
+endif
+if Guy_TrailStep(id,34,x0,y0,230.) then
+call Guy_Eff("Izayoi\\FBT-dilie2.mdl",x0,y0,GetRandomReal(0.,360.),1.,0.8,1.5,30.,0.)
+endif
+endif
+if boom then
+if UnitIsAlive(target) then
+set x0=GetUnitX(target)
+set y0=GetUnitY(target)
+endif
+call Guy_F4_Boom(x0,y0,facing)
+call Guy_Vision(caster,x0,y0,3.)
+call Guy_Grab(caster,target,0.,false)
+if UnitIsAlive(target) and SR(x0,y0,GetUnitX(caster),GetUnitY(caster))<=300. then
+call SetControlToUnit(caster,target,1.5,"stun")
+// владелец 15 нояб: «урон как от предмета Gae Dearg» - обычный урон (null,null,null, как у копья), не чистый UNIVERSAL
+set guyNightShieldMode=LoadInteger(HH,GetHandleId(caster),BlockPenetrate)
+call SaveInteger(HH,GetHandleId(caster),BlockPenetrate,guyNightShieldMode+1)
+call Guy_Dmg(caster,target,LoadReal(HH,id,7),null)
+call SaveInteger(HH,GetHandleId(caster),BlockPenetrate,guyNightShieldMode)
+call Push(target,40.,facing*bj_DEGTORAD,400.)
+call Guy_Self(caster,LoadReal(HH,id,7))
+endif
+set over=true
+endif
+if over then
+if dragon!=null then
+call SetUnitAnimation(dragon,"death")
+// guy_dev55 (разраб: «эффект головы чуть раньше пропадать») - тает x2
+call SetUnitTimeScale(dragon,2.)
+call MyRemoveUnit(dragon,0.9)
+endif
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+call Guy_Hold(caster,false)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GuyNG"),false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set dragon=null
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_F4_Act takes unit caster,unit target returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),GetUnitX(target),GetUnitY(target))
+call SaveUnitHandle(HH,id,1,caster)
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,facing)
+// владелец 15 нояб: «урон *9»; guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Night Guy 8*СИЛ; владелец 17 ноя: «F Night Guy сделай *9» - 9*СИЛ
+call SaveReal(HH,id,7,9.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call SaveBoolean(HH,GetHandleId(caster),StringHash("GuyNG"),true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitFacing(caster,facing)
+call SetUnitAnimationByIndex(caster,14)
+call Guy_Eff("Sabrac\\File00004804.mdl",GetUnitX(caster),GetUnitY(caster),0.,1.,2.5,1.,20.,0.)
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",GetUnitX(caster),GetUnitY(caster),0.,1.5,1.5,1.,0.,0.)
+call Guy_Crush(GetUnitX(caster),GetUnitY(caster),1.2,8)
+call Guy_F4_Ground(caster,facing)
+call sound_play("Guy\\GuyF4-1.mp3",127)
+call sound_play("Guy\\GuyF4-2.mp3",127)
+call TSE_TimerStart(t,0.02,true,function Guy_F4_Act2)
+set t=null
+endfunction
+
+//--------------------- G врат: Ura Renge (с 3 врат) ---------------------
+// (владелец 1 нояб: «ударил врага, откинул, за спиной оказался и ещё раз ударил, опять за врагом — откидывать где-то
+// на 500, в конце сверху впечатывает в землю; все удары в воздухе»). Рывок в сторону курсора (600, 45 за тик). Задел
+// врага — оба взлетают на 350 (0.2 сек); 10 ударов (владелец 1 нояб, было 5; урон тот же): каждый отбрасывает врага на 500 за 0.15 сек, Гай вспышкой
+// оказывается на его пути и отбивает обратно (направление разворачивается на 180 +-35); каждый 4%. Финал — Гай над
+// врагом, удар сверху: враг вбит в землю (60%, оглушение 1.5 сек). Всего 10*СИЛ.
+// Ключи: 1 Гай, 2 цель, 3 угол рывка, 4 куда летит враг, 5 время, 6 начало фазы, 7 урон, 8 фаза, 9 удар/путь
+function Guy_G2_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local integer phase=LoadInteger(HH,id,8)
+local real tp=time-LoadReal(HH,id,6)
+local real facing=LoadReal(HH,id,3)
+local real dmg=LoadReal(HH,id,7)
+local real ak
+local integer k
+local integer cnt
+local boolean over=false
+call SaveReal(HH,id,5,time)
+if udg_B==false or not UnitIsAlive(caster) or (phase>0 and not UnitIsAlive(target)) then
+set over=true
+elseif phase==0 then
+if LoadReal(HH,id,9)<=0. then
+set over=true
+else
+call SaveReal(HH,id,9,LoadReal(HH,id,9)-45.)
+call Guy_Move(caster,PolX(GetUnitX(caster),45.,facing),PolY(GetUnitY(caster),45.,facing))
+call Guy_Dash(caster,facing,0.)
+set target=First_Target_Skill(caster,null,PolX(GetUnitX(caster),60.,facing),PolY(GetUnitY(caster),60.,facing),130.)
+if target!=null and ReverseIntercept(caster,target) then
+set over=true
+elseif target!=null then
+call SaveUnitHandle(HH,id,2,target)
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,6,time)
+call SaveInteger(HH,id,9,-1)
+call Guy_Grab(caster,target,3.2,true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitAnimationByIndex(caster,5)
+call Guy_Hit(target,Guy_Gate(caster))
+call sound_play("Guy\\GuyG2.mp3",127)
+call Guy_Self(caster,dmg)
+endif
+endif
+elseif phase==1 then
+if tp<0.2 then
+// оба взлетают
+call SetUnitFlyHeight(target,350.*tp/0.2,0.)
+call SetUnitFlyHeight(caster,330.*tp/0.2,0.)
+else
+set k=R2I((tp-0.2)/0.2)
+if k>=10 then
+// финал: Гай над врагом
+call SaveInteger(HH,id,8,2)
+call SaveReal(HH,id,6,time)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call Guy_Move(caster,GetUnitX(target),GetUnitY(target))
+call SetUnitFlyHeight(caster,600.,0.)
+call SetUnitAnimationByIndex(caster,4)
+else
+if k!=LoadInteger(HH,id,9) then
+// удар: Гай на пути врага, отбивает его в обратную сторону
+call SaveInteger(HH,id,9,k)
+if k==0 then
+set ak=facing
+else
+set ak=LoadReal(HH,id,4)+180.+GetRandomReal(-80.,80.)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+endif
+call SaveReal(HH,id,4,ak)
+call Guy_Move(caster,PolX(GetUnitX(target),90.,ak+180.),PolY(GetUnitY(target),90.,ak+180.))
+call SetUnitFacing(caster,ak)
+call SetUnitFlyHeight(caster,330.,0.)
+call SetUnitFlyHeight(target,350.,0.)
+// разраб 1 нояб: «рандомность ударов повысить» — разворот 180 +-80 и случайный удар из четырёх
+set cnt=GetRandomInt(0,3)
+if cnt==0 then
+call SetUnitAnimationByIndex(caster,35)
+elseif cnt==1 then
+call SetUnitAnimationByIndex(caster,7)
+elseif cnt==2 then
+call SetUnitAnimationByIndex(caster,34)
+else
+call SetUnitAnimationByIndex(caster,4)
+endif
+call SetUnitTimeScale(caster,2.)
+call Guy_Hit(target,Guy_Gate(caster))
+call Guy_Eff("Signum\\CF2.mdl",GetUnitX(target),GetUnitY(target),ak,1.,0.8,0.6,30.,350.)
+call Guy_Eff("Others\\hit-juhuang-lizi.mdl",GetUnitX(target),GetUnitY(target),ak,1.,1.5,1.,0.,350.)
+// удар как у Замасу (W Блэк Гоку: телепорт за врага и удар; разраб 1 нояб) + EffectID[0] и [1]
+// блинк x2 быстрее, слеш (как EffectID 719) снят — владелец 1 нояб
+call EffectCreateAndMove(true,"BlackGoku\\BlackBlink1.mdl",ak,0.5,1.,2.,100,100,100,0.,0.,caster,0.,ak)
+call EffectCreateAndMove(true,"BlackGoku\\Hit.mdl",ak,1.,1.25,0.8,100,100,100,0.,50.,target,0.,ak)
+call EffectCreateAndMoveAn(true,"BlackGoku\\az-zidan1.mdl",ak,1.,1.,0.8,100,100,100,0.,50.,target,0.,ak,1)
+call EffectCreateAndMove(true,"Izayoi\\BY_Wood_GongChengSiPai_1.mdl",ak,1.,1.2,1.,100,100,100,30.,0.,target,0.,ak)
+call EffectCreateAndMove(true,"Izayoi\\EffecthPush.mdl",ak,1.,0.6,0.6,100,100,100,30.,0.,target,0.,ak)
+call sound_play("Guy\\GuyG2-sfx1.mp3",110)
+call Guy_Dmg(caster,target,dmg*0.04,null)
+endif
+if tp-0.2-0.2*k<0.15 then
+// враг летит 500 за 0.15 сек
+set ak=LoadReal(HH,id,4)
+call Guy_Move(target,PolX(GetUnitX(target),66.,ak),PolY(GetUnitY(target),66.,ak))
+endif
+endif
+endif
+elseif phase==2 then
+if tp<0.15 then
+call SetUnitFlyHeight(target,350.*(0.15-tp)/0.15,0.)
+call SetUnitFlyHeight(caster,600.*(0.15-tp)/0.15+60.,0.)
+else
+call Guy_Grab(caster,target,0.,false)
+call SetUnitFlyHeight(caster,0.,0.)
+// владелец 1 нояб: «в конце эффект 15 не нужен, удар об землю — эффекты 73 и 1303»
+call Guy_Eff("Madara\\BY_Wood_GongChengSiPai_6.mdl",GetUnitX(target),GetUnitY(target),GetRandomReal(0.,360.),1.5,3.,0.8,0.,0.)
+call Guy_Eff("Izayoi\\BY_Wood_Sand_YueKongJi.mdl",GetUnitX(target),GetUnitY(target),GetRandomReal(0.,360.),1.5,1.5,1.,0.,0.)
+call Guy_Hit(target,Guy_Gate(caster))
+call sound_play("Guy\\GuyG2-sfx2.mp3",127)
+call SetControlToUnit(caster,target,1.5,"stun")
+call Guy_Dmg(caster,target,dmg*0.6,null)
+set over=true
+endif
+endif
+if over then
+if target!=null then
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+endif
+call Guy_Vision(caster,GetUnitX(caster),GetUnitY(caster),2.)
+call Guy_Hold(caster,false)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_G2_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
+call SaveReal(HH,id,9,600.)
+// guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Ura Renge 6*СИЛ
+call SaveReal(HH,id,7,6.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call Guy_Fly(caster,0.,0.)
+call SetUnitFacing(caster,LoadReal(HH,id,3))
+call SetUnitAnimationByIndex(caster,31)
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3))
+call TSE_TimerStart(t,0.02,true,function Guy_G2_Act2)
+set t=null
+endfunction
+
+//--------------------- G врат: Hirudora (с 7 врат) ---------------------
+// 0.4 сек замах, затем воздушный тигр (модель hirudora с Discord) летит в сторону курсора на 1000 (40 за тик) и
+// взрывается у первого врага или в конце: 10*СИЛ в 500. На месте взрыва 5 сек вихрь: раз в 0.5 сек замедляет врагов в
+// 450 на 50% (дамми h019 + GySl). Ключи: 1 Гай, 3 угол, 5 время, 7 урон, 8 фаза (0 замах, 1 полёт, 2 вихрь), 9 путь,
+// 11/12 точка взрыва, 20 тигр
+function Guy_Slow takes unit caster,unit target returns nothing
+local unit slw=CreateUnit(GetOwningPlayer(caster),'h019',GetUnitX(target),GetUnitY(target),0.)
+call UnitAddAbility(slw,'GySl')
+call IssueTargetOrder(slw,"cripple",target)
+call UnitApplyTimedLife(slw,'BTLF',1.)
+set slw=null
+endfunction
+// Hirudora (1 нояб: тигр был почти не виден). Тигр выходит из вихря перед Гаем и растёт на месте (анимация stand
+// x1.5: из кольца к ~0.6 сек, рёв на кадре 1.3 сек = 0.87 сек), на рёве замирает (stand не зациклена — иначе юнит
+// перезапускает её с пустого кадра) и летит 40 за тик (1000 за 0.5 сек; владелец: «медленно летит»), за ним порывы,
+// вертикальные кольца воздуха и рваная земля по бокам. Взрыв («не хватает бабаха»): пыль с камнями и столб воздуха
+// (Garp_QAir), белый пар вверх, облака по кругу, купол земли, белая вспышка экрана; тигр за 0.5 сек раздувается
+// x3 -> x4.5 и растворяется. Урон и механика прежние.
+// Ключи: 1 Гай, 3 угол, 5 время, 6 начало фазы, 7 урон, 8 фаза (0 замах, 1 тигр растёт, 2 полёт, 3 купол), 9 остаток
+// пути, 11/12 точка взрыва, 13 время взрыва, 20 тигр (до взрыва), 21 тигр после взрыва, 22/23 купол Cyclon/Vortex
+function Guy_G3_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit tiger=LoadUnitHandle(HH,id,20)
+local unit dead=LoadUnitHandle(HH,id,21)
+local real time=LoadReal(HH,id,5)+0.02
+local integer phase=LoadInteger(HH,id,8)
+local real tp=time-LoadReal(HH,id,6)
+local real facing=LoadReal(HH,id,3)
+local real x0
+local real y0
+local real sc
+local real f
+local integer k=R2I(time*50.+0.5)
+local unit guyTigerSource=WaveRedirectedSource(tiger)
+call SaveReal(HH,id,5,time)
+if tiger!=null and (WaveCancelled(tiger) or GetUnitTypeId(tiger)==0) then
+call FlushChildHashtable(HH,id)
+call TSE_DestroyTimer(t)
+set caster=null
+set tiger=null
+set dead=null
+set guyTigerSource=null
+set t=null
+return
+endif
+// тигр после взрыва раздувается и тает
+if dead!=null then
+set sc=(time-LoadReal(HH,id,13))/0.5
+if sc>=1. then
+call RemoveUnit(dead)
+call RemoveSavedHandle(HH,id,21)
+else
+call UnitSize(dead,3.+1.5*sc,3.+1.5*sc,3.+1.5*sc)
+// тело тигра в модели смещено вперёд на 136 (x 38..235), держим его центр в точке взрыва
+call Guy_Move(dead,PolX(LoadReal(HH,id,11),-136.*(3.+1.5*sc),facing),PolY(LoadReal(HH,id,12),-136.*(3.+1.5*sc),facing))
+call SetUnitVertexColor(dead,255,255,255,R2I(140.*(1.-sc)))
+endif
+endif
+if phase==0 then
+if time>=0.4 then
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,6,time)
+call Guy_Hold(caster,false)
+// владелец 1 нояб: «спавнится далековато» — тело в модели впереди точки юнита на ~410 (x3), ставим юнит за Гаем,
+// чтобы тигр начинался прямо от него
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',PolX(GetUnitX(caster),-100.,facing),PolY(GetUnitY(caster),-100.,facing),facing)
+call SetUnitModel(n0,"Guy\\Hirudora.mdx")
+call UnitSize(n0,3.,3.,3.)
+call UnitSpeed(n0,1.5)
+// полупрозрачный (владелец 13 нояб: «хирудору более прозрачным»): альфа 140 из 255
+call SetUnitVertexColor(n0,255,255,255,0)
+call Guy_Fly(n0,80.,0.)
+call SaveUnitHandle(HH,id,20,n0)
+call WaveRegisterShared(n0,t)
+call Guy_Eff("Others\\WindExploreEffect(Bigger).mdl",PolX(GetUnitX(n0),410.,facing),PolY(GetUnitY(n0),410.,facing),facing,1.,2.,1.,30.,100.)
+endif
+elseif phase==1 then
+// тигр растёт на месте, вокруг закручивается ветер
+// guy_dev55 (разраб: «хирудора стрёмно появляется») - проявляется за 0.6 сек, без ветерков вокруг
+call SetUnitVertexColor(tiger,255,255,255,R2I(140.*RMinBJ(tp/0.6,1.)))
+if tp>=0.87 then
+// рёв: тигр замирает в этой позе и срывается с места
+call SaveInteger(HH,id,8,2)
+call SaveReal(HH,id,6,time)
+call SetUnitTimeScale(tiger,0.)
+call SetUnitVertexColor(tiger,255,255,255,140)
+call Guy_Eff("Others\\WindExploreEffect(Bigger).mdl",PolX(GetUnitX(tiger),410.,facing),PolY(GetUnitY(tiger),410.,facing),facing,1.,2.5,1.,30.,100.)
+endif
+elseif phase==2 then
+if guyTigerSource!=null then
+set caster=guyTigerSource
+call SaveUnitHandle(HH,id,1,caster)
+set facing=WaveRedirectedAngle(tiger)
+call SaveReal(HH,id,3,facing)
+call SetUnitFacingInstant(tiger,facing)
+endif
+call SaveReal(HH,id,9,LoadReal(HH,id,9)-40.)
+call Guy_Move(tiger,PolX(GetUnitX(tiger),40.,facing),PolY(GetUnitY(tiger),40.,facing))
+set x0=GetUnitX(tiger)
+set y0=GetUnitY(tiger)
+// след: белые порывы каждый тик, штрихи ветра и вертикальное кольцо воздуха, по бокам земля рвётся и пылит
+call Guy_Eff("Guts\\BY_Wood_Eff_Ord_DanGe_Wid_ChongFengQiLiu.mdl",x0,y0,facing,1.,1.5,0.85,20.,120.)
+// за тигром конус воздуха, как за драконом Night Guy (разраб 1 нояб: «конус за тигром, а не ветерки на земле»):
+// у хвоста по очереди вертикальные толчки EffecthPush и кольца WindWeak, развёрнутые по полёту — расходятся назад
+if ModuloInteger(k,2)==0 then
+call Guy_Eff("Izayoi\\EffecthPush.mdl",x0,y0,facing,1.,0.9,1.,20.,200.)
+else
+set EFF=AddSpecialEffect("Others\\WindWeak(Thicker).mdl",x0,y0)
+call SetSpecialEffectHeight(EFF,200.)
+call SetSpecialEffectOrientation(EFF,facing,90.,0.)
+call SetSpecialEffectScale(EFF,1.8)
+call DestroyEffect(EFF)
+endif
+if ModuloInteger(k,3)==0 then
+endif
+// попадание и взрыв — по центру тела тигра, а не по точке юнита (она у хвоста)
+if LoadReal(HH,id,9)<=0. or First_Target_Skill(caster,null,PolX(x0,410.,facing),PolY(y0,410.,facing),250.)!=null or udg_B==false then
+set x0=PolX(GetUnitX(tiger),410.,facing)
+set y0=PolY(GetUnitY(tiger),410.,facing)
+call SaveReal(HH,id,11,x0)
+call SaveReal(HH,id,12,y0)
+call SaveInteger(HH,id,8,3)
+call SaveReal(HH,id,6,time)
+call SaveReal(HH,id,13,time)
+call WaveUnregister(tiger,false)
+call SaveUnitHandle(HH,id,21,tiger)
+set k=0
+loop
+exitwhen k>=4
+call Guy_Eff("Others\\WindExploreEffect(Bigger).mdl",PolX(x0,120.,90.*k),PolY(y0,120.,90.*k),90.*k,1.5,3.,1.,30.,50.)
+set k=k+1
+endloop
+// guy_ground55: у Хирудоры земля чистая (разраб: «с земли убрать») - Crush без трещин и обломков
+call Guy_Crush(x0,y0,2.2,0)
+// белый купол взрыва — как в NL (триггер Tigr, дамми ngnv + nhrr; владелец 1 нояб: «купол взрыва белый, из НЛ»):
+// Guy\Cyclon (4225_Cyclon_Explosio_2) x2 и Guy\Vortex x3 на -210, оба полупрозрачные 50%, Vortex x4 скорость;
+// 5 сек раздуваются (Cyclon +0.5/сек, Vortex +0.75/сек), раз в 0.8 сек вспышка EfRasen в центре
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0.,360.))
+call SetUnitModel(n0,"Guy\\Cyclon.mdx")
+call UnitSize(n0,2.,2.,2.)
+call SetUnitVertexColor(n0,255,255,255,128)
+call Guy_Fly(n0,0.,0.)
+call SaveUnitHandle(HH,id,22,n0)
+// владелец 1 нояб: шар глубже в землю и по размеру как тигр — Vortex x1.8 (~1150 в ширину, тигр x3..4.5 ~700..1100),
+// центр шара (z ~94 в модели) уходит под землю: высота -200 на единицу размера
+set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,GetRandomReal(0.,360.))
+call SetUnitModel(n0,"Guy\\Vortex.mdx")
+call UnitSize(n0,1.8,1.8,1.8)
+call UnitSpeed(n0,4.)
+call SetUnitVertexColor(n0,255,255,255,128)
+call Guy_Fly(n0,-360.,0.)
+call SaveUnitHandle(HH,id,23,n0)
+call sound_play("Guy\\GuyG3-sfx.mp3",127)
+call Guy_Vision(caster,x0,y0,5.)
+call Guy_Area(caster,id,1,x0,y0,500.,LoadReal(HH,id,7),0.)
+// тигр теперь только в ключе 21 (тает)
+call RemoveSavedHandle(HH,id,20)
+endif
+elseif tp<3.5 and udg_B and UnitIsAlive(caster) then
+// купол (владелец 1 нояб: «разрастался сразу, а не так долго, и пропадал чуть быстрее»): за 0.4 сек до полного
+// размера (как прежде к 5-й сек), держится, с 2.7 сек тает, всё — 3.5 сек (было 5 сек ровного роста)
+set x0=LoadReal(HH,id,11)
+set y0=LoadReal(HH,id,12)
+set f=RMinBJ(tp/0.4,1.)
+set sc=2.+2.5*f
+call UnitSize(LoadUnitHandle(HH,id,22),sc,sc,sc)
+set sc=1.8+2.25*f
+call UnitSize(LoadUnitHandle(HH,id,23),sc,sc,sc)
+call SetUnitFlyHeight(LoadUnitHandle(HH,id,23),-200.*sc,0.)
+if tp>2.7 then
+call SetUnitVertexColor(LoadUnitHandle(HH,id,22),255,255,255,R2I(128.*(3.5-tp)/0.8))
+call SetUnitVertexColor(LoadUnitHandle(HH,id,23),255,255,255,R2I(128.*(3.5-tp)/0.8))
+endif
+if ModuloInteger(k,40)==0 then
+call DestroyEffect(AddSpecialEffect("Guy\\EfRasen.mdx",x0,y0))
+endif
+if ModuloInteger(k,25)==0 then
+call GroupEnumUnitsInRange(G,x0,y0,400.+1000.*f,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) then
+call Guy_Slow(caster,n0)
+endif
+endloop
+endif
+else
+if tiger!=null then
+call WaveUnregister(tiger,false)
+call RemoveUnit(tiger)
+endif
+if HaveSavedHandle(HH,id,21) then
+call RemoveUnit(dead)
+endif
+call RemoveUnit(LoadUnitHandle(HH,id,22))
+call RemoveUnit(LoadUnitHandle(HH,id,23))
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set guyTigerSource=null
+set dead=null
+set tiger=null
+set caster=null
+set t=null
+endfunction
+function Guy_G3_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+call SaveUnitHandle(HH,id,1,caster)
+call SaveReal(HH,id,3,Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1))
+// путь 1600 (владелец 1 нояб: «летела дальше», было 1000)
+call SaveReal(HH,id,9,1600.)
+// guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Hirudora 8*СИЛ
+call SaveReal(HH,id,7,8.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call SetUnitFacing(caster,LoadReal(HH,id,3))
+call SetUnitAnimationByIndex(caster,37)
+call SetUnitTimeScale(caster,0.6)
+call Guy_Eff("Others\\WindExploreEffect(Bigger).mdl",GetUnitX(caster),GetUnitY(caster),LoadReal(HH,id,3),1.,1.,1.,30.,80.)
+call sound_play("Guy\\GuyG3.mp3",127)
+call Guy_Self(caster,LoadReal(HH,id,7))
+call TSE_TimerStart(t,0.02,true,function Guy_G3_Act2)
+set t=null
+endfunction
+
+//--------------------- G врат: Sekizo (с 8 врат) ---------------------
+// По вики (naruto.wiki/Sekizō, прислал владелец 31 окт): «Вечерний слон» — пять ударов подряд, каждый быстрее прошлого;
+// каждый — вакуум сжатого воздуха в форме «ноги слона» (столб); первый прорывает в земле длинную глубокую траншею, удары
+// вместе обездвиживают цель, пятый пробивает защиту. На кадре владельца — толстые полупрозрачные белые столбы под углом
+// сверху, сходятся на враге. Как сделано: скиллшот. Шаг 1 — удар кулаком в сторону курсора: столб воздуха лёжа вдоль
+// линии от кулака и траншея на 1500 (трещины, обломки, выбросы грязи), 25% всем на линии. Задел — Гай продолжает по
+// ближайшему задетому (обездвижен на всё комбо): шаги 2-4 — Гай вспышкой встаёт в воздухе в 800 от врага на высоте 800 (владелец 1 нояб: «дальше от врага», было 500)
+// с новой стороны (как в NL: +220 / +140 / +40 от первой; владелец 1 нояб: «все удары кроме первого с воздуха под 45
+// градусов сверху вниз») и бьёт выпадом: столб под 45 из Гая сквозь врага в землю, удар об землю, 15% в 250; паузы между
+// шагами 0.35 / 0.28 / 0.21 сек (каждый быстрее). Шаг 5 — с четвёртой стороны, столб толще, кратер 450, 30%, оглушение
+// 1 сек. Всего 12*СИЛ. Гай на паузе и неуязвим.
+// Ключи: 1 Гай, 2 цель, 3 угол первой стороны, 5 время, 6 начало фазы, 7 урон, 8 фаза (0 выстрел, 1 шаги 2-4, 2 сверху),
+// 9 сделано шагов, 15 удар сверху сделан, 40/42 ближайший задетый (Guy_Cannon)
+
+// «нога слона» — воздушная пушка: Guy\Sekizo — труба из Naruto Legend (Sekiz_333, 1 нояб: «выглядит намного лучше»;
+// просмотрена в WhiteoutFlakes). Одна анимация Birth 2.11 сек: от точки вдоль +X вылетает белая труба ~870 в длину и
+// ~200 в поперечнике, ось на высоте ~235 (зашита в модели), к концу тает. (x,y,z) — начало оси трубы, ak — направление,
+// pitch — наклон (☠ в этой игре + задирает нос ВВЕРХ: guy18 владелец показал столб «башней» сбоку; 0 — горизонтально,
+// -90 — вниз); sc — масштаб (x1: 200 в поперечнике, 870 в длину). Смещение оси 235*sc в модели снимается здесь: точка
+// эффекта сдвигается назад по повёрнутой оси Z модели. ☠ Масштаб только одинаковый по осям: с MatrixScale (длина и
+// толщина разные) удар сверху в guy21 встал сбоку от врага — растяжка идёт не в осях модели
+// старая труба Guy\\Sekizo (NL Sekiz_333): ось +X на высоте 235 (снимается сдвигом), Birth 2.11 сек — здесь x4 (~0.5 сек)
+// Столбы стоят до последнего удара (владелец 13 нояб: «все столбы стояли до последнего удара, после последнего удара
+// пропадали»): эффекты копятся в таймере G (ключ 60 — число столбов, 61..70 — эффекты, 81..85 — время появления);
+// через 0.2 сек после появления Birth замирает (скорость 0 — столб вытянут и не тает), Guy_PillarsOff прячет все сразу
+function Guy_PillarSave takes integer id,effect e returns nothing
+local integer cnt=LoadInteger(HH,id,60)
+if cnt<10 then
+call SaveEffectHandle(HH,id,61+cnt,e)
+call SaveInteger(HH,id,60,cnt+1)
+endif
+endfunction
+function Guy_PillarsTick takes integer id,real time returns nothing
+local integer cnt=LoadInteger(HH,id,60)
+local integer i=0
+loop
+exitwhen i>=cnt
+if not LoadBoolean(HH,id,91+i) and time-LoadReal(HH,id,81+i/2)>=0.2 then
+call SaveBoolean(HH,id,91+i,true)
+call SetSpecialEffectTimeScale(LoadEffectHandle(HH,id,61+i),0.)
+endif
+set i=i+1
+endloop
+endfunction
+function Guy_PillarsOff takes integer id returns nothing
+local integer cnt=LoadInteger(HH,id,60)
+local integer i=0
+loop
+exitwhen i>=cnt
+call Guy_EffOff(LoadEffectHandle(HH,id,61+i))
+set i=i+1
+endloop
+call SaveInteger(HH,id,60,0)
+endfunction
+function Guy_PillarOld takes integer id,real x,real y,real z,real ak,real pitch,real sc returns nothing
+local real th=-pitch*bj_DEGTORAD
+local real off=235.*sc
+set EFF=AddSpecialEffect("Guy\\Sekizo.mdx",x-off*Sin(th)*Cos(ak*bj_DEGTORAD),y-off*Sin(th)*Sin(ak*bj_DEGTORAD))
+call SetSpecialEffectHeight(EFF,z-off*Cos(th))
+call SetSpecialEffectOrientation(EFF,ak,pitch,0.)
+call SetSpecialEffectScale(EFF,sc)
+call SetSpecialEffectAnimation(EFF,"birth")
+call SetSpecialEffectTimeScale(EFF,4.)
+call Guy_PillarSave(id,EFF)
+endfunction
+// эффект 1 (толчок EffecthPush; у разраба Madara\\, у игроков есть Izayoi\\ — в патче 5.406) на враге на каждом ударе
+function Guy_SekPush takes real x,real y,real facing returns nothing
+call Guy_Eff("Izayoi\\EffecthPush.mdl",x,y,facing,1.,0.8,0.6,30.,60.)
+endfunction
+// Столб Sekizo — Guy\\SekizoMoon: DoftModel moon_shin_xj(4) (владелец 1 нояб). ☠ У модели корневая кость bone_new0
+// повёрнута на 90° (KGRT 0,0.71,0,0.71) — из-за этого наклон эффекта складывался с её поворотом и столб бил «куда
+// попало» (guy56-63). В копии (Downloads\\GuyPortrait\\sekizo_fix) поворот корня обнулён: столб вдоль +X модели, как
+// старая труба Sekiz_333 — хвост на месте около x=-536, перед за Birth доходит до +536 (~1070 в длину), ось на высоте
+// ~175 (всё при размере 1). (x,y,z) — хвост столба (кулак Гая), ak — направление, pitch — наклон (как у старой трубы:
+// 0 горизонтально, -45 вперёд-вниз). Точка эффекта сдвигается на 536*s вперёд по оси и на 175*s вниз по повёрнутой оси Z.
+// Размер x0.7 (при 2: ~1500 в длину); анимация x4 (владелец: «чтобы моментально стреляло»); без прозрачности (255; владелец 2 нояб: «чтобы было видно получше»), исчезает через 0.3 сек.
+function Guy_Pillar takes integer id,real x,real y,real z,real ak,real pitch,real sc returns nothing
+local real psc=sc*0.7
+local real p=pitch*bj_DEGTORAD
+local real a=ak*bj_DEGTORAD
+local real fwd=536.*psc
+local real up=175.*psc
+set EFF=AddSpecialEffect("Guy\\SekizoMoon.mdx",x+fwd*Cos(p)*Cos(a)+up*Sin(p)*Cos(a),y+fwd*Cos(p)*Sin(a)+up*Sin(p)*Sin(a))
+call SetSpecialEffectHeight(EFF,z+fwd*Sin(p)-up*Cos(p))
+call SetSpecialEffectOrientation(EFF,ak,pitch,0.)
+call SetSpecialEffectScale(EFF,psc)
+call SetSpecialEffectAlpha(EFF,255)
+call SetSpecialEffectAnimation(EFF,"birth")
+call SetSpecialEffectTimeScale(EFF,4.)
+call SaveReal(HH,id,81+LoadInteger(HH,id,60)/2,LoadReal(HH,id,5))
+call Guy_PillarSave(id,EFF)
+call Guy_PillarOld(id,x,y,z,ak,pitch,sc)
+endfunction
+
+// шаг 1: удар кулаком в сторону facing — столб воздуха лёжа вдоль линии от кулака и траншея длиной len (трещины, обломки,
+// выбросы грязи по бокам, пыль); урон dmg всем на линии (130 по обе стороны), ближайший задетый — в HH[id][40]
+function Guy_Cannon takes unit caster,integer id,integer part,real x,real y,real facing,real len,real dmg returns nothing
+local real dc=100.
+local real ak
+local real dist
+local real along
+local real side
+call Guy_Pillar(id,x,y,150.,facing,0.,2.)
+call Guy_Eff("Izayoi\\BY_Wood_GongChengSiPai_1.mdl",PolX(x,60.,facing),PolY(y,60.,facing),facing,1.,1.5,1.,20.,100.)
+loop
+exitwhen dc>len
+call Guy_Eff("Izayoi\\FBT-dilie2.mdl",PolX(x,dc,facing),PolY(y,dc,facing),GetRandomReal(0.,360.),1.5,1.,1.2,20.,0.)
+if ModuloInteger(R2I(dc),300)<150 then
+call Guy_EffAn("ap\\[Plagiat]Effect193.mdl",PolX(x,dc,facing),PolY(y,dc,facing),GetRandomReal(0.,360.),2.,0.8,1.,0.,0.)
+endif
+set dc=dc+150.
+endloop
+call GroupEnumUnitsInRange(G,PolX(x,len*0.5,facing),PolY(y,len*0.5,facing),len*0.5+150.,Base)
+loop
+set n0=FirstOfGroup(G)
+exitwhen n0==null
+call GroupRemoveUnit(G,n0)
+set ak=(Angle2(x,y,GetUnitX(n0),GetUnitY(n0))-facing)*bj_DEGTORAD
+set dist=SR(x,y,GetUnitX(n0),GetUnitY(n0))
+set along=dist*Cos(ak)
+set side=RAbsBJ(dist*Sin(ak))
+if Condition_Base(GetOwningPlayer(caster),n0) and UnitIsAlive(n0) and along>0. and along<=len+50. and side<=260. and LoadInteger(HH,id,GetHandleId(n0))!=part then
+call SaveInteger(HH,id,GetHandleId(n0),part)
+if not HaveSavedHandle(HH,id,40) or along<LoadReal(HH,id,42) then
+call SaveUnitHandle(HH,id,40,n0)
+call SaveReal(HH,id,42,along)
+endif
+call Guy_Hit(n0,8)
+call Guy_SekPush(GetUnitX(n0),GetUnitY(n0),facing)
+call Guy_Dmg(caster,n0,dmg,null)
+endif
+endloop
+endfunction
+function Guy_G4_Act2 takes nothing returns nothing
+local timer t=GetExpiredTimer()
+local integer id=GetHandleId(t)
+local unit caster=LoadUnitHandle(HH,id,1)
+local unit target=LoadUnitHandle(HH,id,2)
+local real time=LoadReal(HH,id,5)+0.02
+local integer phase=LoadInteger(HH,id,8)
+local real tp=time-LoadReal(HH,id,6)
+local real dmg=LoadReal(HH,id,7)
+local real x0=GetUnitX(target)
+local real y0=GetUnitY(target)
+local real ak
+local integer k=LoadInteger(HH,id,9)
+local boolean over=false
+call SaveReal(HH,id,5,time)
+call Guy_PillarsTick(id,time)
+if udg_B==false or not UnitIsAlive(caster) then
+set over=true
+elseif phase==0 then
+// после первого шага 0.6 сек: задел — комбо, нет — конец (отзыв 1 нояб: «не инста, удар — через 0.5-0.75 сек след»)
+if time>=0.6 then
+if target!=null and UnitIsAlive(target) then
+call SaveInteger(HH,id,8,1)
+call SaveReal(HH,id,6,time)
+else
+set over=true
+endif
+endif
+elseif not UnitIsAlive(target) then
+set over=true
+elseif phase==1 then
+// шаги 2-4: паузы 0 / 0.35 / 0.63 от начала фазы (каждый следующий быстрее), шаг 5 — через 0.21 после четвёртого
+if (k==0) or (k==1 and tp>=0.6) or (k==2 and tp>=1.2) then
+set k=k+1
+call SaveInteger(HH,id,9,k)
+set ak=LoadReal(HH,id,3)+40.
+if k==1 then
+set ak=LoadReal(HH,id,3)+220.
+elseif k==2 then
+set ak=LoadReal(HH,id,3)+140.
+endif
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call Guy_Move(caster,PolX(x0,800.,ak),PolY(y0,800.,ak))
+call Guy_Fly(caster,800.,0.)
+call SetUnitFacing(caster,ak+180.)
+call SetUnitAnimationByIndex(caster,37)
+call SetUnitTimeScale(caster,1.5)
+call Guy_Eff("Izayoi\\BY_Wood_GongChengSiPai_1.mdl",PolX(GetUnitX(caster),60.,ak+180.),PolY(GetUnitY(caster),60.,ak+180.),ak+180.,1.,1.2,1.,20.,850.)
+call Guy_Pillar(id,GetUnitX(caster),GetUnitY(caster),850.,ak+180.,-45.,2.)
+call Guy_Crush(x0,y0,1.2,8)
+call Guy_SekPush(x0,y0,ak+180.)
+call Guy_Area(caster,id,k+1,x0,y0,250.,dmg*0.15,0.)
+call sound_play("Guy\\GuyG4-"+I2S(k+1)+".mp3",127)
+elseif k>=3 and tp>=1.8 then
+// шаг 5 — тоже с воздуха под 45, с четвёртой стороны (-40 от первой, как в NL), столб толще
+call SaveInteger(HH,id,8,2)
+call SaveReal(HH,id,6,time)
+set ak=LoadReal(HH,id,3)-40.
+call Guy_Blink(GetUnitX(caster),GetUnitY(caster),GetUnitFacing(caster))
+call Guy_Move(caster,PolX(x0,800.,ak),PolY(y0,800.,ak))
+call Guy_Fly(caster,800.,0.)
+call SetUnitFacing(caster,ak+180.)
+call SetUnitAnimationByIndex(caster,37)
+call SetUnitTimeScale(caster,1.5)
+call Guy_Pillar(id,GetUnitX(caster),GetUnitY(caster),850.,ak+180.,-45.,2.5)
+call sound_play("Guy\\GuyG4-5.mp3",127)
+endif
+elseif tp<0.2 then
+// столб летит до врага
+elseif not LoadBoolean(HH,id,15) then
+// столб врезался: кратер
+call SaveBoolean(HH,id,15,true)
+call SetUnitFlyHeight(caster,0.,0.)
+call SetUnitAnimationByIndex(caster,15)
+call Guy_Crush(x0,y0,2.2,8)
+call Guy_Eff("Others\\[A]earthdom(nocolor)_new.mdl",x0,y0,0.,1.5,2.5,1.,20.,0.)
+call Guy_EffAn("JirenShock2.mdl",x0,y0,0.,1.,5.,0.8,30.,40.)
+call Guy_Grab(caster,target,0.,false)
+call Guy_SekPush(x0,y0,LoadReal(HH,id,3)-40.+180.)
+call Guy_Area(caster,id,9,x0,y0,450.,dmg*0.3,1.)
+set over=true
+endif
+if over then
+if target!=null then
+call Guy_Release(target)    // guy_hold552: скилл кончился/оборвался - снять паузу и инвул
+call SaveBoolean(HH,GetHandleId(target),TARGET_ABILITY,false)
+endif
+call Guy_Vision(caster,GetUnitX(caster),GetUnitY(caster),2.)
+call Guy_Hold(caster,false)
+// последний удар (или промах первым) — все столбы пропадают разом
+call Guy_PillarsOff(id)
+call PauseTimer(t)
+call TSE_DestroyTimer(t)
+call FlushChildHashtable(HH,id)
+endif
+set target=null
+set caster=null
+set t=null
+endfunction
+function Guy_G4_Act takes unit caster,real x1,real y1 returns nothing
+local timer t=CreateTimer()
+local integer id=GetHandleId(t)
+local real facing=Angle2(GetUnitX(caster),GetUnitY(caster),x1,y1)
+local unit target
+call SaveUnitHandle(HH,id,1,caster)
+// guy_fix552 (17 ноя, «на скилах вратов по х6 / Асакуджаку, Хирудора, дракон х8», Sekizo x8): Sekizo 8*СИЛ
+call SaveReal(HH,id,7,8.*GetHeroStr(caster,true))
+call Guy_Hold(caster,true)
+call SetUnitFacing(caster,facing)
+call SetUnitAnimationByIndex(caster,37)
+call SetUnitTimeScale(caster,1.5)
+call Guy_Kick(GetUnitX(caster),GetUnitY(caster),facing)
+call Guy_EffAn("Sabrac\\red-yumao-zhendiLord.mdl",GetUnitX(caster),GetUnitY(caster),0.,1.,1.2,1.,20.,0.)
+call sound_play("Guy\\GuyG4-1.mp3",127)
+call Guy_Self(caster,LoadReal(HH,id,7))
+call Guy_Cannon(caster,id,1,GetUnitX(caster),GetUnitY(caster),facing,1500.,LoadReal(HH,id,7)*0.25)
+call Guy_Vision(caster,PolX(GetUnitX(caster),1300.,facing),PolY(GetUnitY(caster),1300.,facing),2.)
+set target=LoadUnitHandle(HH,id,40)
+if target!=null and not ReverseIntercept(caster,target) then
+call SaveUnitHandle(HH,id,2,target)
+call SaveReal(HH,id,3,Angle2(GetUnitX(target),GetUnitY(target),GetUnitX(caster),GetUnitY(caster)))
+call Guy_Grab(caster,target,3.4,true)
+endif
+call TSE_TimerStart(t,0.02,true,function Guy_G4_Act2)
+set target=null
+set t=null
+endfunction
+// Предзагрузка тяжёлых моделей Гая при выборе героя (13 нояб, лаги): модель 8 врат 1.7 МБ, коляска 1 МБ, дракон,
+// тигр и прочие грузились с диска в момент первого применения - игра подвисала. Раз за игру: эффект в углу карты,
+// сразу спрятан и удалён - модель и текстуры уже в памяти. Зовётся из Trig_Ih_Actions через ExecuteFunc (как Emi_OnSpawn)
+function Guy_Preload takes nothing returns nothing
+local string array mdl
+local integer i=0
+local real x=GetRectMinX(bj_mapInitialPlayableArea)+50.
+local real y=GetRectMinY(bj_mapInitialPlayableArea)+50.
+if LoadBoolean(HH,0,StringHash("GuyPre")) then
+return
+endif
+call SaveBoolean(HH,0,StringHash("GuyPre"),true)
+set mdl[0]="Guy\\Guy8.mdx"
+set mdl[1]="Guy\\GuyWheel.mdx"
+set mdl[2]="Guy\\NightGuy.mdx"
+set mdl[3]="Guy\\Hirudora.mdx"
+set mdl[4]="Guy\\Turtle.mdx"
+set mdl[5]="Guy\\Cyclon.mdx"
+set mdl[6]="Guy\\Vortex.mdx"
+set mdl[7]="Guy\\Sekizo.mdx"
+set mdl[8]="Guy\\SekizoMoon.mdx"
+set mdl[9]="Guy\\Slam2.mdx"
+set mdl[10]="Guy\\VeterGa.mdx"
+set mdl[11]="Guy\\SummonSeal.mdx"
+set mdl[12]="Guy\\AuraRed.mdx"
+set mdl[13]="Guy\\AuraBlue.mdx"
+set mdl[14]="Guy\\Aura.mdx"
+set mdl[15]="Guy\\GateDust.mdx"
+set mdl[16]="Guy\\EfRasen.mdx"
+loop
+exitwhen i>16
+call Guy_EffOff(AddSpecialEffect(mdl[i],x,y))
+set i=i+1
+endloop
+endfunction
+
+function GuyCast takes nothing returns nothing
+    local unit caster=GetTriggerUnit()
+    local integer spell=GetSpellAbilityId()
+    local unit target=GetSpellTargetUnit()
+    local real x1=GetSpellTargetX()
+    local real y1=GetSpellTargetY()
+    if udg_B and DU2 and GetUnitTypeId(caster)=='HGai' then
+        if spell=='GyQ1' then
+            call Guy_Q_Act(caster,x1,y1)
+        elseif spell=='GyQ2' then
+            call Guy_Q2_Act(caster)
+        elseif spell=='GyW1' then
+            call Guy_W_Act(caster,target)
+        elseif spell=='GyE1' then
+            call Guy_E_Act(caster)
+        elseif spell=='GyR1' then
+            call Guy_R_Act(caster)
+        elseif spell=='GyT1' then
+            call Guy_T_Act(caster,target)
+        elseif spell=='GyT2' then
+            call Guy_T2_Act(caster,target)
+        elseif spell=='GyD1' then
+            call Guy_D_Act(caster,x1,y1)
+        elseif spell=='GyD2' then
+            call Guy_D2_Act(caster,x1,y1)
+        elseif spell=='GyF1' then
+            call Guy_F_Act(caster)
+        elseif spell=='GyF2' then
+            call Guy_F2_Act(caster,target)
+        elseif spell=='GyF3' then
+            call Guy_F3_Act(caster,target)
+        elseif spell=='GyF4' then
+            call Guy_F4_Act(caster,target)
+        elseif spell=='GyG1' then
+            call Guy_G_Act(caster)
+        elseif spell=='GyG2' then
+            call Guy_G2_Act(caster,x1,y1)
+        elseif spell=='GyG3' then
+            call Guy_G3_Act(caster,x1,y1)
+        elseif spell=='GyG4' then
+            call Guy_G4_Act(caster,x1,y1)
+        endif
+    endif
+    set caster=null
+    set target=null
+endfunction
+
+function GuyInit takes nothing returns nothing
+    local trigger guySpellTrigger=CreateTrigger()
+    call TriggerRegisterAnyUnitEventBJ(guySpellTrigger,EVENT_PLAYER_UNIT_SPELL_EFFECT)
+    call TriggerAddAction(guySpellTrigger,function GuyCast)
+    set guySpellTrigger=null
+endfunction
+
 function Iori_OriginalCaster takes hashtable ioriTable,integer ioriKey,integer ioriSlot returns unit
     if HaveSavedHandle(ioriTable,ioriKey,StringHash("FixReflectOrig")) then
         return LoadUnitHandle(ioriTable,ioriKey,StringHash("FixReflectOrig"))
@@ -302654,6 +305630,41 @@ local integer healLevel=20                             // с какого уро
    // call SaveBoolean(HH,id,StringHash("IoriHeal"),true)
     call Bof_Heal(caster,caster,healAgi)
 endif
+endfunction
+
+function Iori_SaveContactState takes unit ioriContactCaster,integer ioriContactId returns nothing
+    call SaveBoolean(HH,ioriContactId,StringHash("IoriContactPaused"),IsUnitPaused(ioriContactCaster))
+    call SaveBoolean(HH,ioriContactId,StringHash("IoriContactInvulnerable"),IsUnitInvulnerable(ioriContactCaster))
+    call SaveBoolean(HH,ioriContactId,StringHash("IoriContactTargetable"),IsUnitTargetable(ioriContactCaster))
+endfunction
+
+function Iori_StopReversedContact takes unit ioriContactCaster,timer ioriContactTimer,unit ioriContactTrail,group ioriContactHits returns nothing
+    local integer ioriContactId=GetHandleId(ioriContactTimer)
+    local integer ioriContactSlot=21
+    local effect ioriContactEffect
+    loop
+        exitwhen ioriContactSlot>28
+        set ioriContactEffect=LoadEffectHandle(HH,ioriContactId,ioriContactSlot)
+        if ioriContactEffect!=null then
+            call Bof_EffHide(ioriContactEffect)
+        endif
+        set ioriContactSlot=ioriContactSlot+1
+    endloop
+    if ioriContactTrail!=null then
+        call RemoveUnit(ioriContactTrail)
+    endif
+    if ioriContactHits!=null then
+        call DestroyGroup(ioriContactHits)
+    endif
+    call UnitSpeed(ioriContactCaster,1)
+    call SetUnitAnimation(ioriContactCaster,"stand")
+    call SetUnitPathing(ioriContactCaster,true)
+    call SetUnitTargetable(ioriContactCaster,LoadBoolean(HH,ioriContactId,StringHash("IoriContactTargetable")))
+    call SetUnitInvulnerable(ioriContactCaster,LoadBoolean(HH,ioriContactId,StringHash("IoriContactInvulnerable")))
+    call MapPauseUnit(ioriContactCaster,LoadBoolean(HH,ioriContactId,StringHash("IoriContactPaused")))
+    call FlushChildHashtable(HH,ioriContactId)
+    call TSE_DestroyTimer(ioriContactTimer)
+    set ioriContactEffect=null
 endfunction
 
 function Iori_T_Alt_Act2 takes nothing returns nothing
@@ -302779,6 +305790,12 @@ else
 
     // ===== УДАРЫ 1-8 И ФИНАЛЬНЫЙ ЗАМАХ =====
     if hits<9 and time>=nextHit then
+        if hits==0 and ReverseIntercept(caster,target) then
+            call Iori_StopReversedContact(caster,GetExpiredTimer(),null,null)
+            set caster=null
+            set target=null
+            return
+        endif
         set hits=hits+1
         set lastHit=time
         call SaveInteger(HH,id,8,hits)
@@ -303259,6 +306276,16 @@ else
         set n0=FirstOfGroup(G)
         exitwhen n0==null
         if UnitIsAlive(n0) and IsUnitEnemy(n0,GetOwningPlayer(caster))==true and IsUnitType(n0,UNIT_TYPE_STRUCTURE)==false and GetUnitAbilityLevel(n0,'Avul')==0 and not IsUnitInGroup(n0,gr) then
+            if ReverseIntercept(caster,n0) then
+                call UnitRemoveAbility(caster,'GST4')
+                call GroupClear(G)
+                call Iori_StopReversedContact(caster,GetExpiredTimer(),Dummy,gr)
+                set n0=null
+                set caster=null
+                set Dummy=null
+                set gr=null
+                return
+            endif
             call GroupAddUnit(gr,n0)
             call DamageU(false,caster,n0,damage)
             call DestroyEffect(AddSpecialEffectTarget("Iori\\Iori (49).mdl",n0,"chest"))
@@ -303666,7 +306693,7 @@ call EffectCreateAndMove90(true,"rasengan_eff4.mdl",facing+180,1.25,0.5,1,80,20,
 
 
             // снаряд (основной юнит, он летит и проверяет попадание)
-            set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+            set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
             call SetUnitModel(n0,"Iori\\Iori (30).mdx")
             call MoveUnit(n0,n0,50,facing)
             call SetUnitFlyHeight(n0,150,0)
@@ -303677,7 +306704,7 @@ call WaveRegisterShared(n0,GetExpiredTimer())
             set Dummy=n0
 
             // второй юнит снаряда, следует за основным
-            set n0=CreateUnit(GetOwningPlayer(caster),'e000',x0,y0,facing)
+            set n0=CreateUnit(GetOwningPlayer(caster),'e200',x0,y0,facing)
             call SetUnitModel(n0,"Iori\\Iori (15).mdx")
             call MoveUnit(n0,n0,50,facing)
             call SetUnitFlyHeight(n0,150,0)
@@ -303734,7 +306761,8 @@ endif
                 set Dummy=null
 
                 // эффекты попадания на невидимом носителе
-                set n0=CreateUnit(GetOwningPlayer(caster),'e000',ix,iy,facing)
+                set n0=CreateUnit(GetOwningPlayer(caster),'e200',ix,iy,facing)
+                call SetUnitFlyHeight(n0,10.,0.)
                 call UnitColor(n0,100,100,100,100)
                 call MyRemoveUnit(n0,2)
                 call EffectCreateAndMove(true,"Signum\\fadespearpurple.mdl",GetRandomReal(0,360),1.5,2,0.75,100,100,100,0,100,n0,0,facing)
@@ -303769,7 +306797,8 @@ endif
        // call sound_play("Sound\\Iori\\Iori_Effect4.mp3",127)
 
         // невидимый носитель эффектов луча
-        set n0=CreateUnit(GetOwningPlayer(caster),'e000',px,py,facing)
+        set n0=CreateUnit(GetOwningPlayer(caster),'e200',px,py,facing)
+        call SetUnitFlyHeight(n0,10.,0.)
         call UnitColor(n0,100,100,100,100)
         call MyRemoveUnit(n0,2)
         call EffectCreateAndMove(true,"Iori\\Iori (51).mdl",facing,1,0.65,0.75,100,100,100,0,0,n0,0,facing)
@@ -304567,6 +307596,12 @@ call EffectCreateAndMove90(true,"Others\\WindCirclefaster.mdl",facing,1.5,1.25,1
 
                 if dist<200 then
                     // догнал: time обнуляется, дальше серия ударов с нуля
+                    if ReverseIntercept(caster,target) then
+                        call Iori_StopReversedContact(caster,GetExpiredTimer(),null,null)
+                        set caster=null
+                        set target=null
+                        return
+                    endif
                     call SaveBoolean(HH,id,10,true)
                     call SaveReal(HH,id,5,0)
 
@@ -304895,6 +307930,7 @@ function Iori_T_Act takes unit caster,unit target returns nothing
     call SaveReal(HH,id,3,facing)
     call SaveReal(HH,id,15,damage)
 
+    call Iori_SaveContactState(caster,id)
     call PauseUnit(caster,true)
     call SetUnitInvulnerable(caster,true)
     call SetUnitPathing(caster,false)
@@ -304995,6 +308031,12 @@ call Iori_Heal(caster)
             call SaveReal(HH,id,6,time1)
 
             if dist<200 then
+                if ReverseIntercept(caster,target) then
+                    call Iori_StopReversedContact(caster,GetExpiredTimer(),null,null)
+                    set caster=null
+                    set target=null
+                    return
+                endif
                 // схватил: time обнуляется, дальше таймлайн с нуля
                 call SaveBoolean(HH,id,10,true)
                 call SaveReal(HH,id,5,0)
@@ -305098,6 +308140,7 @@ function Iori_D_Act takes unit caster,unit target returns nothing
     call SaveReal(HH,id,3,facing)
     call SaveReal(HH,id,15,damage)
 
+    call Iori_SaveContactState(caster,id)
     call PauseUnit(caster,true)
     call SetUnitInvulnerable(caster,true)
     call SetUnitPathing(caster,false)
@@ -305175,6 +308218,12 @@ endif
 call SaveReal(HH,id,6,time1)
 call MoveUnit(caster,caster,25+SR(x0,y0,x1,y1)*0.01,facing)
 if SR(x0,y0,x1,y1)<200 and time<5 then
+if ReverseIntercept(caster,target) then
+    call Iori_StopReversedContact(caster,GetExpiredTimer(),null,null)
+    set caster=null
+    set target=null
+    return
+endif
 call SaveReal(HH,id,5,5)
 call UnitSpeed(caster,1)
 call SetUnitAnimationByIndex(caster,3)
@@ -305310,6 +308359,7 @@ local real x1=GetUnitX(target)
 local real y1=GetUnitY(target)
 local real facing=Angle2(x0,y0,x1,y1)
 local real damage=(GetUnitAbilityLevel(caster,'IoE1')*0.2+3)*GetHeroAgi(caster,true)*0.25
+call Iori_SaveContactState(caster,id)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 call SaveUnitHandle(HH,id,1,caster)
@@ -305430,6 +308480,12 @@ set x0=PolX(x0,100,facing)
 set y0=PolY(y0,100,facing)
 set target=First_Target_Skill(caster,null,x0,y0,150)
 if target!=null then
+if ReverseIntercept(caster,target) then
+    call Iori_StopReversedContact(caster,GetExpiredTimer(),LoadUnitHandle(HH,id,20),null)
+    set caster=null
+    set target=null
+    return
+endif
 
 call UnitAddAbility(target,'Amrf')
 call UnitRemoveAbility(target,'Amrf')
@@ -305544,6 +308600,7 @@ set dist=1000
 call SaveReal(HH,id,8,dist)
 
 
+call Iori_SaveContactState(caster,id)
 call PauseUnit(caster,true)
 call SetUnitInvulnerable(caster,true)
 
@@ -306604,6 +309661,7 @@ if HaveSavedReal(HH,GetHandleId(caster),'IoRX') then
     call RemoveSavedReal(HH,GetHandleId(caster),'IoRY')
 endif
 call SaveReal(HH,id,3,facing)
+call Iori_SaveContactState(caster,id)
 call SaveGroupHandle(HH,id,4,CreateGroup())
 
 call PauseUnit(caster,true)
@@ -320585,16 +323643,16 @@ call LANG_A('HmR1',1,4,"Blinks around the target area and throws six grenades. E
 call LANG_A('HmR1',3,0,"Blinks around the target area and throws six grenades. Each explodes separately. Homura is invulnerable and cannot act during the throws. Enemies can leave the marked circles before they explode.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage per grenade: 1/1.25/1.5/1.75/2*|r|c0077FFFFINT"+"|r|cFF00A5FF|nMaximum damage (6 grenades): 6/7.5/9/10.5/12*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 1100|nBlast radius: 350|nGrenade delay: 0.6 sec.|nCooldown: 34/32/30/28/26 sec.|r")
 call LANG_A('HmT1',1,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
 call LANG_A('HmT1',3,0,"Stops time across the entire map. Units without time-stop immunity are frozen. Projectiles and sustained attacks stop and resume when time returns. Homura can move and cast. From hero level 35, her chosen ally can also act.|n|n|cFF00A5FFDuration: 4 sec. at level 25, +0.05 sec. per hero level (max 5 "+"sec.)|nPreparation: 0.4 sec.|nTime-stop delay: 0.3 sec.|nD cooldown during time stop: 1.5 sec.|nCooldown: 110 sec. at level 25, -1 sec. per hero level (min 90 sec.)|r")
-call LANG_A('HmD1',1,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and unlocks her Devil form until the round ends. Press G again when you wish to transform. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Godd"+"ess transformation also unlocks the form for living Homura. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
-call LANG_A('HmD1',3,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and unlocks her Devil form until the round ends. Press G again when you wish to transform. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Godd"+"ess transformation also unlocks the form for living Homura. Saving or transforming consumes the bond.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUses: once per round|r")
+call LANG_A('HmD1',1,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and unlocks her Devil form until the round ends. Press G again when you wish to transform. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Godd"+"ess transformation also unlocks the form for living Homura. Saving or transforming consumes the bond. Homura’s save takes priority over the ally’s own death saves. It also saves Madoka from Cataclysm’s sacrifice.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUs"+"es: once per round|r")
+call LANG_A('HmD1',3,0,"Homura chooses an allied hero for the round. If an enemy deals a lethal hit to that hero, she saves them and unlocks her Devil form until the round ends. Press G again when you wish to transform. Homura’s death breaks the bond.|nMadoka is chosen automatically and receives a stronger save. Her Godd"+"ess transformation also unlocks the form for living Homura. Saving or transforming consumes the bond. Homura’s save takes priority over the ally’s own death saves. It also saves Madoka from Cataclysm’s sacrifice.|n|n|cFF00A5FFHealth on save: 30%|nMadoka’s health on save: 45%|nRange: 1200|nUs"+"es: once per round|r")
 call LANG_A('HmF1',1,0,"Homura records a living allied hero’s position. Press F again to return the ally to the mark without selecting a target. A successful cast reduces D cooldown by 2 sec.|n|n|cFF00A5FFMark duration: 6 sec.|nRange: 1200|nCooldown after recall: 20 sec.|nSelect an ally within 1200. Press F again without"+" a target to return them, at any distance.|r|n|n|cffffcc00Ctrl+F|r switches between manual return and automatic return after 6 sec.")
 call LANG_A('HmF1',3,0,"Homura records a living allied hero’s position. Press F again to return the ally to the mark without selecting a target. A successful cast reduces D cooldown by 2 sec.|n|n|cFF00A5FFMark duration: 6 sec.|nRange: 1200|nCooldown after recall: 20 sec.|r|n|n|cffffcc00Ctrl+F|r switches between manual re"+"turn and automatic return after 6 sec.")
-call LANG_A('HmG1',1,0,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 23 sec.|nWeapon change on self: 2 sec.|r")
-call LANG_A('HmG1',1,1,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 21 sec.|nWeapon change on self: 2 sec.|r")
-call LANG_A('HmG1',1,2,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 19 sec.|nWeapon change on self: 2 sec.|r")
-call LANG_A('HmG1',1,3,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 17 sec.|nWeapon change on self: 2 sec.|r")
-call LANG_A('HmG1',1,4,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 15 sec.|nWeapon change on self: 2 sec.|r")
-call LANG_A('HmG1',3,0,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec.|n"+"|n|cFF00A5FFBlink distance: 750|nCooldown: 23/21/19/17/15 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',1,0,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 23 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',1,1,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 21 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',1,2,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 19 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',1,3,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 17 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',1,4,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 15 sec.|nWeapon change on self: 2 sec.|r")
+call LANG_A('HmG1',3,0,"Blinks to the selected point and changes Q to the selected weapon. Cast on herself to change weapons without blinking and refund the mana cost. Improves with Q. Ctrl+D selects the next Q: random, shield, pistol, bazooka, rifle, grenade.|nQ/W/E/R and successful G/F casts reduce D cooldown by 2 sec. R"+"esets Q’s cooldown.|n|n|cFF00A5FFBlink distance: 750|nCooldown: 23/21/19/17/15 sec.|nWeapon change on self: 2 sec.|r")
 call LANG_A('HdQ1',1,0,"Ruptures space at the selected point, damaging and rooting enemies hit.|n|n|cFF00A5FFDamage: 7*INT|nRadius: 300|nRange: 900|nRoot: 2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('HdQ1',3,0,"Ruptures space at the selected point, damaging and rooting enemies hit.|n|n|cFF00A5FFDamage: 7*INT|nRadius: 300|nRange: 900|nRoot: 2 sec.|nCooldown: 12 sec.|r")
 call LANG_A('HdW1',1,0,"Curses an enemy for 6 sec. Successful ability casts by the target add up to 5 stacks, increasing damage, slow and the cooldowns of all abilities while cursed.|n|n|cFF00A5FFInitial damage: 2*INT|nDamage per second: (1 + 0.3 per stack)*INT|nAS/MS slow: 20% + 8% per stack|nCooldown increase: 10% per st"+"ack, capped at 5 sec.|nRange: 900|nCooldown: 18 sec.|r")
@@ -320609,8 +323667,8 @@ call LANG_A('HdD1',1,0,"Devil form lasts until the end of the round.")
 call LANG_A('HdD1',3,0,"Devil form lasts until the round ends.|n|n|cFF00A5FFBasic attack: +200|nHP/MP: +2000|nHP/MP regeneration: +40/sec.|nControl duration: -80%|nArmor: +30|r|n|n|cffffcc00Devil abilities:|r|nQ — Temporal Rupture: area damage and roots on enemies hit.|nW — Demonic Curse: a curse strengthened by enemy "+"ability casts.|nE — Wings of Salvation: attributes, a shield and time-stop immunity for an ally.|nR — Rewritten World: an area that damages, slows and reduces resistance.|nD — Time Step: blink, return and cooldown reduction.|nF — Last Attempt: recall an ally selected anywhere on the map.|nT "+"— Time Stop: global time stop for 5 sec.|r")
 call LANG_A('HdF1',1,0,"Marks a living allied hero. Recasting returns them to the saved position. The ally can be selected anywhere on the map.|n|n|cFF00A5FFReturn window: 6 sec.|nCooldown after return: 20 sec.|nPress F again without a target to return the marked ally.|r|n|n|cffffcc00Ctrl+F|r switches between manual return"+" and automatic return after 6 sec.")
 call LANG_A('HdF1',3,0,"Marks a living allied hero. Recasting returns them to the saved position. The ally can be selected anywhere on the map.|n|n|cFF00A5FFReturn window: 6 sec.|nCooldown after return: 20 sec.|r|n|n|cffffcc00Ctrl+F|r switches between manual return and automatic return after 6 sec.")
-call LANG_A('HdG1',1,0,"Blinks in the chosen direction. Press D again within 3 sec. to return at no mana cost. The first blink reduces the remaining cooldown of the last Q/W/E/R by 30%, capped at 5 sec.|n|n|cFF00A5FFBlink: 1200|nCooldown: 15 sec.|r|n|n|cffffcc00Ctrl+D|r switches between manual return and automatic return a"+"fter 3 sec.")
-call LANG_A('HdG1',3,0,"Blinks in the chosen direction. Press D again within 3 sec. to return at no mana cost. The first blink reduces the remaining cooldown of the last Q/W/E/R by 30%, capped at 5 sec.|n|n|cFF00A5FFBlink: 1200|nCooldown: 15 sec.|r|n|n|cffffcc00Ctrl+D|r switches between manual return and automatic return a"+"fter 3 sec.")
+call LANG_A('HdG1',1,0,"Blinks in the chosen direction. Press D again within 3 sec. to return at no mana cost. The first blink reduces the remaining cooldown of the last Q/W/E/R by 30%, capped at 5 sec. The first blink also resets Q’s cooldown.|n|n|cFF00A5FFBlink: 1200|nCooldown: 15 sec.|r|n|n|cffffcc00Ctrl+D|r switches "+"between manual return and automatic return after 3 sec.")
+call LANG_A('HdG1',3,0,"Blinks in the chosen direction. Press D again within 3 sec. to return at no mana cost. The first blink reduces the remaining cooldown of the last Q/W/E/R by 30%, capped at 5 sec. The first blink also resets Q’s cooldown.|n|n|cFF00A5FFBlink: 1200|nCooldown: 15 sec.|r|n|n|cffffcc00Ctrl+D|r switches "+"between manual return and automatic return after 3 sec.")
 call LANG_A('HdG2',1,0,"Returns to the starting position. Available for 3 sec. after Time Step.")
 call LANG_A('HmS0',1,0,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDuration: 4 sec.|nCooldown: 16 sec.|r")
 call LANG_A('HmS0',1,1,"Raises her shield, blocking the next enemy hit.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDuration: 4 sec.|nCooldown: 15 sec.|r")
@@ -320642,8 +323700,8 @@ call LANG_A('HmA0',1,2,"Throws a flash grenade at the marked point. Enemies can 
 call LANG_A('HmA0',1,3,"Throws a flash grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 5*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nBlind: 2 sec., 100% miss chance|nDelay: 0.675 sec.|nCooldown: 13 sec.|r")
 call LANG_A('HmA0',1,4,"Throws a flash grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nBlind: 2 sec., 100% miss chance|nDelay: 0.675 sec.|nCooldown: 12 sec.|r")
 call LANG_A('HmA0',3,0,"Throws a flash grenade at the marked point. Enemies can leave its area before it explodes.|nCasting reduces D cooldown by 2 sec.|n|n|cFF00A5FFDamage: 2/3/4/5/6*|r|c0077FFFFINT|r|cFF00A5FF|nRange: 750|nBlast radius: 250|nBlind: 2 sec., 100% miss chance|nDelay: 0.675 sec.|nCooldown: 16/15/14/13/12 sec"+".|r")
-call LANG_A('HmV1',1,0,"Transforms into a devil until the end of the round. Becomes available after G saves her ally or linked Madoka becomes a Goddess. Homura is invulnerable during the 1.15 sec. transformation.|n|n|cffffcc00Devil abilities:|r|nQ — Temporal Rupture: area damage and roots on enemies hit.|nW — Demonic C"+"urse: a curse strengthened by enemy ability casts.|nE — Wings of Salvation: attributes, a shield and time-stop immunity for an ally.|nR — Rewritten World: an area that damages, slows and reduces resistance.|nD — Time Step: blink, return and cooldown reduction.|nF — Last Attempt: recall an al"+"ly selected anywhere on the map.|nT — Time Stop: global time stop for 5 sec.|r")
-call LANG_A('HmV1',3,0,"Transforms into a devil until the end of the round.|n|n|cffffcc00Devil abilities:|r|nQ — Temporal Rupture: area damage and roots on enemies hit.|nW — Demonic Curse: a curse strengthened by enemy ability casts.|nE — Wings of Salvation: attributes, a shield and time-stop immunity for an ally.|nR"+" — Rewritten World: an area that damages, slows and reduces resistance.|nD — Time Step: blink, return and cooldown reduction.|nF — Last Attempt: recall an ally selected anywhere on the map.|nT — Time Stop: global time stop for 5 sec.|r")
+call LANG_A('HmV1',1,0,"Transforms into a devil until the end of the round. Becomes available after G saves her ally or linked Madoka becomes a Goddess. Homura is invulnerable during the 1.15 sec. transformation.|n|n|cFF00A5FFAttack damage: +200|nHP/MP: +2000|nHP/MP regeneration: +40 per sec.|nControl duration: −80%|nArm"+"or: +30|r")
+call LANG_A('HmV1',3,0,"Transforms into a devil until the end of the round.|n|n|cFF00A5FFAttack damage: +200|nHP/MP: +2000|nHP/MP regeneration: +40 per sec.|nControl duration: −80%|nArmor: +30|r|n|n|cffffcc00Devil abilities:|r|nQ — Temporal Rupture: area damage and roots on enemies hit.|nW — Demonic Curse: a curse st"+"rengthened by enemy ability casts.|nE — Wings of Salvation: attributes, a shield and time-stop immunity for an ally.|nR — Rewritten World: an area that damages, slows and reduces resistance.|nD — Time Step: blink, return and cooldown reduction.|nF — Last Attempt: recall an ally selected anyw"+"here on the map.|nT — Time Stop: global time stop for 5 sec.|r")
 call LANG_A('OiG1',1,0,"Orihime prepares for 2 sec., then dashes 2500 in the chosen direction. On contact with the first enemy true hero, both are paused and invulnerable for 1 sec. The seal then bursts, dealing magic damage through shields and Boros Armor, and Orihime dies. She survives if the dash misses.|n|n|cFF00A5FFAv"+"ailable from level 25.|nDamage: 100% of Orihime’s maximum HP|nPreparation: 2 sec.|nDash: 2500|nHold: 1 sec.|nCooldown: 50 sec.|r")
 call LANG_A('OiG1',3,0,"Orihime prepares for 2 sec., then dashes 2500 in the chosen direction. On contact with the first enemy true hero, both are paused and invulnerable for 1 sec. The seal then bursts, dealing magic damage through shields and Boros Armor, and Orihime dies. She survives if the dash misses.|n|n|cFF00A5FFAv"+"ailable from level 25.|nDamage: 100% of Orihime’s maximum HP|nPreparation: 2 sec.|nDash: 2500|nHold: 1 sec.|nCooldown: 50 sec.|r")
 call LANG_A('HmF2',1,0,"Returns the marked ally to the saved position. No range limit.|r")
@@ -320736,6 +323794,99 @@ call LANG_A('IoG3',1,3,"Finish the combo within 3 sec. of landing an ability.|n|
 call LANG_A('IoG3',1,4,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 2 sec.|r")
 call LANG_A('IoG3',2,0,"Ura 1207 Shiki: Yami Sogi, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
 call LANG_A('IoG3',3,0,"Finish the combo within 3 sec. of landing an ability.|n|n|cFF00A5FFQ: detonate the impact point for 3*|r|c003CFF3CAGI|r|cFF00A5FF in 400 AoE. Burns and immobilizes for 1 sec.|nW: strike and explode for 4*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE, burning the target.|nE: raise a pillar in 300 AoE. Ten h"+"its of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF|nR: fire a projectile up to 2000 toward the R target point for 3*|r|c003CFF3CAGI|r|cFF00A5FF and burn enemies.|nD: drag and strike the target for 2*|r|c003CFF3CAGI|r|cFF00A5FF|nT: six aerial strikes of 0.5*|r|c003CFF3CAGI|r|cFF00A5FF. After two F lifts, slam fo"+"r 2*|r|c003CFF3CAGI|r|cFF00A5FF in 300 AoE and stun for 1 sec.|nCast time: 0.01 sec.|nCooldown: 6/5/4/3/2 sec.|r")
+call LANG_A('GyD1',0,0,"Kuchiyose no Jutsu, (|cffffcc00D|r)")
+call LANG_A('GyD1',1,0,"Guy summons a turtle and kicks off toward the cursor. The turtle flies backward and hits the first enemy in its path.|n|n|cFF00A5FFDamage: 3/3.5/4/4.5/5×STR (E level)|nStun: 0.3 sec.|nDash / turtle travel: 600 / 900|nAvailable at hero level 12|nCooldown: 25 sec.|r")
+call LANG_A('GyD1',2,0,"Kuchiyose no Jutsu, [|cffffcc00Level %d|r] (|cffffcc00D|r)")
+call LANG_A('GyD1',3,0,"Guy summons a turtle and kicks off toward the cursor. The turtle flies backward and hits the first enemy in its path.|n|n|cFF00A5FFDamage: 3/3.5/4/4.5/5×STR (E level)|nStun: 0.3 sec.|nDash / turtle travel: 600 / 900|nAvailable at hero level 12|nCooldown: 25 sec.|r")
+call LANG_A('GyD2',0,0,"Hachimon Tonkō: Air Step, (|cffffcc00D|r)")
+call LANG_A('GyD2',1,0,"At the Eighth Gate, Guy instantly dashes toward the cursor.|n|n|cFF00A5FFDash: 500|nCharges: 3|nCharge recovery: 3.5 sec.|r")
+call LANG_A('GyD2',2,0,"Hachimon Tonkō: Air Step, [|cffffcc00Level %d|r] (|cffffcc00D|r)")
+call LANG_A('GyD2',3,0,"At the Eighth Gate, Guy instantly dashes toward the cursor.|n|n|cFF00A5FFDash: 500|nCharges: 3|nCharge recovery: 3.5 sec.|r")
+call LANG_A('GyE1',1,0,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyE1',1,1,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyE1',1,2,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyE1',1,3,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyE1',1,4,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyE1',3,0,"Each cast opens the next gate for 30 sec. E level caps the gates at 4/5/6/7/8.|n|nGate 1: +10 STR/AGI, +15% movement and attack speed, unlocks Omote Renge (F).|nGate 2: +15, +25%, +50% mana regeneration.|nGate 3: +20, +35%, unlocks Ura Renge (G).|nGate 4: +25, +45%, +20% max HP.|nGate 5: +30, +55%, "+"+25% control resistance.|nGate 6: +35, +65%, unlocks Asakujaku (F).|nGate 7: +40, +75%, unlocks Hirudora (G).|nGate 8: +80, +100%, unlocks Night Guy (F), Sekizo (G) and Air Step (D).|n|nFrom gate 4, each gate beyond the third drains 0.4% HP per sec. and increases incoming damage by 5%. Gate techniqu"+"es deal 10% of their damage to Guy. At hero level 35, E opens gate 6 first. After gate 8, Guy spends 20 sec. in a wheelchair with abilities and regeneration disabled, −60% speed and −50/75/100 attributes at hero levels 1/25/30.|n|n|cFF00A5FFDuration: 30 sec.|nCooldown: 8 sec. per gate after clos"+"ing|r")
+call LANG_A('GyF1',1,0,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF1',1,1,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF1',1,2,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF1',1,3,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF1',1,4,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF1',2,0,"Soshuga, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
+call LANG_A('GyF1',3,0,"Guy spins his nunchaku while moving, taking 60% less damage for 2 sec. For the next 8 sec., his next attack or qualifying technique adds three nunchaku strikes. Levels with Q.|n|n|cFF00A5FFCombo damage: 4×STR|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',1,0,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',1,1,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',1,2,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',1,3,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',1,4,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF2',2,0,"Omote Renge, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
+call LANG_A('GyF2',3,0,"From gate 1, Guy appears in front of the enemy, launches them with an uppercut and drives them into the ground. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1 sec.|nRange: 1500|nCooldown: 15 sec.|r")
+call LANG_A('GyF3',1,0,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF3',1,1,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF3',1,2,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF3',1,3,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF3',1,4,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF3',2,0,"Asakujaku, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
+call LANG_A('GyF3',3,0,"From gate 6, Guy launches the target and strikes with flaming fists for 2.25 sec., damaging enemies behind the target. The target falls and is knocked back. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFCombo damage: 8×STR|nLanding stun: 0.5 sec.|nKnockback: 375|nImpact radius: 350|nRang"+"e: 1500|nCooldown: 18 sec.|r")
+call LANG_A('GyF4',1,0,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyF4',1,1,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyF4',1,2,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyF4',1,3,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyF4',1,4,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyF4',2,0,"Sekizō: Night Guy, [|cffffcc00Level %d|r] (|cffffcc00F|r)")
+call LANG_A('GyF4',3,0,"At gate 8, Guy prepares for 2.5 sec. while invulnerable, then pursues the target in a dragon of blood vapour. On contact he kicks the target, carries them forward and drives them into the ground. Pierces shields. Guy takes 10% of the damage. Levels with Q.|n|n|cFF00A5FFDamage: 9×STR|nStun: 1.5 sec."+"|nKnockback: 400|nRange: 1500|nCooldown: 25 sec.|r")
+call LANG_A('GyG1',0,0,"Konoha Tsumujikaze, (|cffffcc00G|r)")
+call LANG_A('GyG1',1,0,"Guy spins on his head for 2 sec., pushing enemies away before a final spinning kick. He is invulnerable during the spin.|n|n|cFF00A5FFSpin damage: 1.8/2/2.1/2.3/2.4×STR (E level)|nFinal hit: 4.2/4.6/4.9/5.3/5.6×STR (E level)|nKnockback: 300|nRadius: 300|nAvailable at hero level 12|nCooldown: 25 se"+"c.|r")
+call LANG_A('GyG1',2,0,"Konoha Tsumujikaze, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
+call LANG_A('GyG1',3,0,"Guy spins on his head for 2 sec., pushing enemies away before a final spinning kick. He is invulnerable during the spin.|n|n|cFF00A5FFSpin damage: 1.8/2/2.1/2.3/2.4×STR (E level)|nFinal hit: 4.2/4.6/4.9/5.3/5.6×STR (E level)|nKnockback: 300|nRadius: 300|nAvailable at hero level 12|nCooldown: 25 se"+"c.|r")
+call LANG_A('GyG2',0,0,"Ura Renge, (|cffffcc00G|r)")
+call LANG_A('GyG2',1,0,"From gate 3, Guy dashes toward the cursor, launches the first enemy hit and strikes them ten times in the air before slamming them into the ground. Guy takes 10% of the damage.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1.5 sec.|nDash: 600|nKnockback per hit: 500|nCooldown: 25 sec.|r")
+call LANG_A('GyG2',2,0,"Ura Renge, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
+call LANG_A('GyG2',3,0,"From gate 3, Guy dashes toward the cursor, launches the first enemy hit and strikes them ten times in the air before slamming them into the ground. Guy takes 10% of the damage.|n|n|cFF00A5FFDamage: 6×STR|nStun: 1.5 sec.|nDash: 600|nKnockback per hit: 500|nCooldown: 25 sec.|r")
+call LANG_A('GyG3',0,0,"Hirudora, (|cffffcc00G|r)")
+call LANG_A('GyG3',1,0,"From gate 7, Guy launches a tiger of compressed air toward the cursor. It explodes at the first enemy hit or at maximum range, leaving a slowing dome for 3.5 sec. Guy takes 10% of the damage.|n|n|cFF00A5FFDamage: 8×STR|nSlow: 50%|nImpact radius: 500|nDome radius: up to 1400|nTravel: 1600|nCooldown:"+" 30 sec.|r")
+call LANG_A('GyG3',2,0,"Hirudora, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
+call LANG_A('GyG3',3,0,"From gate 7, Guy launches a tiger of compressed air toward the cursor. It explodes at the first enemy hit or at maximum range, leaving a slowing dome for 3.5 sec. Guy takes 10% of the damage.|n|n|cFF00A5FFDamage: 8×STR|nSlow: 50%|nImpact radius: 500|nDome radius: up to 1400|nTravel: 1600|nCooldown:"+" 30 sec.|r")
+call LANG_A('GyG4',0,0,"Sekizo, (|cffffcc00G|r)")
+call LANG_A('GyG4',1,0,"At gate 8, Guy strikes along a line with compressed air. If he hits an enemy, he follows up with four strikes around them. Guy is invulnerable, the target is held during the combo and Guy takes 10% of the damage.|n|n|cFF00A5FFTotal damage: 8×STR (25%, 15%, 15%, 15%, 30%)|nFinal stun: 1 sec.|nLine: "+"1500 long, 520 wide|nCrater radius: 450|nCooldown: 30 sec.|r")
+call LANG_A('GyG4',2,0,"Sekizo, [|cffffcc00Level %d|r] (|cffffcc00G|r)")
+call LANG_A('GyG4',3,0,"At gate 8, Guy strikes along a line with compressed air. If he hits an enemy, he follows up with four strikes around them. Guy is invulnerable, the target is held during the combo and Guy takes 10% of the damage.|n|n|cFF00A5FFTotal damage: 8×STR (25%, 15%, 15%, 15%, 30%)|nFinal stun: 1 sec.|nLine: "+"1500 long, 520 wide|nCrater radius: 450|nCooldown: 30 sec.|r")
+call LANG_A('GyQ1',1,0,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ1',1,1,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ1',1,2,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ1',1,3,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ1',1,4,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ1',3,0,"Guy dashes toward the cursor with a flying kick. The first enemy hit is knocked away, and Guy rebounds. On hit, Q becomes Koyubi Kōgeki for 3 sec.|n|n|cFF00A5FFDamage: 1.8/2.4/3/3.6/4.2×STR|nKnockback: 350|nDash: 1000|nCooldown: 12/11/10/9/8 sec.|r")
+call LANG_A('GyQ2',1,0,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 1.2×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyQ2',1,1,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 1.6×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyQ2',1,2,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 2×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyQ2',1,3,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 2.4×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyQ2',1,4,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 2.8×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyQ2',2,0,"Koyubi Kōgeki, [|cffffcc00Level %d|r] (|cffffcc00Q|r)")
+call LANG_A('GyQ2',3,0,"Guy jumps onto the enemy hit by his opening kick and slams down, damaging and stunning nearby enemies.|n|n|cFF00A5FFDamage: 1.2/1.6/2/2.4/2.8×STR|nStun: 1 sec.|nRadius: 200|nAvailable for 3 sec. after Q hits|r")
+call LANG_A('GyR1',1,0,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyR1',1,1,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyR1',1,2,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyR1',1,3,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyR1',1,4,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyR1',3,0,"Guy spins for 2 sec., drawing enemies into a rising vortex before a final flying kick scatters them. Guy is invulnerable while spinning.|n|n|cFF00A5FFDamage: 4/5/6/7/8×STR|nStun: 1 sec.|nKnockback: 500|nRadius: 550|nCooldown: 50/48/45/42/40 sec.|r")
+call LANG_A('GyT1',0,0,"Konoha Kaiganshō, (|cffffcc00T|r)")
+call LANG_A('GyT1',1,0,"Guy appears in front of the target and lands a stunning punch. For 10 sec., T becomes a stronger follow-up that knocks the enemy away.|n|n|cFF00A5FFDamage: 2×STR, follow-up 8×STR|nStun: 1 sec.|nFollow-up knockback: 500|nRange: 600|nCooldown: 60 sec., 25 sec. after the second punch|r")
+call LANG_A('GyT1',2,0,"Konoha Kaiganshō, [|cffffcc00Level %d|r] (|cffffcc00T|r)")
+call LANG_A('GyT1',3,0,"Guy appears in front of the target and lands a stunning punch. For 10 sec., T becomes a stronger follow-up that knocks the enemy away.|n|n|cFF00A5FFDamage: 2×STR, follow-up 8×STR|nStun: 1 sec.|nFollow-up knockback: 500|nRange: 600|nCooldown: 60 sec., 25 sec. after the second punch|r")
+call LANG_A('GyT2',0,0,"Konoha Kaiganshō: Second, (|cffffcc00T|r)")
+call LANG_A('GyT2',1,0,"Guy appears in front of the target and lands a heavy punch that knocks them away.|n|n|cFF00A5FFDamage: 8×STR|nKnockback: 500|nRange: 600|r")
+call LANG_A('GyT2',2,0,"Konoha Kaiganshō: Second, [|cffffcc00Level %d|r] (|cffffcc00T|r)")
+call LANG_A('GyT2',3,0,"Guy appears in front of the target and lands a heavy punch that knocks them away.|n|n|cFF00A5FFDamage: 8×STR|nKnockback: 500|nRange: 600|r")
+call LANG_A('GyW1',1,0,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
+endfunction
+function LANG_Data53 takes nothing returns nothing
+call LANG_A('GyW1',1,1,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
+call LANG_A('GyW1',1,2,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
+call LANG_A('GyW1',1,3,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
+call LANG_A('GyW1',1,4,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
+call LANG_A('GyW1',3,0,"Guy leaps onto the enemy and strikes six times from different sides, ending with a knockback kick. Guy is invulnerable during the combo and the target is held.|n|n|cFF00A5FFDamage: 50 + 2/3/4/5/6×STR|nKnockback: 300|nRange: 600|nCooldown: 20 sec.|r")
 call LANG_It('I000',0,"Gauntlets of Power")
 call LANG_It('I000',1,"Gauntlets of Power")
 call LANG_It('I001',1,"Crown of Nobility")
@@ -320822,8 +323973,6 @@ call LANG_It('I00M',2,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.
 call LANG_It('I00M',3,"Increase |c003CFF3CAGI|r by 15 and |c00FF5555STR|r by 10.")
 call LANG_It('I00N',0,"Vongola Cloud Ring, Rank B")
 call LANG_It('I00N',1,"Vongola Cloud Ring, Rank B")
-endfunction
-function LANG_Data53 takes nothing returns nothing
 call LANG_It('I00N',2,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
 call LANG_It('I00N',3,"Increase |c003CFF3CAGI|r by 20 and |c00FF5555STR|r by 15.")
 call LANG_It('I00O',0,"Vongola Cloud Ring, Rank A")
@@ -320983,6 +324132,8 @@ call LANG_It('I01Q',3,"Attack power increased by 100, |c00FFFF66AllStat|r by 30,
 call LANG_It('I01R',0,"Shusui (Recipe)")
 call LANG_It('I01R',1,"Shusui (Recipe)")
 call LANG_It('I01R',2,"Attack power increased by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: Death Wave - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Excalibur"+" (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
+endfunction
+function LANG_Data54 takes nothing returns nothing
 call LANG_It('I01R',3,"Increases attack damage by 100, |c00FFFF66AllStat|r by 30, 20% chance to deal 2x damage. Passive: \"Deadly Wave\" - 20% chance to deal 1.5*|c003CFF3CAGI|r damage in 500 AoE.|nActive: \"Quick Strikes\" - moves towards the enemy, striking and activating the passive ability of Shusui, Fang and Dark Exc"+"alibur (if not on cooldown) if the owner has them.|nRange: 600|nCooldown: 4 sec.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I01S',0,"Dark Excalibur")
 call LANG_It('I01S',1,"Dark Excalibur")
@@ -321074,8 +324225,6 @@ call LANG_It('I02D',2,"A gift, a secret inside... :)")
 call LANG_It('I02D',3,"A gift, a secret inside... :)")
 call LANG_It('I02E',0,"Hell Ring: \"Soul Eater\", Rank D")
 call LANG_It('I02E',1,"Hell Ring: \"Soul Eater\", Rank D")
-endfunction
-function LANG_Data54 takes nothing returns nothing
 call LANG_It('I02E',2,"Increases attack by 15, AS by 9%, 10% chance when receiving physical damage to block and appear behind the enemy. The ability counts as blocks, not misses.")
 call LANG_It('I02E',3,"Increases attack by 15, AS by 9%, 10% chance when receiving physical damage to block and appear behind the enemy. The ability counts as blocks, not misses.")
 call LANG_It('I02F',0,"Hell Ring: \"Soul Eater\", Rank C")
@@ -321235,6 +324384,8 @@ call LANG_It('I03G',1,"Vongola Gloves Level 1")
 call LANG_It('I03G',2,"Increase hero's AS by 45%.")
 call LANG_It('I03G',3,"Increase hero's AS by 45%.")
 call LANG_It('I03H',0,"Vongola Gloves Level 2")
+endfunction
+function LANG_Data55 takes nothing returns nothing
 call LANG_It('I03H',1,"Vongola Gloves Level 2")
 call LANG_It('I03H',2,"Hero's AS increased by 75%, |c00FFFF66AllStat|r by 6.")
 call LANG_It('I03H',3,"Hero's AS increased by 75%, |c00FFFF66AllStat|r by 6.")
@@ -321326,8 +324477,6 @@ call LANG_It('I03X',0,"Akatsuki Cloak")
 call LANG_It('I03X',1,"Akatsuki Cloak")
 call LANG_It('I03X',2,"Increase DEF by 5 points and magic defense by 10%.")
 call LANG_It('I03X',3,"Increase DEF by 5 points and magic defense by 10%.")
-endfunction
-function LANG_Data55 takes nothing returns nothing
 call LANG_It('I03Y',0,"Akatsuki Hat")
 call LANG_It('I03Y',1,"Akatsuki Hat")
 call LANG_It('I03Y',2,"Increases mana regeneration by 75% and |c0077FFFFINT|r by 20.")
@@ -321487,6 +324636,8 @@ call LANG_It('I04Z',1,"Samehada (Recipe)")
 call LANG_It('I04Z',2,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Switch between modes: 1) Mana burn 8% of current +heal 2) Pure damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I04Z',3,"Increase |c00FF5555STR|r and |c0077FFFFINT|r by 35, attack by 125. (50 for bleeding), increased AS by 50%. Mode Switching: 1) Mana Break 8% of current + heal 2) True Damage 150+20% of auto attack.|n|nRequires: Sandai Kitetsu, Recipe.")
 call LANG_It('I050',0,"Gegetsuburi")
+endfunction
+function LANG_Data56 takes nothing returns nothing
 call LANG_It('I050',1,"Gegetsuburi")
 call LANG_It('I050',2,"Increase |c00FFFF66AllStat|r by 30, increase attack by 30, each attack deals 80 additional damage. pure damage, penetrating resistances, but not shields.|n |nPassive: \"Stunning Blow\" - 20% chance to stun for 1 sec. (0.2 if Imagine Breaker is active).|nIf the owner has not hit anyone for 10 sec., t"+"he chance increases to 100%.|nCD: 1 sec.")
 call LANG_It('I050',3,"Increase |c00FFFF66AllStat|r by 30, increase attack by 30, each attack deals 80 additional damage. pure damage, penetrating resistances, but not shields.|n |nPassive: \"Stunning Blow\" - 20% chance to stun for 1 sec. (0.2 if Imagine Breaker is active).|nIf the owner has not hit anyone for 10 sec., t"+"he chance increases to 100%.|nCD: 1 sec.")
@@ -321578,8 +324729,6 @@ call LANG_It('I05M',0,"Fake Storm Mare Ring")
 call LANG_It('I05M',1,"Fake Storm Mare Ring")
 call LANG_It('I05M',2,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 35, 35% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec.")
 call LANG_It('I05M',3,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 35, 35% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec.")
-endfunction
-function LANG_Data56 takes nothing returns nothing
 call LANG_It('I05N',0,"True Storm Mare Ring")
 call LANG_It('I05N',1,"True Storm Mare Ring")
 call LANG_It('I05N',2,"Increase |c0077FFFFINT|r, |c003CFF3CAGI|r by 40, HP by 500, 40% of damage dealt are done in 600 AoE to adjacent enemies. CD: 2 sec|n|nActive: Deals 15% Max HP of Enemy +15*(2.5*|c00FF5555STR|r of enemy - (|c0077FFFFINT|r of enemy + |c003CFF3CAGI|r of enemy)) magic damage to all enemies within a 400 "+"radius and knocks them back 400 units.|nDamage, without deducting resistances and vulnerabilities, cannot be lower than 15% of Max HP and higher than 45% of the enemy's Max HP.|nAoE: 450|nCD: 20 seconds")
@@ -321739,6 +324888,8 @@ call LANG_It('I06R',3,"Increase |c00FFFF66AllStat|r by 30, and increase allies' 
 call LANG_It('I06S',0,"Kaleidoscepter Ruby (Recipe)")
 call LANG_It('I06S',1,"Kaleidoscepter Ruby (Recipe)")
 call LANG_It('I06S',2,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
+endfunction
+function LANG_Data57 takes nothing returns nothing
 call LANG_It('I06S',3,"Increase |c00FFFF66AllStat|r by 35, reduce the magic resistance of enemies by 15% within 1000.|n|nActive Ability: \"Slash\"|n|nRequires: Sealed Dark Staff, Recipe")
 call LANG_It('I06T',0,"Kaleidoscepter Sapphire (Recipe)")
 call LANG_It('I06T',1,"Kaleidoscepter Sapphire (Recipe)")
@@ -321830,8 +324981,6 @@ call LANG_It('IHnK',1,"Hakka no Togame")
 call LANG_It('IHnK',2,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.")
 call LANG_It('IHnK',3,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.")
 call LANG_It('IHnR',0,"Hakka no Togame (Recipe)")
-endfunction
-function LANG_Data57 takes nothing returns nothing
 call LANG_It('IHnR',1,"Hakka no Togame (Recipe)")
 call LANG_It('IHnR',2,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.|n|nRequires: Ice Gloves, Sode no Shirayuki.")
 call LANG_It('IHnR',3,"|c00FFFF66AllStat|r +35, DEF +15, AS +50%, DMG +60.|n|nPassive: Each damage instance above 50 increases effectivness of control effects by 25% for 5 seconds.|n|nActive: \"Absolute Zero\" - DEF +15, reduces incoming damage by 0.3*Main Stat and 10% of damage is converted into MP. Lasts 7 seconds.|nDea"+"ls 150 damage around the user in 600 AoE, stunning for 1 sec.|nCD: 25 sec.|n|nRequires: Ice Gloves, Sode no Shirayuki.")
@@ -321991,6 +325140,8 @@ call LANG_U('H01H',3,"Death the Kid - the son of a shinigami, uses two pistols, 
 call LANG_U('H01I',3,"Death the Kid - son of a shinigami, uses two pistols, is on the sparta team.")
 call LANG_U('H01J',3,"Jiraiya is a hermit from Mount Myoboku, taught by Minato and Naruto, is a member of the \"Legendary Trinity of Konoha\".|n|nRole: Durable, Caster|n|n")
 call LANG_U('H01K',3,"Jiraiya is a hermit from Mount Myoboku, taught by Minato and Naruto, is a member of the \"Legendary Trinity of Konoha\".")
+endfunction
+function LANG_Data58 takes nothing returns nothing
 call LANG_U('H01L',3,"\"Kurotsuchi Mayuri\" - Captain of the 12th Squad, head of the Technology Squad.|n|nRole: Caster, Assassin, Semi-Support, Exhauster, Carry, Swordsman, Escape|n|n")
 call LANG_U('H01M',3,"Dante is a legendary demon hunter. The son of the demon Sparda and the human woman Eva.|n|nRole: Caster, Carry, Durable|n|n")
 call LANG_U('H01N',3,"Dante is the main protagonist of the Devil May Cry series. The son of the demon Sparda and the earthly woman Eve. He has an older twin brother Virgil. Dante is none other than a demon hunter; he is chasing those who killed his mother and enslaved his brother.")
@@ -322082,8 +325233,6 @@ call LANG_U('H045',3,"Ulquiorra - 4th strongest in espada.|n|nRole: Caster, Assa
 call LANG_U('H047',3,"Laxus Dreyar is a Thunder Dragon Slayer and S-Class Mage of the Fairy Tail Guild.|n|nRole: Durable, Caster, Disabler|n|n")
 call LANG_U('H048',3,"Frieza is a cruel tyrant, the leader of Frieza's army, and the self-proclaimed Emperor of the Universe.|n|nRole: Caster, Exhauster|n|n")
 call LANG_U('H049',3,"Yuuji - Shana's partner, Mistas \"Midnight Child\".|n|nRole: Durable, Carry, Disabler, Swordsman|n|n")
-endfunction
-function LANG_Data58 takes nothing returns nothing
 call LANG_U('H04A',3,"Gon Frikss is a beginner hunter.|n|nRole: Durable, Caster, Carry, Exhauster|n|n")
 call LANG_U('H04B',3,"Gon Frikss is a beginner hunter.|n|nRole: Durable, Caster, Carry, Exhauster|n|n")
 call LANG_U('H04C',3,"Yuzuriha Inori - Was created as a vessel for Oma Mana.|n|nRole: Support, Carry|n|n")
@@ -322243,6 +325392,8 @@ call LANG_U('HSig',3,"Signum — the leader of the Belkan knights, summoned by t
 call LANG_U('HGuB',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 18 +3.5|r|nAgility: 18 +2|nIntelligence: 12 +1.2")
 call LANG_U('HGuN',3,"|nGuts —  the Black Swordsman with a cursed brand (also known as the Hundred Man Slayer and the Hawk of Darkness) tirelessly opposes demonic forces. In battle he uses the huge two-handed sword «Dragonslayer», throwing knives, a crossbow and a metal prosthetic left arm hiding a small hand cannon."+"|n|n|nRole: Disabler, Durable, Caster, Swordsman|n|nAbilities: Tondeke Yagare,Darona,Sokou Doke,Jamada,Kurae Yagare.|n|n|cFFFFC850Strength: 15 +3.5|r|nAgility: 18 +2|nIntelligence: 15 +1.2")
 call LANG_U('Rosh',3,"Master Roshi — a wise, yet very perverted old man. His home is on a small isolated island that serves as a gathering place for old friends.|n|nRole: Caster, Disabler.|n|n")
+endfunction
+function LANG_Data59 takes nothing returns nothing
 call LANG_U('HBrg',3,"Baraggan Louisenbairn — the 2nd Espada, King of Hueco Mundo. His power is aging: everything his breath touches rots and crumbles away.|nAlways in Resurreccion form: Arrogante. (Abilities made with Cloude 5 by AlTrOn, effects taken from Anime WOS2 by Thunder_Gear, model by XeSHTeG)|n|nRole: Nuker, "+"Disabler, Tank.|n|n")
 call LANG_U('HEsc',3,"Escanor — the Sin of Pride of the Seven Deadly Sins. His magic is \"Sunshine\": the closer it is to noon, the stronger he gets.|n(Abilities and effects ported from the Chinese map bof, by AlTrOn)|n|nRole: Caster, Disabler, Initiator, Durable.|n")
 call LANG_U('eB94',0,"Flandre's Cursor")
@@ -322258,6 +325409,8 @@ call LANG_U('HHom',3,"Homura Akemi is a magical girl who can stop and rewind tim
 call LANG_U('HHDv',2,"Homura Akemi")
 call LANG_U('HHDv',3,"Homura Akemi in her Devil form. Her abilities are in development.|n|nRole: Caster, Disabler, Escape|n")
 call LANG_U('HIor',3,"Iori is a melee fighter who chains attacks into follow-ups and controls enemies with purple flames.|n|nRole: Carry, Assassin, Solo Target")
+call LANG_U('HGai',2,"Might Guy")
+call LANG_U('HGai',3,"The Leaf Village’s taijutsu master opens the Eight Gates to unlock increasingly powerful techniques.|n|nRole: Fighter, Assassin")
 call LANG_B('BRRV',0,"Rain Aura")
 call LANG_B('BRRV',1,"Aura of rain.")
 call LANG_B('BMUR',0,"Wood Dragon")
@@ -322334,8 +325487,6 @@ call LANG_B('B02Z',0,"Blocked")
 call LANG_B('B02Z',1,"Blocked")
 call LANG_B('B031',1,"This warrior is accelerated.")
 call LANG_B('B032',0,"Cleave")
-endfunction
-function LANG_Data59 takes nothing returns nothing
 call LANG_B('B032',1,"Cleave")
 call LANG_B('B033',0,"Fire Run")
 call LANG_B('B033',1,"This warrior used the spell ''Fire Run''.")
@@ -322493,6 +325644,8 @@ call LANG_B('MaRb',1,"Madoka's Q skill has been buffed.")
 call LANG_B('MiMp',1,"This warrior is electrocuted. He's slow.")
 call LANG_B('ReD3',1,"|c00FF8000|rRengoku is flaming")
 call LANG_B('ReEp',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
+endfunction
+function LANG_Data60 takes nothing returns nothing
 call LANG_B('ReFP',1,"Rengoku Flame Breathing Secret Technique.")
 call LANG_B('ReRf',1,"This warrior is pissed off. He cannot control himself.")
 call LANG_B('ReSb',1,"This warrior is slow. The speed of his movement and combat is much lower than normal.")
@@ -322531,6 +325684,7 @@ call LANG_B('MaEm',0,"Ashisogi Jizo Mark")
 call LANG_B('MaEm',1,"Using an ability within 7 seconds triggers a 2-second silence and increased vulnerability to control for 5 seconds.")
 call LANG_B('MaEc',0,"Neurotoxin")
 call LANG_B('MaEc',1,"Incoming control duration and the magnitude of MS/AS slows, miss chance and outgoing damage reduction are increased by 25%.")
+call LANG_B('BHMr',1,"Homura gains 40 mana regeneration per second.")
 call LANG_F("BONUS_ATTACK_SPEED"," - Each point increases attack speed|n - Each point increases movement speed by 0.7")
 call LANG_F("BONUS_MANAREGEN"," - Each point increases mana regeneration|n - Each point increases magic resistance by 0.05%")
 call LANG_F("COLON_LUMBER","Victory points.")
@@ -322608,11 +325762,13 @@ call ExecuteFunc("LANG_Data56")
 call ExecuteFunc("LANG_Data57")
 call ExecuteFunc("LANG_Data58")
 call ExecuteFunc("LANG_Data59")
+call ExecuteFunc("LANG_Data60")
 endfunction
 //LANG_DATA_END
 function InitCustomTriggers takes nothing returns nothing
 call ExecuteFunc("LANG_Init") // язык (RU / EN) — до всего, что читает тексты
 call IoriInit()
+call GuyInit()
 call Sh_Init() //Shop32
 call InitTrig_LamboLearnE()
 call InitTrig_LamboChoice()
